@@ -1,0 +1,252 @@
+//--------------------------------------------------------------//
+// Lightworks user effect BorderCrop.fx
+//
+// Created by LW user jwrl 3 May 2017
+//
+// This started out to be a revised SimpleCrop.fx, but since
+// it adds a feathered, coloured border and a soft drop shadow
+// was given its own name.  It's now essentially the same as
+// DualDVE.fx without the DVE components but with input
+// swapping instead.
+//
+// The alpha channel selection of SimpleCrop.fx was dropped,
+// since it was never really of any use.  Disconnecting the
+// background layer achieves exactly the same result.
+//
+// Bug fix by LW user jwrl 20 July 2017 - this effect didn't
+// work on Linux/Mac platforms.  It now does.  In the process
+// significant code optimisation has been performed.
+//--------------------------------------------------------------//
+
+int _LwksEffectInfo
+<
+   string EffectGroup = "GenericPixelShader";
+   string Description = "Bordered crop";
+   string Category    = "DVE";
+   string SubCategory = "Crop Presets";
+> = 0;
+
+//--------------------------------------------------------------//
+// Inputs
+//--------------------------------------------------------------//
+
+texture Fgd;
+texture Bgd;
+
+texture FgdCrop : RenderColorTarget;
+
+//--------------------------------------------------------------//
+// Samplers
+//--------------------------------------------------------------//
+
+sampler FgSampler = sampler_state {
+   Texture   = <Fgd>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Point;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler BgSampler = sampler_state {
+   Texture   = <Bgd>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Point;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler FcSampler = sampler_state {
+   Texture   = <FgdCrop>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Point;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//--------------------------------------------------------------//
+// Parameters
+//--------------------------------------------------------------//
+
+bool Swap
+<
+   string Description = "Swap background and foreground video";
+> = false;
+
+float CropLeft
+<
+   string Group = "Crop";
+   string Description = "Top left";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+float CropTop
+<
+   string Group = "Crop";
+   string Description = "Top left";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
+
+float CropRight
+<
+   string Group = "Crop";
+   string Description = "Bottom right";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
+
+float CropBottom
+<
+   string Group = "Crop";
+   string Description = "Bottom right";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+float BorderWidth
+<
+   string Group = "Border";
+   string Description = "Width";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.05;
+
+float BorderFeather
+<
+   string Group = "Border";
+   string Description = "Feathering";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float4 BorderColour
+<
+   string Group = "Border";
+   string Description = "Colour";
+> = { 0.694, 0.255, 0.710, 1.0 };
+
+float Opacity
+<
+   string Group = "Drop shadow";
+   string Description = "Shadow density";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float Feather
+<
+   string Group = "Drop shadow";
+   string Description = "Feathering";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.15;
+
+float Shadow_X
+<
+   string Group = "Drop shadow";
+   string Description = "Shadow offset";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.6;
+
+float Shadow_Y
+<
+   string Group = "Drop shadow";
+   string Description = "Shadow offset";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.4;
+
+//--------------------------------------------------------------//
+// Definitions and declarations
+//--------------------------------------------------------------//
+
+#define BORDER_SCALE   0.0666667
+#define BORDER_FEATHER 0.05
+
+#define SHADOW_SCALE   0.2
+#define SHADOW_FEATHER 0.1
+
+#define BLACK          float4(0.0.xxx,1.0)
+
+float _OutputAspectRatio;
+
+//--------------------------------------------------------------//
+// Shaders
+//--------------------------------------------------------------//
+
+float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
+{
+   float bWidth = max (0.0, BorderWidth);
+
+   float4 Fgnd   = Swap ? tex2D (BgSampler, uv) : tex2D (FgSampler, uv);
+   float4 retval = lerp (Fgnd, BorderColour, min (1.0, bWidth * 50.0));
+
+   float2 fx1 = float2 (1.0, _OutputAspectRatio) * max (0.0, BorderFeather) * BORDER_FEATHER;
+   float2 fx2 = fx1 / 2.0;
+
+   float2 Border = float2 (1.0, _OutputAspectRatio) * bWidth * BORDER_SCALE;
+   float2 brdrTL = uv - float2 (CropLeft, 1.0 - CropTop) + Border;
+   float2 brdrBR = float2 (CropRight, 1.0 - CropBottom) - uv + Border;
+   float2 bAlpha = min (brdrTL, brdrBR) / fx1;
+
+   float2 cropTL = brdrTL - Border + fx2;
+   float2 cropBR = brdrBR - Border + fx2;
+   float2 cAlpha = min (cropTL, cropBR) / fx1;
+
+   retval.a = saturate (min (bAlpha.x, bAlpha.y));
+
+   return lerp (retval, Fgnd, saturate (min (cAlpha.x, cAlpha.y)));
+}
+
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+{
+   float2 aspect = float2 (1.0, _OutputAspectRatio);
+   float2 Border = aspect * max (0.0, BorderWidth) * BORDER_SCALE;
+   float2 xy     = uv - float2 ((Shadow_X - 0.5), (0.5 - Shadow_Y) * _OutputAspectRatio) * SHADOW_SCALE;
+
+   float4 Bgnd   = Swap ? tex2D (FgSampler, uv) : tex2D (BgSampler, uv);
+   float4 Fgnd   = tex2D (FcSampler, uv);
+   float4 retval = tex2D (FcSampler, xy);
+
+   float2 shadowTL = xy - float2 (CropLeft, 1.0 - CropTop) + Border;
+   float2 shadowBR = float2 (CropRight, 1.0 - CropBottom) - xy + Border;
+   float2 sAlpha   = saturate (min (shadowTL, shadowBR) / (aspect * Feather * SHADOW_FEATHER));
+
+   float alpha = sAlpha.x * sAlpha.y * retval.a * Opacity;
+
+   retval = lerp (Bgnd, BLACK, alpha);
+
+   return lerp (retval, Fgnd, Fgnd.a);
+}
+
+//--------------------------------------------------------------//
+// Techniques
+//--------------------------------------------------------------//
+
+technique crop
+{
+   pass P_1
+   <
+      string Script = "RenderColorTarget0 = FgdCrop;";
+   >
+   {
+      PixelShader = compile PROFILE ps_crop ();
+   }
+
+   pass P_2
+   {
+      PixelShader = compile PROFILE ps_main ();
+   }
+}
+

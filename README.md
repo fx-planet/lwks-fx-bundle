@@ -373,3 +373,30 @@ Alpha transitions are a special kind of effect, and require slightly different s
 (2) [Simple instructions on how to use these composite transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&limit=15&limitstart=15&Itemid=81#135945)
 
 (3) [Instructions on how to install and use these rather complex effects. Since they are in very active development by schrauber that thread is also a good place to go to ensure that you have the most up-to-date versions.](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)
+
+
+# MetaParser
+
+MetaParser is a simple tool for extracting metadata from FX files.
+
+It expects path to the effects directory as an argument and it results
+with JSON output describing metadata for all files found.
+
+Supported meta attributes:
+
+  - `Author`: name of the author (one)
+  - `Maintainer`: name of the maintainer (multiple)
+  - `ReleaseDate`: date of the release (one)
+  - `License`': license name (one)
+  - `Video`: URL of related video (multiple)
+  - `Picture`: URL of screenshot (multiple)
+
+Category, subcategory and effect name are taken from `_LwksEffectInfo`
+section automatically.
+
+Usage:
+
+```bash
+    
+    python metaparser.py <path-to-fx-directory>
+```

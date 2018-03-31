@@ -1,11 +1,14 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import os
 import re
 import glob
 import argparse
 import datetime
 import json
+import sys
 
 import dsm
 
@@ -15,6 +18,10 @@ metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s*:\s*"?([^"^\s]+)"?')
 category_re = re.compile(r'^\s*string\s*Category\s*=\s*"([^"]+)"')
 subcategory_re = re.compile(r'^\s*string\s*SubCategory\s*=\s*"([^"]+)"')
 description_re = re.compile(r'^\s*string\s*Description\s*=\s*"([^"]+)"')
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 def string_attr(value):
@@ -70,10 +77,11 @@ def metadata_parser(metadata, line):
     result = metatag_re.findall(line)
     if result:
         attr, value = result[0]
+        attr = attr.strip().lower()
         try:
             updater = SUPPORTED_ATTRS[attr]
         except KeyError:
-            print("Unknown attr: `%s`. Skipping.", attr)
+            eprint("Unknown attr: `%s`. Skipping." % attr)
         else:
             updater(metadata, attr, value)
             return True

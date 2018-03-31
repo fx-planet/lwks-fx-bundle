@@ -397,7 +397,7 @@ section automatically.
 Usage:
 
 ``` 
-    python metaparser.py <path-to-fx-directory>
+python metaparser.py <path-to-fx-directory>
 ```
 
 Example:

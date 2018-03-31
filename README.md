@@ -394,19 +394,27 @@ Supported meta attributes:
 Category, subcategory and effect name are taken from `_LwksEffectInfo`
 section automatically.
 
-Usage:
+## Prerequisites
+
+Install dependencies:
+
+```
+$ pip install --user -r metaparser-requirements.txt
+```
+
+## Usage
 
 ``` 
 python metaparser.py <path-to-fx-directory>
 ```
 
-Example:
+## Example
 
 ```
 $ ./metaparser.py  Simulation/ | jq
 ```
 
-Output (fragment):
+### Output (fragment)
 
 ```json
 {

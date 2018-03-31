@@ -1,0 +1,375 @@
+# Lightworks user Fx archive, December 21, 2017.
+
+> **WARNING:** Most Lightworks users should download the current library zip file or the individual effects zips from either of the two user effects threads (use the links below to get to them). Once version 14.1 is released this archive version of the library will be solely for Windows users of version 14.0 and earlier. It will be locked off at the state that the library was in on December 21 2017, and is highly unlikely to be updated.
+> 
+> If you are a Windows user of one of those earlier versions of Lightworks and need any effect that isn't here try it from the standard library first. Most will compile without issue. The effects that are most impacted by the update are DVE effects and similar.
+> 
+> If the effect you want doesn't compile you should directly contact the author of that effect. You could alternatively edit the effect code in a text editor (not a word processor) and search for “ClampToEdge” and replace it with “Clamp” anywhere it appears. It should then work, but if it doesn't you could be on your own I'm afraid.
+
+The effects in this ZIP file were created by Lightworks users – thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
+
+
+[https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81#ftop](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81#ftop)
+
+
+[https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#ftop](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#ftop)
+
+
+First, a warning: you shouldn't import effects files that you're unlikely to need. If you do Lightworks startup times can become very slow. This is a **library** and should be treated as such – you don't take home all the books in your local library at once either.
+
+In this library where alternative versions of the effects exist they are separately listed and the entry includes the path that they are in. Where necessary a Read Me file may also be included in the folder with those versions.
+
+Use of these effects is simple.
+
+1. Copy the FX file(s) that you need to your computer. Anywhere will do as long as you know where to find them.
+2. Launch Lightworks, open a project, then open the Effects panel.
+3. In the top left of the window that appears click on "Places" and navigate to the folder in which you stored the FX file.
+4. Select the FX file and then click OK.
+5. The effect will be copied, compiled and a further window will appear giving details.
+
+**NOTE:** Every attempt has been made to ensure that these effects will compile and run on any version of Lightworks on any supported operating system. If you have trouble installing them, please make a note of any error message that Lightworks gives you. Post the complete details [here](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81). It will be followed up.
+
+There is no checking in this zip file for effects with duplicate functionality. These are all included largely as supplied by the original creator. Some of the earlier effects may have been superseded by Editshare-supplied equivalents. It's up to you to check that any given effect does what you want, and does it better/faster/simpler than any alternative.
+
+Lightworks does not overwrite existing effects but simply adds new ones to the list, even if they have the same name and category as a currently installed effect. If you want to replace an effect you need to destroy the existing version first. In the effects panel right-click on the effect you wish to change, and from the menu that appears, select "Destroy current effect". Then install your new version in the usual way. Note that you cannot delete effects supplied with Lightworks this way.
+
+If you need to use two effects that have the same name, simply open one of them with any plain text editor (definitely not a word processor) and look for the line up near the top of the file that says something like ' string Description = "Effect name"; '. Type in your new name in place of the existing effect name inside the quotes and save the file. When you load that version it will now have the name that you gave it.
+
+One alternative approach is to change the category the effect is stored under. Look for a line that says something like ' string Category = "Stylize"; '. Type in a new category name and save the file. The effect will be added to the category that you gave it, even if that category hasn't previously existed. The other alternative for version 14 users and up is to change the subcategory assigned to the effect. Look for a line near the start of the effect that is similar to ' string SubCategory = "Vignette"; '. Type in the new subcategory you wish to use. If the effect has no subcategory line you can add one after the category, but it must be spelled exactly as shown, i.e., SubCategory.
+
+Alpha transitions are a special kind of effect, and require slightly different setting up to other transitions. The setup instructions for them can be found at the following link. https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135925 A newer group of composite wipe transitions have also been developed. They are also a special kind of effect. The very simple technique for using them can be found at the following link. https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135945 Finally, there is a special category of remote control effects, the brain child of user schrauber. The way that they work is unique, and the special setup and control instructions for them can be found in the thread [here](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918).
+
+## CATEGORY FOLDER: Alpha and blends
+
+|EFFECT                 |FILE NAME          |
+|:--------------------- |:----------------- |
+|Adjustable blend       |AdjBlend.fx        |
+|Alpha adjust           |alphaAdjust.fx     |
+|Alpha Feather          |AlphaFeather.fx    |
+|Border                 |Border.fx          |
+|Drop shadow and border |DropShadow.fx      |
+|Drop shadow plus       |DropShadowPlus.fx  |
+|Extrusion Matte        |Extrusion_Matte.fx |
+|Floating images        |FloatImage.fx      |
+|Glitter edge           |GlitterEdge.fx     |
+|Light ray keys         |light_ray_keys.fx  |
+|Magic edges            |MagicEdges.fx      |
+|Matte key              |mattekey.fx        |
+|Unpremultiply          |Unpremultiply.fx   |
+
+## CATEGORY FOLDER: Alpha transitions
+|EFFECT                     |FILE NAME           |
+|:------------------------- |:------------------ |
+|Alpha bar transition¹      |Adx_Bars.fx         |
+|Alpha block dissolve¹      |Adx_Blocks.fx       |
+|Alpha blur dissolve¹       |Adx_Blur.fx         |
+|Alpha border transition¹   |Adx_Borders.fx      |
+|Alpha corner split¹        |Adx_Corners.fx      |
+|Alpha corner squeeze¹      |Adx_CnrSqueeze.fx   |
+|Alpha dissolve thru colour¹|Adx_Colour.fx       |
+|Alpha fractal dissolve¹    |Adx_Fractals.fx     |
+|Alpha granular dissolve¹   |Adx_Granular.fx     |
+|Alpha kaleido mix¹         |Adx_Kaleido.fx      |
+|Alpha optical transition¹  |Adx_Optical.fx      |
+|Alpha pinch¹               |Adx_Pinch.fx        |
+|Alpha push¹                |Adx_Push.fx         |
+|Alpha radial pinch¹        |Adx_PinchR.fx       |
+|Alpha ripple dissolve¹     |Adx_Ripples.fx      |
+|Alpha rotate¹              |Adx_Rotate.fx       |
+|Alpha S dissolve¹          |Adx_Scurve.fx       |
+|Alpha sine mix¹            |Adx_Sine.fx         |
+|Alpha spin dissolve¹       |Adx_Spin.fx         |
+|Alpha split¹               |Adx_Split.fx        |
+|Alpha split squeeze¹       |Adx_SplitSqueeze.fx |
+|Alpha squeeze¹             |Adx_Squeeze.fx      |
+|Alpha stretch dissolve¹    |Adx_Stretch.fx      |
+|Alpha strips¹              |Adx_Strips.fx       |
+|Alpha tile transition¹     |Adx_Tiles.fx        |
+|Alpha transmogrify¹        |Adx_Transmogrify.fx |
+|Alpha twister¹             |Adx_Twister.fx      |
+|Alpha warp dissolve¹       |Adx_Warp.fx         |
+|Alpha wave collapse¹       |Adx_Wave.fx         |
+|Alpha X-pinch¹             |Adx_PinchX.fx       |
+|Alpha zoom dissolve¹       |Adx_Zoom.fx         |
+
+## CATEGORY FOLDER: Art effects
+|EFFECT      |FILE NAME      |
+|:---------- |:------------- |
+|Colour mask |ColourMask.fx  |
+|Edge        |Edge.fx        |
+|Edge glow   |EdgeGlow.fx    |
+|Four Tone   |fourtone.fx    |
+|Five Tone   |fivetone.fx    |
+|Sketch      |Sketch.fx      |
+|Tiles       |Tiles.fx       |
+|Toon        |Toon.fx        |
+
+## CATEGORY FOLDER: Blurs and sharpens
+|EFFECT             |FILE NAME                            |
+|:----------------- |:----------------------------------- |
+|Big Blur           |BigBlur.fx                           |
+|bilateral blur     |bilateral_blur.fx                    |
+|Bokeh              |Bokeh.fx                             |
+|Focal Blur         |FocalBlur.fx                         |
+|FxSpinBlur         |FxSpinBlur.fx                        |
+|FxTiltShift        |FxTiltShift.fx                       |
+|Iris Bokeh         |Iris bokeh/[OS_VERSION]/IrisBokeh.fx |
+|Ghost blur         |GhostBlur.fx                         |
+|Masked Blur        |MaskBlur.fx                          |
+|Masked Motion Blur |MaskedMotionBlur.fx                  |
+|Motion Blur        |motionblur.fx                        |
+|Soft foggy blur    |SoftFoggyBlur.fx                     |
+|Soft motion blur   |SoftMotionBlur.fx                    |
+|Soft spin blur     |SoftSpinBlur.fx                      |
+|Soft zoom blur     |SoftZoomBlur.fx                      |
+|Super blur         |SuperBlur.fx                         |
+|Unsharp Mask       |UnsharpMask.fx                       |
+|Zoom Blur          |ZoomBlur.fx                          |
+
+## CATEGORY FOLDER: Broadcast tools
+|EFFECT                   |FILE NAME                       |
+|:----------------------- |:------------------------------ |
+|Antialias                |AntiAlias.fx                    |
+|Channels                 |Channels.fx                     |
+|Clamp to 16-235          |Maintain_16_235/Clamp16-235.fx  |
+|Color Bars               |ColorBars.fx                    |
+|Colour swizzler          |Swizzler.fx                     |
+|De-interlace             |De-interlace.fx                 |
+|Expand 16-235 to 0-255   |Maintain_16_235/Expand16-235.fx |
+|Exposure Leveler         |ExpoLeveler.fx                  |
+|JH Show Hi/Lo            |jh_analysis_show_hilo.fx        |
+|OutputSelect             |OutputSelect.fx                 |
+|Safe area and crosshatch |Crosshatch.fx                   |
+|Shrink 0-255 to 16-235   |Maintain_16_235/Shrink16-235.fx |
+|Tenderizer               |Tenderizer.fx                   |
+|Test greyscale           |Test_greyscale.fx               |
+|Two-axis vector balance  |TwoAxisVector.fx                |
+|Zebra pattern            |ZebraStripes.fx                 |
+
+## CATEGORY FOLDER: Cleanup and repair
+|EFFECT                     |FILE NAME              |
+|:------------------------- |:--------------------- |
+|Chromatic Aberration Fixer |CAFixer.fx             |
+|Clone Stamp                |CloneStamp_03.fx       |
+|Cubic lens distortion      |CubicLensDistortion.fx |
+|Pixel Fixer                |PixFix.fx              |
+
+## CATEGORY FOLDER: Colour grading
+|EFFECT                    |FILE NAME            |
+|:------------------------ |:------------------- |
+|3 Axis Colour Temperature |3AxisColTemp.fx      |
+|ALE_SMOOTH_CHROMA         |ALE_Smooth_Chroma.fx |
+|CC Helper                 |CCHelper2.fx         |
+|CC_RGBCMY                 |CC_RGBCMY.fx         |
+|Film exposure             |FilmExp.fx           |
+|HSV Wheel                 |HSVWheel.fx          |
+|Hue rotate                |HueRotate.fx         |
+|Peak desaturate           |PeakDesat.fx         |
+|PolyGrad                  |PolyGrad.fx          |
+|S-Curve                   |SCurve.fx            |
+|S-curve adjustment        |RGBsCurve.fx         |
+|Two-axis colour balance   |TwoAxis.fx           |
+
+## CATEGORY FOLDER: Distortions
+|EFFECT                        |FILE NAME                      |
+|:---------------------------- |:----------------------------- |
+|Bulge                         |bulge.fx                       |
+|Glass Tiles                   |GlassTiles.fx                  |
+|Magnifying glass              |magnifying_glass.fx            |
+|Regional zoom                 |Regional zoom.fx               |
+|Ripples (automatic expansion) |Ripples_automatic_expansion.fx |
+|Ripples (manual expansion)    |Ripples_manual_expansion.fx    |
+|WarpedStretch                 |Warped Stretch.fx              |
+|Whirl                         |whirl20171106.fx               |
+
+## CATEGORY FOLDER: DVE reposition and crop
+|EFFECT        |FILE NAME             |
+|:------------ |:-------------------- |
+|Bordered crop |BorderCrop.fx         |
+|Deco DVE      |Deco_DVE.fx           |
+|Flip/flop     |FlipFlop.fx           |
+|Format fixer  |FormatFixer.fx        |
+|FxPerspective |FxPerspective.fx      |
+|Perspective   |Perspective.fx        |
+|Simple crop   |SimpleCrop.fx         |
+|Spin Zoom     |Spin_Zoom_20171022.fx |
+|Triple DVE    |Triple_DVE.fx         |
+|VisualCrop    |vicrop.fx             |
+|zoom-out-in   |zoom-out-in.fx        |
+
+## CATEGORY FOLDER: Filmstock effects
+|EFFECT             |FILE NAME        |
+|:----------------- |:--------------- |
+|Bleach Bypass      |bleachbypass.fx  |
+|Colour film ageing |ColourFilmAge.fx |
+|Duotone            |Duotone.fx       |
+|Film negative      |FilmNeg.fx       |
+|FilmFx             |FilmFx.fx        |
+|Filmic look        |FilmicLookV2.fx  |
+|Old Time Movie     |OldTime.fx       |
+|Technicolor        |Technicolor.fx   |
+|Vintage Look       |vintagelook.fx   |
+
+## CATEGORY FOLDER: Filters
+|EFFECT                   |FILE NAME            |
+|:----------------------- |:------------------- |
+|Anamorphic Lens Flare    |AnaFlare.fx          |
+|Flare                    |Flare.fx             |
+|Glint                    |Glint.fx             |
+|Graduated ND Filter      |GradNDFilter.fx      |
+|JB's Chromatic Aberation |ChromAb.fx           |
+|Rays                     |Rays.fx              |
+|SkinSmooth               |SkinSmooth.fx        |
+|The dark side            |TheDarkSide.fx       |
+
+## CATEGORY FOLDER: Keying
+|EFFECT            |FILE NAME        |
+|:---------------- |:--------------- |
+|Ale_ChromaKey     |ALE_ChromaKey.fx |
+|Chromakey plus    |ChromakeyPlus.fx |
+|DeltaMask         |DeltaMask.fx     |
+|INK               |INK.fx           |
+|KeyDespill        |KeyDespill.fx    |
+|Lumakey with crop |LumakeyCrop.fx   |
+
+## CATEGORY FOLDER: Masks and vignettes
+|EFFECT             |FILE NAME                              |
+|:----------------- |:------------------------------------- |
+|DVE with vignette  |DVE_vignette.fx                        |
+|JH Vignette        |jh_stylize_vignette.fx                 |
+|Letterbox          |Letterbox.fx                           |
+|Octagonal vignette |Octagonal_Vignette.fx                  |
+|Poly03             |/Poly Masks/[OS_VERSION]/PolyMask03.fx |
+|Poly04             |/Poly Masks/[OS_VERSION]/PolyMask04.fx |
+|Poly05             |/Poly Masks/[OS_VERSION]/PolyMask05.fx |
+|Poly06             |/Poly Masks/[OS_VERSION]/PolyMask06.fx |
+|Poly07             |/Poly Masks/[OS_VERSION]/PolyMask07.fx |
+|Poly08             |/Poly Masks/[OS_VERSION]/PolyMask08.fx |
+|Poly10             |/Poly Masks/[OS_VERSION]/PolyMask10.fx |
+|Poly12             |/Poly Masks/[OS_VERSION]/PolyMask12.fx |
+|Poly14             |/Poly Masks/[OS_VERSION]/PolyMask14.fx |
+|Poly16             |/Poly Masks/[OS_VERSION]/PolyMask16.fx |
+
+## CATEGORY FOLDER: Motion
+|EFFECT             |FILE NAME             |
+|:----------------- |:-------------------- |
+|Camera Shake       |CameraShake.fx        |
+|Rhythmic pulsation |Rhythmic_pulsation.fx |
+|Strobe Motion      |Strobe.fx             |
+
+## CATEGORY FOLDER: Noise and grain
+|EFFECT              |FILE NAME        |
+|:------------------ |:--------------- |
+|Film Grain          |FilmGrain.fx     |
+|FxNoise             |FxNoise.fx       |
+|Grain               |Grain.fx         |
+|Grain(Variable)     |VariGrain.fx     |
+|Variable Film Grain |VariFilmGrain.fx |
+
+## CATEGORY FOLDER: Pattern and bgd genes
+|EFFECT          |FILE NAME                               |
+|:-------------- |:-------------------------------------- |
+|Fractal magic 1 |FractalMagic1.fx                        |
+|Fractal magic 2 |FractalMagic2.fx                        |
+|Fractal magic 3 |FractalMagic3.fx                        |
+|FxTile          |FxTile.fx                               |
+|Kaleido         |Kaleido.fx                              |
+|Kaleidoscope    |Kaleidoscope.fx                         |
+|Lissajou stars  |/Lissajou/[OS_VERSION]/Lissajou.fx      |
+|Multigradient   |Multigrad.fx                            |
+|SineLight       |/Sine lights/[OS_VERSION]/SineLights.fx |
+
+## CATEGORY FOLDER: Simulation
+|EFFECT             |FILE NAME                |
+|:----------------- |:----------------------- |
+|Camera distortions |CameraDistortions.fx     |
+|CRT TV screen      |CRTscreen.fx             |
+|JH Old Monitor     |jh_stylize_oldmonitor.fx |
+|Low-res camera     |Low_res_cam.fx           |
+|Night vision       |NightVision.fx           |
+|VHS v2             |VHSv2.fx                 |
+|Water              |Water.fx                 |
+
+## CATEGORY FOLDER: Textures
+|EFFECT            |FILE NAME           |
+|:---------------- |:------------------ |
+|70s Psychedelia   |70s_psych.fx        |
+|Acidulate         |Acidulate.fx        |
+||FxColorHalftone2 |FxColorHalftone2.fx |
+|FxDotScreen       |FxDotScreen.fx      |
+|FxHalftone2       |FxHalftone2.fx      |
+|FxMangaShader     |FxManga.fx          |
+|FxRefraction      |FxRefraction.fx     |
+|Texturizer        |Texturizer.fx       |
+
+## CATEGORY FOLDER: Transitions A
+|EFFECT                  |FILE NAME                 |
+|:---------------------- |:------------------------ |
+|Block dissolve          |Dx_Blocks.fx              |
+|Blur dissolve           |Dx_Blurs.fx               |
+|Chinagraph pencil       |Dx_Chinagraph.fx          |
+|Colour sizzler          |Dx_Sizzler.fx             |
+|Dissolve through Colour |Dx_Colour.fx              |
+|DissolveX               |dissolveX.fx              |
+|Dream sequence          |Dx_Dreams.fx              |
+|FlareTran               |FlareTran.fx              |
+|Fly away                |Fly away.fx               |
+|Fractal dissolve        |Dx_Fractals.fx            |
+|Granular dissolve       |Dx_Granular.fx            |
+|Kaleido turbine mixer   |Kaleido turbine mixer.fx  |
+|Non-add dissolve ultra  |Dx_NonAddUltra.fx         |
+|Non-additive mixer      |Dx_NonAdd.fx              |
+|Optical dissolve        |Dx_Optical.fx             |
+|S dissolve              |Dx_Scurve.fx              |
+|Sinusoidal mix          |Dx_Sine.fx                |
+|Spin dissolve           |Dx_Spin.fx                |
+|Stretch dissolve        |Dx_Stretch.fx             |
+|Subtractive dissolve    |Dx_Subtract.fx            |
+|Swirl mix               |Swirl_mix_20171113.fx     |
+|Transmogrify            |Dx_Transmogrify.fx        |
+|Warp dissolve           |Dx_Warp.fx                |
+|Zoom dissolve           |Dx_Zoom.fx                |
+
+## CATEGORY FOLDER: Transitions B
+|EFFECT                    |FILE NAME          |
+|:------------------------ |:----------------- |
+|Barn door split           |Wx_Split.fx        |
+|Barn door squeeze         |Wx_SplitSqueeze.fx |
+|Composite corner split ²  |Cx_Corners.fx      |
+|Composite corner squeeze² |Cx_CnrSqueeze.fx   |
+|Composite pinch²          |Cx_Pinch.fx        |
+|Composite push²           |Cx_Push.fx         |
+|Composite radial pinch²   |Cx_rPinch.fx       |
+|Composite split²          |Cx_Split.fx        |
+|Composite split squeeze²  |Cx_SplitSqueeze.fx |
+|Composite squeeze²        |Cx_Squeeze.fx      |
+|Composite twister²        |Cx_Twister.fx      |
+|Composite X-pinch²        |Cx_xPinch.fx       |
+|Corner split              |Wx_Corners.fx      |
+|Corner squeeze            |Wx_CnrSqueeze.fx   |
+|Pinch transition          |Wx_Pinch.fx        |
+|Radial pinch              |Wx_rPinch.fx       |
+|The twister               |Wx_Twister.fx      |
+|X-pinch                   |Wx_xPinch.fx       |
+
+## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
+|EFFECT                       |FILE NAME                |
+|:--------------------------- |:----------------------- |
+|RC 1, Five channel remote    |RC1_Remote_control.fx    |
+|RC 3001, cyclic User control |RC3001_Cyclic_Remote.fx  |
+|Settings Display Unit        |Setting_Display_Unit.fx  |
+|RC Gain                      |RC_Gain.fx               |
+|RC RGB-Gain                  |RC_Gain_RGB.fx           |
+|RC Gamma                     |RC_Gamma.fx              |
+|RC RGB-Gamma                 |RC_Gamma_RGB.fx          |
+|RC Lift                      |RC_Lift.fx               |
+|RC RGB-Lift                  |RC_Lift_RGB.fx           |
+|RC regional zoom             |RC_Zoom_Regional.fx      |
+|RC regional zoom plus        |RC_Zoom_Regional_Plus.fx |
+|Spin Zoom, RC                |Spin_Zoom_20171220_RC.fx |
+
+(1) [Install and use alpha dissolves and transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135925)
+
+(2) [Simple instructions on how to use these composite transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&limit=15&limitstart=15&Itemid=81#135945)
+
+(3) [Instructions on how to install and use these rather complex effects. Since they are in very active development by schrauber that thread is also a good place to go to ensure that you have the most up-to-date versions.](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)

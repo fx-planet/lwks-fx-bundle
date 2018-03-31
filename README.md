@@ -396,7 +396,38 @@ section automatically.
 
 Usage:
 
-```bash
-    
-    python metaparser.py <path-to-fx-directory>
+``` 
+python metaparser.py <path-to-fx-directory>
+```
+
+Example:
+
+```
+$ ./metaparser.py  Simulation/ | jq
+```
+
+Output (fragment):
+
+```json
+{
+    "items": [
+    {
+      "name": "Glow amount",
+      "filename": "CRTscreen.fx",
+      "description": " CRTscreen.fx developed by jwrl 22 February 2017.\n\n This effect simulates a close-up look at an analogue colour\n TV screen.  Three options are available: Trinitron (Sony),\n Diamondtron (Mitusbishi/NEC) and Linitron.  For copyright\n reasons they are identified as type 1, type 2 and type 3\n respectively in this effect.  No attempt has been made to\n emulate a dot matrix shadow mask tube, because in early\n tests we just lost too much luminance for the effect to be\n useful.  That's pretty much why the manufacturers stopped\n using the real shadowmask too.\n\n The stabilising wires have not been emulated in the type\n 1 tube for anything other than the lowest two pixel sizes.\n They just looked absurd with the larger settings.\n\n The glow/halation effect is just a simple box blur, slightly\n modified to give a reasonable simulation of the burnout that\n could be obtained by overdriving a CRT.\n\n Cross platform compatibility check 3 August 2017 jwrl.\n Explicitly defined InpSampler{} to reduce the risk of cross\n platform default sampler state differences.\n Inputs\n Samplers\n Parameters\n Definitions and declarations\n Shaders\n New code for Sony Trinitron stabilising wires\n Techniques",
+      "category": "Stylize",
+      "subcategory": "Simulation"
+    },
+    {
+      "name": "Waves",
+      "filename": "Water.fx",
+      "description": " Header\n\n Lightworks effects have to have a _LwksEffectInfo block\n which defines basic information about the effect (ie. name\n and category). EffectGroup must be \"GenericPixelShader\".\n\n Version 14 update 18 Feb 2017 jwrl.\n Added subcategory to effect header.\n The title\n Governs the category that the effect appears in in Lightworks\n Inputs\n For each 'texture' declared here, Lightworks adds a matching\n input to your effect (so for a four input effect, you'd need\n to delcare four textures and samplers)\n Define parameters here.\n\n The Lightworks application will automatically generate\n sliders/controls for all parameters which do not start\n with a a leading '_' character\n Pixel Shader\n\n This section defines the code which the GPU will\n execute for every pixel in an output image.\n\n Note that pixels are processed out of order, in parallel.\n Using shader model 2.0, so there's a 64 instruction limit -\n use multple passes if you need more.\n Technique\n\n Specifies the order of passes (we only have a single pass, so\n there's not much to do)",
+      "category": "Stylize",
+      "subcategory": "Simulation"
+    }
+  ],
+  "count": 7,
+  "date": "2018-03-31T21:14:56.170227"
+}
+
 ```

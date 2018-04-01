@@ -16,6 +16,13 @@
 // Bug fix by LW user jwrl 20 July 2017 - this effect didn't
 // work on Linux/Mac platforms.  It now does.  In the process
 // significant code optimisation has been performed.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,8 +48,8 @@ texture FgdCrop : RenderColorTarget;
 
 sampler FgSampler = sampler_state {
    Texture   = <Fgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -50,8 +57,8 @@ sampler FgSampler = sampler_state {
 
 sampler BgSampler = sampler_state {
    Texture   = <Bgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -59,8 +66,8 @@ sampler BgSampler = sampler_state {
 
 sampler FcSampler = sampler_state {
    Texture   = <FgdCrop>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -178,8 +185,20 @@ float Shadow_Y
 #define SHADOW_FEATHER 0.1
 
 #define BLACK          float4(0.0.xxx,1.0)
+#define EMPTY          (0.0).xxxx
 
 float _OutputAspectRatio;
+
+#pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -217,7 +236,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    float4 Bgnd   = Swap ? tex2D (FgSampler, uv) : tex2D (BgSampler, uv);
    float4 Fgnd   = tex2D (FcSampler, uv);
-   float4 retval = tex2D (FcSampler, xy);
+   float4 retval = fn_illegal (xy) ? EMPTY : tex2D (FcSampler, xy);
 
    float2 shadowTL = xy - float2 (CropLeft, 1.0 - CropTop) + Border;
    float2 shadowBR = float2 (CropRight, 1.0 - CropBottom) - xy + Border;

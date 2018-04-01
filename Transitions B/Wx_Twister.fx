@@ -6,6 +6,16 @@
 // perform a rippling twist to transition between two images.
 // This does not preserve the alpha channels, so if you need
 // that use Adx_Twister.fx.
+//
+// Version 14.1 update 5 December 2017 by jwrl.
+//
+// Added LINUX and OSX test to allow support for changing
+// "Clamp" to "ClampToEdge" on those platforms.  It will now
+// function correctly when used with Lightworks versions 14.5
+// and higher under Linux or OS-X and fixes a bug associated
+// with using this effect with transitions on those platforms.
+//
+// The bug still exists when using older versions of Lightworks.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -28,6 +38,14 @@ texture Halfway : RenderColorTarget;
 //--------------------------------------------------------------//
 // Samplers
 //--------------------------------------------------------------//
+
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
 
 sampler FgdSampler = sampler_state
 {
@@ -134,10 +152,20 @@ float Twist_Axis
 #define SCALE    0.02
 
 #define BLACK    float2(0.0,1.0).xxxy
+#define EMPTY    (0.0).xxxx
 
 float _OutputHeight;
 
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -165,7 +193,7 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);                                   // If the transition profile is positive correct Y
 
-   float4 retval = tex2D (BgdSampler, xy);                              // This version of the foreground has the modulation applied
+   float4 retval = fn_illegal (xy) ? EMPTY : tex2D (BgdSampler, xy);    // This version of the foreground has the modulation applied
 
    return lerp (BLACK, retval, retval.a * amount);                      // Return the first partial composite blend
 }
@@ -192,7 +220,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);
 
-   float4 Fgd = tex2D (FgdSampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
    float4 retval = lerp (tex2D (HW_Sampler, uv), Fgd, Fgd.a * amount);
 
    if (!Show_Axis) { return retval; }

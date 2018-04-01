@@ -1,10 +1,11 @@
-# Lightworks user Fx archive, December 21, 2017.
+# Lightworks user Fx archive, March 31, 2018.
 
 > **WARNING:** Most Lightworks users should download the current library zip file or the individual effects zips from either of the two user effects threads (use the links below to get to them). Once version 14.1 is released this archive version of the library will be solely for Windows users of version 14.0 and earlier. It will be locked off at the state that the library was in on December 21 2017, and is highly unlikely to be updated.
 > 
 > If you are a Windows user of one of those earlier versions of Lightworks and need any effect that isn't here try it from the standard library first. Most will compile without issue. The effects that are most impacted by the update are DVE effects and similar.
 > 
 > If the effect you want doesn't compile you should directly contact the author of that effect. You could alternatively edit the effect code in a text editor (not a word processor) and search for “ClampToEdge” and replace it with “Clamp” anywhere it appears. It should then work, but if it doesn't you could be on your own I'm afraid.
+
 
 The effects in this ZIP file were created by Lightworks users – thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
 
@@ -113,8 +114,8 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Focal Blur         |FocalBlur.fx                         |
 |FxSpinBlur         |FxSpinBlur.fx                        |
 |FxTiltShift        |FxTiltShift.fx                       |
-|Iris Bokeh         |Iris bokeh/[OS_VERSION]/IrisBokeh.fx |
 |Ghost blur         |GhostBlur.fx                         |
+|Iris Bokeh         |Iris bokeh/IrisBokeh.fx              |
 |Masked Blur        |MaskBlur.fx                          |
 |Masked Motion Blur |MaskedMotionBlur.fx                  |
 |Motion Blur        |motionblur.fx                        |
@@ -205,7 +206,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Duotone            |Duotone.fx       |
 |Film negative      |FilmNeg.fx       |
 |FilmFx             |FilmFx.fx        |
-|Filmic look        |FilmicLookV2.fx  |
+|Filmic look        |FilmicLook.fx    |
 |Old Time Movie     |OldTime.fx       |
 |Technicolor        |Technicolor.fx   |
 |Vintage Look       |vintagelook.fx   |
@@ -239,16 +240,16 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |JH Vignette        |jh_stylize_vignette.fx                 |
 |Letterbox          |Letterbox.fx                           |
 |Octagonal vignette |Octagonal_Vignette.fx                  |
-|Poly03             |/Poly Masks/[OS_VERSION]/PolyMask03.fx |
-|Poly04             |/Poly Masks/[OS_VERSION]/PolyMask04.fx |
-|Poly05             |/Poly Masks/[OS_VERSION]/PolyMask05.fx |
-|Poly06             |/Poly Masks/[OS_VERSION]/PolyMask06.fx |
-|Poly07             |/Poly Masks/[OS_VERSION]/PolyMask07.fx |
-|Poly08             |/Poly Masks/[OS_VERSION]/PolyMask08.fx |
-|Poly10             |/Poly Masks/[OS_VERSION]/PolyMask10.fx |
-|Poly12             |/Poly Masks/[OS_VERSION]/PolyMask12.fx |
-|Poly14             |/Poly Masks/[OS_VERSION]/PolyMask14.fx |
-|Poly16             |/Poly Masks/[OS_VERSION]/PolyMask16.fx |
+|Poly03             |/Poly Masks/PolyMask03.fx              |
+|Poly04             |/Poly Masks/PolyMask04.fx              |
+|Poly05             |/Poly Masks/PolyMask05.fx              |
+|Poly06             |/Poly Masks/PolyMask06.fx              |
+|Poly07             |/Poly Masks/PolyMask07.fx              |
+|Poly08             |/Poly Masks/PolyMask08.fx              |
+|Poly10             |/Poly Masks/PolyMask10.fx              |
+|Poly12             |/Poly Masks/PolyMask12.fx              |
+|Poly14             |/Poly Masks/[LW_VERSION]/PolyMask14.fx |
+|Poly16             |/Poly Masks/[LW_VERSION]/PolyMask16.fx |
 
 ## CATEGORY FOLDER: Motion
 |EFFECT             |FILE NAME             |
@@ -275,9 +276,9 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |FxTile          |FxTile.fx                               |
 |Kaleido         |Kaleido.fx                              |
 |Kaleidoscope    |Kaleidoscope.fx                         |
-|Lissajou stars  |/Lissajou/[OS_VERSION]/Lissajou.fx      |
+|Lissajou stars  |/Lissajou/[LW_VERSION]/Lissajou.fx      |
 |Multigradient   |Multigrad.fx                            |
-|SineLight       |/Sine lights/[OS_VERSION]/SineLights.fx |
+|SineLight       |/Sine lights/[LW_VERSION]/SineLights.fx |
 
 ## CATEGORY FOLDER: Simulation
 |EFFECT             |FILE NAME                |

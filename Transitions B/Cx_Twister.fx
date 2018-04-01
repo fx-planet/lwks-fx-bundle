@@ -7,6 +7,13 @@
 // It's the triple layer version of Wx_Twister.fx.  This does
 // not preserve the alpha channels, so if you need that use
 // Adx_Twister.fx.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,8 +44,8 @@ texture Halfway : RenderColorTarget;
 sampler V1sampler = sampler_state
 {
    Texture   = <V1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -47,8 +54,8 @@ sampler V1sampler = sampler_state
 sampler V3sampler = sampler_state
 {
    Texture   = <V3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -77,8 +84,8 @@ sampler BgdSampler = sampler_state
 sampler HW_Sampler = sampler_state
 {
    Texture   = <Halfway>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -93,8 +100,8 @@ sampler V2sampler = sampler_state { Texture = <V2>; };
 int SetTechnique
 <
    string Description = "Make V3 and not V1 the outgoing image";
-   string Enum = "Yes,No";
-> = 1;
+   string Enum = "No,Yes";
+> = 0;
 
 float Amount
 <
@@ -167,10 +174,20 @@ float Twist_Axis
 #define SCALE    0.02
 
 #define BLACK    float2(0.0,1.0).xxxy
+#define EMPTY    (0.0).xxxx
 
 float _OutputHeight;
 
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -216,7 +233,7 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);                                   // If the transition profile is positive correct Y
 
-   float4 retval = tex2D (BgdSampler, xy);                              // This version of the foreground has the modulation applied
+   float4 retval = fn_illegal (xy) ? EMPTY : tex2D (BgdSampler, xy);    // This version of the foreground has the modulation applied
 
    return lerp (BLACK, retval, retval.a * amount);                      // Return the first partial composite blend
 }
@@ -243,7 +260,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);
 
-   float4 Fgd = tex2D (FgdSampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
    float4 retval = lerp (tex2D (HW_Sampler, uv), Fgd, Fgd.a * amount);
 
    if (!Show_Axis) { return retval; }

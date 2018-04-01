@@ -44,6 +44,13 @@
 //
 // Explicitly defined samplers so we aren't bitten by cross
 // platform default sampler state differences.
+//
+// Version 14.1 update 28 March 2018 by jwrl.
+//
+// This will now function correctly when used with Lightworks
+// versions 14.5 and higher under Linux or OS-X.  It fixes a
+// bug associated with using this effect with transitions on
+// those platforms.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -70,8 +77,8 @@ texture Inp : RenderColorTarget;
 sampler FgdSampler = sampler_state
 {
    Texture   = <Fgd>;
-   AddressU  = Border;
-   AddressV  = Border;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -80,8 +87,8 @@ sampler FgdSampler = sampler_state
 sampler BgdSampler = sampler_state
 {
    Texture   = <Bgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -90,8 +97,8 @@ sampler BgdSampler = sampler_state
 sampler InpSampler = sampler_state
 {
    Texture   = <Inp>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Border;
+   AddressV  = Border;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -295,6 +302,7 @@ float BgPosY
 #define FLIP_FLOP     3
 
 #define FRAME_CENTRE  0.5.xx
+#define BLACK         float2(0.0,1.0).xxxy
 #define EMPTY         0.0.xxxx
 
 #define HALF_PI       1.5707963
@@ -303,6 +311,15 @@ float _OutputWidth;
 float _OutputAspectRatio; 
 
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -343,7 +360,7 @@ float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((radius - offset) / mix) : 0.0;
 
-   float4 retval = tex2D (FgdSampler, xy2);
+   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (FgdSampler, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (radius > border + fthr) return EMPTY;
@@ -392,7 +409,7 @@ float4 ps_square (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((square - offset) / mix) : 0.0;
 
-   float4 retval = tex2D (FgdSampler, xy2);
+   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (FgdSampler, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (square > border + fthr) return EMPTY;
@@ -438,7 +455,7 @@ float4 ps_diamond (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((diamond - offset) / mix) : 0.0;
 
-   float4 retval = tex2D (FgdSampler, xy2);
+   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (FgdSampler, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (diamond > border + fthr) return EMPTY;
@@ -461,7 +478,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    xy3.x = (BgFlipFlop == FLIP) || (BgFlipFlop == FLIP_FLOP) ? 0.5 + BgPosX - xy3.x : 0.5 + xy3.x - BgPosX;
    xy3.y = BgFlipFlop >= FLOP ? 0.5 - xy3.y - BgPosY : 0.5 + xy3.y + BgPosY;
 
-   float alpha    = tex2D (InpSampler, xy1).a * 0.03125;
+   float alpha    = fn_illegal (xy1) ? 0.0 : tex2D (InpSampler, xy1).a * 0.03125;
    float softness = ShadowSoft * 4.0;
    float amount   = 0.125;
    float feather  = 0.0;
@@ -486,7 +503,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    alpha = saturate (alpha * Shadow * 0.5);
 
    float4 Fgnd   = tex2D (InpSampler, uv);
-   float4 Bgnd   = (any (xy3 > 1.0) || any (xy3 < 0.0)) ? EMPTY : tex2D (BgdSampler, xy3);
+   float4 Bgnd   = fn_illegal (xy3) ? EMPTY : tex2D (BgdSampler, xy3);
    float4 retval = float4 (lerp (Bgnd.rgb, 0.0.xxx, alpha), Bgnd.a);
 
    return lerp (retval, Fgnd, Fgnd.a);

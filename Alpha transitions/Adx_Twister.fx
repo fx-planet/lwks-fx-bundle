@@ -6,6 +6,13 @@
 // perform a rippling twist to establish or remove an alpha
 // image.  The range of possible effect variations obtainable
 // with differing combinations of settings is almost inifinite.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,8 +43,8 @@ texture Bgd : RenderColorTarget;
 sampler In1Sampler = sampler_state
 {
    Texture = <Inp_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -46,20 +53,28 @@ sampler In1Sampler = sampler_state
 sampler In2Sampler = sampler_state
 {
    Texture = <Inp_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler In3Sampler = sampler_state { Texture = <Inp_3>; };
+sampler In3Sampler = sampler_state
+{
+   Texture   = <Inp_3>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 sampler FgdSampler = sampler_state
 {
    Texture   = <In_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -68,14 +83,22 @@ sampler FgdSampler = sampler_state
 sampler Fg2Sampler = sampler_state
 {
    Texture   = <In_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler BgdSampler = sampler_state { Texture = <Bgd>; };
+sampler BgdSampler = sampler_state
+{
+   Texture   = <Bgd>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //--------------------------------------------------------------//
 // Parameters
@@ -189,14 +212,25 @@ float Boost_I
 // Definitions and declarations
 //--------------------------------------------------------------//
 
+float _OutputHeight;
+
 #define RIPPLES  125.0
 #define SOFTNESS 0.45
 #define OFFSET   0.05
 #define SCALE    0.02
 
-float _OutputHeight;
+#define EMPTY    (0.0).xxxx
 
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -244,7 +278,7 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);                                   // If the transition profile is positive correct Y
 
-   float4 Fgd = tex2D (FgdSampler, xy);                                 // This version of the foreground has the modulation applied
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);       // This version of the foreground has the modulation applied
 
    if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_I + 1.0));   // Apply the appropriate boost factor
 
@@ -287,7 +321,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);
 
-   float4 Fgd = tex2D (FgdSampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
 
    if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_O + 1.0));
 

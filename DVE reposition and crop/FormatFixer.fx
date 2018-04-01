@@ -34,6 +34,13 @@
 //
 // Bug fix by LW user jwrl 13 July 2017 - this effect didn't
 // work as expected on Linux/Mac platforms.  It now does.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,10 +66,32 @@ texture Blur_2 : RenderColorTarget;
 // Samplers
 //--------------------------------------------------------------//
 
-sampler FgdSampler = sampler_state { Texture = <Fgd>; };
-sampler BgdSampler = sampler_state { Texture = <Bgd>; };
+sampler FgdSampler = sampler_state {
+   Texture   = <Fgd>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
-sampler InpSampler = sampler_state { Texture   = <Input>; };
+sampler BgdSampler = sampler_state {
+   Texture   = <Bgd>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler InpSampler = sampler_state {
+   Texture   = <Input>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 sampler b1_Sampler = sampler_state
 {
@@ -243,10 +272,23 @@ float4 bgColour
 #define BRDR_SCALE 0.0666667
 #define BRDR_FTHR  0.1
 
+#define EMPTY      (0.0).xxxx
+
 float _OutputAspectRatio;
 float _OutputWidth;
 
 #define Output_Height (_OutputWidth/_OutputAspectRatio)
+
+#pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -276,7 +318,7 @@ float4 ps_foreground (float2 uv : TEXCOORD1) : COLOR
    float2 cropval = abs (float2 ((Crop_X - 0.5) / hScale, (0.5 - Crop_Y) / vScale)) - abs (uv - 0.5.xx);
    float2 brdrval = cropval + Border;
 
-   float4 Fgnd = tex2D (FgdSampler, xy);
+   float4 Fgnd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
    float4 retval = lerp (Fgnd, BorderColour, min (1.0, BorderWidth * 50.0));
 
    brdrval  = max (0.0.xx, brdrval / Feather);
@@ -309,8 +351,9 @@ float4 ps_background (float2 uv : TEXCOORD1) : COLOR
 
    xy = saturate ((xy / (bgStretch + 1.0)) - (float2 (bgOffsetX, bgOffsetY)) + 0.5);
 
+   float4 Fgnd   = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
    float4 Bgnd   = tex2D (BgdSampler, uv) * Bgd_Mix;
-   float4 retval = lerp (Bgnd, tex2D (FgdSampler, xy), Fgd_Mix);
+   float4 retval = lerp (Bgnd, Fgnd, Fgd_Mix);
 
    return lerp (retval, bgColour, Colour_Mix);
 }

@@ -15,6 +15,13 @@
 // Bug fix 26 July 2017 by jwrl:
 // Because Windows and Linux-OS/X have differing defaults for
 // undefined samplers they have now been explicitly declared.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,8 +36,8 @@ int _LwksEffectInfo
 // Inputs
 //--------------------------------------------------------------//
 
-texture Fgd;
-texture Bgd;
+texture Fg;
+texture Bg;
 
 texture Bg_1 : RenderColorTarget;
 texture Bg_2 : RenderColorTarget;
@@ -40,46 +47,46 @@ texture Bg_3 : RenderColorTarget;
 // Samplers
 //--------------------------------------------------------------//
 
-sampler FgdSampler = sampler_state {
-        Texture   = <Fgd>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
+sampler s_Fgnd    = sampler_state {
+        Texture   = <Fg>;
+	AddressU  = Mirror;
+	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
         };
 
-sampler BgdSampler = sampler_state {
-        Texture   = <Bgd>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
+sampler s_Bgnd    = sampler_state {
+        Texture   = <Bg>;
+	AddressU  = Mirror;
+	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
         };
 
-sampler Bg1Sampler = sampler_state {
+sampler s_Bgnd_1  = sampler_state {
         Texture   = <Bg_1>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
+	AddressU  = Mirror;
+	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
         };
 
-sampler Bg2Sampler = sampler_state {
-        Texture = <Bg_2>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
+sampler s_Bgnd_2  = sampler_state {
+        Texture   = <Bg_2>;
+	AddressU  = Mirror;
+	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
         };
 
-sampler Bg3Sampler = sampler_state {
-        Texture = <Bg_3>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
+sampler s_Bgnd_3  = sampler_state {
+        Texture   = <Bg_3>;
+	AddressU  = Mirror;
+	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
@@ -96,7 +103,7 @@ int enhanceKey
    string Enum = "Solid video,Video with alpha channel,Lightworks title or effect";
 > = 1;
 
-float Opac_A
+float A_Opac
 <
    string Group = "Overlay 1 (always enabled)";
    string Description = "Opacity";
@@ -104,15 +111,15 @@ float Opac_A
    float MaxVal = 1.0;
 > = 0.5;
 
-float Zoom_A
+float A_Zoom
 <
    string Group = "Overlay 1 (always enabled)";
    string Description = "Scale";
-   float MinVal = 0.01;
+   float MinVal = 0.0001;
    float MaxVal = 10.00;
 > = 1.0;
 
-float Xc_A
+float A_Xc
 <
    string Group = "Overlay 1 (always enabled)";
    string Description = "Position";
@@ -121,7 +128,7 @@ float Xc_A
    float MaxVal = 1.00;
 > = 0.5;
 
-float Yc_A
+float A_Yc
 <
    string Group = "Overlay 1 (always enabled)";
    string Description = "Position";
@@ -130,13 +137,13 @@ float Yc_A
    float MaxVal = 1.00;
 > = 0.5;
 
-bool On_B
+bool B_On
 <
    string Group = "Overlay 2";
    string Description = "Enabled";
 > = false;
 
-float Opac_B
+float B_Opac
 <
    string Group = "Overlay 2";
    string Description = "Opacity";
@@ -144,15 +151,15 @@ float Opac_B
    float MaxVal = 1.0;
 > = 0.5;
 
-float Zoom_B
+float B_Zoom
 <
    string Group = "Overlay 2";
    string Description = "Scale";
-   float MinVal = 0.01;
+   float MinVal = 0.0001;
    float MaxVal = 10.00;
 > = 1.0;
 
-float Xc_B
+float B_Xc
 <
    string Group = "Overlay 2";
    string Description = "Position";
@@ -161,7 +168,7 @@ float Xc_B
    float MaxVal = 1.00;
 > = 0.5;
 
-float Yc_B
+float B_Yc
 <
    string Group = "Overlay 2";
    string Description = "Position";
@@ -170,13 +177,13 @@ float Yc_B
    float MaxVal = 1.00;
 > = 0.5;
 
-bool On_C
+bool C_On
 <
    string Group = "Overlay 3";
    string Description = "Enabled";
 > = false;
 
-float Opac_C
+float C_Opac
 <
    string Group = "Overlay 3";
    string Description = "Opacity";
@@ -184,15 +191,15 @@ float Opac_C
    float MaxVal = 1.0;
 > = 0.5;
 
-float Zoom_C
+float C_Zoom
 <
    string Group = "Overlay 3";
    string Description = "Scale";
-   float MinVal = 0.01;
+   float MinVal = 0.0001;
    float MaxVal = 10.00;
 > = 1.0;
 
-float Xc_C
+float C_Xc
 <
    string Group = "Overlay 3";
    string Description = "Position";
@@ -201,7 +208,7 @@ float Xc_C
    float MaxVal = 1.00;
 > = 0.5;
 
-float Yc_C
+float C_Yc
 <
    string Group = "Overlay 3";
    string Description = "Position";
@@ -210,13 +217,13 @@ float Yc_C
    float MaxVal = 1.00;
 > = 0.5;
 
-bool On_D
+bool D_On
 <
    string Group = "Overlay 4";
    string Description = "Enabled";
 > = false;
 
-float Opac_D
+float D_Opac
 <
    string Group = "Overlay 4";
    string Description = "Opacity";
@@ -224,15 +231,15 @@ float Opac_D
    float MaxVal = 1.0;
 > = 0.5;
 
-float Zoom_D
+float D_Zoom
 <
    string Group = "Overlay 4";
    string Description = "Scale";
-   float MinVal = 0.01;
+   float MinVal = 0.0001;
    float MaxVal = 10.00;
 > = 1.0;
 
-float Xc_D
+float D_Xc
 <
    string Group = "Overlay 4";
    string Description = "Position";
@@ -241,7 +248,7 @@ float Xc_D
    float MaxVal = 1.00;
 > = 0.5;
 
-float Yc_D
+float D_Yc
 <
    string Group = "Overlay 4";
    string Description = "Position";
@@ -249,6 +256,21 @@ float Yc_D
    float MinVal = 0.00;
    float MaxVal = 1.00;
 > = 0.5;
+
+//--------------------------------------------------------------//
+// Definitions and declarations
+//--------------------------------------------------------------//
+
+#define A_On  true
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 xy)
+{
+   return (xy.x < 0.0) || (xy.y < 0.0) || (xy.x > 1.0) || (xy.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -259,23 +281,22 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform sampler img,
                 uniform float Xc, uniform float Yc,
                 uniform bool use_it) : COLOR
 {
-   float4 fgdImage, bgdImage = tex2D (img, xy);
+   float4 bgdImage = tex2D (img, xy);
 
    if (!use_it) return bgdImage;
 
-   if (Zoom > 0.0) {
-      float2 uv;
+   float scale = 1.0 / max (Zoom, 0.0001);
 
-      float scale = 1.0 / Zoom;
+   float2 zoomCentre = float2 (1.0 - Xc, Yc);
+   float2 uv = ((xy - zoomCentre) * scale) + zoomCentre;
 
-      float2 zoomCentre = float2 (1.0 - Xc, Yc);
+   if (fn_illegal (uv)) { return bgdImage; }
 
-      uv = ((xy - zoomCentre) * scale) + zoomCentre;
-      fgdImage = tex2D (FgdSampler, uv);
-   }
-   else fgdImage = tex2D (FgdSampler, xy);
+   float4 fgdImage = tex2D (s_Fgnd, uv);
 
-   fgdImage.a = (enhanceKey == 0) ? 1.0 : saturate (fgdImage.a * enhanceKey);
+   if (enhanceKey == 0) fgdImage.a = 1.0;
+
+   if (enhanceKey == 2) fgdImage.a = pow (fgdImage.a, 0.5);
 
    return lerp (bgdImage, fgdImage, fgdImage.a * Opac);
 }
@@ -286,32 +307,18 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform sampler img,
 
 technique ZoomDissolveOut
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Bg_1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (BgdSampler, Opac_D, Zoom_D, Xc_D, Yc_D, On_D);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Bg_1;"; >
+   { PixelShader = compile PROFILE ps_main (s_Bgnd, D_Opac, D_Zoom, D_Xc, D_Yc, D_On); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = Bg_2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (Bg1Sampler, Opac_C, Zoom_C, Xc_C, Yc_C, On_C);
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = Bg_2;"; >
+   { PixelShader = compile PROFILE ps_main (s_Bgnd_1, C_Opac, C_Zoom, C_Xc, C_Yc, C_On); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = Bg_3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (Bg2Sampler, Opac_B, Zoom_B, Xc_B, Yc_B, On_B);
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = Bg_3;"; >
+   { PixelShader = compile PROFILE ps_main (s_Bgnd_2, B_Opac, B_Zoom, B_Xc, B_Yc, B_On); }
 
-   pass pass_four
-   {
-      PixelShader = compile PROFILE ps_main (Bg3Sampler, Opac_A, Zoom_A, Xc_A, Yc_A, true);
-   }
+   pass P_4
+   { PixelShader = compile PROFILE ps_main (s_Bgnd_3, A_Opac, A_Zoom, A_Xc, A_Yc, A_On); }
 }

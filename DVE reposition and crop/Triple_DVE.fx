@@ -21,6 +21,13 @@
 // they have exactly the same quality impact on the final
 // result as a single DVE would.  In effect it's three DVEs
 // for the price of one.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,8 +54,8 @@ texture Msk : RenderColorTarget;
 sampler FgdSampler = sampler_state
 {
    Texture   = <Dve1>;
-   AddressU  = Border;
-   AddressV  = Border;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -57,8 +64,8 @@ sampler FgdSampler = sampler_state
 sampler BgdSampler = sampler_state
 {
    Texture   = <Dve2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -67,8 +74,8 @@ sampler BgdSampler = sampler_state
 sampler MskSampler = sampler_state
 {
    Texture   = <Msk>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -331,6 +338,7 @@ float Amt_3
 
 #define CENTRE        0.5.xx
 
+#define BLACK         float2(0.0, 1.0).xxxy
 #define EMPTY         0.0.xxxx
 
 float _OutputAspectRatio;
@@ -338,10 +346,19 @@ float _OutputAspectRatio;
 #pragma warning ( disable : 3571 )
 
 //--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
+
+//--------------------------------------------------------------//
 // Shaders
 //--------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
+float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
 {
    float adjust = max (0.0, max (CropL - CropR, CropT - CropB));
 
@@ -415,11 +432,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    uv1 = (uv1 - float2 (PosX_1, 1.0 - PosY_1)) / max (MINIMUM, Scale_1 * float2 (ScaleX_1, ScaleY_1)) + CENTRE;
 
-   float4 Fgnd = tex2D (FgdSampler, uv1);
-   float4 Bgnd = (any (uv2 > 1.0) || any (uv2 < 0.0)) ? EMPTY : tex2D (BgdSampler, uv2);
-   float4 Mask = (any (xy1 > 1.0) || any (xy1 < 0.0)) ? EMPTY : tex2D (MskSampler, xy1);
+   float4 Fgnd = fn_illegal (uv1) ? BLACK : tex2D (FgdSampler, uv1);
+   float4 Bgnd = fn_illegal (uv2) ? EMPTY : tex2D (BgdSampler, uv2);
+   float4 Mask = fn_illegal (xy1) ? EMPTY : tex2D (MskSampler, xy1);
 
-   float3 Bgd = (any (xy2 > 1.0) || any (xy2 < 0.0)) ? Bgnd.rgb : Bgnd.rgb * (1.0 - tex2D (MskSampler, xy2).w);
+   float3 Bgd = fn_illegal (xy2) ? Bgnd.rgb : Bgnd.rgb * (1.0 - tex2D (MskSampler, xy2).w);
 
    float4 Colour = lerp (BorderColour_2, BorderColour_1, Mask.y);
    float4 retval = lerp (float4 (Bgd, Bgnd.a), Colour, Mask.z);

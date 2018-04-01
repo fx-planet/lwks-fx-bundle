@@ -60,6 +60,14 @@ texture blurProc : RenderColorTarget;
 // Samplers
 //--------------------------------------------------------------//
 
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
+
 sampler FgSampler = sampler_state {
    Texture   = <Fg>;
    AddressU  = Clamp;

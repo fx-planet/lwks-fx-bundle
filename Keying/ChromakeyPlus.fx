@@ -174,7 +174,7 @@ float4 KeyColour
    string Group = "Chromakey";
    string Description = "Key Colour";
    string Flags = "SpecifiesColourRange";
->;
+> = { 150.0, 0.7, 0.75, 0.0 };
 
 float4 Tolerance
 <
@@ -182,7 +182,7 @@ float4 Tolerance
    string Description = "Tolerance";
    string Flags = "SpecifiesColourRange";
    bool Visible = false;
->;
+> = { 20.0, 0.3, 0.25, 0.0 };
 
 float4 ToleranceSoftness
 <
@@ -190,7 +190,7 @@ float4 ToleranceSoftness
    string Description = "Tolerance softness";
    string Flags = "SpecifiesColourRange";
    bool Visible = false;
->;
+> = { 15.0, 0.115, 0.11, 0.0 };
 
 bool Invert
 <

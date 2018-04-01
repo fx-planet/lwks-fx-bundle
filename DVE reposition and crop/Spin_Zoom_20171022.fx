@@ -26,7 +26,6 @@
 //        Zoom <  0: first ROTATION, then ZOOM
 //--------------------------------------------------------------//
 
-
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";

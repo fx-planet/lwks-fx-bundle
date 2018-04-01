@@ -5,6 +5,13 @@
 // This is an alpha dissolve/wipe that uses sine distortion to
 // perform a left - right or right - left transition between
 // the alpha components.  Phase can be offset by 180 degrees.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,8 +42,8 @@ texture Bgd : RenderColorTarget;
 sampler In1Sampler = sampler_state
 {
    Texture = <In_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -45,19 +52,27 @@ sampler In1Sampler = sampler_state
 sampler In2Sampler = sampler_state
 {
    Texture = <In_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler In3Sampler = sampler_state { Texture = <In_3>; };
+sampler In3Sampler = sampler_state
+{
+   Texture   = <In_3>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 sampler Fg1Sampler = sampler_state {
    Texture   = <Inp_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -66,14 +81,22 @@ sampler Fg1Sampler = sampler_state {
 sampler Fg2Sampler = sampler_state
 {
    Texture   = <Inp_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler BgdSampler = sampler_state { Texture = <Bgd>; };
+sampler BgdSampler = sampler_state
+{
+   Texture   = <Bgd>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //--------------------------------------------------------------//
 // Parameters
@@ -166,6 +189,15 @@ float Boost_I
 #define EMPTY    (0.0).xxxx
 
 //--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
+
+//--------------------------------------------------------------//
 // Shaders
 //--------------------------------------------------------------//
 
@@ -206,7 +238,7 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = (Mode == 0) ? float2 (uv.x, uv.y + offset) : float2 (uv.x, uv.y - offset);
 
-   float4 Fgd = tex2D (Fg1Sampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (Fg1Sampler, xy);
    float4 Bgd = tex2D (BgdSampler, uv);
 
    if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_O + 1.0));
@@ -231,7 +263,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = (Mode == 0) ? float2 (uv.x, uv.y + offset) : float2 (uv.x, uv.y - offset);
 
-   float4 Fgd = tex2D (Fg1Sampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (Fg1Sampler, xy);
    float4 Bgd = tex2D (BgdSampler, uv);
 
    if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_O + 1.0));

@@ -6,7 +6,7 @@
 // Renamed from AlphaBarMix.fx by jwrl 8 August 2017 for name
 // consistency through alpha dissolve range.
 //
-// An alpha transition that splts title(s) into strips then
+// An alpha transition that splits title(s) into strips then
 // blows them apart either horizontally or vertically.
 //
 // Alpha levels are boosted to support Lightworks titles, which
@@ -17,6 +17,13 @@
 // The boost technique also now uses gamma rather than gain to
 // adjust the alpha levels.  This more closely matches the way
 // that Lightworks handles titles.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -158,10 +165,21 @@ float Boost_I
 // Definitions and declarations
 //--------------------------------------------------------------//
 
-#define WIDTH    50
-#define OFFSET   1.2
+#define WIDTH  50
+#define OFFSET 1.2
+
+#define EMPTY  (0.0).xxxx
 
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -229,8 +247,8 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
       xy.y  += (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * amount;
    }
 
-   float4 Fgnd  = tex2D (FgdSampler, xy);
-   float4 Bgnd  = tex2D (Bg1Sampler, uv);
+   float4 Fgnd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
+   float4 Bgnd = tex2D (Bg1Sampler, uv);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -249,8 +267,8 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
       xy.y  += ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
    }
 
-   float4 Fgnd  = tex2D (FgdSampler, xy);
-   float4 Bgnd  = tex2D (BgdSampler, uv);
+   float4 Fgnd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
+   float4 Bgnd = tex2D (BgdSampler, uv);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

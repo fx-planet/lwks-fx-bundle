@@ -27,6 +27,9 @@
 // Bug fix 26 July 2017 by jwrl:
 // Because Windows and Linux-OS/X have differing defaults for
 // undefined samplers they have now been explicitly declared.
+//
+// Bug fix 26 March 2018 by jwrl:
+// Corrected a hue problem with the extrusion generation.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,6 +39,74 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Edge Effects";
 > = 0;
+
+//--------------------------------------------------------------//
+// Inputs
+//--------------------------------------------------------------//
+
+texture Fg;
+texture Bg;
+
+texture blurPre  : RenderColorTarget;
+texture colorPre : RenderColorTarget;
+texture blurProc : RenderColorTarget;
+
+//--------------------------------------------------------------//
+// Samplers
+//--------------------------------------------------------------//
+
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
+
+sampler FgSampler = sampler_state {
+        Texture   = <Fg>;
+        AddressU  = Clamp;
+        AddressV  = Clamp;
+        MinFilter = Linear;
+        MagFilter = Linear;
+        MipFilter = Linear;
+};
+
+sampler BgSampler = sampler_state {
+        Texture   = <Bg>;
+        AddressU  = Clamp;
+        AddressV  = Clamp;
+        MinFilter = Linear;
+        MagFilter = Linear;
+        MipFilter = Linear;
+};
+
+sampler BlurSampler = sampler_state {
+        Texture   = <blurPre>;
+        AddressU  = Clamp;
+        AddressV  = Clamp;
+        MinFilter = Linear;
+        MagFilter = Linear;
+        MipFilter = Linear;
+};
+
+sampler Col_Sampler = sampler_state {
+        Texture   = <colorPre>;
+        AddressU  = Clamp;
+        AddressV  = Clamp;
+        MinFilter = Linear;
+        MagFilter = Linear;
+        MipFilter = Linear;
+};
+
+sampler ProcSampler = sampler_state {
+        Texture   = <blurProc>;
+        AddressU  = Clamp;
+        AddressV  = Clamp;
+        MinFilter = Linear;
+        MagFilter = Linear;
+        MipFilter = Linear;
+};
 
 //--------------------------------------------------------------//
 // Parameters
@@ -102,67 +173,7 @@ bool expAlpha
 > = false;
 
 //--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Fg;
-texture Bg;
-
-texture blurPre  : RenderColorTarget;
-texture colorPre : RenderColorTarget;
-texture blurProc : RenderColorTarget;
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
-
-sampler FgSampler = sampler_state {
-        Texture   = <Fg>;
-        AddressU  = Clamp;
-        AddressV  = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state {
-        Texture   = <Bg>;
-        AddressU  = Clamp;
-        AddressV  = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
-};
-
-sampler BlurSampler = sampler_state {
-        Texture   = <blurPre>;
-        AddressU  = Clamp;
-        AddressV  = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
-};
-
-sampler Col_Sampler = sampler_state {
-        Texture   = <colorPre>;
-        AddressU  = Clamp;
-        AddressV  = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
-};
-
-sampler ProcSampler = sampler_state {
-        Texture   = <blurProc>;
-        AddressU  = Clamp;
-        AddressV  = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
-// Common
+// Definitions and declarations
 //--------------------------------------------------------------//
 
 #define SAMPLE   80
@@ -177,8 +188,9 @@ sampler ProcSampler = sampler_state {
 #define L_SCALE  0.05
 #define R_SCALE  0.00125
 
-#define COLOUR   true
-#define MONO     false
+#define DEFAULT  0
+#define COLOUR   1
+#define MONO     2
 
 #define LIN_OFFS 0.667333
 
@@ -189,42 +201,42 @@ float _OutputWidth;
 // Shaders
 //--------------------------------------------------------------//
 
-float4 ps_radial (float2 xy : TEXCOORD1, uniform bool is_colour) : COLOR
+float4 ps_radial (float2 uv : TEXCOORD1, uniform int mode) : COLOR
 {
-   float4 retval = tex2D (FgSampler, xy);
+   float4 retval = tex2D (FgSampler, uv);
 
    if (zoomAmount == 0.0) return retval;
 
    float scale, depth = zoomAmount * R_SCALE;
 
    float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
-   float2 uv = xy;
-   float2 xy1 = depth * (xy - zoomCentre);
+   float2 xy1 = uv;
+   float2 xy2 = depth * (uv - zoomCentre);
 
    retval.rgb = 1.0.xxx - retval.rgb;
 
    for (int i = 0; i <= SAMPLE; i++) {
-      retval += tex2D (FgSampler, uv);
-      uv += xy1;
+      retval += tex2D (FgSampler, xy1);
+      xy1 += xy2;
    }
 
    retval.a = saturate (retval.a);
 
-   if (is_colour) { retval.rgb = colour.rgb; }
-   else {
-      retval.rgb = ((retval.rgb / SAMPLES) * 0.75) + 0.125;
+   if (mode == COLOUR) return float4 (colour.rgb, retval.a);
 
-      if (!invShade) retval.rgb = 1.0.xxx - retval.rgb;
-   }
+   retval.rgb = ((retval.rgb / SAMPLES) * 0.75) + 0.125;
 
-   return retval;
+   if (((mode == DEFAULT) && !invShade) || ((mode != DEFAULT) && invShade))
+      return retval;
+
+   return float4 (1.0.xxx - retval.rgb, retval.a);
 }
 
-float4 ps_linear (float2 xy : TEXCOORD1, uniform bool is_colour) : COLOR
+float4 ps_linear (float2 uv : TEXCOORD1, uniform int mode) : COLOR
 {
-   float4 retval = tex2D (FgSampler, xy);
+   float4 retval = tex2D (FgSampler, uv);
 
-   float2 offset, uv = xy;
+   float2 offset, xy = uv;
 
    offset.x = (0.498 - Xcentre) * LIN_OFFS;
    offset.y = (Ycentre - 0.505) * LIN_OFFS;
@@ -238,26 +250,26 @@ float4 ps_linear (float2 xy : TEXCOORD1, uniform bool is_colour) : COLOR
    offset *= depth * B_SCALE;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += tex2D (FgSampler, uv);
-      uv += offset;
+      retval += tex2D (FgSampler, xy);
+      xy += offset;
       }
 
    retval.a = saturate (retval.a);
 
-   if (is_colour) { retval.rgb = colour.rgb; }
-   else {
-      retval.rgb = ((retval.rgb / SAMPLES) * 0.75) + 0.125;
+   if (mode == COLOUR) return float4 (colour.rgb, retval.a);
 
-      if (!invShade) retval.rgb = 1.0.xxx - retval.rgb;
-   }
+   retval.rgb = ((retval.rgb / SAMPLES) * 0.75) + 0.125;
 
-   return retval;
+   if (((mode == DEFAULT) && !invShade) || ((mode != DEFAULT) && invShade))
+      return retval;
+
+   return float4 (1.0.xxx - retval.rgb, retval.a);
 }
 
-float4 ps_shaded (float2 xy : TEXCOORD1) : COLOR
+float4 ps_shaded (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 blurImg = tex2D (BlurSampler, xy);
-   float4 colrImg = tex2D (Col_Sampler, xy);
+   float4 blurImg = tex2D (BlurSampler, uv);
+   float4 colrImg = tex2D (Col_Sampler, uv);
 
    float alpha   = blurImg.a;
    float minColr = min (colrImg.r, min (colrImg.g, colrImg.b));
@@ -299,9 +311,9 @@ float4 ps_shaded (float2 xy : TEXCOORD1) : COLOR
    return float4 (retval.xyz, alpha);
 }
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 fgImage = tex2D (FgSampler, xy);
+   float4 fgImage = tex2D (FgSampler, xy1);
    float4 retval  = 0.0.xxxx;
 
    float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
@@ -312,8 +324,8 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      retval += tex2D (ProcSampler, xy + offset);
-      retval += tex2D (ProcSampler, xy - offset);
+      retval += tex2D (ProcSampler, xy1 + offset);
+      retval += tex2D (ProcSampler, xy1 - offset);
       angle += ANGLE;
    }
 
@@ -324,7 +336,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
    if (expAlpha) return retval;
 
-   float4 bgImage = tex2D (BgSampler, xy);
+   float4 bgImage = tex2D (BgSampler, xy2);
 
    retval = lerp (bgImage, retval, retval.a);
 
@@ -337,129 +349,77 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique Radial
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurProc;";
-   >
-   {
-      PixelShader = compile PROFILE ps_radial (MONO);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurProc;"; >
+   { PixelShader = compile PROFILE ps_radial (DEFAULT); }
 
-   pass pass_two
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique RadialShaded
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurPre;";
-   >
-   {
-      PixelShader = compile PROFILE ps_radial (MONO);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurPre;"; >
+   { PixelShader = compile PROFILE ps_radial (MONO); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = colorPre;";
-   >
-   {
-      PixelShader = compile PROFILE ps_radial (COLOUR);
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = colorPre;"; >
+   { PixelShader = compile PROFILE ps_radial (COLOUR); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = blurProc;";
-   >
-   {
-      PixelShader = compile PROFILE ps_shaded ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = blurProc;"; >
+   { PixelShader = compile PROFILE ps_shaded (); }
 
-   pass pass_four
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_4
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique RadialColour
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurProc;";
-   >
-   {
-      PixelShader = compile PROFILE ps_radial (COLOUR);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurProc;"; >
+   { PixelShader = compile PROFILE ps_radial (COLOUR); }
 
-   pass pass_two
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Linear
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurProc;";
-   >
-   {
-      PixelShader = compile PROFILE ps_linear (MONO);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurProc;"; >
+   { PixelShader = compile PROFILE ps_linear (DEFAULT); }
 
-   pass pass_two
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique LinearShaded
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurPre;";
-   >
-   {
-      PixelShader = compile PROFILE ps_linear (MONO);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurPre;"; >
+   { PixelShader = compile PROFILE ps_linear (MONO); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = colorPre;";
-   >
-   {
-      PixelShader = compile PROFILE ps_linear (COLOUR);
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = colorPre;"; >
+   { PixelShader = compile PROFILE ps_linear (COLOUR); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = blurProc;";
-   >
-   {
-      PixelShader = compile PROFILE ps_shaded ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = blurProc;"; >
+   { PixelShader = compile PROFILE ps_shaded (); }
 
-   pass pass_four
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_4
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique LinearColour
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurProc;";
-   >
-   {
-      PixelShader = compile PROFILE ps_linear (COLOUR);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurProc;"; >
+   { PixelShader = compile PROFILE ps_linear (COLOUR); }
 
-   pass pass_two
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 

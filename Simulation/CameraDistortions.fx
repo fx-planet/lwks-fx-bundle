@@ -66,6 +66,16 @@
 // multiply operations in the loops and where possible by
 // making any mathematical processes work on float2 variables
 // rather than individually on two floats.
+//
+// Version 14.5 update 28 March 2018 by jwrl.
+//
+// Added LINUX and OSX test to allow support for changing
+// "Clamp" to "ClampToEdge" on those platforms.  It will now
+// function correctly when used with Lightworks versions 14.5
+// and higher under Linux or OS-X and fixes a bug associated
+// with using this effect with transitions on those platforms.
+//
+// The bug still exists when using older versions of Lightworks.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -88,6 +98,14 @@ texture Dist_Out : RenderColorTarget;
 //--------------------------------------------------------------//
 // Samplers
 //--------------------------------------------------------------//
+
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
 
 sampler FgSampler   = sampler_state
 {

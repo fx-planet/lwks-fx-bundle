@@ -5,6 +5,13 @@
 // This is a dissolve/wipe that uses a sin distortion to do a
 // left - right or right - left transition between the inputs.
 // The phase can also be offset by 180 degrees.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -103,6 +110,19 @@ float Spread
 #define OFFSET   0.05
 #define SCALE    0.02
 
+#define EMPTY    (0.0).xxxx
+
+#pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
+
 //--------------------------------------------------------------//
 // Shaders
 //--------------------------------------------------------------//
@@ -125,7 +145,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float2 uv = (Mode == 0) ? float2 (xy2.x, xy2.y + offset) : float2 (xy2.x, xy2.y - offset);
 
    float4 Fgd = tex2D (FgSampler, xy1);
-   float4 Bgd = tex2D (BgSampler, uv);
+   float4 Bgd = fn_illegal (uv) ? EMPTY : tex2D (BgSampler, uv);
 
    return lerp (Fgd, Bgd, amount);
 }

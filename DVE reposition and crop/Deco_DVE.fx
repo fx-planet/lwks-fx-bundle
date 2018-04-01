@@ -27,6 +27,13 @@
 //
 // Inverted the position settings.  They originally worked
 // backwards. i.e., from the camera point of view.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,8 +62,8 @@ texture Multiple : RenderColorTarget;
 sampler InSampler = sampler_state
 {
    Texture = <Fgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -65,8 +72,8 @@ sampler InSampler = sampler_state
 sampler BgSampler = sampler_state
 {
    Texture = <Bgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -75,8 +82,8 @@ sampler BgSampler = sampler_state
 sampler FgSampler = sampler_state
 {
    Texture   = <FgdAdj>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -85,8 +92,8 @@ sampler FgSampler = sampler_state
 sampler FcSampler = sampler_state
 {
    Texture   = <FgdCrop>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -233,7 +240,7 @@ int InnerPos
 float Inner_TL
 <
    string Group = "Foreground border";
-   string Description = "High inner crop";
+   string Description = "Inner length A";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.75;
@@ -241,10 +248,10 @@ float Inner_TL
 float Inner_BR
 <
    string Group = "Foreground border";
-   string Description = "Low inner crop";
+   string Description = "Inner length B";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.875;
+> = 0.125;
 
 float4 Colour_1
 <
@@ -304,6 +311,27 @@ float OverlayY
 
 float _OutputAspectRatio;
 
+#pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_inRange (float2 uv, float2 r1, float2 r2)
+{
+   return (uv.x >= r1.x) && (uv.y >= r1.y) && (uv.x <= r2.x) && (uv.y <= r2.y);
+}
+
+bool fn_outRange (float2 uv, float2 r1, float2 r2)
+{
+   return (uv.x < r1.x) || (uv.y < r1.y) || (uv.x > r2.x) || (uv.y > r2.y);
+}
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
+
 //--------------------------------------------------------------//
 // Shader
 //--------------------------------------------------------------//
@@ -313,7 +341,7 @@ float4 ps_scale_fgd (float2 uv : TEXCOORD1) : COLOR
    float  scale = max (FgdZ, 0.0001);
    float2 xy = ((uv - 0.5.xx) / scale) + float2 (1.0 - FgdX, FgdY);
 
-   return (any (xy > 1.0.xx) || any (xy < 0.0.xx)) ? BLACK : tex2D (InSampler, xy);
+   return fn_illegal (xy) ? BLACK : tex2D (InSampler, xy);
 }
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
@@ -339,19 +367,19 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    float2 bordTL = saturate (cropTL - outrEdge);
    float2 bordBR = saturate (cropBR + outrEdge);
 
-   float4 retval = (all (uv > bordTL) && all (uv < bordBR)) ? Colour_1 : EMPTY;
+   float4 retval = fn_inRange (uv, bordTL, bordBR) ? Colour_1 : EMPTY;
 
    bordTL = saturate (cropTL - gap_Edge);
    bordBR = saturate (cropBR + gap_Edge);
 
-   if (all (uv > bordTL) && all (uv < bordBR)) { retval = (GapFill == 1) ? Fgnd : EMPTY; }
+   if (fn_inRange (uv, bordTL, bordBR)) { retval = (GapFill == 1) ? Fgnd : EMPTY; }
 
    bordTL = saturate (cropTL - brdrEdge);
    bordBR = saturate (cropBR + brdrEdge);
 
-   if (all (uv > bordTL) && all (uv < bordBR)) { retval = Colour_1; }
+   if (fn_inRange (uv, bordTL, bordBR)) { retval = Colour_1; }
 
-   return (all (uv > cropTL) && all (uv < cropBR)) ? Fgnd : retval;
+   return fn_inRange (uv, cropTL, cropBR) ? Fgnd : retval;
 }
 
 float4 ps_flash (float2 uv : TEXCOORD1) : COLOR
@@ -371,22 +399,24 @@ float4 ps_flash (float2 uv : TEXCOORD1) : COLOR
    outerEdge += float2 (CropPosX, 1.0 - CropPosY).xyxy;
    innerEdge += float2 (CropPosX, 1.0 - CropPosY).xyxy;
 
-   if (!(all (uv > outerEdge.xy) && all (uv < outerEdge.zw)) ||
-        (all (uv > innerEdge.xy) && all (uv < innerEdge.zw))) return Fgnd;
+   if (fn_outRange (uv, outerEdge.xy, outerEdge.zw) ||
+       fn_inRange (uv, innerEdge.xy, innerEdge.zw)) return Fgnd;
 
    float4 retval = Colour_1;
 
    float2 xy  = uv;
    float2 xy1 = float2 (outerEdge.z - outerEdge.x, outerEdge.w - outerEdge.y);
-   float2 xy2 = outerEdge.zw - (xy1 * (1.0 - Inner_BR));
+   float2 xy2 = outerEdge.zw - (xy1 * Inner_BR);
 
    if (InnerPos == 1) { xy.x = 1.0 - uv.x; }
 
    xy1 *= Inner_TL;
    xy1 += outerEdge.xy;
 
-   if ((any (xy > xy1) && any (xy < innerEdge.xy)) ||
-       (any (xy < xy2) && any (xy > innerEdge.zw))) return Fgnd;
+   if ((((xy.x > xy1.x) || (xy.y > xy1.y)) &&
+        ((xy.x < innerEdge.x) || (xy.y < innerEdge.y))) ||
+       (((xy.x > innerEdge.z) || (xy.y > innerEdge.w)) &&
+        ((xy.x < xy2.x) || (xy.y < xy2.y)))) return Fgnd;
 
    return retval;
 }
@@ -409,7 +439,7 @@ float4 ps_main_single (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = ((uv - CENTRE) / scale) + float2 (1.0 - OverlayX, OverlayY);
 
-   float4 Fgnd = tex2D (FgSampler, xy);
+   float4 Fgnd = fn_illegal (xy) ? EMPTY : tex2D (FgSampler, xy);
    float4 Bgnd = tex2D (BgSampler, uv);
 
    return lerp (Bgnd, Fgnd, Fgnd.a * OverlayOpacity);

@@ -23,6 +23,16 @@
 // achieve the differing blend modes.  It isn't much, I
 // know, but every little helps.  Halved the samplers used
 // by the glow for the same reason.
+//
+// Version 14.1 update 5 December 2017 by jwrl.
+//
+// Added LINUX and OSX test to allow support for changing
+// "Clamp" to "ClampToEdge" on those platforms.  It will now
+// function correctly when used with Lightworks versions 14.5
+// and higher under Linux or OS-X and fixes a bug associated
+// with using this effect with transitions on those platforms.
+//
+// The bug still exists when using older versions of Lightworks.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,6 +57,14 @@ texture Glow_2   : RenderColorTarget;
 //--------------------------------------------------------------//
 // Samplers
 //--------------------------------------------------------------//
+
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
 
 sampler FgdSampler = sampler_state {
    Texture   = <Input>;

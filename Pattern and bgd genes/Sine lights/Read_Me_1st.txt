@@ -1,1 +1,1 @@
-This folder contains two versions of baopao's sine lights effect, one for Linux and Macintosh systems, and the other for Windows.  The Windows version requires ps_3_0 shader support, which should not be a problem for Lightworks on current systems post XP.
+This folder contains two versions of baopao's sine lights effect, one for Windows versions of Lightworks more recent than version 14.0 and all Linux and Mac systems, and the other for older Windows versions.

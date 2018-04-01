@@ -70,8 +70,8 @@ texture compose : RenderColorTarget;
 
 sampler FgSampler = sampler_state {
    Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -79,8 +79,8 @@ sampler FgSampler = sampler_state {
 
 sampler BgSampler = sampler_state {
    Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -88,8 +88,8 @@ sampler BgSampler = sampler_state {
 
 sampler b_inSampler = sampler_state {
    Texture = <brdrInp>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -97,8 +97,8 @@ sampler b_inSampler = sampler_state {
 
 sampler hardSampler = sampler_state {
    Texture   = <aliased>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -106,8 +106,8 @@ sampler hardSampler = sampler_state {
 
 sampler fthrSampler = sampler_state {
    Texture = <fthr_in>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -115,8 +115,8 @@ sampler fthrSampler = sampler_state {
 
 sampler borderSampler = sampler_state {
    Texture = <brdrOut>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -124,8 +124,8 @@ sampler borderSampler = sampler_state {
 
 sampler shadowSampler = sampler_state {
    Texture = <shadOut>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -133,8 +133,8 @@ sampler shadowSampler = sampler_state {
 
 sampler compedSampler = sampler_state {
    Texture   = <compose>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;

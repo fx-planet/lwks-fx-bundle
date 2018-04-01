@@ -9,7 +9,15 @@
 //
 // Explicitly defined samplers so we aren't bitten by cross
 // platform default sampler state differences.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Addressing has been changed from Clamp to Mirror to bypass
+// a bug in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -33,8 +41,8 @@ texture V;
 sampler VSampler = sampler_state
 {
    Texture = <V>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

@@ -8,6 +8,13 @@
 //
 // Unlike "Pinch", this version compresses to the diagonal
 // radii of the images.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -32,8 +39,8 @@ texture Bg;
 sampler FgdSampler = sampler_state
 {
    Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -42,8 +49,8 @@ sampler FgdSampler = sampler_state
 sampler BgdSampler = sampler_state
 {
    Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -74,9 +81,20 @@ float Amount
 
 #define MID_PT  (0.5).xx
 
+#define HALF_PI 1.5707963
+
 #define EMPTY   (0.0).xxxx
 
-#define HALF_PI 1.5707963
+#pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -94,7 +112,7 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    xy *= scale;
    xy += MID_PT;
 
-   float4 outgoing = (any (xy > (1.0).xx) || any (xy < (0.0).xx)) ? EMPTY : tex2D (FgdSampler, xy);
+   float4 outgoing = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
 
    return lerp (tex2D (BgdSampler, uv), outgoing, outgoing.a);
 }
@@ -111,7 +129,7 @@ float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
    xy *= scale;
    xy += MID_PT;
 
-   float4 incoming = (any (xy > (1.0).xx) || any (xy < (0.0).xx)) ? EMPTY : tex2D (BgdSampler, xy);
+   float4 incoming = fn_illegal (xy) ? EMPTY : tex2D (BgdSampler, xy);
 
    return lerp (tex2D (FgdSampler, uv), incoming, incoming.a);
 }

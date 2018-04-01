@@ -21,6 +21,13 @@
 // gamma rather than simple amplification to correct alpha
 // levels.  This closely matches the way that Lightworks
 // handles titles internally.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -49,8 +56,8 @@ texture Bg1 : RenderColorTarget;
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -58,8 +65,8 @@ sampler In1Sampler = sampler_state {
 
 sampler In2Sampler = sampler_state {
    Texture = <In2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -67,8 +74,8 @@ sampler In2Sampler = sampler_state {
 
 sampler In3Sampler = sampler_state {
    Texture   = <In3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -76,8 +83,8 @@ sampler In3Sampler = sampler_state {
 
 sampler FgdSampler = sampler_state {
    Texture   = <Fgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -85,8 +92,8 @@ sampler FgdSampler = sampler_state {
 
 sampler BgdSampler  = sampler_state {
    Texture   = <Bgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -94,8 +101,8 @@ sampler BgdSampler  = sampler_state {
 
 sampler Bg1Sampler = sampler_state {
    Texture   = <Bg1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -193,7 +200,18 @@ float Boost_I
 #define PI      3.141593
 #define TWO_PI  6.283185
 
+#define EMPTY   (0.0).xxxx
+
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shader
@@ -264,7 +282,7 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
    sincos (angle, xy.y, xy.x);
    xy = ((xy * radius) + PosXY) / Scale;
 
-   float4 Fgd = tex2D (FgdSampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
    float4 Bgd = tex2D (Bg1Sampler, uv);
 
    return lerp (Bgd, Fgd, Fgd.a * mixval);
@@ -289,7 +307,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    sincos (angle, xy.y, xy.x);
    xy = ((xy * radius) + PosXY) / Scale;
 
-   float4 Fgd = tex2D (FgdSampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
    float4 Bgd = tex2D (BgdSampler, uv);
 
    return lerp (Bgd, Fgd, Fgd.a * mixval);

@@ -16,6 +16,15 @@
 //        Progress 0.78 to 0.95 : Mixing the inputs, starting in the center
 //
 //
+// Version 14.1 update 5 December 2017 by jwrl.
+//
+// Added LINUX and OSX test to allow support for changing
+// "Clamp" to "ClampToEdge" on those platforms.  It will now
+// function correctly when used with Lightworks versions 14.5
+// and higher under Linux or OS-X and fixes a bug associated
+// with using this effect with transitions on those platforms.
+//
+// The bug still exists when using older versions of Lightworks.
 //--------------------------------------------------------------//
 
 
@@ -35,6 +44,13 @@ int _LwksEffectInfo
 // Inputs und Samplers
 //--------------------------------------------------------------//
 
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
 
 texture Fg;
 sampler FgSampler = sampler_state

@@ -2,6 +2,16 @@
 // ZoomBlur.fx created by Gary Hango (khaver) January 2012.
 //
 // This cross platform conversion by jwrl 20 July 2017.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Added LINUX and OSX test to allow support for changing
+// "Clamp" to "ClampToEdge" on those platforms.  It will now
+// function correctly when used with Lightworks versions 14.5
+// and higher under Linux or OS-X and fixes a bug associated
+// with using this effect with transitions on those platforms.
+//
+// The bug still exists when using older versions of Lightworks.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -17,6 +27,14 @@ int _LwksEffectInfo
 //--------------------------------------------------------------//
 
 texture Input;
+
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
 
 sampler InputSampler = sampler_state {
 	Texture = <Input>;

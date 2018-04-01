@@ -1,0 +1,1 @@
+All of the effects in this zip file will run on all versions of Lightworks, with the exception of PolyMask14 and PolyMask16.  They have been placed in separate folders.  The versions in the "Compatible" folder will run on any version of Lighworks except versions 14.0 and earlier running on Windows 32 bit or 64 bit.  Those versions have been placed in the "Older Windows" folder.

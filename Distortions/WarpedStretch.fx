@@ -3,6 +3,13 @@
 //
 // Cross platform conversion by jwrl May 1 2016.
 // Added subcategory for LW14 - jwrl Feb 18 2017.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -19,7 +26,14 @@ int _LwksEffectInfo
 
 texture Input;
 
-sampler InputSampler = sampler_state { Texture = <Input>; };
+sampler InputSampler = sampler_state {
+   Texture   = <Input>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //--------------------------------------------------------------//
 // Parameters
@@ -110,7 +124,18 @@ float ORY
 // Definitions and declarations
 //--------------------------------------------------------------//
 
+#define BLACK float2(0.0, 1.0).xxxy
+
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -146,7 +171,7 @@ float4 main1 (float2 uv : TEXCOORD1) : COLOR
    
       outp.x = lerp (norm.x, xy.x, Strength);
 
-      color = tex2D (InputSampler, outp);
+      color = fn_illegal (outp) ? BLACK : tex2D (InputSampler, outp);
    }
 
    if (Grid

@@ -16,6 +16,16 @@
 // Fully defined float2 and float4 variables to address the
 // behavioural difference between the D3D and Cg compilers
 // when this is not done.
+//
+// Version 14.1 update 5 December 2017 by jwrl.
+//
+// Added LINUX and MAC test to allow support for changing
+// "Clamp" to "ClampToEdge" on those platforms.  It will now
+// function correctly when used with Lightworks versions 14.5
+// and higher under Linux or OS-X and fixes a bug associated
+// with using this effect with transitions on those platforms.
+//
+// The bug still exists when using older versions of Lightworks.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,6 +47,14 @@ int _LwksEffectInfo
 texture Input;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
+
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef MAC
+#define Clamp ClampToEdge
+#endif
 
 sampler InputSampler = sampler_state
 {

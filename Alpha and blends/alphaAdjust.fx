@@ -17,6 +17,26 @@ int _LwksEffectInfo
 > = 0;
 
 //--------------------------------------------------------------//
+// Inputs
+//--------------------------------------------------------------//
+
+texture Inp;
+
+//--------------------------------------------------------------//
+// Samplers
+//--------------------------------------------------------------//
+
+sampler s_Input = sampler_state
+{
+   Texture = <Inp>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//--------------------------------------------------------------//
 // Parameters
 //--------------------------------------------------------------//
 
@@ -54,38 +74,18 @@ float alphaGain
 > = 1.0;
 
 //--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Input;
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
 // Shaders
 //--------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (InputSampler, xy);
+   float4 retval = tex2D (s_Input, uv);
 
    retval.a = saturate (((((pow (retval.a, 1 / alphaGamma) * alphaGain) + alphaBrightness) - 0.5) * alphaContrast) + 0.5);
 
-   if  (showAlpha) { retval = retval.aaaa; }
+   if (!showAlpha) return retval;
 
-   return retval;
+   return retval.aaaa;
 }
 
 //--------------------------------------------------------------//
@@ -94,8 +94,6 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique Adjustment
 {
-   pass pass_one
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1
+   { PixelShader = compile PROFILE ps_main (); }
 }

@@ -4,7 +4,15 @@
 // Lightworks effects have to have a _LwksEffectInfo block
 // which defines basic information about the effect (ie. name
 // and category). EffectGroup must be "GenericPixelShader".
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -114,7 +122,18 @@ float Zoom
    float MaxVal = 2.00;
 > = 1.0;
 
+#define EMPTY    (0.0).xxxx
+
 #pragma warning ( disable : 3571 )
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------
 // Pixel Shader
@@ -134,7 +153,9 @@ float4 main1( float2 uv : TEXCOORD1 ) : COLOR
    float2 zoomit = ((xy - 0.5.xx) / Zoom) + 0.5.xx;
    zoomit.x = zoomit.x + (0.5f-ORGX);
    zoomit.y = zoomit.y + (ORGY-0.5f);
-   float4  color = tex2D(InputSampler,zoomit);
+
+   float4 color = fn_illegal (zoomit) ? EMPTY : tex2D (InputSampler, zoomit);
+
    if (zoomit.x < 0.0 || zoomit.x > 1.0) color = 0.0.xxxx;
    if (zoomit.y < 0.0 || zoomit.y > 1.0) color = 0.0.xxxx;
    return saturate(color);

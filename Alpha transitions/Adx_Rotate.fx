@@ -12,6 +12,15 @@
 // than simple amplification to correct alpha levels.  This
 // closely matches the way that Lightworks handles titles
 // internally.
+//
+// Version 14.1 update 5 December 2017 by jwrl.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -152,7 +161,16 @@ float Boost_I
 
 #define HALF_PI 1.5707963
 
-#define BLACK   (0.0).xxxx
+#define EMPTY   (0.0).xxxx
+
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+
+bool fn_illegal (float2 uv)
+{
+   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
+}
 
 //--------------------------------------------------------------//
 // Shaders
@@ -160,7 +178,7 @@ float Boost_I
 
 float4 ps_mode_sw_1 (float2 xy : TEXCOORD1) : COLOR      // Alpha foreground
 {
-   float4 retval = (Ttype == FX2_FX1) ? tex2D (In2Sampler, xy) : (Ttype == FX_IN) ? BLACK : tex2D (In1Sampler, xy);
+   float4 retval = (Ttype == FX2_FX1) ? tex2D (In2Sampler, xy) : (Ttype == FX_IN) ? EMPTY : tex2D (In1Sampler, xy);
 
    if (!Boost_On) return retval;
 
@@ -171,7 +189,7 @@ float4 ps_mode_sw_1 (float2 xy : TEXCOORD1) : COLOR      // Alpha foreground
 
 float4 ps_mode_sw_2 (float2 xy : TEXCOORD1) : COLOR      // Alpha background
 {
-   float4 retval = (Ttype == FX1_FX2) ? tex2D (In2Sampler, xy) : (Ttype == FX_OUT) ? BLACK : tex2D (In1Sampler, xy);
+   float4 retval = (Ttype == FX1_FX2) ? tex2D (In2Sampler, xy) : (Ttype == FX_OUT) ? EMPTY : tex2D (In1Sampler, xy);
 
    if (!Boost_On) return retval;
 
@@ -190,8 +208,8 @@ float4 ps_rotate_right (float2 uv : TEXCOORD1) : COLOR
    float2 xy1 = (Amount == 1.0) ? float2 (2.0, uv.y) : float2 ((uv.x - 1.0) / (1.0 - Amount) - (Amount * 0.2) + 1.0, ((uv.y - 0.5) * (1.0 + Amount)) + 0.5 + (0.5 - uv.y) * uv.x * sin (Amount * HALF_PI));
    float2 xy2 = (Amount == 0.0) ? float2 (2.0, uv.y) : float2 ((uv.x / Amount) - ((1.0 - Amount) * 0.2), ((uv.y - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.y) * uv.x * cos (Amount * HALF_PI));
 
-   float4 Fgd1   = (xy1.x != saturate (xy1.x)) ? BLACK : tex2D (Fg1Sampler, xy1);
-   float4 Fgd2   = (xy2.x != saturate (xy2.x)) ? BLACK : tex2D (Fg2Sampler, xy2);
+   float4 Fgd1   = fn_illegal (xy1) ? EMPTY : tex2D (Fg1Sampler, xy1);
+   float4 Fgd2   = fn_illegal (xy2) ? EMPTY : tex2D (Fg2Sampler, xy2);
    float4 fgdPix = max (Fgd1, Fgd2);
 
    return lerp (tex2D (BgdSampler, uv), fgdPix, fgdPix.a);
@@ -202,8 +220,8 @@ float4 ps_rotate_left (float2 uv : TEXCOORD1) : COLOR
    float2 xy1 = (Amount == 1.0) ? float2 (2.0, uv.y) : float2 (uv.x / (1.0 - Amount) + (Amount * 0.2), ((uv.y - 0.5) * (1.0 + Amount)) + 0.5 + (0.5 - uv.y) * (1.0 - uv.x) * sin (Amount * HALF_PI));
    float2 xy2 = (Amount == 0.0) ? float2 (2.0, uv.y) : float2 ((uv.x - 1.0) / Amount + 1.0 + ((1.0 - Amount) * 0.2), ((uv.y - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.y) * (1.0 - uv.x) * cos (Amount * HALF_PI));
 
-   float4 Fgd1   = (xy1.x != saturate (xy1.x)) ? BLACK : tex2D (Fg1Sampler, xy1);
-   float4 Fgd2   = (xy2.x != saturate (xy2.x)) ? BLACK : tex2D (Fg2Sampler, xy2);
+   float4 Fgd1   = fn_illegal (xy1) ? EMPTY : tex2D (Fg1Sampler, xy1);
+   float4 Fgd2   = fn_illegal (xy2) ? EMPTY : tex2D (Fg2Sampler, xy2);
    float4 fgdPix = max (Fgd1, Fgd2);
 
    return lerp (tex2D (BgdSampler, uv), fgdPix, fgdPix.a);
@@ -214,8 +232,8 @@ float4 ps_rotate_down (float2 uv : TEXCOORD1) : COLOR
    float2 xy1 = (Amount == 1.0) ? float2 (2.0, uv.y) : float2 (((uv.x - 0.5) * (1.0 + Amount)) + 0.5 + (0.5 - uv.x) * uv.y * sin (Amount * HALF_PI), (uv.y - 1.0) / (1.0 - Amount) - (Amount * 0.2) + 1.0);
    float2 xy2 = (Amount == 0.0) ? float2 (2.0, uv.y) : float2 (((uv.x - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.x) * uv.y * cos (Amount * HALF_PI), (uv.y / Amount) - ((1.0 - Amount) * 0.2));
 
-   float4 Fgd1   = (xy1.y != saturate (xy1.y)) ? BLACK : tex2D (Fg1Sampler, xy1);
-   float4 Fgd2   = (xy2.y != saturate (xy2.y)) ? BLACK : tex2D (Fg2Sampler, xy2);
+   float4 Fgd1   = fn_illegal (xy1) ? EMPTY : tex2D (Fg1Sampler, xy1);
+   float4 Fgd2   = fn_illegal (xy2) ? EMPTY : tex2D (Fg2Sampler, xy2);
    float4 fgdPix = max (Fgd1, Fgd2);
 
    return lerp (tex2D (BgdSampler, uv), fgdPix, fgdPix.a);
@@ -226,8 +244,8 @@ float4 ps_rotate_up (float2 uv : TEXCOORD1) : COLOR
    float2 xy1 = (Amount == 1.0) ? float2 (2.0, uv.y) : float2 (((uv.x - 0.5) * (1.0 + Amount)) + 0.5 + (0.5 - uv.x) * (1.0 - uv.y) * sin (Amount * HALF_PI), uv.y / (1.0 - Amount) + (Amount * 0.2));
    float2 xy2 = (Amount == 0.0) ? float2 (2.0, uv.y) : float2 (((uv.x - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.x) * (1.0 - uv.y) * cos (Amount * HALF_PI), (uv.y - 1.0) / Amount + 1.0 + ((1.0 - Amount) * 0.2));
 
-   float4 Fgd1   = (xy1.y != saturate (xy1.y)) ? BLACK : tex2D (Fg1Sampler, xy1);
-   float4 Fgd2   = (xy2.y != saturate (xy2.y)) ? BLACK : tex2D (Fg2Sampler, xy2);
+   float4 Fgd1   = fn_illegal (xy1) ? EMPTY : tex2D (Fg1Sampler, xy1);
+   float4 Fgd2   = fn_illegal (xy2) ? EMPTY : tex2D (Fg2Sampler, xy2);
    float4 fgdPix = max (Fgd1, Fgd2);
 
    return lerp (tex2D (BgdSampler, uv), fgdPix, fgdPix.a);

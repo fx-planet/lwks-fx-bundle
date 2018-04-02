@@ -192,13 +192,14 @@ def extract_metadata(path):
                 break
 
     def is_not_comment_line(x):
-        return not (x.startswith('---') and (
+        return ((not (x.startswith('---') and (
                 x.endswith('-//') or x.endswith('---'))) or (
-            x.startswith('//') and x.endswith('//')) or metatag_re.match(x)
+            x.startswith('//') and x.endswith('//'))) and
+                not metatag_re.findall(x))
 
     # strip out comment-like lines from description
     description = '\n'.join(
-            filter(is_not_comment_line, description.split('\n')))
+            filter(is_not_comment_line, description.split('\n'))).strip()
 
     if description:
         metadata['description'] = description

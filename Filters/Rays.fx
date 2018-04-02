@@ -1,4 +1,6 @@
 // @ReleaseDate: 2018-03-31
+// @Author: khaver
+// @CreationDate: "February 2013"
 //--------------------------------------------------------------//
 // Rays.fx created by Gary Hango (khaver) February 2013.
 //

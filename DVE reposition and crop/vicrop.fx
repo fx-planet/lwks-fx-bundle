@@ -1,4 +1,7 @@
 // @ReleaseDate: 2018-03-31
+// @Author: gr00by
+// @OriginalAuthor: "EditShare EMEA"
+// @CreationDate: "26 November 2016"
 //--------------------------------------------------------------//
 // VisualCrop by gr00by
 // based on DVE.fx created by EditShare

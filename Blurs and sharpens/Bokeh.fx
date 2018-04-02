@@ -1,4 +1,5 @@
 // @ReleaseDate: 2018-03-31
+// @Author: khaver
 //--------------------------------------------------------------//
 // Blur with Bokeh by khaver
 //

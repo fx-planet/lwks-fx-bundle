@@ -1,4 +1,5 @@
 // @ReleaseDate: 2018-03-31
+// @Author: khaver
 //--------------------------------------------------------------//
 // Iris Bokeh Pixel Shader
 // (c) 2012 - Gary Hango

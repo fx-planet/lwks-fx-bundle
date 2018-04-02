@@ -1,4 +1,5 @@
 // @ReleaseDate: 2018-03-31
+// @Author: "Johannes Bausch"
 //--------------------------------------------------------------//
 // Chromatic Abberation
 //

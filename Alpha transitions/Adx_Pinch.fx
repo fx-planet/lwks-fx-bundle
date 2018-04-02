@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Pinch.fx
 // Created by jwrl 27 October 2017.

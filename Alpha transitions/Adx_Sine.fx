@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Sine.fx
 // Created by LW user jwrl 30 October 2017

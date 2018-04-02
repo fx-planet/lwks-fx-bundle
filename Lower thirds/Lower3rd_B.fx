@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3rd_B.fx
 // Created by LW user jwrl 15 March 2018

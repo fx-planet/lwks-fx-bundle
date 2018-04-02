@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // This safe area and cross hatch generator was written by
 // Lightworks user jwrl Januuary 23, 2016.  It is entirely

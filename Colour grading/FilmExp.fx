@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // FilmExp.fx was started by user abelmilanes as FilmFx.fx in
 // 2011 but was never completed.

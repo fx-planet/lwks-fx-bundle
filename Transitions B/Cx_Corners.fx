@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // User effect Cx_Corners.fx
 // Created by jwrl 25 August 2017.

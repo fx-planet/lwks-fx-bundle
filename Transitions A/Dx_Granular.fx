@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Dx_Granular.fx was created by Lightworks user jwrl to
 // provide a granular noise driven dissolve, February 8 2016.

@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // HueRotate.fx by Lightworks user gr00by 14 June 2016
 //

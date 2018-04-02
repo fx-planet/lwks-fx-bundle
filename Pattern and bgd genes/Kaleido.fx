@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Kaleido   http://www.alessandrodallafontana.com/ 
 // based on the pixel shader of: http://pixelshaders.com/ 

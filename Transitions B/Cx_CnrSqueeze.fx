@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // User effect Cx_CnrSqueeze.fx
 // Created by jwrl 26 August 2017.

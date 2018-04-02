@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect SoftFoggyBlur.fx
 // Created by LW user jwrl 6 July 2017.

@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // VisualCrop by gr00by
 // based on DVE.fx created by EditShare

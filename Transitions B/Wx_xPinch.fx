@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Wx_xPinch.fx
 // Created by LW user jwrl 10 September 2017.

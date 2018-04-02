@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Flip_Flop.fx
 // Rewritten by LW user jwrl 14 March 2018

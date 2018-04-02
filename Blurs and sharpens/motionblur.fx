@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // This effect was originally posted by Lightworks user
 // quality.  It was converted for better ps_2_0 compliance

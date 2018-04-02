@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect LumakeyDVE.fx
 // Created by LW user jwrl 20 March 2018.

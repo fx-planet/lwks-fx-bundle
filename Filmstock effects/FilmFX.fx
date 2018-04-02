@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Source credit:
 // http://www.loadusfx.net/virtualdub/filmfxguide.htm

@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // CC_RGBCMY - a colorgrade tool based on individual red, green,
 // blue, cyan, magentan and yellow parameters.  This is a

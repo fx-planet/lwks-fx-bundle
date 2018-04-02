@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // VHS by khaver - cross-platform V2 mod by jwrl
 //

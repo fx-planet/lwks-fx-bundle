@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Cx_Twister.fx
 // Created by LW user jwrl 8 September 2017.

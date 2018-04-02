@@ -1,3 +1,4 @@
+// @ReleaseDate: 2018-03-31
 //--------------------------------------------------------------//
 // De-interlace.fx written by jwrl March 14 2017.
 // @Author: jwrl

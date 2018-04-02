@@ -1,4 +1,4 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------
 // 
 // JH Stylize Vignette v1.0 - Juha Hartikainen - juha@linearteam.org

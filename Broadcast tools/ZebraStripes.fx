@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks effect ZebraStripes.fx
 //
 // Created by Lightworks user jwrl 20 April 2016.
-// @Author: jwrl
-// @CreationDate: "20 April 2016"
+// @Author jwrl
+// @CreationDate "20 April 2016"
 //
 // This analyzes the input media and displays zebra stripes
 // when an overload occurs.

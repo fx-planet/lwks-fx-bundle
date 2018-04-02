@@ -1,5 +1,5 @@
-// @ReleaseDate: 2018-03-31
-// @Author: "Alessandro Dalla Fontana"
+// @ReleaseDate 2018-03-31
+// @Author "Alessandro Dalla Fontana"
 //--------------------------------------------------------------//
 // http://www.alessandrodallafontana.com/  
 //

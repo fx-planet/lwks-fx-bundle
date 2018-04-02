@@ -1,7 +1,7 @@
-// @ReleaseDate: 2018-03-31
-// @Author: msi
-// @CreationDate: 2011
-// @License: "CC BY-NC-SA"
+// @ReleaseDate 2018-03-31
+// @Author msi
+// @CreationDate 2011
+// @License "CC BY-NC-SA"
 // ----------------------------------------
 // Bleach bypass, 2011 msi.
 // [CC BY-NC-SA]

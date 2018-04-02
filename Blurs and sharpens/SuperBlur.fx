@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect SuperBlur.fx
 //
 // Created by LW user jwrl 30 June 2016.
-// @Author: jwrl
-// @CreationDate: "30 June 2016"
+// @Author jwrl
+// @CreationDate "30 June 2016"
 //  Modified for version 14 11 February 2017.
 //
 // This version modified at khaver's suggestion to reduce the

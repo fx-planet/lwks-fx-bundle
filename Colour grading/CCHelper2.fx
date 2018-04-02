@@ -1,4 +1,4 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Header
 //
@@ -7,8 +7,8 @@
 // and category). EffectGroup must be "GenericPixelShader".
 //
 // This shader written by Gary Hango (khaver) February 2013
-// @Author: khaver
-// @CreationDate: "01 February 2013"
+// @Author khaver
+// @CreationDate "01 February 2013"
 //
 // This cross platform conversion by jwrl April 28 2016.
 //

@@ -1,5 +1,5 @@
-// @ReleaseDate: 2018-03-31
-// @Author: baopao
+// @ReleaseDate 2018-03-31
+// @Author baopao
 //SkinSmooth by baopao
 
 //Based on:

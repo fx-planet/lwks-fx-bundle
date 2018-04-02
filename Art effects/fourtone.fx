@@ -1,5 +1,5 @@
-// @ReleaseDate: 2018-03-31
-// @Author: "Val Gameiro"
+// @ReleaseDate 2018-03-31
+// @Author "Val Gameiro"
 //--------------------------------------------------------------//
 // Four Tone
 //

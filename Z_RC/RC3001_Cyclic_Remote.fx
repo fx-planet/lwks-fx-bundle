@@ -1,4 +1,4 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect 
 // 2017, Users "schrauber"

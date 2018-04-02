@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect FractalMagic1.fx
 //
 // Created by LW user jwrl 8 May 2016.
-// @Author: jwrl
-// @CreationDate: "8 May 2016"
+// @Author jwrl
+// @CreationDate "8 May 2016"
 //  LW 14+ version by jwrl 12 February 2017
 //  SubCategory "Patterns" added.
 //

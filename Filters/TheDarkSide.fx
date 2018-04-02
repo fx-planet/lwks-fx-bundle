@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: jwrl
-// @CreationDate: "25 February 2017"
+// @ReleaseDate 2018-03-31
+// @Author jwrl
+// @CreationDate "25 February 2017"
 //--------------------------------------------------------------//
 // TheDarkSide.fx created by LW user jwrl 25 February 2017.
 //

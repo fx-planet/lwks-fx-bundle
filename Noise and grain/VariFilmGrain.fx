@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect VariFilmGrain.fx
 //
 // Created by LW user khaver May 3, 2017
-// @Author: khaver
-// @CreationDate: "3 May 2017"
+// @Author khaver
+// @CreationDate "3 May 2017"
 //
 // Variable Film Grain
 //

@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect alphaAdjust.fx
 //
 // Created by LW user jwrl 1 March 2016.
-// @Author: jwrl
-// @CreationDate: "1 March 2016"
+// @Author jwrl
+// @CreationDate "1 March 2016"
 //
 // This Lightworks effect is designed principally for alpha
 // channel gamma correction.  It will adjust other settings as

@@ -14,14 +14,22 @@ import dsm
 
 from dateutil.parser import parse
 
-metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s*:\s*("([^"]+)"|([^\s]+))')
+metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s+("([^"]+)"|([^\s]+))')
 category_re = re.compile(r'^\s*string\s*Category\s*=\s*"([^"]+)"')
 subcategory_re = re.compile(r'^\s*string\s*SubCategory\s*=\s*"([^"]+)"')
 description_re = re.compile(r'^\s*string\s*Description\s*=\s*"([^"]+)"')
 
+VERBOSITY = 0
+
 
 def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+    if VERBOSITY > 0:
+        print(*args, file=sys.stderr, **kwargs)
+
+
+def debug(*args, **kwargs):
+    if VERBOSITY > 1:
+        print(*args, file=sys.stderr, **kwargs)
 
 
 def string_attr(value):
@@ -50,7 +58,9 @@ def multiple(parser):
 
 
 SUPPORTED_ATTRS = {
-        'author': one(string_attr),
+        'author': multiple(string_attr),
+        'see': multiple(string_attr),
+        'version': one(string_attr),
         'maintainer': multiple(string_attr),
         'name': one(string_attr),
         'license': one(string_attr),
@@ -82,9 +92,11 @@ def metadata_parser(metadata, line):
         try:
             updater = SUPPORTED_ATTRS[attr]
         except KeyError:
-            eprint("Unknown attr: `%s`. Skipping." % attr)
+            eprint(
+                "%s: unknown attr `%s`" % (metadata['path'], attr))
         else:
             updater(metadata, attr, value)
+            debug('Found (%s, "%s", %s)' % (attr, value, metadata[attr]))
             return True
 
 
@@ -162,9 +174,11 @@ class ParserException(Exception):
 
 
 def extract_metadata(path):
+    debug('Extracting metadata from file: %s' % path)
     filename = os.path.basename(path)
 
     metadata = {
+            'path': os.path.relpath(path),
             'name': os.path.splitext(filename)[0],
             'filename': filename,
         }
@@ -223,19 +237,33 @@ def find_files(search_dir):
 
 
 def main():
+    global VERBOSITY
+
     parser = argparse.ArgumentParser()
     parser.add_argument('search_dir', default='.')
+    parser.add_argument(
+            '-v', dest='verbosity', action='store_const', const=1, default=0,
+            help='verbose output to stderr')
+    parser.add_argument(
+            '-vv', dest='verbosity', action='store_const', const=2, default=0,
+            help='more verbose (debug) output to stderr')
+    parser.add_argument(
+            '-n', dest='no_output', action='store_true', default=False,
+            help='do not generate output')
 
     opts = parser.parse_args()
+    VERBOSITY = opts.verbosity
     paths = find_files(opts.search_dir)
     effects = []
     for path in paths:
         effects.append(extract_metadata(path))
-    print(json.dumps({
-        'items': effects,
-        'count': len(effects),
-        'date': datetime.datetime.now().isoformat(),
-        }))
+
+    if not opts.no_output:
+        print(json.dumps({
+            'items': effects,
+            'count': len(effects),
+            'date': datetime.datetime.now().isoformat(),
+            }))
 
 
 if __name__ == '__main__':

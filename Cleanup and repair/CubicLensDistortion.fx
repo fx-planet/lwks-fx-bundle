@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @OriginalAuthor: "François Tarlier"
-// @Author: brdloush
+// @ReleaseDate 2018-03-31
+// @OriginalAuthor "François Tarlier"
+// @Author brdloush
 //------------------------------------------------------------------------------------------------//
 // Lightworks user effect CubicLensDistortion.fx 
 //

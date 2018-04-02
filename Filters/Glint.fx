@@ -1,5 +1,5 @@
-// @ReleaseDate: 2018-03-31
-// @Author: khaver
+// @ReleaseDate 2018-03-31
+// @Author khaver
 //--------------------------------------------------------------//
 // Glint Effect - Gary Hango (khaver)
 //

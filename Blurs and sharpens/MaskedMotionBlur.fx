@@ -1,5 +1,5 @@
-// @ReleaseDate: 2018-03-31
-// @Author: baopao
+// @ReleaseDate 2018-03-31
+// @Author baopao
 //--------------------------------------------------------------//
 // Original effect created by Lightworks user baopao
 //

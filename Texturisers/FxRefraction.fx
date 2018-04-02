@@ -1,4 +1,4 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 //
 // Description : Array and textureless GLSL 3D simplex noise function.

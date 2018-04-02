@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect GhostBlur.fx
 //
 // Created by LW user jwrl May 9 2016 as YAblur.fx.
-// @Author: jwrl
-// @CreationDate: "May 9 2016"
+// @Author jwrl
+// @CreationDate "May 9 2016"
 //
 // This was an accident that looked interesting, so it was
 // given a name and developed.  It is based on a radial

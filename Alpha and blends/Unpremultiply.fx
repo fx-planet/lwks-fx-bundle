@@ -1,5 +1,5 @@
-// @ReleaseDate: 2018-03-31
-// @Author: unknown
+// @ReleaseDate 2018-03-31
+// @Author unknown
 //--------------------------------------------------------------
 // alpha unpremultiply  
 //

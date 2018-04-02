@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect AdjBlend.fx
 //
 // Created by LW user jwrl 25 October 2017.
-// @Author: jwrl
-// @CreationDate: "25 October 2017"
+// @Author jwrl
+// @CreationDate "25 October 2017"
 //
 // This is a quick way of blending when the alpha channel may
 // not quite be as required.  The alpha channel may be inverted

@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: unknown
-// @Maintainer: jwrl
+// @ReleaseDate 2018-03-31
+// @Author unknown
+// @Maintainer jwrl
 //--------------------------------------------------------------//
 // Header
 //

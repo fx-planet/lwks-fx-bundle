@@ -1,9 +1,9 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3rd_C.fx
 // Created by LW user jwrl 15 March 2018
-// @Author: jwrl
-// @CreationDate: "15 March 2018"
+// @Author jwrl
+// @CreationDate "15 March 2018"
 //
 // This effect opens a text ribbon in a lower third position
 // to reveal the lower third text.  That's all there is to it

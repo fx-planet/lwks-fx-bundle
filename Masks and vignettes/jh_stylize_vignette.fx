@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: "Juha Hartikainen"
-// @AuthorEmail: "juha@linearteam.org"
+// @ReleaseDate 2018-03-31
+// @Author "Juha Hartikainen"
+// @AuthorEmail "juha@linearteam.org"
 //--------------------------------------------------------------
 // 
 // JH Stylize Vignette v1.0 - Juha Hartikainen - juha@linearteam.org

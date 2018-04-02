@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: khaver
-// @CreationDate: "February 2013"
+// @ReleaseDate 2018-03-31
+// @Author khaver
+// @CreationDate "February 2013"
 //--------------------------------------------------------------//
 // Header
 //

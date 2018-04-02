@@ -1,9 +1,9 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Triple_DVE.fx
 //  Created by LW user jwrl 6 June 2017
-// @Author: jwrl
-// @CreationDate: "6 June 2017"
+// @Author jwrl
+// @CreationDate "6 June 2017"
 //
 //  Bug fix to correct ambiguous declaration affecting Linux
 //  and Mac versions only 17 July 2017.

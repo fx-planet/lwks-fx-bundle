@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Dx_Sizzler.fx
 //
 // Created by LW jwrl 12 May 2017.
-// @Author: jwrl
-// @CreationDate: "12 May 2017"
+// @Author jwrl
+// @CreationDate "12 May 2017"
 //
 // This effect dissolves through a complex colour translation
 // while performing what is essentially a non-additive mix.

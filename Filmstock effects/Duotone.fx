@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Duotone.fx
 //
 // Created by LW user jwrl 12 April 2016.
-// @Author: jwrl
-// @CreationDate: "12 April 2016"
+// @Author jwrl
+// @CreationDate "12 April 2016"
 //            This version 14 April 2016.
 //
 // This simulates the effect of the old Duotone film colour

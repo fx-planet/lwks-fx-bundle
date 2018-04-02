@@ -1,9 +1,9 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // User effect aDx_Split.fx
 // Created by jwrl 26 October 2017.
-// @Author: jwrl
-// @CreationDate: "26 October 2017"
+// @Author jwrl
+// @CreationDate "26 October 2017"
 //
 // This is really the classic barn door effect, but since a
 // wipe with that name already exists in Lightworks another

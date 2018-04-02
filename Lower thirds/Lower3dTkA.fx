@@ -1,9 +1,9 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3dTkA.fx
 // Created by LW user jwrl 15 March 2018
-// @Author: jwrl
-// @CreationDate: "15 March 2018"
+// @Author jwrl
+// @CreationDate "15 March 2018"
 //
 // This is a general purpose toolkit designed to build lower
 // thirds.  It can optionally be fed with a graphics layer or

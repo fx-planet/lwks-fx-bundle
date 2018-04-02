@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: jwrl
-// @CreationDate: "11 November 2016"
+// @ReleaseDate 2018-03-31
+// @Author jwrl
+// @CreationDate "11 November 2016"
 //--------------------------------------------------------------//
 // Lightworks user effect FloatImage.fx
 //

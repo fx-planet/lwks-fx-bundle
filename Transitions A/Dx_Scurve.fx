@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Dx_Scurve.fx
 //
 // Created by LW user jwrl 25 March 2017.
-// @Author: jwrl
-// @CreationDate: "25 March 2017"
+// @Author jwrl
+// @CreationDate "25 March 2017"
 //
 // This is essentially the same as Editshare's "Mix", with a
 // trigonometric curve applied to the "Amount" parameter.  If

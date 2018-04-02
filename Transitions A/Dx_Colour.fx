@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Dx_Colour.fx
 //
 // Written by LW user jwrl 31 July 2016
-// @Author: jwrl
-// @CreationDate: "31 July 2016"
+// @Author jwrl
+// @CreationDate "31 July 2016"
 //
 // This effect is a complete rewrite of my Dip2colour.fx to
 // add the ability to adjust effect centering, to improve the

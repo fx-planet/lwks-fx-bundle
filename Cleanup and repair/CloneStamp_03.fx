@@ -1,7 +1,7 @@
-// @ReleaseDate: 2018-03-31
-// @Author: nouanda
-// @Author: brdloush
-// @Author: jwrl
+// @ReleaseDate 2018-03-31
+// @Author nouanda
+// @Author brdloush
+// @Author jwrl
 //--------------------------------------------------------------//
 // CloneStamp.fx
 // Version alpha 0.03

@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Ripples.fx
 //
 // Created by LW user jwrl 25 May 2016
-// @Author: jwrl
-// @CreationDate: "25 May 2016"
+// @Author jwrl
+// @CreationDate "25 May 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaRippleMix.fx by jwrl 8 August 2017 for
 // name consistency through alpha dissolve range.

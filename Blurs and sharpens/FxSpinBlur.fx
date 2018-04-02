@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: rakusan
-// @Maintainer: Windsturm
+// @ReleaseDate 2018-03-31
+// @Author rakusan
+// @Maintainer Windsturm
 /**
   * FxSpinBlur.
   * SpinBlur effect.

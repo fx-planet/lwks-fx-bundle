@@ -1,9 +1,9 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3rd_A.fx
 // Created by LW user jwrl 15 March 2018
-// @Author: jwrl
-// @CreationDate: "15 March 2018"
+// @Author jwrl
+// @CreationDate "15 March 2018"
 //
 // This moves a coloured bar on from one side of the screen
 // then lowers or raises it to reveal an alpha image connected

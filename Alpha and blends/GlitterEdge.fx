@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect GlitterEdge.fx
 //
 // Created by LW user jwrl 10 May 2016.
-// @Author: jwrl
-// @CreationDate: "10 May 2016"
+// @Author jwrl
+// @CreationDate "10 May 2016"
 //  LW 14+ version by jwrl 11 January 2017
 //  Subcategory "Edge Effects" added.
 //

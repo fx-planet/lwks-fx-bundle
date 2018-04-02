@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Dx_NonAddUltra.fx
 //
 // Written by LW user jwrl 11 May 2017.
-// @Author: jwrl
-// @CreationDate: "11 May 2017"
+// @Author jwrl
+// @CreationDate "11 May 2017"
 //
 // This is an extreme non-additive mix.  The incoming video is
 // faded in to full value at the 50% point, at which stage the

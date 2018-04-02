@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Zoom.fx
 //
 // Created by LW user jwrl 24 May 2016
-// @Author: jwrl
-// @CreationDate: "24 May 2016"
+// @Author jwrl
+// @CreationDate "24 May 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaZoomMix.fx by jwrl 8 August 2017 for
 // name consistency through the alpha dissolve range.

@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Low_res_cam.fx
 //
 // Created by LW user jwrl 12 February 2016
-// @Author: jwrl
-// @CreationDate: "12 February 2016"
+// @Author jwrl
+// @CreationDate "12 February 2016"
 //
 // This effect was designed to simulate the pixellation that
 // you get when a low-res camera is blown up just that little

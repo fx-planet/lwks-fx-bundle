@@ -1,5 +1,5 @@
-// @ReleaseDate: 2018-03-31
-// @Author: khaver
+// @ReleaseDate 2018-03-31
+// @Author khaver
 //--------------------------------------------------------------//
 // Exposure Leveler by khaver
 //

@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Squeeze.fx
 //
 // Created by Lightworks user jwrl 1 June 2016.
-// @Author: jwrl
-// @CreationDate: "1 June 2016"
+// @Author jwrl
+// @CreationDate "1 June 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaSqueezeMix.fx by jwrl 8 August 2017 for
 // name consistency through the alpha dissolve range.

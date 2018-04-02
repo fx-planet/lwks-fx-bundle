@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: gr00by
-// @OriginalAuthor: "Mark Ransom"
+// @ReleaseDate 2018-03-31
+// @Author gr00by
+// @OriginalAuthor "Mark Ransom"
 //--------------------------------------------------------------//
 // HueRotate.fx by Lightworks user gr00by 14 June 2016
 //

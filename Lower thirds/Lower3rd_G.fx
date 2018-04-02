@@ -1,9 +1,9 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3rd_G.fx
 // Created by LW user jwrl 19 March 2018
-// @Author: jwrl
-// @CreationDate: "19 March 2018"
+// @Author jwrl
+// @CreationDate "19 March 2018"
 //
 // This uses a clock wipe to wipe on a box around text.  The
 // box can wipe on CW or ACW, and start from the top or the

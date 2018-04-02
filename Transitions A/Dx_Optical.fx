@@ -1,10 +1,10 @@
-// @ReleaseDate: 2018-03-31
+// @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Dx_Optical.fx
 //
 // Written by LW user jwrl 30 July 2016
-// @Author: jwrl
-// @CreationDate: "30 July 2016"
+// @Author jwrl
+// @CreationDate "30 July 2016"
 //
 // This is an attempt to simulate the look of the classic film
 // optical dissolve.  To do this it applies a non-linear curve

@@ -1,6 +1,6 @@
-// @ReleaseDate: 2018-03-31
-// @Author: khaver
-// @CreationDate: "August 2012"
+// @ReleaseDate 2018-03-31
+// @Author khaver
+// @CreationDate "August 2012"
 //--------------------------------------------------------------//
 // Sketch.fx created by Gary Hango (khaver) August 2012.
 //

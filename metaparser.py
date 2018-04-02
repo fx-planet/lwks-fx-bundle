@@ -139,6 +139,10 @@ def extract_comments(lines):
     return comments_found
 
 
+class ParserException(Exception):
+    pass
+
+
 def extract_metadata(path):
     filename = os.path.basename(path)
 
@@ -174,8 +178,13 @@ def extract_metadata(path):
 
     for line in lines:
         for parser in parsers:
-            if parser(metadata, line):
-                break
+            try:
+                if parser(metadata, line):
+                    break
+            except Exception as ex:
+                raise ParserException(
+                    'Cannot parse metadata from file `%s` in line:\n'
+                    '%s\n%s' % (path, line, ex))
 
     return metadata
 

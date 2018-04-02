@@ -1,3 +1,4 @@
+// @Maintainer jwrl
 // @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // User effect Wx_CnrSqueeze.fx

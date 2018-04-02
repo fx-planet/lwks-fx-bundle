@@ -1,3 +1,4 @@
+// @Maintainer jwrl
 // @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect light_ray_keys.fx

@@ -1,3 +1,4 @@
+// @Maintainer jwrl
 // @ReleaseDate 2018-03-31
 //--------------------------------------------------------------//
 // Dx_Spin.fx written by LW user jwrl 15 February 2016.

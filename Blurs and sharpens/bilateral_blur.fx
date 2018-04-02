@@ -1,3 +1,4 @@
+// @Maintainer jwrl
 // @ReleaseDate 2018-03-31
 //bilateral based on:
 //Antitorgo's avishader 0.42 filter

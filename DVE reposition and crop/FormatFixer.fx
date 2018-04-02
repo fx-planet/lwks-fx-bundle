@@ -2,6 +2,8 @@
 // Lightworks user effect FormatFixer.fx
 //
 // Created by LW user jwrl 9 May 2017.
+// @Author: jwrl
+// @CreationDate: "9 May 2017"
 //
 // This effect is designed to be a very straightforward
 // portrait to landscape rotator/180 degree rotator.  This it

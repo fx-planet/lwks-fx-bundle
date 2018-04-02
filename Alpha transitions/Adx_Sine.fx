@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Sine.fx
 // Created by LW user jwrl 30 October 2017
+// @Author: jwrl
+// @CreationDate: "30 October 2017"
 //
 // This is an alpha dissolve/wipe that uses sine distortion to
 // perform a left - right or right - left transition between

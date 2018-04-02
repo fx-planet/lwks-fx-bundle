@@ -2,6 +2,8 @@
 // Lightworks user effect Adx_Scurve.fx
 //
 // Created by LW user jwrl 19 May 2017.
+// @Author: jwrl
+// @CreationDate: "19 May 2017"
 // Renamed from S_mix.fx by jwrl 8 August 2017 for consistency
 // of name through the alpha dissolve range.
 //

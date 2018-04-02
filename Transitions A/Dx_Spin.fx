@@ -1,5 +1,7 @@
 //--------------------------------------------------------------//
 // Dx_Spin.fx written by LW user jwrl 15 February 2016.
+// @Author: jwrl
+// @CreationDate: "15 February 2016"
 //
 // This effect performs a transition between two sources,
 // During the process it also applies a rotational blur, the

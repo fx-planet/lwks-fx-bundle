@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect Wx_Twister.fx
 // Created by LW user jwrl 8 November 2017
+// @Author: jwrl
+// @CreationDate: "8 November 2017"
 //
 // This is a dissolve/wipe that uses sine & cos distortions to
 // perform a rippling twist to transition between two images.

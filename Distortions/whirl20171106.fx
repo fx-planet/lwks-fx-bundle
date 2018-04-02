@@ -2,6 +2,8 @@
 // Lightworks user effect
 //
 // Created by LW user schrauber  06 November 2017
+// @Author: schrauber
+// @CreationDate: "06 November 2017"
 // 
 //--------------------------------------------------------------//
 

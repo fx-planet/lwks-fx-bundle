@@ -2,6 +2,8 @@
 // Lightworks user Dx_Blocks.fx
 //
 // Written by LW user jwrl January 2016
+// @Author: jwrl
+// @CreationDate: "January 2016"
 //
 // This effect starts off by building blocks from the outgoing
 // image for the first third of the effect, then dissolves to

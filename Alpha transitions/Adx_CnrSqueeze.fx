@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // User effect aDx_CnrSqueeze.fx
 // Created by jwrl 27 October 2017.
+// @Author: jwrl
+// @CreationDate: "27 October 2017"
 //
 // This is similar to the corner squeeze effect, customised to
 // suit its use with alpha effects.

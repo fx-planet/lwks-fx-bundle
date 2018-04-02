@@ -2,6 +2,8 @@
 // Lightworks user effect Channels.fx
 //
 // Created by LW user jwrl 20 December 2015
+// @Author: jwrl
+// @CreationDate: "20 December 2015"
 // This effect can show individual RGB channels and a range
 // of other video components.
 //

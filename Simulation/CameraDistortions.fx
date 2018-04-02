@@ -2,6 +2,8 @@
 // Lightworks user effect CameraDistortions.fx
 //
 // Created by LW user jwrl 12 March 2016
+// @Author: jwrl
+// @CreationDate: "12 March 2016"
 //
 // This effect was suggested by CubicLensDistortion.fx by
 // Lightworks user brdloush.  This implementation is my own,

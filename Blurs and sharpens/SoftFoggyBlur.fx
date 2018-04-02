@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect SoftFoggyBlur.fx
 // Created by LW user jwrl 6 July 2017.
+// @Author: jwrl
+// @CreationDate: "6 July 2017"
 //
 // This blur effect mimics the classic "petroleum jelly on the
 // lens" look.  It does this by combining a radial and a spin

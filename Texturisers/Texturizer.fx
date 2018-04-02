@@ -2,6 +2,8 @@
 // Lightworks effect Texturizer.fx
 //
 // Created by Lightworks user jwrl 22 April 2016.
+// @Author: jwrl
+// @CreationDate: "22 April 2016"
 //
 // This effect is designed to modulate the input with a texture
 // from an external piece of art.  The texture may be coloured

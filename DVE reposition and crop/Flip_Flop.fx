@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect Flip_Flop.fx
 // Rewritten by LW user jwrl 14 March 2018
+// @Author: jwrl
+// @CreationDate: "14 March 2018"
 //
 // This is a complete rewrite of this effect. It emulates a
 // similar effect in other NLEs.  The uncanny resemblance to

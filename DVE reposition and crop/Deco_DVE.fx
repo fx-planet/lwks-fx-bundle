@@ -2,6 +2,8 @@
 // Lightworks user effect Deco_DVE.fx
 //
 // Created by LW user jwrl 27 April 2017
+// @Author: jwrl
+// @CreationDate: "27 April 2017"
 //
 // This is an Art Deco take on the classic DVE effect.  It
 // produces two independently adjustable borders around the

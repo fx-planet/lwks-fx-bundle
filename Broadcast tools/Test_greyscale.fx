@@ -1,5 +1,7 @@
 //--------------------------------------------------------------//
 // GreyscaleTest.fx written by jwrl 1 April 2017.
+// @Author: jwrl
+// @CreationDate: "1 April 2017"
 //
 // Inspired by an earlier version, this is a complete rewrite
 // from the ground up.  There are a total of ten unique

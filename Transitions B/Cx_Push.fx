@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // User effect Cx_Push.fx
 // Created by jwrl 25 August 2017.
+// @Author: jwrl
+// @CreationDate: "25 August 2017"
 //
 // This mimics Editshare's push effect, but is customised
 // to suit use with three or four-layer keying operations

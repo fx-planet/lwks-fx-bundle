@@ -2,6 +2,8 @@
 // Lightworks user effect Adx_Fractals.fx
 //
 // Created by LW user jwrl 24 May 2016
+// @Author: jwrl
+// @CreationDate: "24 May 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaFractalMix.fx by jwrl 8 August 2017 for
 // name consistency through alpha dissolve range.

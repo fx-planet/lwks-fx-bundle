@@ -2,6 +2,8 @@
 // Lightworks effect DropShadow.fx
 //
 // Created by Lightworks user jwrl 31 March 2016.
+// @Author: jwrl
+// @CreationDate: "31 March 2016"
 //
 // This effect is a drop shadow and border generator.  It has
 // drop shadow blur, and independent colour settings for border

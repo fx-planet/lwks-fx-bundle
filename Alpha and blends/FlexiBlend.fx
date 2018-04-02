@@ -2,6 +2,8 @@
 // Lightworks user effect FlexiBlend.fx
 //
 // Created by LW user jwrl 23 December 2017
+// @Author: jwrl
+// @CreationDate: "23 December 2017"
 //
 // This is a simple blend utility with the ability to adjust
 // the position, size and rotation of the image being matted

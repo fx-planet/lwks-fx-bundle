@@ -2,6 +2,8 @@
 // Lightworks user effect Dx_Non_Add.fx
 //
 // Created by LW user jwrl 8 March 2018
+// @Author: jwrl
+// @CreationDate: "8 March 2018"
 //
 // This effect emulates the classic analog vision mixer non-add
 // mix.  This version replaces the 3 January 2017 version.  The

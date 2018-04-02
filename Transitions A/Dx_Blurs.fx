@@ -2,6 +2,8 @@
 // Lightworks user effect Dx_Blurs.fx
 //
 // Written by LW user jwrl October 2015
+// @Author: jwrl
+// @CreationDate: "October 2015"
 //
 // This effect performs a transition between two sources,
 // During the process it also applies a directional blur,

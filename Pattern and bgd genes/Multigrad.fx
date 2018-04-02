@@ -2,6 +2,8 @@
 // Lightworks user effect Multigrad.fx
 //
 // Written by LW user jwrl 31 July 2016
+// @Author: jwrl
+// @CreationDate: "31 July 2016"
 //
 // This creates a colour field which can be set up to be just
 // a flat colour or a wide range of gradients.  If the gradient

@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // User effect Cx_Split.fx
 // Created by jwrl 25 August 2017.
+// @Author: jwrl
+// @CreationDate: "25 August 2017"
 //
 // This is really the classic barn door effect, but since a
 // wipe with that name already exists in Lightworks another

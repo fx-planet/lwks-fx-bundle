@@ -2,6 +2,8 @@
 // Lightworks user effect SimpleCrop.fx
 //
 // Created by LW user jwrl 23 March 2017.
+// @Author: jwrl
+// @CreationDate: "23 March 2017"
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo

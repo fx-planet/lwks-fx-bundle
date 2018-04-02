@@ -2,6 +2,8 @@
 // Lightworks user effect DropShadowPlus.fx
 //
 // Created by LW user jwrl 1 April 2016.
+// @Author: jwrl
+// @CreationDate: "1 April 2016"
 //
 // Moved alpha export to its own independent setting
 // Rewrote several blend modes

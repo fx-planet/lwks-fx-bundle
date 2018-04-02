@@ -2,6 +2,8 @@
 // Lightworks user effect Octagonal_Vignette.fx
 //
 // Created by LW user jwrl 5 August 2016.
+// @Author: jwrl
+// @CreationDate: "5 August 2016"
 //  LW 14+ version by jwrl 11 February 2017
 //  Category "Masks" is no longer defined in 14+, so category
 //  "DVEs" has been used with the subcategory "Crop Presets".

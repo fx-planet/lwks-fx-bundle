@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // User effect Cx_CnrSqueeze.fx
 // Created by jwrl 26 August 2017.
+// @Author: jwrl
+// @CreationDate: "26 August 2017"
 //
 // This is similar to the corner squeeze effect, customised to
 // suit its use with three or four-layer keying operations and

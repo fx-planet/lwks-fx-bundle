@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect LumakeyDVE.fx
 // Created by LW user jwrl 20 March 2018.
+// @Author: jwrl
+// @CreationDate: "20 March 2018"
 //
 // This keyer uses an algorithm derived from the Editshare
 // lumakey effect, but this implementation is entirely my

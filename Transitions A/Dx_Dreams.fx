@@ -2,6 +2,8 @@
 // Lightworks user effect Dx_Dreams.fx
 //
 // Written by LW user jwrl November 2015
+// @Author: jwrl
+// @CreationDate: "November 2015"
 //
 // This effect starts off by rippling the outgoing image for
 // the first third of the effect, then dissolves to the new

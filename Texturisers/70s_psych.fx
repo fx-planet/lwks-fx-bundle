@@ -2,6 +2,8 @@
 // Lightworks user effect 70s_psych.fx
 //
 // Created by LW user jwrl 11 May 2016
+// @Author: jwrl
+// @CreationDate: "11 May 2016"
 //
 // This is an entirely original effect, but feel free to do
 // what you will with it.

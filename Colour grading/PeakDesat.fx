@@ -2,6 +2,8 @@
 // Lightworks user effect PeakDesat.fx
 //
 // Created by LW user jwrl 6 April 2016.
+// @Author: jwrl
+// @CreationDate: "6 April 2016"
 //
 // This is a tool designed to quickly and easily desaturate
 // whites and blacks, which can easily become contaminated

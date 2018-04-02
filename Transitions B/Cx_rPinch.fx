@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect Cx_rPinch.fx
 // Created by LW user jwrl 9 September 2017.
+// @Author: jwrl
+// @CreationDate: "9 September 2017"
 //
 // This effect pinches the outgoing video to a user-defined
 // point to reveal the incoming shot.  It can also reverse the

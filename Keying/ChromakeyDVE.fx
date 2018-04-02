@@ -1,5 +1,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromakeyDVE.fx - Created by LW user jwrl 20 March 2018.
+// @Author: jwrl
+// @CreationDate: "20 March 2018"
 //
 // This effect is customised version of Editshare's Chromakey effect with cropping and
 // simple DVE adjustments added.  The ChromaKey sections are copyright (c) EditShare EMEA.

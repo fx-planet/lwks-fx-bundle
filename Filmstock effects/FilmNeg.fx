@@ -2,6 +2,8 @@
 // Lightworks user effect FilmNeg.fx
 //
 // Created by LW user jwrl 14 May 2016.
+// @Author: jwrl
+// @CreationDate: "14 May 2016"
 //
 // This simulates the look of 35 mm masked film negative.
 //

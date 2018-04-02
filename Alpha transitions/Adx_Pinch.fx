@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Pinch.fx
 // Created by jwrl 27 October 2017.
+// @Author: jwrl
+// @CreationDate: "27 October 2017"
 //
 // This effect pinches the outgoing video to a user-defined
 // point to reveal the incoming shot.  It can also reverse the

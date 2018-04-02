@@ -2,6 +2,8 @@
 // Lightworks user effect
 //
 // Created by LW user schrauber  13 November 2017
+// @Author: schrauber
+// @CreationDate: "13 November 2017"
 //
 // 
 // Phase of the transition effect:

@@ -2,6 +2,8 @@
 // Lightworks user effect Adx_Bars.fx
 //
 // Created by LW user jwrl 10 June 2016
+// @Author: jwrl
+// @CreationDate: "10 June 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaBarMix.fx by jwrl 8 August 2017 for name
 // consistency through alpha dissolve range.

@@ -2,6 +2,8 @@
 // Lightworks user effect NightVision.fx
 //
 // Created by LW user jwrl 16 April 2016
+// @Author: jwrl
+// @CreationDate: "16 April 2016"
 // Updated by LW user jwrl 30 August 2016.
 //
 // The blur and glow engines in this version of the effect are

@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_PinchX.fx
 // Created by LW user jwrl 28 October 2017.
+// @Author: jwrl
+// @CreationDate: "28 October 2017"
 //
 // This effect pinches the outgoing title to a point to clear
 // the background shot, while zooming out of the pinched title.

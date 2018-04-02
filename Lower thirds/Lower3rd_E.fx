@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3rd_E.fx
 // Created by LW user jwrl 15 March 2018
+// @Author: jwrl
+// @CreationDate: "15 March 2018"
 //
 // This effect does a page turn type of text overlay over a
 // standard ribbon with adjustable opacity.  The direction of

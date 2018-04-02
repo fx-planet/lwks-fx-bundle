@@ -2,6 +2,8 @@
 // Lightworks user effect Adx_Strips.fx
 //
 // Created by LW user jwrl 3 July 2016
+// @Author: jwrl
+// @CreationDate: "3 July 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaStripMix.fx by jwrl 8 August 2017 for
 // name consistency through the alpha dissolve range.

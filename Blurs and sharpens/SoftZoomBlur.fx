@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect SoftZoomBlur.fx
 // Created by LW user jwrl 6 July 2017.
+// @Author: jwrl
+// @CreationDate: "6 July 2017"
 //
 // This blur effect is similar to the Lightworks radial blur
 // effect, but is very much softer in the result that it can

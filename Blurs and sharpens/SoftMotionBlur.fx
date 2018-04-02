@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect SoftMotionBlur.fx
 // Created by LW user jwrl 6 July 2017.
+// @Author: jwrl
+// @CreationDate: "6 July 2017"
 //
 // This blur is actually a simple directional blur.
 //--------------------------------------------------------------//

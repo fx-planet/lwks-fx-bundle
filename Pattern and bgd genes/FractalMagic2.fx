@@ -2,6 +2,8 @@
 // Lightworks user effect FractalMagic2.fx
 //
 // Created by LW user jwrl 14 May 2016.
+// @Author: jwrl
+// @CreationDate: "14 May 2016"
 //  LW 14+ version by jwrl 12 February 2017
 //  SubCategory "Patterns" added.
 //

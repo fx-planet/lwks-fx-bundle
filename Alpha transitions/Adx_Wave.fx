@@ -2,6 +2,8 @@
 // Lightworks user effect Adx_Wave.fx
 //
 // Created by LW user jwrl 2 July 2016
+// @Author: jwrl
+// @CreationDate: "2 July 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaWaveMix.fx by jwrl 8 August 2017 for
 // name consistency through the alpha dissolve range.

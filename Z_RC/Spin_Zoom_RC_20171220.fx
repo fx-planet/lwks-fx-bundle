@@ -1,6 +1,8 @@
 //--------------------------------------------------------------//
 // Lightworks user effect
 // Created by LW user schrauber 22 October 2017
+// @Author: schrauber
+// @CreationDate: "22 October 2017"
 // 20 December 2017: 
 //    - Fixed missing brackets added to the revolution calculation
 //    - Fixed unclear parameter setting (rotation center)

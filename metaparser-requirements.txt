@@ -1,2 +1,3 @@
 dsm
 python-dateutil
+pyquery

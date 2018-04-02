@@ -9,12 +9,13 @@ import argparse
 import datetime
 import json
 import sys
+import pyquery
 
 import dsm
 
 from dateutil.parser import parse
 
-metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s+("([^"]+)"|([^\s]+))')
+metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s+("([^"]+)"|(.+)$)')
 category_re = re.compile(r'^\s*string\s*Category\s*=\s*"([^"]+)"')
 subcategory_re = re.compile(r'^\s*string\s*SubCategory\s*=\s*"([^"]+)"')
 description_re = re.compile(r'^\s*string\s*Description\s*=\s*"([^"]+)"')
@@ -41,7 +42,8 @@ def date_attr(value):
 
 
 def url_attr(value):
-    return value
+    pq = pyquery.PyQuery(value)
+    return pq('a').attr('href') or value
 
 
 def one(parser):
@@ -59,7 +61,7 @@ def multiple(parser):
 
 SUPPORTED_ATTRS = {
         'author': multiple(string_attr),
-        'see': multiple(string_attr),
+        'see': multiple(url_attr),
         'version': one(string_attr),
         'maintainer': multiple(string_attr),
         'name': one(string_attr),

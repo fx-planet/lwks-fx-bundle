@@ -14,7 +14,7 @@ import dsm
 
 from dateutil.parser import parse
 
-metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s*:\s*"?([^"^\s]+)"?')
+metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s*:\s*("([^"]+)"|([^\s]+))')
 category_re = re.compile(r'^\s*string\s*Category\s*=\s*"([^"]+)"')
 subcategory_re = re.compile(r'^\s*string\s*SubCategory\s*=\s*"([^"]+)"')
 description_re = re.compile(r'^\s*string\s*Description\s*=\s*"([^"]+)"')
@@ -76,7 +76,7 @@ def readlines(path):
 def metadata_parser(metadata, line):
     result = metatag_re.findall(line)
     if result:
-        attr, value = result[0]
+        attr, value = result[0][0], (result[0][2] or result[0][3])
         attr = attr.strip().lower()
         try:
             updater = SUPPORTED_ATTRS[attr]
@@ -139,6 +139,23 @@ def extract_comments(lines):
     return comments_found
 
 
+def extract_lwksinfo_lines(lines):
+    to_analyse = []
+    lwksinfo = False
+    end_of_block_re = re.compile('>[^;]')
+
+    for line in lines:
+        if '_LwksEffectInfo' in line:
+            lwksinfo = True
+        if lwksinfo:
+            to_analyse.append(line)
+            if end_of_block_re.match(line):
+                lwksinfo = False
+                break
+
+    return to_analyse
+
+
 class ParserException(Exception):
     pass
 
@@ -153,9 +170,6 @@ def extract_metadata(path):
 
     parsers = (
             metadata_parser,
-            simple_regexp_parser_factory('category', category_re),
-            simple_regexp_parser_factory('subcategory', subcategory_re),
-            simple_regexp_parser_factory('name', description_re),
             )
 
     lines = readlines(path)
@@ -164,10 +178,22 @@ def extract_metadata(path):
     comments = extract_comments(lines)
     description = '\n'.join(comments)
 
+    lwksinfo = extract_lwksinfo_lines(lines)
+    lwksinfo_parsers = (
+        simple_regexp_parser_factory('category', category_re),
+        simple_regexp_parser_factory('subcategory', subcategory_re),
+        simple_regexp_parser_factory('name', description_re),
+        )
+
+    for line in lwksinfo:
+        for parser in lwksinfo_parsers:
+            if parser(metadata, line):
+                break
+
     def is_not_comment_line(x):
         return not (x.startswith('---') and (
                 x.endswith('-//') or x.endswith('---'))) or (
-            x.startswith('//') and x.endswith('//'))
+            x.startswith('//') and x.endswith('//')) or metatag_re.match(x)
 
     # strip out comment-like lines from description
     description = '\n'.join(

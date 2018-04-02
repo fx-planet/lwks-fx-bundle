@@ -385,12 +385,17 @@ with JSON output describing metadata for all files found.
 
 Supported meta attributes:
 
-  - `Author`: name of the author (one)
+  - `Author`: name of the author (multiple)
   - `Maintainer`: name of the maintainer (multiple)
+  - `CreationDate`: date of the first release (one)
   - `ReleaseDate`: date of the release (one)
+  - `Version`: actual version (one)
   - `License`': license name (one)
   - `Video`: URL of related video (multiple)
   - `Picture`: URL of screenshot (multiple)
+  - `See`: an URL to related resource of any type (multiple)
+  - `Name`: name of the effect (one); provide only when
+    `_LwksEffectInfo` is missing or contains no description
 
 Category, subcategory and effect name are taken from `_LwksEffectInfo`
 section automatically.

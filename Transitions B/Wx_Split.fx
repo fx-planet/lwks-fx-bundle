@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // User effect Wx_Split.fx
 // Created by jwrl 24 August 2017.
 // @Author jwrl
-// @CreationDate "24 August 2017"
+// @Created "24 August 2017"
 //
 // This is really the classic barn door effect, but since a
 // wipe with that name already exists in Lightworks another

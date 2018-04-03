@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author khaver
-// @CreationDate "December 2013"
+// @Created "December 2013"
 //--------------------------------------------------------------//
 // WarpedStretch.fx created by Gary Hango (khaver) December 2013.
 //

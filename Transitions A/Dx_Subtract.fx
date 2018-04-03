@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Dx_Subtract.fx
 //
 // Written by LW user jwrl 11 May 2017.
 // @Author jwrl
-// @CreationDate "11 May 2017"
+// @Created "11 May 2017"
 //
 // This is an inverted non-additive mix.  The incoming video is
 // faded from white to normal value at the 50% point, at which

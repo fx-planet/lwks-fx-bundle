@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author khaver
-// @CreationDate "February 2013"
+// @Created "February 2013"
 //--------------------------------------------------------------//
 // Header
 //

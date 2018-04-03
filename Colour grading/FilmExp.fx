@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @OriginalAuthor abelmilanes
 // @Author jwrl
-// @CreationDate "4 March 2017"
+// @Created "4 March 2017"
 // @See https://www.lwks.com/media/kunena/attachments/6375/FilmExp_2.png
 //--------------------------------------------------------------//
 // FilmExp.fx was started by user abelmilanes as FilmFx.fx in

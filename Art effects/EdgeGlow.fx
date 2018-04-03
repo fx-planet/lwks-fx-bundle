@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect EdgeGlow.fx
 //
 // Created by LW user jwrl 30 June 2016.
 // @Author jwrl
-// @CreationDate "30 June 2016"
+// @Created "30 June 2016"
 //
 // This is an effect that can use image levels or the edges of
 // the image to produce a glow effect.  The resulting glow can

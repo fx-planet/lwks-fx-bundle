@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author gr00by
 // @OriginalAuthor "Mark Ransom"
 // @See https://www.lwks.com/media/kunena/attachments/6375/HueAdjust_2.png

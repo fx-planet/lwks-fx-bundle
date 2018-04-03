@@ -403,8 +403,8 @@ Supported meta attributes:
 
   - `author`: name of the author (multiple)
   - `maintainer`: name of the maintainer (multiple)
-  - `creationdate`: date of the first release (one)
-  - `releasedate`: date of the release (one)
+  - `created`: date of the first release (one)
+  - `released`: date of the release (one)
   - `version`: actual version (one)
   - `license`': license name (one)
   - `see`: an URL to related resource of any type (multiple); can be

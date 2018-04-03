@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @See https://www.lwks.com/media/kunena/attachments/6375/Swirl_mix_4.png
 //--------------------------------------------------------------//
 // Lightworks user effect
 //
 // Created by LW user schrauber  13 November 2017
 // @Author schrauber
-// @CreationDate "13 November 2017"
+// @Created "13 November 2017"
 //
 // 
 // Phase of the transition effect:

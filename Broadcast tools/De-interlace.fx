@@ -1,9 +1,9 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // De-interlace.fx written by jwrl March 14 2017.
 // @Author jwrl
-// @CreationDate "March 14 2017"
+// @Created "March 14 2017"
 //
 // A fourth try at a de-interlace tool, still doing it the way
 // that avoids Lightworks' pixel height bug.  It provides seven

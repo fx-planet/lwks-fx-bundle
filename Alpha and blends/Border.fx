@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author rhinox202
-// @CreationDate 11/21/2012
+// @Created 11/21/2012
 //--------------------------------------------------------------//
 // Border Effect by rhinox202
 // First Attempt - 11/21/2012

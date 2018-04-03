@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // User effect aDx_Corners.fx
 // Created by jwrl 27 October 2017.
 // @Author jwrl
-// @CreationDate "27 October 2017"
+// @Created "27 October 2017"
 //
 // This is a four-way split which moves the image to or from
 // the corners of the frame.  It has been adapted for use

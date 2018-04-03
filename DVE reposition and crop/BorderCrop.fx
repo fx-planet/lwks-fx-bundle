@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect BorderCrop.fx
 //
 // Created by LW user jwrl 3 May 2017
 // @Author jwrl
-// @CreationDate "3 May 2017"
+// @Created "3 May 2017"
 //
 // This started out to be a revised SimpleCrop.fx, but since
 // it adds a feathered, coloured border and a soft drop shadow

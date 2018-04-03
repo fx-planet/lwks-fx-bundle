@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks effect Dx_Transmogrify.fx
 //
 // Created by Lightworks user jwrl 10 May 2016.
 // @Author jwrl
-// @CreationDate "10 May 2016"
+// @Created "10 May 2016"
 //
 // This is is a truly bizarre transition.  Sort of a stripy
 // blurry dissolve, I guess.

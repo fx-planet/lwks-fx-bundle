@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks effect Dx_Chinagraph.fx
 //
 // Created by Lightworks user jwrl 1 March 2017.
 // @Author jwrl
-// @CreationDate "1 March 2017"
+// @Created "1 March 2017"
 //
 // This effect simulates the chinagraph marks used by film
 // editors to mark up optical effects on film rushes.

@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect FractalMagic1.fx
 //
 // Created by LW user jwrl 14 May 2016.
 // @Author jwrl
-// @CreationDate "14 May 2016"
+// @Created "14 May 2016"
 //  LW 14+ version by jwrl 12 February 2017
 //  Category changed from "Generators" to "Mattes"
 //  SubCategory "Patterns" added.

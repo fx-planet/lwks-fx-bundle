@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author jwrl
-// @CreationDate "5 June 2016"
+// @Created "5 June 2016"
 //--------------------------------------------------------------//
 // TwoAxisVector.fx by Lightworks user jwrl 5 June 2016
 //

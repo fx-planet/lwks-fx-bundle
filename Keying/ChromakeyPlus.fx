@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect ChromakeyPlus.fx
 // Created by LW user jwrl 8 September 2016.
 // @Author jwrl
-// @CreationDate "8 September 2016"
+// @Created "8 September 2016"
 //
 // This is a combination chromakeyer and alpha cleanup tool to
 // be used on problem keys.  Since it needs a powerful GPU it

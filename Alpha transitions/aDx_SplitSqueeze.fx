@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // User effect aDx_SplitSqueeze.fx
 // Created by jwrl 26 October 2017.
 // @Author jwrl
-// @CreationDate "26 October 2017"
+// @Created "26 October 2017"
 //
 // This is similar to the split squeeze effect, customised to
 // suit its use with alpha channels.

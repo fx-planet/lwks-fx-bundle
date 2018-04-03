@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // User effect Wx_SplitSqueeze.fx
 // Created by jwrl 25 August 2017.
 // @Author jwrl
-// @CreationDate "25 August 2017"
+// @Created "25 August 2017"
 //
 // This is based on the barn door split effect, modified to
 // squeeze or expand the divided section of the frame.

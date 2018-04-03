@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author jwrl
-// @CreationDate "5 February 2017"
+// @Created "5 February 2017"
 //--------------------------------------------------------------//
 // ColourFilmAge.fx by Lightworks user jwrl 5 February 2017
 //

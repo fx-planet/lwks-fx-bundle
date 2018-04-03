@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Adx_Colour.fx
 //
 // Created by LW user jwrl 28 May 2016
 // @Author jwrl
-// @CreationDate "28 May 2016"
+// @Created "28 May 2016"
 //  LW 14+ version by jwrl 19 May 2017
 // Renamed from AlphaColourMix.fx by jwrl 8 August 2017 for
 // name consistency through alpha dissolve range.

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------
 // From Schrauber revised for transitions.
 // The transition effect is based on baopao's (and/or nouanda?)  "Kaleido".

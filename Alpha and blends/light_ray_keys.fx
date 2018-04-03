@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect light_ray_keys.fx
 //
 // Created by LW user jwrl 4 March 2016.
 // @Author jwrl
-// @CreationDate "4 March 2016"
+// @Created "4 March 2016"
 //  LW 14+ version by jwrl 11 January 2017
 //  Subcategory "Edge Effects" added.
 //

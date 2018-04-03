@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author khaver
-// @CreationDate "January 2012"
+// @Created "January 2012"
 //--------------------------------------------------------------//
 // ZoomBlur.fx created by Gary Hango (khaver) January 2012.
 //

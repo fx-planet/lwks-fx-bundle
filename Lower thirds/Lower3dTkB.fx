@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3dTkB.fx
 // Created by LW user jwrl 15 March 2018
 // @Author jwrl
-// @CreationDate "15 March 2018"
+// @Created "15 March 2018"
 //
 // This is a general purpose toolkit designed to build lower
 // thirds.  It's designed to create an edged, coloured ribbon

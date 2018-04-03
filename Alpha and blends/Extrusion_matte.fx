@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Extrusion_matte.fx
 //
 // Created by LW user jwrl 2 April 2016.
 // @Author jwrl
-// @CreationDate "2 April 2016"
+// @Created "2 April 2016"
 //  LW 14+ version by jwrl 11 January 2017
 //  Subcategory "Edge Effects" added.
 //

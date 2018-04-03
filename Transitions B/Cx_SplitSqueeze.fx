@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // User effect Cx_SplitSqueeze.fx
 // Created by jwrl 25 August 2017.
 // @Author jwrl
-// @CreationDate "25 August 2017"
+// @Created "25 August 2017"
 //
 // This is similar to the split squeeze effect, customised to
 // suit its use with three or four-layer keying operations and

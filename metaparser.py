@@ -80,8 +80,8 @@ SUPPORTED_ATTRS = {
         'maintainer': multiple(string_attr),
         'name': one(string_attr),
         'license': one(string_attr),
-        'releasedate': one(date_attr),
-        'creationdate': one(date_attr),
+        'released': one(date_attr),
+        'created': one(date_attr),
         }
 
 

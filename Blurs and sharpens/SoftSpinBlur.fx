@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect SoftSpinBlur.fx
 // Created by LW user jwrl 1 July 2017.
 // @Author jwrl
-// @CreationDate "1 July 2017"
+// @Created "1 July 2017"
 //
 // The impetus to develop this spin blur effect was triggered
 // by windsturm's effect, FxSpinBlur.  Since this was written

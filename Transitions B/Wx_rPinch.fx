@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Wx_rPinch.fx
 // Created by LW user jwrl 9 September 2017.
 // @Author jwrl
-// @CreationDate "9 September 2017"
+// @Created "9 September 2017"
 //
 // This effect pinches the outgoing video to a user-defined
 // point to reveal the incoming shot.  It can also reverse the

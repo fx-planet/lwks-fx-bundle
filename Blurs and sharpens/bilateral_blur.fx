@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //bilateral based on:
 //Antitorgo's avishader 0.42 filter
 //http://www.blosser.org/d9/dlAviShader042.rar

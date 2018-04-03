@@ -1,9 +1,9 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Antialias.fx written by jwrl May 9 2016.
 // @Author jwrl
-// @CreationDate "May 9 2016"
+// @Created "May 9 2016"
 //
 // A two pass rotary anti-alias tool that samples first at 6
 // degree intervals then at 7.5 degree intervals using

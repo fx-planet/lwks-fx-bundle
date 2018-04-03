@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author gr00by
 // @OriginalAuthor "EditShare EMEA"
-// @CreationDate "26 November 2016"
+// @Created "26 November 2016"
 // @See https://www.lwks.com/media/kunena/attachments/6375/vicrop2.png
 //--------------------------------------------------------------//
 // VisualCrop by gr00by

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 //
 // Description : Array and textureless GLSL 3D simplex noise function.

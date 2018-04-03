@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @See https://www.lwks.com/media/kunena/attachments/348533/Temp20171022-02.JPG
 //--------------------------------------------------------------//
 // Lightworks user effect Spin_Zoom_20171022
 //
 // Created by LW user schrauber 22 October 2017
 // @Author schrauber
-// @CreationDate "22 October 2017"
+// @Created "22 October 2017"
 // 
 // The rotation code is based on the spin-dissolve effects of the user "jwrl".
 // The zoom code is based on the zoom out, zoom in effect of the user "schrauber".

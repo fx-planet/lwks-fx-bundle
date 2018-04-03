@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author msi
-// @CreationDate 2011
+// @Created 2011
 // @License "CC BY-NC-SA"
 // ---------------------------------------------------------
 // Vintage look, 2011 msi.

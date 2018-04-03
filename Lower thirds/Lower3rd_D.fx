@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3rd_D.fx
 // Created by LW user jwrl 15 March 2018
 // @Author jwrl
-// @CreationDate "15 March 2018"
+// @Created "15 March 2018"
 //
 // This effect pushes a text block on from the edge of frame
 // to reveal the lower third text.  The block has a coloured

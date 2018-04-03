@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect DVE_vignette.fx
 //
 // Created by LW user jwrl 28 May 2017.
 // @Author jwrl
-// @CreationDate "28 May 2017"
+// @Created "28 May 2017"
 //
 // This effect is a simple 2D DVE with the ability to apply a
 // circular, square or diamond shaped mask.  The foreground

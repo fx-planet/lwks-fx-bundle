@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Acidulate.fx
 //
 // Created by LW user jwrl 14 May 2016
 // @Author jwrl
-// @CreationDate "14 May 2016"
+// @Created "14 May 2016"
 //
 // I was going to call this LSD, but this name will do.
 //

@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // mattekey.fx
 //
 // Created by Lightworks user jwrl 29 February 2016
 // @Author jwrl
-// @CreationDate "29 February 2016"
+// @Created "29 February 2016"
 //
 // This provides a means of matting a foreground image into a
 // background using a white on black or black on white matte

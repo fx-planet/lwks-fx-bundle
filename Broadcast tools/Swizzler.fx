@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Swizzler.fx
 //
 // Created by LW user jwrl 19 October 2017
 // @Author jwrl
-// @CreationDate "19 October 2017"
+// @Created "19 October 2017"
 //
 // This "swizzles" the RGB channels to correct for bad channel
 // assignments

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Header
 //
@@ -9,7 +9,7 @@
 //
 // This shader written by Gary Hango (khaver) February 2013
 // @Author khaver
-// @CreationDate "01 February 2013"
+// @Created "01 February 2013"
 //
 // This cross platform conversion by jwrl April 28 2016.
 //

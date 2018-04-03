@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect SimpleMatte.fx
 //
 // Created by LW user jwrl 20 January 2018.
 // @Author jwrl
-// @CreationDate "20 January 2018"
+// @Created "20 January 2018"
 //
 // Just a simple crop and matte effect.  There is no bordering
 // or feathering of the edges and the background matte is just

@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Lower3rd_B.fx
 // Created by LW user jwrl 15 March 2018
 // @Author jwrl
-// @CreationDate "15 March 2018"
+// @Created "15 March 2018"
 //
 // This effect consists of a line with an attached bar.  The
 // bar can be locked at either end of the line or made to move

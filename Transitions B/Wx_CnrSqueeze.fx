@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // User effect Wx_CnrSqueeze.fx
 // Created by jwrl 26 August 2017.
 // @Author jwrl
-// @CreationDate "26 August 2017"
+// @Created "26 August 2017"
 //
 // This is based on the corner wipe effect, modified to squeeze
 // or expand the divided section of the frame.

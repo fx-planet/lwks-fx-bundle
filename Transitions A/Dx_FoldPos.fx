@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 //--------------------------------------------------------------//
 // Lightworks user effect Dx_FoldPos.fx
 //
 // Created by LW user jwrl 8 March 2018
 // @Author jwrl
-// @CreationDate "8 March 2018"
+// @Created "8 March 2018"
 //
 // This transitions by adding one input to the other.  The
 // result is then folded.

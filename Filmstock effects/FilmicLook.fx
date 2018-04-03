@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author jwrl
-// @CreationDate "19 March 2017"
+// @Created "19 March 2017"
 //--------------------------------------------------------------//
 // Lightworks user effect FilmicLook.fx
 //

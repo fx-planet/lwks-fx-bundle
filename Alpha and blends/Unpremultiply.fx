@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @Author unknown
 //--------------------------------------------------------------
 // alpha unpremultiply  

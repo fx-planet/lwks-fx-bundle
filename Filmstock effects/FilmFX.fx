@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @ReleaseDate 2018-03-31
+// @Released 2018-03-31
 // @OriginalAuthor "Avery Lee"
 // @Author jwrl
-// @CreationDate "8 May 2017"
+// @Created "8 May 2017"
 //--------------------------------------------------------------//
 // Source credit:
 // http://www.loadusfx.net/virtualdub/filmfxguide.htm

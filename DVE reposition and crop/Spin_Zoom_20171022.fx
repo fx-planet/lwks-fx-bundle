@@ -1,5 +1,6 @@
 // @Maintainer jwrl
 // @ReleaseDate 2018-03-31
+// @See https://www.lwks.com/media/kunena/attachments/348533/Temp20171022-02.JPG
 //--------------------------------------------------------------//
 // Lightworks user effect Spin_Zoom_20171022
 //

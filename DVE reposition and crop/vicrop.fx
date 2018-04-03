@@ -3,6 +3,7 @@
 // @Author gr00by
 // @OriginalAuthor "EditShare EMEA"
 // @CreationDate "26 November 2016"
+// @See https://www.lwks.com/media/kunena/attachments/6375/vicrop2.png
 //--------------------------------------------------------------//
 // VisualCrop by gr00by
 // based on DVE.fx created by EditShare

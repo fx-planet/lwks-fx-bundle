@@ -383,19 +383,37 @@ MetaParser is a simple tool for extracting metadata from FX files.
 It expects path to the effects directory as an argument and it results
 with JSON output describing metadata for all files found.
 
+Meta attribute syntax is:
+```
+    @<attribute> <value>
+```
+or
+```
+    @<attribute> "<value>"
+```
+
+where:
+    - `<attribute>` can contain only letters and digits (`[a-zA-Z0-9]`)
+    - `<value>` can contain any character
+
+Value enclosed with double quotes will be trimmed respectively.
+Otherwise value will contain all characters up to end of line (EOL).
+
 Supported meta attributes:
 
-  - `Author`: name of the author (multiple)
-  - `Maintainer`: name of the maintainer (multiple)
-  - `CreationDate`: date of the first release (one)
-  - `ReleaseDate`: date of the release (one)
-  - `Version`: actual version (one)
-  - `License`': license name (one)
-  - `Video`: URL of related video (multiple)
-  - `Picture`: URL of screenshot (multiple)
-  - `See`: an URL to related resource of any type (multiple)
-  - `Name`: name of the effect (one); provide only when
+  - `author`: name of the author (multiple)
+  - `maintainer`: name of the maintainer (multiple)
+  - `creationdate`: date of the first release (one)
+  - `releasedate`: date of the release (one)
+  - `version`: actual version (one)
+  - `license`': license name (one)
+  - `see`: an URL to related resource of any type (multiple); can be
+    link to the screenshot, picture, video, document, webpage, etc
+  - `name`: name of the effect (one); provide only when
     `_LwksEffectInfo` is missing or contains no description
+
+_Meta attributes are case insensitive._
+
 
 Category, subcategory and effect name are taken from `_LwksEffectInfo`
 section automatically.

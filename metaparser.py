@@ -82,8 +82,6 @@ SUPPORTED_ATTRS = {
         'license': one(string_attr),
         'releasedate': one(date_attr),
         'creationdate': one(date_attr),
-        'video': multiple(url_attr),
-        'picture': multiple(url_attr),
         }
 
 

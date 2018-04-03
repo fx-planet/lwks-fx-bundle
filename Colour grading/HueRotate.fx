@@ -2,6 +2,7 @@
 // @ReleaseDate 2018-03-31
 // @Author gr00by
 // @OriginalAuthor "Mark Ransom"
+// @See https://www.lwks.com/media/kunena/attachments/6375/HueAdjust_2.png
 //--------------------------------------------------------------//
 // HueRotate.fx by Lightworks user gr00by 14 June 2016
 //

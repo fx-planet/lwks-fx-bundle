@@ -1,5 +1,6 @@
 // @Maintainer jwrl
 // @ReleaseDate 2018-03-31
+// @See https://www.lwks.com/media/kunena/attachments/6375/Swirl_mix_4.png
 //--------------------------------------------------------------//
 // Lightworks user effect
 //

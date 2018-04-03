@@ -2,6 +2,7 @@
 // @ReleaseDate 2018-03-31
 // @Author "Nicholas Carroll"
 // @CreationDate "2 May 2016"
+// @See https://www.lwks.com/media/kunena/attachments/6375/INK_2.png
 //--------------------------------------------------------------//
 // INK  proportionate colour difference keyer
 // Copyright 2016 Nicholas Carroll 

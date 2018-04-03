@@ -9,13 +9,14 @@ import argparse
 import datetime
 import json
 import sys
-import pyquery
+import bs4
 
 import dsm
 
 from dateutil.parser import parse
 
 metatag_re = re.compile(r'@([a-zA-Z0-9]+)\s+("([^"]+)"|(.+)$)')
+probably_url_re = re.compile(r'^[a-zA-Z0-9]+://')
 category_re = re.compile(r'^\s*string\s*Category\s*=\s*"([^"]+)"')
 subcategory_re = re.compile(r'^\s*string\s*SubCategory\s*=\s*"([^"]+)"')
 description_re = re.compile(r'^\s*string\s*Description\s*=\s*"([^"]+)"')
@@ -42,8 +43,21 @@ def date_attr(value):
 
 
 def url_attr(value):
-    pq = pyquery.PyQuery(value)
-    return pq('a').attr('href') or value
+    if not value:
+        return
+
+    value = value.strip()
+
+    if probably_url_re.match(value):
+        return value
+
+    doc = bs4.BeautifulSoup(value, 'lxml')
+    try:
+        anchor = doc.select('a')[0]
+    except IndexError:
+        return value
+    else:
+        return anchor.attrs.get('href')
 
 
 def one(parser):

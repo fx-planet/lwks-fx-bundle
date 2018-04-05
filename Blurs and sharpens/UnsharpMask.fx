@@ -1,78 +1,67 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author khaver
-//--------------------------------------------------------------//
-/*
-   History of this effect:  The original header was -
-
-   Unsharp Mask by Jerker (Sound and Vision Unit) - was based
-   on Big Blur by khaver, see below - borrowed the main blur
-   algorithm but simplified it by taking away the individual
-   color settings.  http://software.soundandvision.se
-
-   Original description:
-   Big Blur by khaver
-
-   Smooth blur using a 12 tap circular kernel that rotates
-   5 degrees for each of 6 passes.  There's a checkbox for
-   a 10 fold increase in the blur amount.  (This was actually
-   reduced to 5 in Jerker's effect - jwrl)
-*/
-
-// Totally rewritten UnsharpMask.fx by jwrl 19 July 2017:
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2017-06-06
+// @see https://www.lwks.com/media/kunena/attachments/6375/Unsharpmask_2016-04-07.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect UnsharpMask.fx
+/
+// History of this effect:
 //
-// I didn't understand how the original code could ever have
-// worked correctly and in fact it didn't work in Linux, and
-// therefore was unlikely to do so in OS/X.  The main issue
-// was with the actual unsharp shader, which made assumptions
-// about the way that shaders functioned in Lightworks which
-// at best could only be described as coincidental if it was
-// at all true.
+// ORIGINAL HEADER:
+// Unsharp Mask by Jerker (Sound and Vision Unit) - was based on Big Blur by khaver,
+// see below - borrowed the main blur algorithm but simplified it by taking away the
+// individual color settings.  http://software.soundandvision.se
 //
-// The original also did five passes through the blur code,
-// but only ever used three of them.  This meant that the
-// blur could never have been smooth, and in the version
+// Original description: Big Blur by khaver
+//
+// Smooth blur using a 12 tap circular kernel that rotates 5 degrees for each of 6
+// passes.  There's a checkbox for a 10 fold increase in the blur amount.  (This was
+// actually reduced to 5 in Jerker's effect - jwrl)
+// END OF ORIGINAL HEADER
+//
+// Totally rewritten 19 July 2017 by jwrl.
+// I didn't understand how the original code could ever have worked correctly and in
+// fact it didn't work in Linux, and therefore was unlikely to do so in OS/X.  The
+// main issue was with the actual unsharp shader, which made assumptions about the
+// way that shaders functioned in Lightworks which at best could only be described
+// as coincidental if it was at all true.
+//
+// The original also did five passes through the blur code, but only ever used three
+// of them.  This meant that the blur could never have been smooth, and in the version
 // that was tested on Windows, visibly wasn't.
 //
-// In the light of all that I decided to completely rewrite
-// the effect from the ground up.  This includes the blur
-// section which took khaver's original big blur effect
-// and heavily optimised it to reduce GPU loading.  Any
-// overheads in an effect of this complexity should be
-// kept as low as possible, and we had a total of six
-// passes to execute.
+// In the light of all that I decided to completely rewrite the effect from the ground
+// up.  This includes the blur section which took khaver's original big blur effect
+// and heavily optimised it to reduce GPU loading.  Any overheads in an effect of this
+// complexity should be kept as low as possible, and we had a total of six passes to
+// execute.
 //
-// I have discarded the five / ten times sample radius
-// scaling of the original because I really didn't see the
-// point when the blur was used in this context.
+// I have discarded the five / ten times sample radius scaling of the original because
+// I really didn't see the point when the blur was used in this context.
 //
-// The original unsharpen shader has been discarded all
-// together. I have gone back to first principles and
-// created an algorithm that produces the sharpening
-// using luminance.  To my eye it gives a cleaner result
-// and is much closer to the way that the original film
-// optical technique functioned.  As far as I know the
-// actual method that I have used is an original one,
-// but feel free to use it if you find it useful.
+// The original unsharpen shader has been discarded all together. I have gone back to
+// first principles and created an algorithm that produces the sharpening using
+// luminance.  To my eye it gives a cleaner result and is much closer to the way that
+// the original film optical technique functioned.  As far as I know the actual method
+// that I have used is an original one, but feel free to use it if you find it useful.
 //
-// I have added a mask gamma adjustment to the unsharp
-// section.  Called somewhat misleadingly "Edge gamma",
-// that plus the range of the original blur gives more
-// than enough sharpness adjustment for any reasonable
-// purpose.  The parameter as used will run from a mask
-// gamma value of 3.67 (EdgeGamma 0.0) to a value of
-// 0.007 (EdgeGamma 1.0).  The default EdgeGamma setting
-// of 0.5 will give a unity mask gamma value.
+// I have added a mask gamma adjustment to the unsharp section.  Called somewhat
+// misleadingly "Edge gamma", that plus the range of the original blur gives more than
+// enough sharpness adjustment for any reasonable purpose.  The parameter as used will
+// run from a mask gamma value of 3.67 (EdgeGamma 0.0) to a value of 0.007 (EdgeGamma
+// 1.0).  The default EdgeGamma setting of 0.5 will give a unity mask gamma value.
 //
-// I've also included a mask gain parameter called, as you
-// might have expected, "Edge gain"  Again, 0.5 corresponds
-// to a unity setting.
+// I've also included a mask gain parameter called, as you might have expected,
+// "Edge gain"  Again, 0.5 corresponds to a unity setting.
 //
-// The finished effect functions cross-platform and has been
-// tested to confirm compatibility.  As a result the old
-// effect has been retired.  It really was too broken to
-// repair - jwrl.
-//--------------------------------------------------------------//
+// The finished effect functions cross-platform and has been tested to confirm
+// compatibility.  As a result the old effect has been retired.  It really was too
+// broken to repair - jwrl.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -82,18 +71,18 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Pass1 : RenderColorTarget;
 texture Pass2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s0 = sampler_state {
 	Texture   = <Input>;
@@ -122,9 +111,9 @@ sampler s2 = sampler_state {
 	MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float BlurAmt
 <
@@ -161,9 +150,9 @@ float Amount
    float MaxVal = 1.0;
 > = 0.15;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define LUMA_DOT  float3(1.1955,2.3464,0.4581)
 #define GAMMA_VAL 1.666666667
@@ -173,9 +162,9 @@ float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_blur_1 (float2 uv : TEXCOORD1) : COLOR
 {  
@@ -279,9 +268,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, sharp, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {

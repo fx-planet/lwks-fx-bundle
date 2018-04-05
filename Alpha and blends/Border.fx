@@ -1,15 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author rhinox202
-// @Created 11/21/2012
-//--------------------------------------------------------------//
-// Border Effect by rhinox202
-// First Attempt - 11/21/2012
+// @Created 2012-11-21
+// @see https://www.lwks.com/media/kunena/attachments/6375/Border_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Border.fx
+//
+// Border creates a coloured hard border over a cropped image.  The border is created
+// inside the image being bordered, meaning that some of the image content will be lost.
 //
 // Bug fix 21 July 2017 by jwrl:
-// This addresses a cross platform issue which may have caused
-// the effect not to behave as needed on Linux and Mac systems.
-//--------------------------------------------------------------//
+// This addresses a cross platform issue which may have caused the effect not to behave
+// as needed on Linux and Mac systems.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -19,9 +26,25 @@ int _LwksEffectInfo
    string SubCategory = "Edge Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
+
+texture Input;
+
+sampler2D TextureSampler = sampler_state {
+   Texture   = <Input>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Point;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
 float4 BorderC
 <
    string Description = "Color";
@@ -62,22 +85,15 @@ float BorderL
    float MaxVal = 5.0;
 > = 0.5;
 
-float _OutputAspectRatio; //The project aspect ratio
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-texture Input;
+float _OutputAspectRatio; // The project aspect ratio
 
-sampler2D TextureSampler = sampler_state {
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy1 : TEXCOORD1) : COLOR
 {
@@ -96,7 +112,8 @@ float4 ps_main (float2 xy1 : TEXCOORD1) : COLOR
    return ret;
 }
 
-//--------------------------------------------------------------//
-// Technique Section for Image Processing Effects
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Technique
+//-----------------------------------------------------------------------------------------//
+
 technique Border { pass Single_Pass { PixelShader = compile PROFILE ps_main (); } }

@@ -1,22 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author "Val Gameiro"
-//--------------------------------------------------------------//
-// Five Tone
+// @Released 2018-04-05
+// @Author idealsceneprod (Val Gameiro)
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/FiveTone.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect fivetone.fx
 //
-// by Val Gameiro
-// Based on Tri-Tone by EditShare EMEA.
+// This posterization effect extends the existing Lightworks Two Tone and Tri-Tone
+// effects.  It reduces input video to five tonal values.  Blending and colour values
+// are adjustable.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-//
-// Added workaround for the interlaced media height bug in
-// Lightworks effects.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,9 +31,53 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+texture Input;
+
+texture ThresholdTexture : RenderColorTarget;
+texture Blur1 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler InputSampler = sampler_state
+{
+   Texture = <Input>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler ThresholdSampler = sampler_state
+{
+   Texture = <ThresholdTexture>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler BlurSampler = sampler_state
+{
+   Texture = <Blur1>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
 float Level1
 <
    string Description = "Threshold One";
@@ -89,51 +138,19 @@ float4 LightColour
    string Description = "Light Colour";
 > = { 1.0, 1.0, 1.0, 1.0 };
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Input;
-
-texture ThresholdTexture : RenderColorTarget;
-texture Blur1 : RenderColorTarget;
-
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler ThresholdSampler = sampler_state
-{
-   Texture = <ThresholdTexture>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BlurSampler = sampler_state
-{
-   Texture = <Blur1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth = 1.0;
 
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+/* const */ float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // See Pascals Triangle
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
 float4 threshold_main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
 	float4 src1 = tex2D( InputSampler, xy1 );
@@ -154,11 +171,6 @@ float4 threshold_main( float2 xy1 : TEXCOORD1 ) : COLOR
    return src1;
 }
 
-/* const */ float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // See Pascals Triangle
-
-//--------------------------------------------------------------//
-// Blur1
-//--------------------------------------------------------------//
 float4 blur1_ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
    // Explicitly query BETWEEN pixels to get extra averaging
@@ -180,10 +192,6 @@ float4 blur1_ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
    return result;
 }
 
-
-//--------------------------------------------------------------//
-// Blur2
-//--------------------------------------------------------------//
 float4 blur2_ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
    // Explicitly query BETWEEN pixels to get extra averaging
@@ -209,8 +217,11 @@ float4 blur2_ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
    return result;
 }
 
-//--------------------------------------------------------------//
-technique BoxBlur
+//-----------------------------------------------------------------------------------------//
+// Technique
+//-----------------------------------------------------------------------------------------//
+
+technique FiveTone
 {
    pass ThresholdPass
    <

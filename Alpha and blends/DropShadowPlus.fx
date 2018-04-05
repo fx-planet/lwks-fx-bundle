@@ -1,50 +1,45 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2016-04-01
+// @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowPlus_5.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect DropShadowPlus.fx
 //
-// Created by LW user jwrl 1 April 2016.
-// @Author jwrl
-// @Created "1 April 2016"
+// This effect is a drop shadow and border generator.  It has drop shadow blur, and
+// independent colour settings for border and shadow.  Two border generation modes and
+// optional border anti-aliassing are also provided.  Additionally, the border centering,
+// width and height can also be independently adjusted.
 //
-// Moved alpha export to its own independent setting
-// Rewrote several blend modes
+// The effect can also output the foreground, border and drop shadow alone, with the
+// appropriate alpha channel.  When doing so any background input to the effect will not
+// be displayed.
 //
-// 20 April 2015 : Fixed a minor bug in the overlay blend
-// which would have biassed the colour towards red.
+// The blend mode of the drop shadow and/or border and/or foreground can also be adjusted.
+// This section of the effect attempts to match as closely as possible Photoshop's blends.
+// Because that is built around an entirely different colour model and I have no definite
+// knowledge of the algorithms used, absolute accuracy isn't claimed or guaranteed.
 //
-// This effect is a drop shadow and border generator.  It has
-// drop shadow blur, and independent colour settings for border
-// and shadow.  Two border generation modes and optional border
-// anti-aliassing are also provided.  Additionally, the border
-// centering, width and height can also be independently
-// adjusted (thanks Igor).
-//
-// The effect can also output the foreground, border and drop
-// shadow alone, with the appropriate alpha channel.  When doing
-// so any background input to the effect will not be displayed.
-//
-// The blend mode of the drop shadow and/or border and/or
-// foreground can also be adjusted.  This section of the effect
-// attempts to match as closely as possible Photoshop's blends.
-// Because that is built around an entirely different colour
-// model and I have no definite knowledge of the algorithms used,
-// absolute accuracy isn't claimed and can't be guaranteed.
+// Bug fixes 20 April 2015
+// Fixed a minor bug in the overlay blend which biassed the colour towards red.
+// Moved alpha export to its own independent setting.
+// Rewrote several blend modes.
 //
 // LW 14+ version by jwrl 11 January 2017.
-// Category changed from "Keying" to "Key", subcategory "Edge
-// Effects" added.
+// Category changed from "Keying" to "Key", subcategory "Edge Effects" added.
 //
-// Bug fix 26 February 2017 by jwrl:
-// This addresses a bug with Lightworks' handling of interlaced
-// media.  The height parameter in Lightworks returns half the
-// true frame height but only when interlaced media is playing.
-// That has been fixed in this code.
+// Bug fix 26 February 2017
+// Fixed a bug with Lightworks' handling of interlaced media.  The height parameter in
+// Lightworks returns half the true frame height when interlaced media is stationary.
 //
-// Bug fix 21 July 2017 by jwrl:
-// This addresses a cross platform issue which could cause the
-// effect to not behave as expected on Linux and Mac systems.
-//--------------------------------------------------------------//
+// Bug fix 21 July 2017
+// Corrected a cross platform issue which could cause the effect to not behave as
+// expected on Linux and Mac systems.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -54,9 +49,9 @@ int _LwksEffectInfo
    string SubCategory = "Edge Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -68,9 +63,9 @@ texture fthr_in : RenderColorTarget;
 texture shadOut : RenderColorTarget;
 texture compose : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
    Texture   = <Fg>;
@@ -144,9 +139,9 @@ sampler compedSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -274,9 +269,9 @@ bool alphaMode
    string Description = "Don't export background alpha";
 > = false;
 
-//--------------------------------------------------------------//
-// Definitions and stuff
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define SHADOW         0
 #define BORDER_SHADOW  1
@@ -287,9 +282,7 @@ bool alphaMode
 #define BORDER         6
 
 #define F_SCALE        2
-
 #define B_SCALE        10
-
 #define S_SCALE        1.75
 
 #define OFFS_SCALE     0.04
@@ -316,9 +309,9 @@ const float _pascal [] = { 0.00000006, 0.00000143, 0.00001645, 0.00012064, 0.000
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // HSV functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 rgb2hsv (float4 rgb)
 {
@@ -360,9 +353,9 @@ float4 hsv2rgb (float4 hsv)
    return float4 (hsv.z, p, q, hsv.w);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 border_A (float2 xy : TEXCOORD1) : COLOR
 {
@@ -605,9 +598,9 @@ float4 feather_it (float2 xy : TEXCOORD1) : COLOR
    return float4 (retval.rgb, alpha);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // From here on are the various blend modes
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_normal (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -619,7 +612,7 @@ float4 ps_normal (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -708,7 +701,7 @@ float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -821,7 +814,7 @@ float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -952,7 +945,7 @@ float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -1022,7 +1015,7 @@ float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -1104,7 +1097,7 @@ float4 ps_luminance (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.xyz, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_negate (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -1124,7 +1117,7 @@ float4 ps_negate (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -1165,9 +1158,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, Bgd.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique normal
 {
@@ -1475,4 +1468,3 @@ technique negate
    pass P_6 < string Script = "RenderColorTarget0 = compose;"; > { PixelShader = compile PROFILE ps_negate (); }
    pass P_7 { PixelShader = compile PROFILE ps_main (); }
 }
-

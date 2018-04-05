@@ -1,22 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author khaver
-// @Created "January 2012"
-//--------------------------------------------------------------//
-// ZoomBlur.fx created by Gary Hango (khaver) January 2012.
+// @Created 2012-01-??
+// @see https://www.lwks.com/media/kunena/attachments/6375/ZoomBlur.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ZoomBlur.fx
 //
-// This cross platform conversion by jwrl 20 July 2017.
+// Cross platform conversion by jwrl 20 July 2017.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms.  The bug still exists when using older versions
+// of Lightworks.
 //
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,9 +27,9 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -49,9 +50,9 @@ sampler InputSampler = sampler_state {
 	MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float CX
 <
@@ -78,9 +79,9 @@ float BlurAmount
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -100,9 +101,9 @@ float4 main (float2 uv : TEXCOORD1) : COLOR
    return c / 41.0;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -111,4 +112,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE main ();
    }
 }
-

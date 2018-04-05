@@ -1,12 +1,11 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
-//-----------------------------------------------------------------------------------------//
-// Lightworks user effect AdjBlend.fx
-//
 // @Author jwrl
 // @Created 2017-10-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/AdjBlend_3.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AdjBlend_4.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect AdjBlend.fx
 //
 // This is a quick way of blending when the alpha channel may not quite be as required.
 // The alpha channel may be inverted or scaled, the video may be premultiplied, and

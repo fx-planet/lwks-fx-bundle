@@ -1,86 +1,74 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author "Evan Wallace"
-// @Maintainer Windsturm
-/**
-  * FxTiltShift.
-  * Tilt Shift effect.
-  * 
-  * @Auther Windsturm
-  * @version 1.0.1
-
-ported from evanw/glfx.js https://github.com/evanw/glfx.js
-
-Copyright (C) 2011 by Evan Wallace
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
- */
-
-//--------------------------------------------------------------//
-// This conversion for ps_2_0 compliance by Lightworks user
-// jwrl, 5 February 2016.
-//--------------------------------------------------------------//
-
-//--------------------------------------------------------------//
-// FxTiltShift
+// @Released 2018-04-05
+// @Author "Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)"
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/TiltShift.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxTiltShift.fx
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// Ported by windsturm
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
+// ORIGINAL AUTHOR'S DESCRIPTION AND PERMISSION:
+// Simulates the shallow depth of field normally encountered in close-up photography,
+// which makes the scene seem much smaller than it actually is. This filter assumes the
+// scene is relatively planar, in which case the part of the scene that is completely
+// in focus can be described by a line (the intersection of the focal plane and the
+// scene). An example of a planar scene might be looking at a road from above at a
+// downward angle. The image is then blurred with a blur radius that starts at zero
+// on the line and increases further from the line.
 //
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// Copyright (C) 2011 by Evan Wallace
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this
+// software and associated documentation files (the "Software"), to deal in the Software
+// without restriction, including without limitation the rights to use, copy, modify,
+// merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be included in all copies
+// or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+// PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+// CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+// OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+// Conversion for ps_2_0 compliance by Lightworks user jwrl, 5 February 2016.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// Bug fix June 28 2017 by jwrl.
+// An arithmetic bug which arose during the cross platform conversion was detected and
+// fixed.  The bug resulted in a noticeable drop in video levels and severe highlight
+// compression.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "FxTiltShift";          // The title
-   string Category    = "Stylize";              // Governs the category that the effect appears in in Lightworks
-   string SubCategory = "Blurs and Sharpens";   // Added for v14 compatibility - jwrl.
+   string Description = "FxTiltShift";
+   string Category    = "Stylize";
+   string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Pass1 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s0 = sampler_state
 {
@@ -101,9 +89,9 @@ sampler s1 = sampler_state {
 	MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float startX
 <
@@ -151,11 +139,18 @@ float gradientRadius
    float MaxVal = 500.0;
 > = 200.0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
-// Procedures
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float random (float3 scale, float seed, float2 texCoord)
 {
@@ -204,9 +199,9 @@ float4 tiltShift (sampler tSource, float2 start, float2 end, float2 delta, float
    return gl_FragColor;
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float4 FxTiltShift (float2 texCoord : TEXCOORD1, uniform int mode) : COLOR
 {
@@ -226,9 +221,9 @@ float4 FxTiltShift (float2 texCoord : TEXCOORD1, uniform int mode) : COLOR
    return color;
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique FxTechnique
 {

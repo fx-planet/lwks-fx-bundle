@@ -1,30 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 5 April 2018
+// @Author khaver
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/Strobe.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Strobe.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
-//--------------------------------------------------------------//
+// Strobe is a two-input effect which switches rapidly between two video layers.  The
+// switch rate is dependent on the length of the clip.  There should be enough adjustment
+// range of strobe spacing to allow any reasonable clip size to be used, but if you need
+// more range break the clip into sections and repeat the effect.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// Cross platform compatibility check 2 August 2017 jwrl.
+// Explicitly defined samplers to avoid cross platform default sampler differences.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Strobe";        // The title
-   string Category    = "Stylize";            // Governs the category that the effect appears in in Lightworks
+   string Description = "Strobe";
+   string Category    = "Stylize";
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
 
 texture fg;
 texture bg;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler FGround = sampler_state {
         Texture = <fg>;
@@ -43,15 +57,9 @@ sampler BGround = sampler_state {
         MipFilter = Linear;
  };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
-
-float _Progress;
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool swap
 <
@@ -65,18 +73,17 @@ float strobe
 	float MaxVal = 1.0f;
 > = 1.0f;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _Progress;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
 
 float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
 {
@@ -97,14 +104,11 @@ float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
   else return BG;
 }
 
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+
+technique Strobe
 {
 
    pass Pass1
@@ -112,4 +116,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE Combine();
    }
 }
-

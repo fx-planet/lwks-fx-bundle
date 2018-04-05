@@ -1,40 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//bilateral based on:
-//Antitorgo's avishader 0.42 filter
-//http://www.blosser.org/d9/dlAviShader042.rar
-
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author baopao
+// @Created -undefined-
+// @see https://www.lwks.com/media/kunena/attachments/6375/Bilateral_blur_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect bilateral_blur.fx
+//
+// bilateral based on:
+// Antitorgo's avishader 0.42 filter
+// http://www.blosser.org/d9/dlAviShader042.rar
+//
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
+// Bug fix 18 July 2017 by jwrl.
+// Partial rewrite to address a Linux/Mac compatibility issue.  In the process some
+// code optimisation has been performed to improve execution times and lighten the GPU
+// load.  Range values that result in divide by zero errors have been limited to safe
+// values, and the "FrameSize" parameter is now labelled more appropriately "Blur
+// window".
+// The direction of operation of that control has also been reversed so that increasing
+// values result in an increase of the blur window, and no longer a reduction.
 //
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//
-// Partial rewrite to address a Linux/Mac compatibility issue
-// by Lightworks user jwrl 18 July 2017.
-//
-// In the process some code optimisation has been performed to
-// improve execution times and lighten the GPU load.  Range
-// values that result in divide by zero errors have been
-// limited to safe values, and the "FrameSize" parameter is
-// now labelled more appropriately "Blur window".
-//
-// The direction of operation of that control has also been
-// reversed so that increasing values result in an increase
-// of the blur window, and no longer a reduction.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -44,15 +34,15 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler2D InpSampler = sampler_state {
    Texture   = <Input>;
@@ -63,9 +53,9 @@ sampler2D InpSampler = sampler_state {
    MagFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -81,16 +71,16 @@ float FrameSize
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 fold_bilateral (float2 uv : TEXCOORD1) : COLOR
 {
@@ -199,9 +189,9 @@ float4 fold_bilateral (float2 uv : TEXCOORD1) : COLOR
    return float4 (Colour / normalizer, 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique BilateralFilter
 {

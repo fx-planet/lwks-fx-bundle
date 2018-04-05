@@ -1,16 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect SoftFoggyBlur.fx
-// Created by LW user jwrl 6 July 2017.
+// @Released 2018-04-05
 // @Author jwrl
-// @Created "6 July 2017"
+// @Created 2017-06-06
+// @see https://www.lwks.com/media/kunena/attachments/6375/SoftFog_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect SoftFoggyBlur.fx
 //
-// This blur effect mimics the classic "petroleum jelly on the
-// lens" look.  It does this by combining a radial and a spin
-// blur effect.  The spin component has an adjustable aspect
-// ratio which can have significant effect on the final look.
-//--------------------------------------------------------------//
+// This blur effect mimics the classic "petroleum jelly on the lens" look.  It does this
+// by combining a radial and a spin blur effect.  The spin component has an adjustable
+// aspect ratio which can have significant effect on the final look.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -20,18 +22,18 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
 texture blur_1 : RenderColorTarget;
 texture blur_2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state {
    Texture   = <Inp>;
@@ -102,9 +104,9 @@ float CentreY
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define DIV_1    18.5
 #define DIV_2    18.975
@@ -123,9 +125,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_radial_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform int scale) : COLOR
 {
@@ -194,9 +196,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (InpSampler, uv), retval, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique soft_foggy_blur
 {
@@ -215,4 +217,3 @@ technique soft_foggy_blur
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

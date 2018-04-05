@@ -1,52 +1,46 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author khaver
-//--------------------------------------------------------------//
-// Big Blur by khaver
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/BigBlur.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect BigBlur.fx
 //
-// Smooth blur using a 12 tap circular kernel that rotates 5 degrees
-// for each of 6 passes.  There's a checkbox for a 10 fold
-// increase in the blur amount.
+// Smooth blur using a 12 tap circular kernel that rotates 5 degrees for each of 6
+// passes.  There's a checkbox for a 10 fold increase in the blur amount.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// Added workaround for the interlaced media height bug in Lightworks effects.  THE BUG
+// WAS NOT IN THE WAY THIS EFFECT WAS ORIGINALLY IMPLEMENTED.  When a height parameter is
+// needed one cannot reliably use _OutputHeight with interlaced media.  It returns only
+// half the actual frame height when interlaced media is stationary.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Big Blur";             // The title
-   string Category    = "Stylize";              // Governs the category that the effect appears in in Lightworks
-   string SubCategory = "Blurs and Sharpens";   // Added for v14 compatibility - jwrl.
+   string Description = "Big Blur";
+   string Category    = "Stylize";
+   string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Pass1 : RenderColorTarget;
 texture Pass2 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler s0 = sampler_state {
    Texture   = <Input>;
@@ -75,13 +69,9 @@ sampler s2 = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float blurry
 <
@@ -119,18 +109,18 @@ bool alpha
    string Group = "Channels";
 > = false;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
 
 float4 GrowablePoissonDisc13FilterRGBA (sampler tSource, float2 texCoord, float2 pixelSize, float discRadius, int run)
 {
@@ -172,13 +162,11 @@ float4 PSMain (float2 Tex : TEXCOORD1, uniform int test) : COLOR
    return GrowablePoissonDisc13FilterRGBA (s1, Tex, pixsize, blur, test);
 }
 
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (6 passes total)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+
+technique BigBlur
 {
 
    pass PassA
@@ -221,4 +209,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE PSMain(5);
    }
 }
-

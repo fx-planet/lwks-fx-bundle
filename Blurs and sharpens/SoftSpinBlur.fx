@@ -1,45 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect SoftSpinBlur.fx
-// Created by LW user jwrl 1 July 2017.
+// @Released 2018-04-05
 // @Author jwrl
-// @Created "1 July 2017"
+// @Created 2017-06-01
+// @see https://www.lwks.com/media/kunena/attachments/6375/JLspinBlur_2.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect SoftSpinBlur.fx
 //
-// The impetus to develop this spin blur effect was triggered
-// by windsturm's effect, FxSpinBlur.  Since this was written
-// from the ground up any similarity to that work is entirely
-// coincidental.  In the interests of interface consistency
-// an attempt was made to match the parameters in that effect.
-// Due to other design decisions that has not been completely
-// possible.
+// The impetus to develop this spin blur effect was triggered by windsturm's effect,
+// FxSpinBlur.  Since this was written from the ground up any similarity to that work
+// is entirely coincidental.  In the interests of interface consistency an attempt was
+// made to match the parameters in that effect.  Due to other design decisions that has
+// not been completely possible.
 //
-// As part of the development process, particular attention has
-// been given to the blur sample rate.  The effect achieves
-// 108 samples by using three consecutive passes of 36 samples
-// each at finer and finer pitch.  This is an oversampling
-// technique which results in a theoretical sample rate of
-// greater than 45,000.  As a result a full 180 degrees of arc
-// can be blurred without the sampling becoming too obvious
-// even if the blur centre is at the corner of the frame.
+// As part of the development process, particular attention has been given to the blur
+// sample rate.  The effect achieves 108 samples by using three consecutive passes of
+// 36 samples each at finer and finer pitch.  This is an oversampling technique which
+// results in a theoretical sample rate of greater than 45,000.  As a result a full 180
+// degrees of arc can be blurred without the sampling becoming too obvious even if the
+// blur centre is at the corner of the frame.
 //
-// The blur arc method used is bi-directional and produces
-// a symmetrical blur.  For example, a 30 degree arc will
-// be produced by applying dual 15 degree clockwise and
-// anti clockwise blurs.  A level tracking parameter has
-// been included to compensate for the inevitable upward
-// drift in blacks and downward drift in whites that a
-// strong blur can cause.
+// The blur arc method used is bi-directional and produces a symmetrical blur.  For
+// example, a 30 degree arc will be produced by applying dual 15 degree clockwise and
+// anti clockwise blurs.  A level tracking parameter has been included to compensate
+// for the inevitable upward drift in blacks and downward drift in whites that a strong
+// blur can cause.
 //
-// Blur density reduces the blur effect to zero.  Blur aspect
-// ratio is set in percentage change values and swings between
-// 1:5 and 5:1.  The blur centring can be set either by means
-// of the sliders or by dragging with the mouse in the edit
-// sequence viewer.  It cannot be dragged off screen, but
-// manually entering values will do this if desired.
+// Blur density reduces the blur effect to zero.  Blur aspect ratio is set in percentage
+// change values and swings between 1:5 and 5:1.  The blur centring can be set either by
+// means of the sliders or by dragging with the mouse in the edit sequence viewer.  It
+// cannot be dragged off screen, but manually entering values will do this if desired.
 //
 // Re-arranged the user interface 6 July 2017.
-//--------------------------------------------------------------//
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -49,18 +44,18 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
 texture blur_1 : RenderColorTarget;
 texture blur_2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state {
    Texture   = <Inp>;
@@ -89,10 +84,9 @@ sampler b2_Sampler = sampler_state {
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Arc
 <
@@ -138,9 +132,9 @@ float Tracking
    float MaxVal = 1.0;
 > = 0.1;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define STEPS   18
 #define DIVISOR 18.975
@@ -156,9 +150,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform int scale) : COLOR
 {
@@ -206,9 +200,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (InpSampler, uv), retval, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SoftSpinBlur
 {
@@ -227,4 +221,3 @@ technique SoftSpinBlur
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

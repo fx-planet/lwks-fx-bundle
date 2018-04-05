@@ -1,26 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2016-05-09
+// @see https://www.lwks.com/media/kunena/attachments/6375/YAblur_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect GhostBlur.fx
 //
-// Created by LW user jwrl May 9 2016 as YAblur.fx.
-// @Author jwrl
-// @Created "May 9 2016"
-//
-// This was an accident that looked interesting, so it was
-// given a name and developed.  It is based on a radial
-// anti-aliassing blur developed for another series of
-// effects, further modulated by image content.
+// Originally created as YAblur.fx, this was an accident that looked interesting, so it
+// was given a name and developed.  It is based on a radial anti-aliassing blur developed
+// for another series of effects, further modulated by image content.
 //
 // Modified by jwrl 29 July 2017.
+// Renamed to Ghost blur because it felt more like the result that you get.  Opacity and
+// Radius limiting added so that negative values of either will not be acted on.  Added
+// a fogginess adjustment.  Really a gamma tweak applied while sampling the blur, it's
+// also range limited to ensure that whiter than white video levels are controlled.
 //
-// Renamed from YAblur to Ghost blur - it feels more like the
-// result that you get.  Opacity and Radius limiting added so
-// that negative values of either will not be acted on.  Added
-// a fogginess adjustment.  Really a gamma tweak applied while
-// sampling the blur, it's also range limited to ensure that
-// whiter than white video levels are controlled.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -30,17 +28,17 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture prelim : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
         Texture   = <Input>;
@@ -60,9 +58,9 @@ sampler preSampler = sampler_state {
 	MipFilter = Linear;
         };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Radius
 <
@@ -85,9 +83,9 @@ float Opacity
    float MaxVal       = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define LOOP_1   29
 #define RADIUS_1 0.1
@@ -103,9 +101,9 @@ float Opacity
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_prelim (float2 uv : TEXCOORD1) : COLOR
 {
@@ -153,11 +151,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Fgd, saturate (retval), Opacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
+technique GhostBlur
 {
    pass P_1
    < string Script = "RenderColorTarget0 = prelim;"; >

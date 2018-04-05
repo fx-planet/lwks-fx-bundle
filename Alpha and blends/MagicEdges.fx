@@ -1,35 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2016-05-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/MagicEdge_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect MagicEdges.fx
 //
-// Created by LW user jwrl 8 May 2016.
-// @Author jwrl
-// @Created "8 May 2016"
-//  LW 14+ version by jwrl 11 January 2017
-//  Category changed from "Mixes" to "Keying"
-//  Subcategory "Edge Effects" added.
+// The fractal generation component was created by Robert SchÃ¼tze in GLSL sandbox
+// (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better suit the
+// needs of its use in this context.
 //
-// The fractal generation component was created by Robert
-// Schütze in GLSL sandbox (http://glslsandbox.com/e#29611.0).
-// It has been somewhat modified to better suit the needs of its
-// use in this context.
+// The star point component is based on khaver's Glint.fx, but modified to have no blur
+// component, no choice of star points, and to compile and run under the ps_2_b shader
+// profile in Windows.
 //
-// The star point component is based on khaver's Glint.fx, but
-// modified to have no blur component, no choice of star points,
-// and to compile and run under the ps_2_0 shader5 profile.
+// LW 14+ version 11 January 2017
+// Category changed from "Mixes" to "Key", subcategory "Edge Effects" added.
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  It returns only half the actual frame
-// height when interlaced media is playing and only when it
-// is playing.  This fix will be reliable even if the LW bug
-// is fixed.
+// Bug fix 26 February 2017
+// This corrects for a bug in the way that Lightworks handles interlaced media.  It
+// returns only half the actual frame height when interlaced media is stationary.
 //
 // Bug fix 26 July 2017 by jwrl:
-// Because Windows and Linux-OS/X have differing defaults for
-// undefined samplers they have now been explicitly declared.
-//--------------------------------------------------------------//
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
+// have now been explicitly declared.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,9 +38,9 @@ int _LwksEffectInfo
    string SubCategory = "Edge Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -55,9 +54,9 @@ texture Sample2 : RenderColorTarget;
 texture Sample3 : RenderColorTarget;
 texture Sample4 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
    Texture   = <Fg>;
@@ -140,9 +139,9 @@ sampler Samp4 = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -254,9 +253,9 @@ bool ShowFractal
    string Description = "Show pattern";
 > = false;
 
-//--------------------------------------------------------------//
-// Common
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define PI_2       6.28319
 
@@ -282,9 +281,9 @@ float _Progress;
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
 {
@@ -451,9 +450,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, comb, Strength);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique doMatte
 {
@@ -558,4 +557,3 @@ technique doMatte
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

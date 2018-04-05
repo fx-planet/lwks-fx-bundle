@@ -17,8 +17,8 @@
 // Unlike the Lightworks blend effect there are no Photoshop-style blending modes.
 //
 // Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Added authorship, links and description information for GitHub, and reformatted the
+// original code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

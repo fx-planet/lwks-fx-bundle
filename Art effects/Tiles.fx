@@ -1,16 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-05
+// @Author khaver
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/Tiles.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Tiles.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// Tiles breaks the image up into adjustable tiles of solid colour.  It's like a mosaic
+// effect but has adjustable bevelled edges as well.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Bug fix 21 July 2017 by jwrl:
-// This addresses a cross platform issue which could cause the
-// effect to not behave as expected on Linux and Mac systems.
-//--------------------------------------------------------------//
+// This addresses a cross platform issue which could cause the effect to not behave as
+// expected on Linux and Mac systems.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -20,13 +28,9 @@ int _LwksEffectInfo
    string SubCategory = "Art Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
+// Inputs and shaders
+//-----------------------------------------------------------------------------------------//
 
 float _OutputWidth;
 
@@ -41,14 +45,9 @@ sampler FgSampler = sampler_state {
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Size
 <
@@ -70,18 +69,17 @@ float4 EdgeColor
    bool SupportsAlpha = false;
 > = { 0.7, 0.7, 0.7, 1.0 };
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputWidth;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
 
 float4 tilesPS (float2 xy : TEXCOORD1) : COLOR
 {
@@ -106,11 +104,9 @@ float4 tilesPS (float2 xy : TEXCOORD1) : COLOR
    return float4 (max (0.0.xxx, (tileColor.rgb + cBottom - cTop)), tileColor.a);
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -119,4 +115,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE tilesPS ();
    }
 }
-

@@ -1,31 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author khaver
-//--------------------------------------------------------------//
-// Focal Blur by khaver
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/Focal_Blur.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FocalBlur.fx
 //
-// A 3 pass 13 tap circular kernel blur.
-// The blur can be varied using the alpha channel or luma value of
-// the source video or another video track. Use a depth map for
-// the mask for faux DoF, plus it's refocusable.
+// A 3 pass 13 tap circular kernel blur.  The blur can be varied using the alpha channel
+// or luma value of the source video or another video track.  Use a depth map for the
+// mask for faux DoF, plus it's refocusable.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// Added workaround for the interlaced media height bug in Lightworks effects.  THE BUG
+// WAS NOT IN THE WAY THIS EFFECT WAS ORIGINALLY IMPLEMENTED.  When a height parameter is
+// needed one cannot reliably use _OutputHeight with interlaced media.  It returns only
+// half the actual frame height when interlaced media is stationary.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -34,22 +31,19 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";   // Added for v14 compatibility - jwrl.
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture V1;
 texture V2;
 texture MaskPass : RenderColorTarget;
 texture Pass1 : RenderColorTarget;
 texture Pass2 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler v1 = sampler_state {
 	Texture = <V1>;
@@ -96,14 +90,9 @@ sampler s2 = sampler_state {
 	MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool swap
 <
@@ -221,19 +210,16 @@ float thresh
 	float MaxVal = 1.0f;
 > = 0.0f;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
+float _OutputAspectRatio;
+float _OutputWidth;
 
-
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float2 circle(float angle)
 {
@@ -259,6 +245,10 @@ float4 GrowablePoissonDisc13FilterRGBA (sampler tSource, float2 texCoord, float2
 
    return cOut;
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 Masking( float2 Tex : TEXCOORD1) : COLOR
 {
@@ -364,14 +354,10 @@ float4 Combine( float2 Tex : TEXCOORD1 ) : COLOR
 	return swap ? tex2D (v2, Tex) : tex2D (v1, Tex);
 }
 
-
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+
 technique No
 {
 

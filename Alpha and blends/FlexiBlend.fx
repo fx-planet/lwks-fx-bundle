@@ -1,22 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2017-12-23
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlexiBlend_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect FlexiBlend.fx
 //
-// Created by LW user jwrl 23 December 2017
-// @Author jwrl
-// @Created "23 December 2017"
+// This is a simple blend utility with the ability to adjust the position, size and
+// rotation of the image being matted and crop it.  The alpha channel can also be
+// inverted if needed to support the less common inverted alpha logic.
 //
-// This is a simple blend utility with the ability to adjust
-// the position, size and rotation of the image being matted
-// and crop it.  The alpha channel can also be inverted if
-// needed to support the less common inverted alpha logic.
+// This code bypasses the recently discovered D3D - Cg bug where "Clamp" addressing
+// behaves differently in the two shader languages.  To do this code has been added to
+// set RGBA to zero if 0.0-1.0 addresses are exceeded.
 //
-// This code bypasses the recently discovered D3D - Cg bug
-// where "Clamp" addressing behaves differently in the two
-// shader languages.  To do this code has been added to set
-// RGBA to zero if 0.0-1.0 addresses are exceeded.
-//--------------------------------------------------------------//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,27 +27,27 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
 texture _Crop : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state { Texture = <Fg>; };
 sampler BgSampler = sampler_state { Texture = <Bg>; };
 
 sampler CropSampler = sampler_state { Texture = <_Crop>; };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -124,15 +125,15 @@ float Crop_B
    float MaxVal = 1.00;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
@@ -169,11 +170,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return float4 (lerp (Bgd.rgb, Fgd.rgb, alpha), max (alpha, Bgd.a));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-technique FastBlend
+technique FlexiBlend
 {
    pass P_1
    < string Script = "RenderColorTarget0 = _Crop;"; > 
@@ -181,4 +182,3 @@ technique FastBlend
 
    pass P_2 { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author schrauber
-//--------------------------------------------------------------//
-// Lightworks user effect 
-// 2017
-// Please excuse the Google translation:
-// LW Users "schrauber"
+// @Created 2017
+// @see https://www.lwks.com/media/kunena/attachments/6375/RhythmPulse_2.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect CameraShake.fx
+//
 //
 // Thanks for your tips.
 // I would be glad about your participation in the further development of the effect,
@@ -14,30 +14,29 @@
 //
 // Note: 
 // LWKS-Kyframing should not be used with some parameters.
-// E.g. A sliding change of the frames per cycle ("Main Interval") always shifts the position in the cycle, 
-// which can counteract the internally calculated positional change, 
-// which in the interplay will give a different cycle time than the Kyframe value.
+// E.g. A sliding change of the frames per cycle ("Main Interval") always shifts the
+// position in the cycle, which can counteract the internally calculated positional
+// change, which in the interplay will give a different cycle time than the Kyframe value.
 // 
 //
 // Note: 
-// For cycle frames with decimal places, 
-// the cycle progress (and the marker) will occasionally pause for 2 frames
-// at a position to remain synchronized with the set value.
+// For cycle frames with decimal places, the cycle progress (and the marker) will
+// occasionally pause for 2 frames at a position to remain synchronized with the set value.
 //
 //
 // Note also the document: Dynamically controlled effects __ warning symbols.pdf
 //
 //
-// Version 14.1 update 5 December 2017 by jwrl.
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms.  The bug still exists when using older versions
+// of Lightworks.
 //
-// Added LINUX and MAC test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -1071,7 +1070,6 @@ technique Split_screen
    // Mix video & Graphic
    pass seven { PixelShader = compile PS_VERSION mainMixVideoGraph(); }
 }
-
 
 
 

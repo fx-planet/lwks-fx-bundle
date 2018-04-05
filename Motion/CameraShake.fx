@@ -1,43 +1,62 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author khaver
-//--------------------------------------------------------------//
-// Camera Shake
-// Coded by Gary Hango (khaver)
+// @Released 2018-04-05
+// @Author Gary Hango (khaver)
+// @Created -unknown-
+// @license GPLv3
+// @see https://www.lwks.com/media/kunena/attachments/6375/Camera_Shake.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CameraMotion.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect CameraShake.fx
+//
+// Camera Shake uses luminance variations in a clip to add motion horizontally, vertically
+// and/or rotationally.  That clip can be either the source track or another video layer,
+// and that second video layer may contain motion content or be a still frame.
+//
+// The motion source track is set up using the "Show motion track" box.  This will display
+// the motion track source in the viewer overlaid with red, green and blue lines and three
+// associated coloured ovals.  Playing through the clip will cause each oval to move from
+// one end of its line to the other, corresponding to the play head position.  Red shows
+// the horizontal motion track, green the vertical, and blue, rotation.
+//
+// Best results are produced when the start and end points of each line cover a good range
+// of dark and light areas as the clip plays.  This can be done with either the sliders or
+// by dragging with the mouse.  Once they are set adjust the bias and strength for the
+// required amount of horizontal, vertical and rotational movement.
+//
+// The zoom, rotation and pan sliders can be used for additional trimming.  Each motion
+// track may be smoothed and/or have its direction of action reversed.
 //
 // Version 14 update 18 Feb 2017 jwrl.
 // Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in
-// Lightworks effects.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
 // Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to avoid cross platform default sampler differences.
 //
-// Version 14.1 update 5 December 2017 by jwrl.
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms.  The bug still exists when using older versions
+// of Lightworks.
 //
-// Added LINUX and MAC test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "Camera Shake";
    string Category    = "Stylize";
-   string SubCategory = "Motion";               // Version 14 subcategory - jwrl.
+   string SubCategory = "Motion";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture src;
 texture bg;
@@ -45,9 +64,9 @@ texture bg;
 texture srcbg : RenderColorTarget;
 texture motrack : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -57,11 +76,10 @@ texture motrack : RenderColorTarget;
 #define Clamp ClampToEdge
 #endif
 
-// The samplers below originally had the address modes and filter
-// settings commented out so that default values would be used.
-// This is quite valid in Windows, but can produce unexpected
-// results when using Mac/Linux.  They have now been uncommented
-// to explicitly define the settings - jwrl.
+// The samplers below originally had the address modes and filter settings commented out
+// so that default values would be used.  This is quite valid in Windows, but can produce
+// unexpected results when using Mac/Linux.  They have now been uncommented to explicitly
+// define the settings - jwrl.
 
 sampler BackgroundSampler = sampler_state { Texture = <bg>;
    AddressU  = Clamp;
@@ -92,15 +110,9 @@ sampler MotionSampler = sampler_state { Texture = <motrack>;
    MipFilter = Linear;
  };
 
-
-//--------------------------------------------------------------//
-// Define parameters here.
-//--------------------------------------------------------------//
-
-float _Progress;
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int UseMTrack //Select video track to use as the motion sampler
 <
@@ -339,11 +351,20 @@ float r2y //End of the rotation sample line
    float MaxVal = 1.00;
 > = 0.1;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _Progress;
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 bool isBetween(float2 a,float2 b,float2 c) {
  float A = c.x - a.x;
@@ -374,6 +395,10 @@ else if (param > 1.0) {
  if (dist < 0.0008) return true;
  else return false;
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 InorBack (float2 uv : TEXCOORD1 ) : COLOR
 {
@@ -453,7 +478,6 @@ float4 motionsample (float2 uv : TEXCOORD1 ) : COLOR
   return premo;
  }
 
-
 float4 main( float2 uv : TEXCOORD1 ) : COLOR
 {
 
@@ -527,14 +551,11 @@ float4 main( float2 uv : TEXCOORD1 ) : COLOR
   return orig;
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
+technique CameraShake
 {
     pass Pass0
    <
@@ -555,4 +576,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE main();
    }
 }
-

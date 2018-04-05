@@ -1,43 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2016-06-30
+// @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_3.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect EdgeGlow.fx
 //
-// Created by LW user jwrl 30 June 2016.
-// @Author jwrl
-// @Created "30 June 2016"
+// This is an effect that can use image levels or the edges of the image to produce a
+// glow effect.  The resulting glow can be applied to the image using any of five blend
+// modes.
 //
-// This is an effect that can use image levels or the edges of
-// the image to produce a glow effect.  The resulting glow can
-// be applied to the image using any of five blend modes.
+// The glow can use the native image colours, a preset colour, or two colours which cycle.
+// Cycle rate can be adjusted, and the detected edges can be mixed back over the effect.
 //
-// The glow can use the native image colours, a preset colour,
-// or two colours which cycle.  Cycle rate can be adjusted,
-// and the detected edges can be mixed back over the effect.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
+// Added workaround for the interlaced media height bug in Lightworks effects.
+// Explicitly defined a float4 variable to address the different behaviour of the D3D
+// and Cg compilers.
+// Efficiency fix:  used SetTechnique instead of conditional execution to achieve the
+// differing blend modes.
+// Halved the samplers used by the glow for the same reason.
 //
-// Added workaround for the interlaced media height bug in
-// Lightworks effects.
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms. The bug still exists when using older versions
+// of Lightworks.
 //
-// Explicitly defined a float4 variable to address the
-// different behaviour of the D3D and Cg compilers.
-//
-// Used SetTechnique instead of conditional execution to
-// achieve the differing blend modes.  It isn't much, I
-// know, but every little helps.  Halved the samplers used
-// by the glow for the same reason.
-//
-// Version 14.1 update 5 December 2017 by jwrl.
-//
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -47,9 +43,9 @@ int _LwksEffectInfo
    string SubCategory = "Art Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -58,9 +54,9 @@ texture Edge : RenderColorTarget;
 texture Glow_1   : RenderColorTarget;
 texture Glow_2   : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -108,9 +104,9 @@ sampler g2_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -186,9 +182,9 @@ float4 Colour_2
    bool SupportsAlpha = true;
 > = { 1.0, 1.0, 0.0, 1.0 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define LOOP     12
 #define DIVIDE   49        // (LOOP * 4) + 1
@@ -213,9 +209,9 @@ float _Progress;
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float fn_get_edge (float2 uv)
 {
@@ -224,9 +220,9 @@ float fn_get_edge (float2 uv)
    return (Fgd.r + Fgd.g + Fgd.b) / 3.0;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_edges (float2 uv : TEXCOORD1) : COLOR
 {
@@ -352,9 +348,9 @@ float4 ps_vivid_light_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Fgd, Glow, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique addEdge
 {
@@ -505,4 +501,3 @@ technique vividLightEdge
    pass P_7
    { PixelShader = compile PROFILE ps_vivid_light_main (); }
 }
-

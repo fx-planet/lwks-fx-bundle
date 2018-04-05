@@ -1,20 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-05
+// @Author khaver
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/Toon.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Toon.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// The image is posterized, then outlines are developed from image edges.  These are
+// applied on top of the already posterized image to give the final effect.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Explicitly defined float3 variable to address behavioural differences between the D3D
+// and Cg compilers.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Explicitly defined float3 variable to address behavioural
-// differences between the D3D and Cg compilers.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -24,13 +29,9 @@ int _LwksEffectInfo
    string SubCategory = "Art Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -44,13 +45,10 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
 float RedStrength
 <
    string Description = "RedStrength";
@@ -83,20 +81,18 @@ float Threshold
    float MaxVal       = 10.00;
 > = 0.1; // Default value
 
-#pragma warning ( disable : 3571 )
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define NUM 9
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+#pragma warning ( disable : 3571 )
+
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
+
 float4 dirtyToonPS( float2 xy : TEXCOORD1 ) : COLOR
 {
    // Read a pixel from the source image at position 'xy'
@@ -143,19 +139,14 @@ float4 dirtyToonPS( float2 xy : TEXCOORD1 ) : COLOR
 	return color;
 }
 
-
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+
+technique Toon
 {
    pass SinglePass
    {
       PixelShader = compile PROFILE dirtyToonPS();
    }
 }
-

@@ -1,40 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2016-04-02
+// @see https://www.lwks.com/media/kunena/attachments/6375/Extrusion_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Extrusion_matte_route.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Extrusion_matte.fx
 //
-// Created by LW user jwrl 2 April 2016.
-// @Author jwrl
-// @Created "2 April 2016"
-//  LW 14+ version by jwrl 11 January 2017
-//  Subcategory "Edge Effects" added.
+// This effect, as the name suggests, extrudes a foreground image either linearly or
+// radially towards a centre point.  The extruded section can either be shaded by the
+// foreground, image, colour shaded, or flat colour filled.
 //
-// This effect, as the name suggests, extrudes a foreground
-// image either linearly or radially towards a centre point.
-// The extruded section can either be shaded by the foreground,
-// image, colour shaded, or flat colour filled.
+// The edge shading can be inverted if desired.  It is also possible to export the
+// alpha channel for use in downstream effects.
 //
-// The edge shading can be inverted if desired.  It is also
-// possible to export the alpha channel for use in downstream
-// effects.
-//
-// Lightworks effect modified by user jwrl 6 May 2016.
+// Modified 6 May 2016.
 // Extrusion anti-ailasing added.
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  It returns only half the actual frame
-// height when interlaced media is playing and only when it
-// is playing.  This fix will be reliable even if the LW bug
-// is fixed.
+// LW 14+ version 11 January 2017
+// Subcategory "Edge Effects" added.
 //
-// Bug fix 26 July 2017 by jwrl:
-// Because Windows and Linux-OS/X have differing defaults for
-// undefined samplers they have now been explicitly declared.
+// Bug fix 26 February 2017
+// This corrects for a bug in the way that Lightworks handles interlaced media.  It
+// returns only half the actual frame height when interlaced media is stationary.
 //
-// Bug fix 26 March 2018 by jwrl:
+// Bug fix 26 July 2017
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers
+// they have now been explicitly declared.
+//
+// Bug fix 26 March 2018
 // Corrected a hue problem with the extrusion generation.
-//--------------------------------------------------------------//
+//
+// Modified 5 April 2018
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -44,9 +44,9 @@ int _LwksEffectInfo
    string SubCategory = "Edge Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -112,9 +112,9 @@ sampler ProcSampler = sampler_state {
         MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -176,9 +176,9 @@ bool expAlpha
    string Description = "Export alpha channel";
 > = false;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define SAMPLE   80
 #define HALFWAY  40              // SAMPLE / 2
@@ -201,9 +201,9 @@ bool expAlpha
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_radial (float2 uv : TEXCOORD1, uniform int mode) : COLOR
 {
@@ -347,9 +347,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (bgImage, float4 (retval.rgb, bgImage.a), Opacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Radial
 {
@@ -426,4 +426,3 @@ technique LinearColour
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

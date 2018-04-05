@@ -1,20 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// mattekey.fx
-//
-// Created by Lightworks user jwrl 29 February 2016
+// @Released 2018-04-05
 // @Author jwrl
-// @Created "29 February 2016"
+// @Created 2016-02-29
+// @see https://www.lwks.com/media/kunena/attachments/6375/MatteKey_0_2016-08-07.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/DropShadow13.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect mattekey.fx
 //
-// This provides a means of matting a foreground image into a
-// background using a white on black or black on white matte
-// shape.  The matte can be feathered, or it can be blurred
-// inside the effect prior to generating the key.
+// This provides a means of matting a foreground image into a background using a white
+// on black or black on white matte shape.  The matte can be feathered, or it can be
+// blurred inside the effect prior to generating the key.
 //
-// It currently uses reasonably dumb box blurs on the matte
-// shape.  That seems to work well enough for feathering.
-//--------------------------------------------------------------//
+// It currently uses reasonably dumb box blurs on the matte shape.  That seems to work
+// well enough for feathering.
+//
+// LW 14+ version 11 January 2017
+// Subcategory "User Effects" added.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -24,9 +30,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float opacity
 <
@@ -80,9 +86,9 @@ bool AlphaChan
    string Description = "Output foreground and alpha only";
 > = false;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Matte;
 texture Fg;
@@ -94,9 +100,9 @@ texture blurIn3 : RenderColorTarget;
 texture blurIn4 : RenderColorTarget;
 texture keyInp  : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler matteSampler = sampler_state
 {
@@ -178,9 +184,9 @@ sampler keySampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Common
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define R_VAL          0.2989
 #define G_VAL          0.5866
@@ -199,9 +205,9 @@ sampler keySampler = sampler_state
 
 float _OutputAspectRatio;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 invertMatte (float2 xy : TEXCOORD1) : COLOR
 {
@@ -328,86 +334,50 @@ float4 matte_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique standardFeather
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurIn1;";
-   >
-   {
-      PixelShader = compile PROFILE invertMatte ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurIn1;"; >
+   { PixelShader = compile PROFILE invertMatte (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = blurIn2;";
-   >
-   {
-      PixelShader = compile PROFILE boxBlur_1 ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = blurIn2;"; >
+   { PixelShader = compile PROFILE boxBlur_1 (); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = keyInp;";
-   >
-   {
-      PixelShader = compile PROFILE boxBlur_2 ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = keyInp;"; >
+   { PixelShader = compile PROFILE boxBlur_2 (); }
 
-   pass pass_four
-   {
-      PixelShader = compile PROFILE matte_gen ();
-   }
+   pass P_4
+   { PixelShader = compile PROFILE matte_gen (); }
 }
 
 technique extendFeather
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = blurIn1;";
-   >
-   {
-      PixelShader = compile PROFILE invertMatte ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = blurIn1;"; >
+   { PixelShader = compile PROFILE invertMatte (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = blurIn2;";
-   >
-   {
-      PixelShader = compile PROFILE boxBlur_1 ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = blurIn2;"; >
+   { PixelShader = compile PROFILE boxBlur_1 (); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = blurIn3;";
-   >
-   {
-      PixelShader = compile PROFILE boxBlur_2 ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = blurIn3;"; >
+   { PixelShader = compile PROFILE boxBlur_2 (); }
 
-   pass pass_four
-   <
-      string Script = "RenderColorTarget0 = blurIn4;";
-   >
-   {
-      PixelShader = compile PROFILE blur_X ();
-   }
+   pass P_4
+   < string Script = "RenderColorTarget0 = blurIn4;"; >
+   { PixelShader = compile PROFILE blur_X (); }
 
-   pass pass_five
-   <
-      string Script = "RenderColorTarget0 = keyInp;";
-   >
-   {
-      PixelShader = compile PROFILE blur_Y ();
-   }
+   pass P_5
+   < string Script = "RenderColorTarget0 = keyInp;"; >
+   { PixelShader = compile PROFILE blur_Y (); }
 
-   pass pass_six
-   {
-      PixelShader = compile PROFILE matte_gen ();
-   }
+   pass P_6
+   { PixelShader = compile PROFILE matte_gen (); }
 }

@@ -1,35 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author rakusan
-// @Maintainer Windsturm
-/**
-  * FxSpinBlur.
-  * SpinBlur effect.
-  * 
-  * @param <threshold>  Blur length parameters
-  * @param <CX> Center point of the spin, the X coordinate
-  * @param <CY> Center point of the spin, the Y coordinate
-  * @param <AR> AspectRatio 1:x
-  * @author Windsturm
-  * @version 1.0
- */
-
-//--------------------------------------------------------------//
-// FxSpinBlur
+// @Released 2018-04-05
+// @Author rakusan/windsturm
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/spinblur.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxSpinBlur.fx
 //
-// original code by rakusan.
-// http://kuramo.ch/webgl/videoeffects/
+// Original code by rakusan http://kuramo.ch/webgl/videoeffects/ translated by windsturm.
+// This applies a rotary blur with adjustable aspect ratio and centring.
 //
-// Translated by Windsturm.
+// @param <threshold>  Blur length parameters
+// @param <CX> Center point of the spin, the X coordinate
+// @param <CY> Center point of the spin, the Y coordinate
+// @param <AR> AspectRatio 1:x
+// @version 1.0 (only version posted by windsturm - jwrl).
 //
-// This Lightworks cross-platform version ported by Lightworks
-// forum moderator jwrl May 3 2016.
+// Cross-platform port by Lightworks forum moderator jwrl May 3 2016.
 //
-// An arithmetic bug which arose during the cross platform
-// conversion was detected and fixed by jwrl on June 28 2017.
-// The bug resulted in a noticeable drop in video levels and
-// severe highlight compression.
-//--------------------------------------------------------------//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// Bug fix June 28 2017 by jwrl.
+// An arithmetic bug which arose during the cross platform conversion was detected and
+// fixed.  The bug resulted in a noticeable drop in video levels and severe highlight
+// compression.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,17 +37,17 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";   // Added for v14 compatibility - jwrl.
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture prelim : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -71,9 +69,9 @@ sampler partSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float threshold
 <
@@ -105,9 +103,9 @@ float AR
    float MaxVal = 10.00;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define BLUR_PART 15
 #define BLUR_SAMP 30
@@ -122,9 +120,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 FxSpinBlur (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
 {
@@ -166,11 +164,11 @@ float4 FxSpinBlur (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
    return color;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
+technique FxSpinBlur
 {
    pass Pass_1
    <
@@ -185,4 +183,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE FxSpinBlur (true);
    }
 }
-

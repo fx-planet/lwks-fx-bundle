@@ -1,47 +1,50 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2016-03-04
+// @see https://www.lwks.com/media/kunena/attachments/6375/Light_rays_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect light_ray_keys.fx
 //
-// Created by LW user jwrl 4 March 2016.
-// @Author jwrl
-// @Created "4 March 2016"
-//  LW 14+ version by jwrl 11 January 2017
-//  Subcategory "Edge Effects" added.
+// This effect adds directional blurs to a key or any image with an alpha channel.  The
+// default is to apply a radial blur away from the effect centre.  That centre can be
+// put/ up to one frame height and/or frame width outside the frame.  Optionally it can
+// produce a blur that points to the centre, or a linear directional blur.
 //
-// This effect adds directional blurs to a key or any image
-// with an alpha channel.  The default is to apply a radial
-// blur away from the effect centre.  That centre can be put
-// up to one frame height and/or frame width outside the frame.
-// Optionally it can produce a blur that points to the centre,
-// or a linear directional blur.
+// The angle of the linear (directional) blur is set by dragging the effect centre away
+// from the frame centre.  The angle of displacement is all that's used in this mode,
+// and the amount of that displacement is ignored.  It can help in setting up, because
+// moving the effect centre further away from the frame centre in linear mode will
+// enhance the angular precision.
 //
-// The angle of the linear (directional) blur is set by dragging
-// the effect centre away from the frame centre.  The angle of
-// displacement is all that's used in this mode, and the amount
-// of that displacement is ignored.  It can help in setting up,
-// because moving the effect centre further away from the frame
-// centre in linear mode will enhance the angular precision.
+// If there is no alpha channel available this can be used to apply an overall blur to
+// an image.
 //
-// If there is no alpha channel available this can be used to
-// apply an overall blur to an image.
+// Modified April 3 2016
+// Added the ability to set the foreground blend to solid, screen, darken, or none, and
+// to make the rays darken or lighter the background.
 //
-// April 3 2016: added the ability to set the foreground blend
-// to solid, screen, darken, or none, and to make the rays darken
-// or lighter the background.
-//
-// May 7 2016: extended the foreground blend mdoes to include
-// add and subtract, and changed the ray blend modes to be add,
-// screen, darken and subtract.  "Add" effectively replaces the
-// original "lighten" mode.
-//
-// Also added the ability to independently fade out the
+// Modified May 7 2016
+// Extended the foreground blend mdoes to include add and subtract, and changed the ray
+// blend modes to be add, screen, darken and subtract.  "Add" effectively replaces the
+// original "lighten" mode.  Also added the ability to independently fade out the
 // foreground image and improved the linear fall-off.
 //
-// Bug fix 26 July 2017 by jwrl:
-// Because Windows and Linux-OS/X have differing defaults for
-// undefined samplers they have now been explicitly declared.
-//--------------------------------------------------------------//
+// LW 14+ version 11 January 2017
+// Subcategory "Edge Effects" added.
+//
+// Bug fix 26 July 2017
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
+// have now been explicitly declared.
+//
+// Modified 5 December 2017
+// Corrected an addressing mode bug which could have effected the way that transitions
+// behaved with this effect on Linux and OS-X.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -51,18 +54,18 @@ int _LwksEffectInfo
    string SubCategory = "Edge Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
 texture blurProc : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -99,9 +102,9 @@ sampler ProcSampler  = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Common
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define R_VAL    0.2989
 #define G_VAL    0.5866
@@ -126,9 +129,9 @@ sampler ProcSampler  = sampler_state {
 
 float _OutputAspectRatio;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -194,9 +197,9 @@ float Ycentre
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_out (float2 xy : TEXCOORD1) : COLOR
 {
@@ -312,9 +315,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return float4 (retval.rgb, bgImage.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique FromCentre
 {
@@ -363,4 +366,3 @@ technique Linear
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

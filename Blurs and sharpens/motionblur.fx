@@ -1,21 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author quality
-//--------------------------------------------------------------//
-// This effect was originally posted by Lightworks user
-// quality.  It was converted for better ps_2_0 compliance
-// by user jwrl 5 February 2016.
+// @Created -undefined-
+// @see https://www.lwks.com/media/kunena/attachments/6375/MotionBlur.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect motionblur.fx
+//
+// Modified 5 February 2016 by user jwrl.
+// This effect was originally posted by Lightworks user quality.  It was converted for
+// better ps_2_b compliance.
 //
 // Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Modified the code so that low values of Samples didn't make the video levels jump.
+// Also added an offset adjustment to compensate for the subjective position shift seen
+// with low values of that variable.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Modified the code so that low values of Samples didn't make
-// the video levels jump.  Also added an offset adjustment to
-// compensate for the subjective position shift seen with low
-// values of that variable.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -25,11 +28,9 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-float _Progress;
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -42,11 +43,9 @@ sampler InputSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//--------------------------------------------------------------//
-
-#define MAXSAMPLES 60.0
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Angle
 <
@@ -76,11 +75,19 @@ float Mix
     float MaxVal = 1.0;
 > = 0.5;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _Progress;
+
+#define MAXSAMPLES 60.0
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Pixel Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float4 main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -112,9 +119,9 @@ float4 main (float2 uv : TEXCOORD1) : COLOR
    return lerp (original, output, Mix);
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {

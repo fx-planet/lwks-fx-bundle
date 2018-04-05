@@ -1,16 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2013-03-01
+// @see https://www.lwks.com/media/kunena/attachments/6375/alphaAdjust.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect alphaAdjust.fx
 //
-// Created by LW user jwrl 1 March 2016.
-// @Author jwrl
-// @Created "1 March 2016"
+// This Lightworks effect is designed principally for alpha channel gamma correction.
+// It will adjust other settings as well, but it's optimised for gamma adjustment.
 //
-// This Lightworks effect is designed principally for alpha
-// channel gamma correction.  It will adjust other settings as
-// well, but it's optimised for gamma adjustment.
-//--------------------------------------------------------------//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -20,15 +22,15 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Input = sampler_state
 {
@@ -40,9 +42,9 @@ sampler s_Input = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool showAlpha
 <
@@ -77,9 +79,9 @@ float alphaGain
    float MaxVal = 4.00;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -87,14 +89,14 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    retval.a = saturate (((((pow (retval.a, 1 / alphaGamma) * alphaGain) + alphaBrightness) - 0.5) * alphaContrast) + 0.5);
 
-   if (!showAlpha) return retval;
+   if (showAlpha) return retval.aaaa;
 
-   return retval.aaaa;
+   return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Adjustment
 {

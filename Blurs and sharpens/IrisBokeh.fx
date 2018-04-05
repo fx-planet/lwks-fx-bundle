@@ -1,42 +1,43 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author khaver
-//--------------------------------------------------------------//
-// Iris Bokeh Pixel Shader
+// @Created 2012-??-??
+// @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokehNew.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect IrisBokeh.fx
 // (c) 2012 - Gary Hango
 //
-// This cross platform version for Linux/Mac by Lightworks
-// user jwrl 24 July 2017.
+// Iris Bokeh is similar to Bokeh.fx, but provides control of the iris (5 to 8 segments
+// or round).  It also controls the size, rotation, threshold and pretty much anything
+// else that you're likely to need to adjust.
 //
-// This is a rewrite of Gary Hango's original to support the
-// Cg compiler used on the Linux/Mac platforms.  The variables,
-// functions, shaders and techniques are operationally the same
-// as those in the Windows original and as much as possible try
-// to use the same names.  The code used to implement them may
-// be different.
+// Cross platform version 24 July 2017 by jwrl.
+// This has had considerable work done on it to make it Linux/Mac compatible.  The
+// compatibility of the previous version was poor due to the inability to pass pointers
+// to shaders conditionally on those platforms.  As a result this has become largely a
+// rewrite of Gary Hango's original to support the Cg compiler used on the Linux/Mac
+// platforms.  The variables, functions, shaders and techniques are operationally the
+// same as those in the Windows original and as much as possible try to use the same
+// names.  The code used to implement them may be different.
 //
 // The major differences are:
+//    The original LittleBlur() function has now become a shader.
+//    Both BokehPS() and BlurPS() have been split in three and merged with the
+//    functions they called.
 //
-//    The original LittleBlur() function has now become a
-//    shader.
+// The changes have reduced conditional execution and function calls significantly.
+// With fourteen passes, anything that we can do to reduce overheads is worth it.
 //
-//    Both BokehPS() and BlurPS() have been split in three
-//    and merged with the functions they called.
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge"
+// on those platforms.  It will now function correctly when used with Lightworks
+// versions 14.5 and higher under Linux or OS-X and fixes a bug associated with using
+// this effect with transitions on those platforms.  The bug still exists when using
+// older versions of Lightworks.
 //
-// The changes have reduced conditional execution and function
-// calls significantly.  With fourteen passes, anything that we
-// can do to reduce overheads is worth it.
-//
-// Version 14.1 update 5 December 2017 by jwrl.
-//
-// Added LINUX and MAC test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -46,9 +47,9 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Depth;
@@ -61,9 +62,9 @@ texture Pass2 : RenderColorTarget;
 texture Bokeh1 : RenderColorTarget;
 texture Bokeh2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -136,9 +137,9 @@ sampler m2 = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -225,9 +226,9 @@ float mix
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
@@ -363,9 +364,9 @@ float2 _bokeh[120] =
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float2 Rotation (float2 pt)
 {
@@ -376,9 +377,9 @@ float2 Rotation (float2 pt)
    return (pt * C) - (float2 (pt.y, -pt.x) * S);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 FindBokehPS (float2 Tex : TEXCOORD1) : COLOR
 {
@@ -585,9 +586,9 @@ float4 CombinePS (float2 Tex : TEXCOORD1) : COLOR
    return (1.0.xxxx - ((1.0.xxxx - (bokeh * bomix)) * (1.0.xxxx - (blurred * blmix))));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Round
 {
@@ -1148,4 +1149,3 @@ technique Five
       PixelShader = compile PROFILE CombinePS ();
    }
 }
-

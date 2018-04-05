@@ -1,29 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+// @Author jwrl
+// @Created 2016-05-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/GlitterEdge_3.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect GlitterEdge.fx
 //
-// Created by LW user jwrl 10 May 2016.
-// @Author jwrl
-// @Created "10 May 2016"
-//  LW 14+ version by jwrl 11 January 2017
-//  Subcategory "Edge Effects" added.
+// The star point component is based on khaver's Glint.fx, but modified to have no blur
+// component, no choice of star points, and to compile and run under the ps_2_b shader
+// profile in Windows.
 //
-// The star point component is based on khaver's Glint.fx, but
-// modified to have no blur component, no choice of star points,
-// and to compile and run under the ps_2_0 shader profile.
+// LW 14+ version 11 January 2017
+// Subcategory "Edge Effects" added.
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  It returns only half the actual frame
-// height when interlaced media is playing and only when it
-// is playing.  This fix will be reliable even if the LW bug
-// is fixed.
+// Bug fix 26 February 2017
+// This corrects for a bug in the way that Lightworks handles interlaced media.  It
+// returns only half the actual frame height when interlaced media is stationary.
 //
 // Bug fix 26 July 2017 by jwrl:
-// Because Windows and Linux-OS/X have differing defaults for
-// undefined samplers they have now been explicitly declared.
-//--------------------------------------------------------------//
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
+// have now been explicitly declared.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -33,9 +34,9 @@ int _LwksEffectInfo
    string SubCategory = "Edge Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -49,9 +50,9 @@ texture Sample2 : RenderColorTarget;
 texture Sample3 : RenderColorTarget;
 texture Sample4 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
         Texture   = <Fg>;
@@ -134,9 +135,9 @@ sampler Samp4 = sampler_state {
         MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -222,9 +223,9 @@ float4 Colour
    bool SupportsAlpha = true;
 > = { 1.0, 0.8, 0.0, 1.0 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Common
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 # define ROTATE_45   0.7854
 # define ROTATE_135  2.35619
@@ -240,9 +241,9 @@ float _Progress;
 float _OutputWidth;
 float _OutputAspectRatio;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_noise (float2 uv : TEXCOORD1) : COLOR
 {
@@ -395,9 +396,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgd, retval, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique doMatte
 {
@@ -502,4 +503,3 @@ technique doMatte
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

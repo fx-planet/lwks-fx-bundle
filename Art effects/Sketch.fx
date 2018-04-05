@@ -1,44 +1,49 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author khaver
-// @Created "August 2012"
-//--------------------------------------------------------------//
-// Sketch.fx created by Gary Hango (khaver) August 2012.
+// @Created 2012-08-??
+// @see https://www.lwks.com/media/kunena/attachments/6375/Sketch.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Sketch.fx
+//
+// Sketch simulates a sketch from a standard video source.  An extremely wide range of
+// adjustment parameters have been provided which should meet most needs.  Border line
+// colour is adjustable, as are the individual thresholds for each RGB channel.
+// Shadow area colour can also be adjusted for best effect.
 //
 // Cross platform conversion by jwrl May 2 2016.
+// Explicit profile declaration changed to generic PROFILE.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-//
-// Added workaround for the interlaced media height bug in
-// Lightworks effects.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
+// Explicitly defined samplers to fix cross-platform default sampler state differences.
+// Explicitly defined float2 and float4 variables to address behavioural difference
+// between the D3D and Cg compilers.
+// Removed the statements "static const", "CULL_MODE" and a VertexShader declaration.
+// They broke the effect in Linux and appeared to do nothing in Windows.
+// Removed the arguments being passed to the RenderColorTarget declarations.  They
+// seemed to do nothing in either OS.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Explicitly defined float2 and float4 variables to address
-// behavioural difference between the D3D and Cg compilers.
-//
-// Removed the statements "static const", "CULL_MODE" and the
-// VertexShader declaration.  They broke the effect in Linux
-// and appeared to do nothing in Windows.
-//
-// Removed the arguments being passed to the RenderColorTarget
-// declarations.  They seemed to do nothing in either OS.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "Sketch";
    string Category    = "Stylize";
-   string SubCategory = "Art Effects";         // Added for LW14 - jwrl
+   string SubCategory = "Art Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -46,6 +51,10 @@ texture ThresholdTexture : RenderColorTarget;
 texture Blur1 : RenderColorTarget;
 texture Blur2 : RenderColorTarget;
 texture Target : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler SourceTextureSampler = sampler_state
 {
@@ -96,9 +105,9 @@ sampler TarSamp = sampler_state {
    MipFilter = Linear;
  };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool Invert
 <
@@ -184,9 +193,9 @@ bool InvBack
    string Group = "Background";
 > = false;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
@@ -207,9 +216,9 @@ int GY [3][3] =
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 threshold_main (float2 xy1 : TEXCOORD1) : COLOR
 {
@@ -295,9 +304,9 @@ float4 Fix (float2 tex : TEXCOORD1) : COLOR
    return lerp (lines, back, lines.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique EdgeDetect
 {
@@ -338,4 +347,3 @@ technique EdgeDetect
       PixelShader = compile PROFILE Fix ();
    }
 }
-

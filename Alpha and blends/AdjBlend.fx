@@ -1,18 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-05
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect AdjBlend.fx
 //
-// Created by LW user jwrl 25 October 2017.
 // @Author jwrl
-// @Created "25 October 2017"
+// @Created 2017-10-25
+// @see https://www.lwks.com/media/kunena/attachments/6375/AdjBlend_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AdjBlend_4.png
 //
-// This is a quick way of blending when the alpha channel may
-// not quite be as required.  The alpha channel may be inverted
-// or scaled, the video may be premultiplied, and transparency
-// and opacity may be adjusted.  Unlike the blend effect there
-// are no Photoshop-style blending modes.
-//--------------------------------------------------------------//
+// This is a quick way of blending when the alpha channel may not quite be as required.
+// The alpha channel may be inverted or scaled, the video may be premultiplied, and
+// transparency and opacity may be adjusted.  Those last two behave in different ways:
+// "Transparency" adjusts the key channel background transparency, while "Opacity" is a
+// final key opacity adjustment.
+//
+// Unlike the Lightworks blend effect there are no Photoshop-style blending modes.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -22,16 +29,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 {
@@ -53,9 +60,9 @@ sampler BgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool Invert
 <
@@ -92,9 +99,9 @@ float Boost_alpha
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -131,9 +138,9 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgd, Fgd, Fgd.a * Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique AdjBlend_0
 {
@@ -144,4 +151,3 @@ technique AdjBlend_1
 {
    pass P_1 { PixelShader = compile PROFILE ps_main_1 (); }
 }
-

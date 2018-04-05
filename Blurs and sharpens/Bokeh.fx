@@ -1,48 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author khaver
-//--------------------------------------------------------------//
-// Blur with Bokeh by khaver
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/BigBlur.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Bokeh.fx
 //
-// Blur with adjustable bokeh.
-// Uses 6 GPU passes for blur and 8 pass for bokeh creation.
-// Probably not playable in realtime.
+// Blur with adjustable bokeh.  Uses 6 GPU passes for blur and 8 pass for bokeh creation.
+// May not be playable in real time on slower systems.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// Added workaround for the interlaced media height bug in Lightworks effects.  THE BUG
+// WAS NOT IN THE WAY THIS EFFECT WAS ORIGINALLY IMPLEMENTED.  When a height parameter is
+// needed one cannot reliably use _OutputHeight with interlaced media.  It returns only
+// half the actual frame height when interlaced media is stationary.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Bokeh";                // The title
-   string Category    = "Stylize";              // Governs the category that the effect appears in in Lightworks
-   string SubCategory = "Blurs and Sharpens";   // Added for v14 compatibility - jwrl.
+   string Description = "Bokeh";
+   string Category    = "Stylize";
+   string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Mask : RenderColorTarget;
@@ -50,6 +40,10 @@ texture Pass1 : RenderColorTarget;
 texture Pass2 : RenderColorTarget;
 texture Bokeh1 : RenderColorTarget;
 texture Bokeh2 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler s0 = sampler_state {
 	Texture = <Input>;
@@ -105,13 +99,9 @@ sampler b2 = sampler_state {
 	MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float size
 <
@@ -169,18 +159,18 @@ bool smask
 	string Description = "Show Bokeh Mask";
 > = false;
 
+//-----------------------------------------------------------------------------------------//
+// Declarations and definitions
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float2 circle(float angle)
 {
@@ -229,6 +219,10 @@ float4 BokehFilterRGBA (sampler tSource, float2 texCoord, float2 pixelSize, floa
    cOut.a = 1.0f;
    return cOut;
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 FindBokeh( float2 Tex : TEXCOORD1) : COLOR
 {
@@ -291,15 +285,11 @@ float4 Combine( float2 Tex : TEXCOORD1 ) : COLOR
   return orig;
 }
 
-
-
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes
-//--------------------------------------------------------------
-technique singletechnique
+//-----------------------------------------------------------------------------------------//
+
+technique Bokeh
 {
 
    pass BokehPass

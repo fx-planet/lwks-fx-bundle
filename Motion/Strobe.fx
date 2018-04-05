@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 5 April 2018
+// @Released 2018-04-05
 // @Author khaver
 // @Created -unknown-
 // @see https://www.lwks.com/media/kunena/attachments/6375/Strobe.png

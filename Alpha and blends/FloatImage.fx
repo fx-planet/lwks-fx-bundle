@@ -1,32 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author jwrl
-// @Created "11 November 2016"
-//--------------------------------------------------------------//
+// @Created 2016-11-11
+// @see https://www.lwks.com/media/kunena/attachments/6375/FloatGraphic_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect FloatImage.fx
 //
-// This version by LW user jwrl 11 November 2016
+// The original version of this effect (now withdrawn) was called floating graphics.
+// It was subsequently thought necessary to add the ability to deal with non-alpha
+// media or media with an unwanted alpha channel.  This effect is the final result.
 //
-// The original version of this effect (now withdrawn) was
-// called floating graphics.  It was subsequently thought
-// necessary to add the ability to deal with non-alpha media
-// or media with an unwanted alpha channel.  This effect is
-// the final result.
+// The original effect came about because of a need to create a custom title treatment
+// in production.
 //
-// The original effect came about because of a need to create
-// a custom title treatment in production.
+// Bug fix 26 July 2017
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
+// have now been explicitly declared.
 //
-// Bug fix 26 July 2017 by jwrl:
-// Because Windows and Linux-OS/X have differing defaults for
-// undefined samplers they have now been explicitly declared.
+// Version 14.5 update 24 March 2018
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect should now function correctly when used with
+// current and previous Lightworks versions.
 //
-// Version 14.5 update 24 March 2018 by jwrl.
-//
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -36,9 +35,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -47,9 +46,9 @@ texture Bg_1 : RenderColorTarget;
 texture Bg_2 : RenderColorTarget;
 texture Bg_3 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Fgnd    = sampler_state {
         Texture   = <Fg>;
@@ -96,9 +95,9 @@ sampler s_Bgnd_3  = sampler_state {
 	MipFilter = Linear;
         };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int enhanceKey
 <
@@ -261,24 +260,24 @@ float D_Yc
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define A_On  true
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 xy)
 {
    return (xy.x < 0.0) || (xy.y < 0.0) || (xy.x > 1.0) || (xy.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1, uniform sampler img,
                 uniform float Opac, uniform float Zoom,
@@ -305,9 +304,9 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform sampler img,
    return lerp (bgdImage, fgdImage, fgdImage.a * Opac);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique ZoomDissolveOut
 {

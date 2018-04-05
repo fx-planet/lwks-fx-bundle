@@ -1,16 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect SoftZoomBlur.fx
-// Created by LW user jwrl 6 July 2017.
+// @Released 2018-04-05
 // @Author jwrl
-// @Created "6 July 2017"
+// @Created 2017-07-06
+// @see https://www.lwks.com/media/kunena/attachments/6375/SoftZoom_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect SoftZoomBlur.fx
 //
-// This blur effect is similar to the Lightworks radial blur
-// effect, but is very much softer in the result that it can
-// produce.  The blur length range is also much greater than
-// that provided by the Lightworks effect.
-//--------------------------------------------------------------//
+// This blur effect is similar to the Lightworks radial blur effect, but is very much
+// softer in the result that it can produce.  The blur length range is also much greater
+// than that provided by the Lightworks effect.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -20,18 +22,18 @@ int _LwksEffectInfo
    string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
 texture blur_1 : RenderColorTarget;
 texture blur_2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state {
    Texture   = <Inp>;
@@ -60,10 +62,9 @@ sampler b2_Sampler = sampler_state {
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Length
 <
@@ -95,9 +96,9 @@ float CentreY
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define DIVISOR 18.5
 
@@ -110,9 +111,9 @@ float CentreY
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform int scale) : COLOR
 {
@@ -148,9 +149,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (InpSampler, uv), retval, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique soft_zoom_blur
 {
@@ -169,4 +170,3 @@ technique soft_zoom_blur
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

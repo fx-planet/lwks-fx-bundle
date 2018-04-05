@@ -1,11 +1,10 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
-//-----------------------------------------------------------------------------------------//
-// Lightworks user effect AlphaFeather.fx
-//
 // @Author khaver
 // @Created -unknown-
 // @see http://www.lwks.com/media/kunena/attachments/1246/AFExample.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect AlphaFeather.fx
 //
 // The Alpha Feather effect was created to help bed an externally generated graphic with
 // alpha channel into an existing background after it was noticed that the standard LW

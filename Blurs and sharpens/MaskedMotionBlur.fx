@@ -1,29 +1,46 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-05
 // @Author baopao
-//--------------------------------------------------------------//
-// Original effect created by Lightworks user baopao
+// @Created -unknown-
+// @see https://www.lwks.com/media/kunena/attachments/6375/MmotionBlur_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect MaskedMotionBlur.fx
+//
+// This is an extremely strong directional blur.  The blur angle can be adjusted through
+// a full 360 degrees, and sampling can be adjusted to range from a succession of
+// discrete images to smooth blur.  An external mask input is available to control where
+// the mask appears.
 //
 //  Cross-platform conversion by jwrl April 28 2016.
-//--------------------------------------------------------------//
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "Masked Motion Blur";
    string Category    = "Stylize";
-   string SubCategory = "Blurs and Sharpens";   // Added for v14 compatibility - jwrl.
+   string SubCategory = "Blurs and Sharpens";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Mask;
 
 texture blurInput : RenderColorTarget;
 texture mainInput : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state {
 	Texture = <Input>;
@@ -63,9 +80,9 @@ sampler mainSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Angle
 <
@@ -100,17 +117,17 @@ bool invertMask
    string Description = "Invert mask";
 > = false;
 
-//--------------------------------------------------------------//
-// Definitions, global variables and constants
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define MAXSAMPLES 60
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
-// Pixel Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 pre_blur (float2 uv : TEXCOORD1) : COLOR
 {
@@ -155,9 +172,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, blurry, Mix);
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -190,4 +207,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

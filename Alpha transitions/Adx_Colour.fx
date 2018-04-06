@@ -1,34 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-05-28
+// @see https://www.lwks.com/media/kunena/attachments/6375/Alpha2Colour_1_2016-08-14.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaColour.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Colour.fx
 //
-// Created by LW user jwrl 28 May 2016
-// @Author jwrl
-// @Created "28 May 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaColourMix.fx by jwrl 8 August 2017 for
-// name consistency through alpha dissolve range.
+// This effect dips through a user-selected colour from one title to another or fades to
+// or from that colour.  The colour field used can be a single flat colour, a vertical
+// gradient, a horizontal gradient or a four corner gradient.  It can also composite the
+// result over a background layer.  If fading a title in or out it uses non-linear
+// transitions to reveal the colour at its maximum strength midway through the transition.
 //
-// This effect dips through a user-selected colour from one
-// title to another or fades to or from that colour.  The
-// colour field used can be a single flat colour, a vertical
-// gradient, a horizontal gradient or a four corner gradient.
-// It can also composite the result over a background layer.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.
 //
-// If fading a title in or out it uses non-linear transitions
-// to reveal the colour at its maximum strength midway through
-// the transition.
+// The boost technique also now uses gamma rather than gain to adjust the alpha levels.
+// This more closely matches the way that Lightworks handles titles.
 //
-// Alpha levels are boosted to support Lightworks titles, which
-// is now the default setting.  The boost amount is tied to the
-// incoming and outgoing titles, rather than FX1 and FX2 as
-// with the earlier version.
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
 //
-// The boost technique also now uses gamma rather than gain to
-// adjust the alpha levels.  This more closely matches the way
-// that Lightworks handles titles.
-//--------------------------------------------------------------//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaColourMix.fx for name consistency through
+// the alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -38,9 +40,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -54,9 +56,9 @@ texture colourFrame : RenderColorTarget;
 
 texture preMix : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -130,9 +132,9 @@ sampler preSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -221,17 +223,17 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
-// Definitions and stuff
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define HALF_PI 1.570796
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
-// Pixel Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
 {
@@ -356,9 +358,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a * level);
 }
 
-//--------------------------------------------------------------//
-// Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique fade_in
 {
@@ -425,4 +427,3 @@ technique diss_Fx2_Fx1
    pass P_5
    { PixelShader = compile PROFILE ps_main (); }
 }
-

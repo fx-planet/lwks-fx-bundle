@@ -1,31 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-06
 // @Author khaver
-//--------------------------------------------------------------//
-// Tenderizer by khaver
+// @see https://www.lwks.com/media/kunena/attachments/1246/Tenderizer.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Tenderizer.fx
 //
-// This effect converts 8 bit video to 10 bit video by adding
-// intermediate colors and luma values using spline interpolation.
-// Set project to 10 bit and set source width and height for best results.
-// Note: alpha channel is not changed.
+// This effect converts 8 bit video to 10 bit video by adding intermediate colors and
+// luma values using spline interpolation.  Set project to 10 bit and set source width
+// and height for best results.
+//
+// Note: the alpha channel is not changed, but there may be some image softening.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -34,18 +27,9 @@ int _LwksEffectInfo
    string SubCategory = "Technical";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-#define OutputHeight (_OutputWidth/_OutputAspectRatio)
+//-----------------------------------------------------------------------------------------//
+// Input and shader
+//-----------------------------------------------------------------------------------------//
 
 texture V;
 
@@ -57,14 +41,10 @@ sampler VSampler = sampler_state {
         MagFilter = Point;
         MipFilter = Point;
 };
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
 
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int ReX
 <
@@ -88,20 +68,20 @@ bool Chroma
    string Description = "Tenderize Chroma";
 > = true;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+#define OutputHeight (_OutputWidth/_OutputAspectRatio)
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
-
-
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float4 Hermite(float t, float4 A, float4 B, float4 C, float4 D)
 {
@@ -135,6 +115,10 @@ float closest(float test, float orig, float bit)
 		else return (test + orig) / 2.0;
 	}
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 Tenderize( float2 xy : TEXCOORD1 ) : COLOR
 {
@@ -235,17 +219,14 @@ float4 samp80, samp81, samp83, samp84;
    return color;
 }
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
+technique Tenderizer
 {
    pass First
    {
       PixelShader = compile PROFILE Tenderize();
    }
 }
-

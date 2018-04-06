@@ -1,26 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-05-27
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaWarp_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaWarp.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Warp.fx
 //
-// Created by LW user jwrl 27 May 2016
-// @Author jwrl
-// @Created "27 May 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaWarpMix.fx by jwrl 8 August 2017 for name
-// consistency through the alpha dissolve range.
+// This effect warps in or out of a title or between titles.  It also composites the
+// result over a background layer.  The warp is driven by the background image, so will
+// be different each time that it's used.
 //
-// This effect warps in or out of a title or between titles.
-// It also composites the result over a background layer.
-// The warp is driven by the background image, so will be
-// different each time it's used.
+// Alpha levels can be boosted to support Lightworks titles, which is the default
+// setting.  The boost technique uses gamma rather than simple amplification to correct
+// alpha levels.  This visually matches the way that Lightworks handles titles closely.
 //
-// Alpha levels can be boosted to support Lightworks titles,
-// which is the default setting.  The boost technique uses
-// gamma rather than simple amplification to correct alpha
-// levels.  This closely matches the way that Lightworks
-// handles titles internally.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaWarpMix.fx for name consistency through the alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -30,9 +34,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -45,9 +49,9 @@ texture Fg2 : RenderColorTarget;
 texture Wrp1 : RenderColorTarget;
 texture Wrp2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state
 {
@@ -127,9 +131,9 @@ sampler Wp2Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -177,17 +181,17 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define HALF_PI 1.570796
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
 {
@@ -291,9 +295,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgd2, Fgd2.a * (1.0 - Amount));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique WarpDissIn
 {
@@ -366,4 +370,3 @@ technique WarpDiss_2_1
    pass P_6
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,16 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-06
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/ColorBars.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ColorBars.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// This version of colorbars provides a SMPTE alternative to the Lightworks-supplied
+// EBU version.  It installs into the custom category "User", subcategory "Broadcast".
 //
-// Bugfix by jwrl 14 July 2017 to correct an issue with Linux/
-// Mac versions of the Lightworks effects compiler that caused
-// the bars not to display on those platforms.
-//--------------------------------------------------------------//
+// Bugfix 14 July 2017 by jwrl.
+// Corrected an issue with Linux/Mac versions of the Lightworks effects compiler that
+// caused the bars not to display on those platforms.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -19,21 +25,15 @@ int _LwksEffectInfo
    string SubCategory = "Broadcast";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+// No input required.
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -43,17 +43,9 @@ int SetTechnique
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
-
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 PS_BarsHD( float2 uv : TEXCOORD0 ) : COLOR
 {
@@ -219,14 +211,9 @@ float4 PS_BarsSD( float2 uv : TEXCOORD0 ) : COLOR
 	return float4(0.75,0.75,0.75,1);
 }
 
-
-
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique HD
 {
@@ -243,4 +230,3 @@ technique SD
       PixelShader = compile PROFILE PS_BarsSD();
    }
 }
-

@@ -1,25 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-07-03
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaStrips_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaStrips.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Strips.fx
 //
-// Created by LW user jwrl 3 July 2016
-// @Author jwrl
-// @Created "3 July 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaStripMix.fx by jwrl 8 August 2017 for
-// name consistency through the alpha dissolve range.
+// An alpha transition that splits title(s) into strips and compresses them to zero
+// height.  The vertical centring can be adjusted so that the collapse is symmetrical.
 //
-// An alpha transition that splits title(s) into strips and
-// compresses them to zero height.  The vertical centring
-// can be adjusted so that the title collapses symmetrically.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.  The boost technique also now uses gamma rather than
+// gain to adjust the alpha levels.  This more closely visually matches the way that
+// Lightworks handles titles.
 //
-// Alpha levels can be boosted to support Lightworks titles,
-// which is the default setting.  The boost technique uses
-// gamma rather than simple amplification to correct alpha
-// levels.  This closely matches the way that Lightworks
-// handles titles internally.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaStripMix.fx for name consistency through the alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -29,9 +35,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -41,9 +47,9 @@ texture Fgd : RenderColorTarget;
 texture Bgd : RenderColorTarget;
 texture Bg1 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -99,9 +105,9 @@ sampler Bg1Sampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -175,9 +181,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define HEIGHT   20.0
 
@@ -188,9 +194,9 @@ float _Progress;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
 {
@@ -289,9 +295,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique fade_in
 {
@@ -350,4 +356,3 @@ technique diss_Fx2_Fx1
 
    pass P_5 { PixelShader = compile PROFILE ps_main_in (); }
 }
-

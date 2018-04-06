@@ -1,31 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Adx_PinchX.fx
-// Created by LW user jwrl 28 October 2017.
+// @Released 2018-04-06
 // @Author jwrl
-// @Created "28 October 2017"
+// @Created 2017-10-28
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBars_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBar.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Adx_PinchX.fx
 //
-// This effect pinches the outgoing title to a point to clear
-// the background shot, while zooming out of the pinched title.
-// It reverses the process to bring in the incoming title.
-// Trig functions have been used during the progress of the
-// effect to make the acceleration smoother.
+// This effect pinches the outgoing title to a point to clear the background shot, while
+// zooming out of the pinched title.  It reverses the process to bring in the incoming
+// title.  Trig functions have been used during the progress of the effect to make the
+// acceleration smoother.
 //
-// While based on Wx_xPinch.fx, the direction swap has been
-// made symmetrical, unlike that in Wx_xPinch.fx.  When used
-// with titles which by their nature don't occupy the full
-// screen, subjectively this approach looked better.  The wipe
-// in and wipe out transitions also scale differently to the
-// overlaps for the same reason.
+// While based on Wx_xPinch.fx, the direction swap has been made symmetrical, unlike that
+// in Wx_xPinch.fx.  When used with titles which by their nature don't occupy the full
+// screen, subjectively this approach looked better.  The wipe in and wipe out transitions
+// also scale differently to the overlaps for the same reason.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -35,9 +34,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp_1;
 texture Inp_2;
@@ -52,9 +51,9 @@ texture Pinch : RenderColorTarget;
 
 texture Amt : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler AmtSampler = sampler_state
 {
@@ -136,9 +135,9 @@ sampler BgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -178,9 +177,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define MID_PT     (0.5).xx
 
@@ -189,18 +188,18 @@ float Boost_I
 #define HALF_PI    1.5707963268
 #define QUARTER_PI 0.7853981634
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_amt_inp (float2 uv : TEXCOORD1) : COLOR
 {
@@ -305,9 +304,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (BgdSampler, uv), Fgd, Fgd.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique PinchIn
 {
@@ -428,4 +427,3 @@ technique PinchFX2_FX1
    pass P_8
    { PixelShader = compile PROFILE ps_main_in (); }
 }
-

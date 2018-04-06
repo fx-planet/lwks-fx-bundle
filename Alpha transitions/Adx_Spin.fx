@@ -1,30 +1,37 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-12-30
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSpinMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSpin.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Spin.fx
 //
-// Created by LW user jwrl 30 December 2016
-// @Author jwrl
-// @Created "30 December 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaSpinMix.fx by jwrl 8 August 2017 for
-// name consistency through alpha dissolve range.
+// The effect applies a rotary blur to transition into or out of a title or between titles
+// and is based on original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).
+// The direction, aspect ratio, centring and strength of the blur can all be adjusted.
+// It then composites the result over the background layer.
 //
-// This effect is based on original shader code by rakusan
-// (http://kuramo.ch/webgl/videoeffects/).
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.  The boost technique also now uses gamma rather than
+// gain to adjust the alpha levels.  This more closely visually matches the way that
+// Lightworks handles titles.
 //
-// The effect applies a rotational blur to transition into
-// or out of a title or between titles.  The direction,
-// aspect ratio, centring and strength of the blur can all
-// be adjusted.  It then composites the result over the
-// background layer.
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
 //
-// Alpha levels can be boosted to support Lightworks titles,
-// which is the default setting.  The boost technique uses
-// gamma rather than simple amplification to correct alpha
-// levels.  This closely matches the way that Lightworks
-// handles titles internally.
-//--------------------------------------------------------------//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaSpinMix.fx for name consistency through the alpha dissolve range.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -34,9 +41,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -48,9 +55,9 @@ texture Bgnd : RenderColorTarget;
 texture Spn1 : RenderColorTarget;
 texture Spn2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -115,9 +122,9 @@ sampler Spn2Sampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -198,9 +205,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define HALF_PI   1.570796
 
@@ -234,9 +241,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_fixAlpha (float2 uv : TEXCOORD1, uniform sampler foreground, uniform float enhanceKey) : COLOR
 {
@@ -304,9 +311,9 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler B_sampler, uniform bool f
    return lerp (Bgd, Fgd, Fgd.a * mixAmt);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SpinDissIn
 {
@@ -445,4 +452,3 @@ technique SpinDissFX2_FX1
    pass P_E
    { PixelShader = compile PROFILE ps_main (BgSampler, FADE_IN); }
 }
-

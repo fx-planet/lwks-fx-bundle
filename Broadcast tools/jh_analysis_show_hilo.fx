@@ -1,16 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author "Juha Hartikainen"
+// @Released 2018-04-06
+// @Author juhartik
 // @AuthorEmail juha@linearteam.org
-//--------------------------------------------------------------
+// @Created 2016-05-09
+// @see https://www.lwks.com/media/kunena/attachments/6375/Analyze.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect jh_analysis_show_hilo.fx
+//
+// JH Analysis Show Hi/Lo v1.0 - Juha Hartikainen - juha@linearteam.org - Blinks extreme
+// darks/highlights.
 // 
-// JH Analysis Show Hi/Lo v1.0 - Juha Hartikainen - juha@linearteam.org
-// - Blinks extreme darks/highlights
-// 
-// Modified to sit in user category "Analysis" for version 14.
-// This will actually show as category "User", subcategory
-// "Analysis" in 14 and as category "User" in earlier versions.
-//--------------------------------------------------------------
+// Modified 11 February 2017 jwrl.
+// Modified to sit in user category "Analysis" for version 14.  This will actually show
+// as category "User", subcategory "Analysis" in 14 and as category "User" in earlier
+// versions.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -19,9 +28,10 @@ int _LwksEffectInfo
    string SubCategory = "Analysis";
 > = 0;
 
-//--------------------------------------------------------------
-// Inputs
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
+
 texture Input;
 
 sampler FgSampler = sampler_state
@@ -34,10 +44,10 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+
 float LoLimit
 <
    string Description = "Low Limit";
@@ -52,13 +62,17 @@ float HiLimit
    float MaxVal = 1.0;
 > = 0.95;
 
-#pragma warning ( disable : 3571 )
-
-//--------------------------------------------------------------
-// Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _Progress = 1.0;
+
+#pragma warning ( disable : 3571 )
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 half4 MainPS(float2 xy : TEXCOORD1) : COLOR
 {
@@ -79,11 +93,14 @@ half4 MainPS(float2 xy : TEXCOORD1) : COLOR
    return color;
 }
 
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
+technique ShowHiLo
 {
    pass p0
    {
       PixelShader = compile PROFILE MainPS();
    }
 }
-

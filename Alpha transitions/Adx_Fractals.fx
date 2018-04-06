@@ -1,28 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-05-24
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaFractalMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaFractal.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Fractals.fx
 //
-// Created by LW user jwrl 24 May 2016
-// @Author jwrl
-// @Created "24 May 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaFractalMix.fx by jwrl 8 August 2017 for
-// name consistency through alpha dissolve range.
+// This effect uses a fractal-like pattern to transition into or out of a title, or to
+// dissolve between titles.  It also composites the result over a background layer.
 //
-// This effect uses a fractal-like pattern to transition into
-// or out of a title, or to dissolve between titles.  It also
-// composites the result over a background layer.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.
 //
-// Alpha levels are boosted to support Lightworks titles, which
-// is now the default setting.  The boost amount is tied to the
-// incoming and outgoing titles, rather than FX1 and FX2 as
-// with the earlier version.
+// The boost technique also now uses gamma rather than gain to adjust the alpha levels.
+// This more closely matches the way that Lightworks handles titles.
 //
-// The boost technique also now uses gamma rather than gain to
-// adjust the alpha levels.  This more closely matches the way
-// that Lightworks handles titles.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaFractalMix.fx for name consistency through alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,9 +36,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -46,9 +50,9 @@ texture Bgd : RenderColorTarget;
 
 texture FracOut : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -113,9 +117,9 @@ sampler FracSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -179,18 +183,18 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define FEATHER 0.1
 
 float _OutputAspectRatio;
 float _Progress;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
 {
@@ -338,9 +342,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return lerp (retval, Ovly, Fgd2.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique doFadeIn
 {
@@ -407,4 +411,3 @@ technique doMain_2_1
    pass P_5
    { PixelShader = compile PROFILE ps_main (); }
 }
-

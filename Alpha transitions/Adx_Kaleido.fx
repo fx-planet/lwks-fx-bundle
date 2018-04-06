@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Kaleido.fx
 //
-// This is loosely based on the userb effect Kaleido.fx by Lightworks user baopao
+// This is loosely based on the user effect Kaleido.fx by Lightworks user baopao
 // (http://www.alessandrodallafontana.com/) which was in turn based on a pixel shader
 // at http://pixelshaders.com/ which was fine tuned for Cg compliance by Lightworks user
 // nouanda.  This effect has been built from that original.  In the process some further

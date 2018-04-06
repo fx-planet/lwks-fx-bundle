@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @OriginalAuthor "François Tarlier"
+// @Released 2018-04-06
 // @Author brdloush
-//------------------------------------------------------------------------------------------------//
+// @see https://www.lwks.com/media/kunena/attachments/6375/CubicLensDistortion.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect CubicLensDistortion.fx 
 //
-// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by François Tarlier
+// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by FranÃ§ois Tarlier
 //
-// Nice effect that can be used for getting rid of heavy fish-eye effect of GoPro HD Hero2 cameras.
+// Nice effect that can be used for getting rid of heavy fish-eye effect of GoPro HD
+// Hero2 cameras.
 //
 // Following settings worked nicely:
 // - Comp Size - X: 100%
@@ -16,51 +17,51 @@
 // - Distortion: -18%
 // - Cubic Distortion: 5.75%
 //
-// Feel free to share/modify or implement all the functions of original "ft-CubicLensDistortion".
-//------------------------------------------------------------------------------------------------//
-
-//------------------------------------------------------------------------------------------------//
-// Pixel Bender shader written by François Tarlier
+// Feel free to share/modify or implement all the functions of original
+// "ft-CubicLensDistortion".
+//
+// Pixel Bender shader written by FranÃ§ois Tarlier
 // http://www.francois-tarlier.com/blog/index.php/2010/03/update-cubic-lens-distortion-pixel-bender-shader-for-ae-with-scale-chroamtic-aberration/
 //     
-// Original Lens Distortion Algorithm from SSontech (Syntheyes) http://www.ssontech.com/content/lensalg.htm
+// Original Lens Distortion Algorithm from SSontech (Syntheyes)
+// http://www.ssontech.com/content/lensalg.htm
 //     r2 = image_aspect*image_aspect*u*u + v*v
 //     f = 1 + r2*(k + kcube*sqrt(r2))
 //     u' = f*u
 //     v' = f*v
 //
-// Copyright (c) 2010 François Tarlier
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-// and associated documentation files (the "Software"), to deal in the Software without restriction,
-// including without limitation the rights to use, copy, modify, merge, publish, distribute,
-// sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
+// Copyright (c) 2010 FranÃ§ois Tarlier
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in the
+// Software without restriction, including without limitation the rights to use, copy,
+// modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+// and to permit persons to whom the Software is furnished to do so, subject to the
+// following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all copies or
-// substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in all copies
+// or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-// BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+// PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+// CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+// OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-//------------------------------------------------------------------------------------------------//
-
-//------------------------------------------------------------------------------------------------//
 // Cross platform compatibility check 29 July 2017 jwrl.
-//
-// Explicitly defined samplers to correct for cross platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect should now function correctly when used with
+// all current and previous Lightworks versions.  When doing that I have also substantially
+// restructured the code so that it is both more readable and will run more efficiently
+// in Lightworks.
 //
-// Legality checking has been added to correct for a bug in XY sampler addressing on Linux and
-// OS-X platforms.  This effect should now function correctly when used with all current and
-// previous Lightworks versions.
-//
-// When doing that I have also substantially restructured the code so that it is both more
-// readable and will run more efficiently in Lightworks.
-//------------------------------------------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -70,15 +71,15 @@ int _LwksEffectInfo
    string SubCategory = "Repair";
 > = 0;
 
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -90,9 +91,9 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float scale
 <
@@ -115,9 +116,9 @@ float cubicDistortion
    float MaxVal = 1.0;
 > = 0.0;
 
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 
@@ -125,18 +126,18 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
@@ -152,13 +153,12 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return fn_illegal (uv) ? EMPTY : tex2D (FgSampler, uv);
 }
 
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique CubicLensDistortion
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,25 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2017-05-19
+// @see https://www.lwks.com/media/kunena/attachments/6375/A_Dx_S_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaScurve.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Scurve.fx
 //
-// Created by LW user jwrl 19 May 2017.
-// @Author jwrl
-// @Created "19 May 2017"
-// Renamed from S_mix.fx by jwrl 8 August 2017 for consistency
-// of name through the alpha dissolve range.
+// This is essentially the same as the S dissolve but extended to support alpha channels.
+// A trigonometric curve is applied to the "Amount" parameter and the linearity of the
+// curve can be adjusted.
 //
-// This is essentially the same as the S dissolve but extended
-// to support alpha channels.  A trigonometric curve is applied
-// to the "Amount" parameter and the linearity of the curve can
-// be adjusted.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.  The boost technique also now uses gamma rather than
+// gain to adjust the alpha levels.  This more closely visually matches the way that
+// Lightworks handles titles.
 //
-// Alpha levels can be boosted to support Lightworks titles,
-// which is the default setting.  The boost technique uses
-// gamma rather than simple amplification to correct alpha
-// levels.  This closely matches the way that Lightworks
-// handles titles internally.
-//--------------------------------------------------------------//
+// Modified 8 August 2017 by jwrl.
+// Renamed from S_mix.fx for consistency of name through the alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -29,9 +33,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -42,9 +46,9 @@ texture In_2 : RenderColorTarget;
 
 texture Bgd : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -100,9 +104,9 @@ sampler BgdSampler  = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -149,17 +153,17 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI      3.1415927
 
 #define HALF_PI 1.5707963
 
-//--------------------------------------------------------------//
-// Pixel Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
@@ -249,9 +253,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgd_2, Fgd_2.a * amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique sDx_in
 {
@@ -306,4 +310,3 @@ technique sDx_2_1
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

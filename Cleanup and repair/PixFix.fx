@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-06
 // @Author khaver
-// @Created "February 2013"
-//--------------------------------------------------------------//
-// Header
+// @Created 2013-02-14
+// @see https://www.lwks.com/media/kunena/attachments/1246/PixFix.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect PixFix.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// Pixel Fixer is designed to repair dead pixels.  Add a clip to be corrected to a
+// sequence and add the Pixel Fixer effect to the clip.  It will show a magnified area
+// of the frame with a green target pixel in the middle.  It defaults to a single pixel
+// but you can select a pixel pattern of up to 4 pixels in a group.  The green pixels
+// will change as you select the different patterns.
 //
-// Effect created by Gary Hango (khaver) February 2013.
+// Using the on-screen cross-hairs, move the magnified area to the dead pixels and use
+// the X Adjust and Y Adjust to fine tune the target over the dead pixel(s).  Check the
+// "Fix" box to hide the dead pixel(s), then un-check "Magnify".
 //
 // This cross platform conversion by jwrl April 29 2016.
 //
 // Bug fix 26 February 2017 by jwrl:
-//
-// Added workaround for the interlaced media height bug in
-// Lightworks effects.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
 // Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,19 +37,16 @@ int _LwksEffectInfo
    string SubCategory = "Repair";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Bars1 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state {
    Texture = <Input>;
@@ -64,13 +66,9 @@ sampler BarSampler1 = sampler_state {
    MipFilter = Point;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool Glass
 <
@@ -125,20 +123,20 @@ float fineY
    float MaxVal = 1.00;
 > = 0.0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+float4 _red = float4 (0.0, 1.0, 0.0, 1.0);
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
-
-const float4 _red = float4 (0.0, 1.0, 0.0, 1.0);
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -616,12 +614,9 @@ float4 last (float2 uv : TEXCOORD1) : COLOR
    return tex2D (BarSampler1, xy);
 }
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique pnum1
 {
@@ -772,4 +767,3 @@ technique pnum4
       PixelShader = compile PROFILE last ();
    }
 }
-

@@ -1,22 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-06-01
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSqueeze_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSqueeze.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Squeeze.fx
 //
-// Created by Lightworks user jwrl 1 June 2016.
-// @Author jwrl
-// @Created "1 June 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaSqueezeMix.fx by jwrl 8 August 2017 for
-// name consistency through the alpha dissolve range.
+// This mimics the Lightworks squeeze effect but supports alpha channel transitions.
+// Alpha levels can be boosted to support Lightworks titles, which is the default setting.
+// The boost technique uses gamma rather than simple amplification to correct alpha levels.
+// This visually matches the way that Lightworks handles titles quite closely.
 //
-// This mimics the Lightworks squeeze effect but supports alpha
-// channel transitions.  Alpha levels can be boosted to support
-// Lightworks titles, which is the default setting.  The boost
-// technique uses gamma rather than simple amplification to
-// correct alpha levels.  This closely matches the way that
-// Lightworks handles titles internally.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaSqueezeMix.fx for name consistency through the alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,9 +31,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -38,9 +43,9 @@ texture Fg1 : RenderColorTarget;
 texture Fg2 : RenderColorTarget;
 texture Bgd : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -96,9 +101,9 @@ sampler BgdSampler  = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -145,9 +150,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define FX_IN   0
 #define FX_OUT  1
@@ -158,9 +163,9 @@ float Boost_I
 
 #define BLACK   (0.0).xxxx
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1 (float2 xy : TEXCOORD1) : COLOR      // Alpha foreground
 {
@@ -237,9 +242,9 @@ float4 ps_squeeze_up (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (BgdSampler, uv), Fgnd, Fgnd.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique squeeze_right
 {
@@ -300,4 +305,3 @@ technique squeeze_up
    pass P_4
    { PixelShader = compile PROFILE ps_squeeze_up (); }
 }
-

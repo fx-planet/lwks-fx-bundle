@@ -1,32 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// De-interlace.fx written by jwrl March 14 2017.
+// @Released 2018-04-06
 // @Author jwrl
-// @Created "March 14 2017"
+// @Created 2017-03-14
+// @see https://www.lwks.com/media/kunena/attachments/6375/Deinterlace_1_2017-03-08.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect De-interlace.fx
 //
-// A fourth try at a de-interlace tool, still doing it the way
-// that avoids Lightworks' pixel height bug.  It provides seven
-// modes of operation: odd field only, even field only, blended
-// fields, odd field interpolated, even field interpolated and
-// two blended interpolated modes.
+// A fourth try at a de-interlace tool, still doing it the way that avoids Lightworks'
+// pixel height bug.  It provides seven modes of operation: odd field only, even field
+// only, blended fields, odd field interpolated, even field interpolated and two blended
+// interpolated modes.
 //
-// Depending on the mode chosen, this can require a maximum of
-// three passes to execute.  On that basis it shouldn't place
-// too much of a strain on any modern GPU.
+// Depending on the mode chosen, this can require a maximum of three passes to execute.
+// On that basis it shouldn't place too much of a strain on any modern GPU.
 //
-// This version is designed to work only on interlaced media of
-// the same resolution as the project, and to then export only
-// at that resolution.  If this is not the case severe "combing"
-// can result which may be impossible to remove.
+// This version is designed to work only on interlaced media of the same resolution as
+// the project, and to then export only at that resolution.  If this is not the case
+// severe "combing" can result which may be impossible to remove.
 //
-// Because it relies on the capability of the GPU to do pixel
-// interpolation some tests were felt necessary before release.
-// It has been tested with an Nvidia Quadro K2200, an Nvidia
-// GTX-970 G1 and an Nvidia GTX-960.  On those it was reliable
-// in all the interpolated modes with 1080i media in a 1080p
-// project.
-//--------------------------------------------------------------//
+// Because it relies on the capability of the GPU to do pixel interpolation some tests
+// were felt necessary before release.  It has been tested with an Nvidia Quadro K2200,
+// an Nvidia GTX-970 G1 and an Nvidia GTX-960.  On those it was reliable in all the
+// interpolated modes with 1080i media in a 1080p project.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -36,18 +36,18 @@ int _LwksEffectInfo
    string SubCategory = "Broadcast";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
 texture Odds  : RenderColorTarget;
 texture Evens : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state
 {
@@ -79,9 +79,9 @@ sampler EvenSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -89,18 +89,18 @@ int SetTechnique
    string Enum = "Odd fields only,Even fields only,Field blending,Interpolate odd fields,Interpolate even fields,Blended interpolated A,Blended interpolated B";
 > = 5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Declarations and definitions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_odd_fields (float2 uv : TEXCOORD1) : COLOR
 {
@@ -187,127 +187,80 @@ float4 ps_main_B (float2 uv : TEXCOORD1) : COLOR
            tex2D (OddSampler, xy2) + tex2D (EvenSampler, xy2)) / 4.0;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique oddFields
 {
-   pass pass_one
-   {
-      PixelShader = compile PROFILE ps_odd_fields ();
-   }
+   pass P_1
+   { PixelShader = compile PROFILE ps_odd_fields (); }
 }
 
 technique evenFields
 {
-   pass pass_one
-   {
-      PixelShader = compile PROFILE ps_even_fields ();
-   }
+   pass P_1
+   { PixelShader = compile PROFILE ps_even_fields (); }
 }
 
 technique blendFields
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Odds;";
-   >
-   {
-      PixelShader = compile PROFILE ps_odd_fields ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Odds;"; >
+   { PixelShader = compile PROFILE ps_odd_fields (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = Evens;";
-   >
-   {
-      PixelShader = compile PROFILE ps_even_fields ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = Evens;"; >
+   { PixelShader = compile PROFILE ps_even_fields (); }
 
-   pass pass_three
-   {
-      PixelShader = compile PROFILE ps_blend ();
-   }
+   pass P_3
+   { PixelShader = compile PROFILE ps_blend (); }
 }
 
 technique interpolateOdd
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Evens;";
-   >
-   {
-      PixelShader = compile PROFILE ps_even_fields ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Evens;"; >
+   { PixelShader = compile PROFILE ps_even_fields (); }
 
-   pass pass_two
-   {
-      PixelShader = compile PROFILE ps_interp_odd ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_interp_odd (); }
 }
 
 technique interpolateEven
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Odds;";
-   >
-   {
-      PixelShader = compile PROFILE ps_odd_fields ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Odds;"; >
+   { PixelShader = compile PROFILE ps_odd_fields (); }
 
-   pass pass_two
-   {
-      PixelShader = compile PROFILE ps_interp_even ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_interp_even (); }
 }
 
 technique blendInterpolateA
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Odds;";
-   >
-   {
-      PixelShader = compile PROFILE ps_odd_fields ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Odds;"; >
+   { PixelShader = compile PROFILE ps_odd_fields (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = Evens;";
-   >
-   {
-      PixelShader = compile PROFILE ps_even_fields ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = Evens;"; >
+   { PixelShader = compile PROFILE ps_even_fields (); }
 
-   pass pass_three
-   {
-      PixelShader = compile PROFILE ps_main_A ();
-   }
+   pass P_3
+   { PixelShader = compile PROFILE ps_main_A (); }
 }
 
 technique blendInterpolateB
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Odds;";
-   >
-   {
-      PixelShader = compile PROFILE ps_odd_fields ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Odds;"; >
+   { PixelShader = compile PROFILE ps_odd_fields (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = Evens;";
-   >
-   {
-      PixelShader = compile PROFILE ps_even_fields ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = Evens;"; >
+   { PixelShader = compile PROFILE ps_even_fields (); }
 
-   pass pass_three
-   {
-      PixelShader = compile PROFILE ps_main_B ();
-   }
+   pass P_3
+   { PixelShader = compile PROFILE ps_main_B (); }
 }
-

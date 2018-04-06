@@ -1,31 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-06-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaRotate_1_2016-08-14.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaRotate.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Rotate.fx
 //
-// Created by LW user jwrl 18 June 2016
-// @Author jwrl
-// @Created "18 June 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaRotateMix.fx by jwrl 8 August 2017 for
-// name consistency through alpha dissolve range.
+// This rotates one title out and the other in.  Alpha levels can be boosted to support
+// Lightworks titles, which is the default setting.  The boost technique uses gamma
+// rather than simple amplification to correct alpha levels.  This closely matches the
+// way that Lightworks handles titles internally.
 //
-// This rotates one title out and the other in.  Alpha levels
-// can be boosted to support Lightworks titles, which is the
-// default setting.  The boost technique uses gamma rather
-// than simple amplification to correct alpha levels.  This
-// closely matches the way that Lightworks handles titles
-// internally.
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
 //
-// Version 14.1 update 5 December 2017 by jwrl.
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaRotateMix.fx for name consistency through the alpha dissolve range.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -35,9 +35,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -47,9 +47,9 @@ texture Fg1 : RenderColorTarget;
 texture Fg2 : RenderColorTarget;
 texture Bgd : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -105,9 +105,9 @@ sampler BgdSampler  = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -154,9 +154,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define FX_IN   0
 #define FX_OUT  1
@@ -167,18 +167,18 @@ float Boost_I
 
 #define EMPTY   (0.0).xxxx
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1 (float2 xy : TEXCOORD1) : COLOR      // Alpha foreground
 {
@@ -255,9 +255,9 @@ float4 ps_rotate_up (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (BgdSampler, uv), fgdPix, fgdPix.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique rotate_right
 {
@@ -318,4 +318,3 @@ technique rotate_up
    pass P_4
    { PixelShader = compile PROFILE ps_rotate_up (); }
 }
-

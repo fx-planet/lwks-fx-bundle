@@ -1,22 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2015-12-20
+// @see https://www.lwks.com/media/kunena/attachments/6375/Channels_3.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Channels.fx
 //
-// Created by LW user jwrl 20 December 2015
-// @Author jwrl
-// @Created "20 December 2015"
-// This effect can show individual RGB channels and a range
-// of other video components.
+// This is a diagnostic tool that can be used to display individual RGB channels,
+// luminance, summed RGB, U, V and alpha channels.
 //
-// Note: the alpha channel is preserved for potential later
-// use in other effects.
+// Note: the alpha channel is preserved for potential later use in other effects.
 //
-// 18 June 2016: Added RGB sum, B - Y and R - Y display.
+// Modified 18 June 2016 by jwrl.
+// Added RGB sum, B - Y and R - Y display.
 //
-// 16 August 2016: Added 709 luminance matrix and the ability
-//                 to show any or all RGB as negative.
-//--------------------------------------------------------------//
+// Modified 16 August 2016 by jwrl.
+// Added 709 luminance matrix and the ability to show any or all RGB as negative.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,15 +30,15 @@ int _LwksEffectInfo
    string SubCategory = "Broadcast";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
    Texture = <Input>;
@@ -45,9 +49,9 @@ sampler FgSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int Channel
 <
@@ -60,9 +64,9 @@ bool Negative
    string Description = "Display as negative";
 > = false;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define R_MATRIX 0.2989
 #define G_MATRIX 0.5866
@@ -75,9 +79,9 @@ bool Negative
 #define U_SCALE  0.564
 #define V_SCALE  0.713
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
@@ -105,15 +109,12 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return RGBval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique showChannels
 {
-   pass Single_Pass
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1
+   { PixelShader = compile PROFILE ps_main (); }
 }
-

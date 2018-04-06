@@ -1,57 +1,48 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-06
 // @Author nouanda
-// @Author brdloush
-// @Author jwrl
-//--------------------------------------------------------------//
-// CloneStamp.fx
-// Version alpha 0.03
-// Collective effort from Lightworks Forum members
-// Ok, we're amateurs, but we managed to do it!
-// nouanda // brdloush // jwrl
+// @see https://www.lwks.com/media/kunena/attachments/6375/clonestamp.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect CloneStamp.fx version alpha 0.03
 //
-// Absolutely no copyright - none - zero - nietchevo - rien
-// it's no rocket science, why should we claim a copyright?
-// Feel free to use at your envy!
+// Collective effort from Lightworks Forum members nouanda // brdloush // jwrl
+// Ok, we're amateurs, but we managed to do it!
+//
+// Absolutely no copyright - none - zero - nietchevo - rien - it's no rocket science,
+// why should we claim a copyright?  Feel free to use at your envy!
 //
 // Function aspectAdjustedpos from Lwks' shapes2.fx shader
 //
 // Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to correct for platform default sampler state differences.
+// Taking nouanda's "feel free" above at face value, I have rewritten the rectangle code
+// to correct a bug in the clone positioning.  In the process considerable code cleanup
+// and optimisation of both modules has been done.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Rewrote the aspect ratio adjustment to take into account _OutputAspectRatio.  The code
+// is no longer the Lightworks version which has meant some changes to the aspect ratio
+// parameter.  The default setting of 1.78:1 is now 1:1 and the range now swings between
+// 1:3.33 to 3.33:1.
 //
-// Taking nouanda's "feel free" above at face value, I have
-// rewritten the rectangle code to correct a bug in the
-// clone positioning.  In the process considerable code
-// cleanup and optimisation of both modules has been done.
+// Fixed an aspect ratio bug in the ellipse code.  This means that the ellipse now
+// defaults to a circle at an aspect ratio of 1:1.  This matches the behaviour of the
+// rectangle, which defaults to square.
 //
-// Rewrote the aspect ratio adjustment to take into account
-// _OutputAspectRatio.  The code is no longer the Lightworks
-// version which has meant some changes to the aspect ratio
-// parameter.  The default setting of 1.78:1 is now 1:1 and
-// the range now swings between 1:3.33 to 3.33:1.
+// Scaled the Size parameter in the ellipse code so that it matches the area covered by
+// the rectangle at the same settings.
 //
-// Fixed an aspect ratio bug in the ellipse code.  This
-// means that the ellipse now defaults to a circle at an
-// aspect ratio of 1:1.  This matches the behaviour of
-// the rectangle, which defaults to square.
+// Rewrote the rectangle softness so the corners of the linear and sinusoidal curves
+// are smooth and are no longer cut off.
 //
-// Scaled the Size parameter in the ellipse code so that it
-// matches the area covered by the rectangle at the same
-// settings.
+// FINAL COMMENT: There are still too many conditionals for my liking and I know that
+// I can work out a technique without using them for the rectangular linear softness.
+// Unfortunately it doesn't translate for the square or sinusoidal softness, so at the
+// moment I don't want to use it.  There has to be a way.
 //
-// Rewrote the rectangle softness so that the corners of
-// the linear and sinusoidal curves are smooth and are no
-// longer cut off.
-//
-// FINAL COMMENT: There are still too many conditionals for
-// my liking and I know that I can work out a technique
-// without using them for the rectangular linear softness.
-// Unfortunately it doesn't translate for the square or
-// sinusoidal softness, so at the moment I don't want to
-// use it.  There has to be a way.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -61,15 +52,15 @@ int _LwksEffectInfo
    string SubCategory = "Repair";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler SourceSampler = sampler_state
 {
@@ -81,16 +72,15 @@ sampler SourceSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
    string Description = "Shape";
    string Enum = "Ellipse, Rectangle";
 > = 0;
-
 
 float Size
 <
@@ -194,9 +184,9 @@ float DestBlue
    float MaxVal = 1.00;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI      3.14159265
 #define PI_AREA 1.27323954
@@ -205,9 +195,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_ellipse (float2 uv : TEXCOORD1): COLOR
 {
@@ -321,9 +311,9 @@ float4 ps_rectangle (float2 uv : TEXCOORD1): COLOR
    return float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Ellipse
 {
@@ -336,5 +326,4 @@ technique Rectangle
    pass P_1
    { PixelShader = compile PROFILE ps_rectangle (); }
 }
-
 

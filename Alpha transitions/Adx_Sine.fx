@@ -1,22 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Adx_Sine.fx
-// Created by LW user jwrl 30 October 2017
+// @Released 2018-04-06
 // @Author jwrl
-// @Created "30 October 2017"
+// @Created 2017-10-30
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Sine_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Sine.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Adx_Sine.fx
 //
-// This is an alpha dissolve/wipe that uses sine distortion to
-// perform a left - right or right - left transition between
-// the alpha components.  Phase can be offset by 180 degrees.
+// This is an alpha dissolve/wipe that uses sine distortion to perform a left-right or
+// right-left transition between the alpha components.  Phase can be offset by 180 degrees.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,9 +27,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In_1;
 texture In_2;
@@ -39,9 +40,9 @@ texture Inp_2 : RenderColorTarget;
 
 texture Bgd : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state
 {
@@ -102,9 +103,9 @@ sampler BgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -181,9 +182,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define RIPPLES  125.0
 #define SOFTNESS 0.45
@@ -192,18 +193,18 @@ float Boost_I
 
 #define EMPTY    (0.0).xxxx
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_inp_1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -275,9 +276,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgd, Fgd, Fgd.a * amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique WarpDissIn
 {
@@ -358,4 +359,3 @@ technique WarpDissFX2_FX1
    pass P_6
    { PixelShader = compile PROFILE ps_main_in (); }
 }
-

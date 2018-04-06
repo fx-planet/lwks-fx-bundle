@@ -1,34 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-05-27
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaTransmogrify_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaTransmogrify.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Transmogrify.fx
 //
-// Created by LW user jwrl 27 May 2016
-// @Author jwrl
-// @Created "27 May 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaTransmogMix.fx by jwrl 8 August 2017 for
-// name consistency through the alpha dissolve range.
+// This is a truly bizarre transition which can transition into or out of a title or
+// between titles.  The outgoing title is blown apart into individual pixels which swirl
+// away.  The incoming title materialises from a pixel cloud, and the result is then
+// composited over the background layer.
 //
-// This is a truly bizarre transition.  It can transition
-// into or out of a title or between titles.  It then
-// composites the result over a background layer.
+// Alpha levels can be boosted to support Lightworks titles, which is the default
+// setting.  The boost technique uses gamma rather than simple amplification to correct
+// alpha levels, which visually matches the way that Lightworks handles titles quite
+// closely.
 //
-// Alpha levels can be boosted to support Lightworks titles,
-// which is the default setting.  The boost technique uses
-// gamma rather than simple amplification to correct alpha
-// levels.  This closely matches the way that Lightworks
-// handles titles internally.
+// Bug fix 26 February 2017 by jwrl.
+// Compensated for a bug in the way that Lightworks handles interlaced media.
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  When a height parameter is needed in an
-// effect one cannot reliably use _OutputHeight.  It returns
-// only half the actual frame height when interlaced media is
-// playing.  In this effect the output height is obtained by
-// dividing _OutputWidth by _OutputAspectRatio which is a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaTransmogMix.fx for consistency through the alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -38,9 +39,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -50,9 +51,9 @@ texture Fgd : RenderColorTarget;
 texture Fg1 : RenderColorTarget;
 texture Bgd : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -108,9 +109,9 @@ sampler BgdSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -150,9 +151,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
-// Definitions and stuff
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
@@ -163,9 +164,9 @@ float _Progress;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
 {
@@ -268,9 +269,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - Amount));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique transmogrify_in
 {
@@ -325,4 +326,3 @@ technique transmogrify_2_1
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

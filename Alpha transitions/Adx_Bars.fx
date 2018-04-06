@@ -1,34 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-06-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBars_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBar.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Bars.fx
 //
-// Created by LW user jwrl 10 June 2016
-// @Author jwrl
-// @Created "10 June 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaBarMix.fx by jwrl 8 August 2017 for name
-// consistency through alpha dissolve range.
+// An alpha transition that splits title(s) into strips then blows them apart either
+// horizontally or vertically.
 //
-// An alpha transition that splits title(s) into strips then
-// blows them apart either horizontally or vertically.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.
 //
-// Alpha levels are boosted to support Lightworks titles, which
-// is now the default setting.  The boost amount is tied to the
-// incoming and outgoing titles, rather than FX1 and FX2 as
-// with the earlier version.
+// The boost technique also now uses gamma rather than gain to adjust the alpha levels.
+// This more closely matches the way that Lightworks handles titles.
 //
-// The boost technique also now uses gamma rather than gain to
-// adjust the alpha levels.  This more closely matches the way
-// that Lightworks handles titles.
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaBarMix.fx for name consistency through alpha dissolve range.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -38,9 +40,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -50,9 +52,9 @@ texture Fgd : RenderColorTarget;
 texture Bgd : RenderColorTarget;
 texture Bg1 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -108,9 +110,9 @@ sampler Bg1Sampler  = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -165,9 +167,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define WIDTH  50
 #define OFFSET 1.2
@@ -176,18 +178,18 @@ float Boost_I
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
 {
@@ -277,9 +279,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique fade_in
 {
@@ -340,4 +342,3 @@ technique diss_Fx2_Fx1
    pass P_5
    { PixelShader = compile PROFILE ps_main_in (); }
 }
-

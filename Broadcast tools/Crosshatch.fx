@@ -1,36 +1,41 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-06
 // @Author jwrl
-//--------------------------------------------------------------//
-// This safe area and cross hatch generator was written by
-// Lightworks user jwrl Januuary 23, 2016.  It is entirely
-// original work.  Centre 4x3 safe added Januuary 25, 2016.
+// @Created 2016-01-23
+// @see https://www.lwks.com/media/kunena/attachments/6375/SafeArea.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Crosshatch.fx
 //
-// It has been generously commented so that anyone who wishes
-// to do so may modify it as required.  All "magic numbers"
-// are defined immediately following the sampler declarations
-// for easy access and adjustment.
-//--------------------------------------------------------------//
+// This safe area and cross hatch generator is entirely original work.  It has been
+// generously commented so that anyone who wishes to do so may modify it as required.
+// All "magic numbers" are defined immediately following the sampler declarations for
+// easy access and adjustment.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Safe area and crosshatch V3";
+   string Description = "Safe area and crosshatch";
    string Category    = "User";
    string SubCategory = "Broadcast";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture safeArea  : RenderColorTarget;
 texture gridLines : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler   = sampler_state {
    Texture = <Input>;
@@ -59,9 +64,9 @@ sampler gridSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define SUBTRACT     1           // Subtract value used by showIt and showSafeArea
 #define DIFFERENCE   2           // Difference value used by showIt and showSafeArea
@@ -111,6 +116,12 @@ sampler gridSampler = sampler_state {
 
 #define AR16x9       1.7         // 16x9 rounded down to give minimum identification
 #define AR16x9a      1.8         // 16x9 rounded up to give maximum ID
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int safeMode
 <
@@ -213,13 +224,11 @@ bool disableBgd
    string Description = "Disable background";
 > = false;
 
-float _OutputAspectRatio;
-
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Pixel Shaders
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_crosshatch (float2 uv : TEXCOORD1) : COLOR
 {
@@ -478,31 +487,20 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return original;
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
+technique Crosshatch
 {
-   pass passOne
-   <
-      string Script = "RenderColorTarget0 = gridLines;";
-   >
-   {
-      PixelShader = compile PROFILE ps_crosshatch ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = gridLines;"; >
+   { PixelShader = compile PROFILE ps_crosshatch (); }
 
-   pass passTwo
-   <
-      string Script = "RenderColorTarget0 = safeArea;";
-   >
-   {
-      PixelShader = compile PROFILE ps_safe_area ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = safeArea;"; >
+   { PixelShader = compile PROFILE ps_safe_area (); }
 
-   pass passThree
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_3
+   { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,34 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-06-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBlurMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBlur.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Blur.fx
 //
-// Created by LW user jwrl 24 May 2016
-// @Author jwrl
-// @Created "24 May 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaBlurMix.fx by jwrl 8 August 2017 for name
-// consistency through alpha dissolve range.
+// This effect is used to transition into or out of a title, or to dissolve between
+// titles.  It also composites the result over a background layer.
 //
-// This effect is used to transition into or out of a title, or
-// to dissolve between titles.  It also composites the result
-// over a background layer.
+// During the process it also applies a directional blur, the angle and strength of
+// which can be independently set for both the incoming and outgoing vision sources.
+// A setting to tie both incoming and outgoing blurs together is also provided.
 //
-// During the process it also applies a directional blur,
-// the angle and strength of which can be independently set
-// for both the incoming and outgoing vision sources.  A
-// setting to tie both incoming and outgoing blurs together
-// is also provided.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.
 //
-// Alpha levels are boosted to support Lightworks titles, which
-// is now the default setting.  The boost amount is tied to the
-// incoming and outgoing titles, rather than FX1 and FX2 as
-// with the earlier version.
+// The boost technique also now uses gamma rather than gain to adjust the alpha levels.
+// This more closely matches the way that Lightworks handles titles.
 //
-// The boost technique also now uses gamma rather than gain to
-// adjust the alpha levels.  This more closely matches the way
-// that Lightworks handles titles.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaBarMix.fx for name consistency through alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -38,9 +40,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -53,9 +55,9 @@ texture In_3 : RenderColorTarget;
 texture ovl1Proc : RenderColorTarget;
 texture ovl2Proc : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture   = <In1>;
@@ -133,9 +135,9 @@ sampler BgdSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -230,9 +232,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define FX_IN     0
 #define FX_OUT    1
@@ -246,9 +248,9 @@ float Boost_I
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Pixel Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1 (float2 xy : TEXCOORD1) : COLOR
 {
@@ -308,9 +310,9 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform int modeSet) : COLOR
    return lerp (retval, fgdImage, fgdImage.a * Mix);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique blurDiss_0
 {
@@ -353,4 +355,3 @@ technique blurDiss_1
    pass P_6
    { PixelShader = compile PROFILE ps_main (1); }
 }
-

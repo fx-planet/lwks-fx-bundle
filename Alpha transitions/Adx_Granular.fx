@@ -1,45 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-05-25
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaGranMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaGranular.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Granular.fx
 //
-// Created by LW user jwrl 25 May 2016
-// @Author jwrl
-// @Created "25 May 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaGranMix.fx by jwrl 8 August 2017 for
-// name consistency through alpha dissolve range.
+// This effect uses a granular noise driven dissolve to transition into or out of a
+// title, or between titles.  It also composites the result over a background layer.
 //
-// This effect uses a granular noise driven dissolve to
-// transition into or out of a title, or between titles.
-// It also composites the result over a background layer.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.
 //
-// Alpha levels are boosted to support Lightworks titles, which
-// is now the default setting.  The boost amount is tied to the
-// incoming and outgoing titles, rather than FX1 and FX2 as
-// with the earlier version.
-//
-// The boost technique also now uses gamma rather than gain to
-// adjust the alpha levels.  This more closely matches the way
-// that Lightworks handles titles.
+// The boost technique also now uses gamma rather than gain to adjust the alpha levels.
+// This more closely matches the way that Lightworks handles titles.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// Corrected in the way that Lightworks handles interlaced media.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
 //
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaGranMix.fx for name consistency through the alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -49,9 +39,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -66,9 +56,9 @@ texture Buffer_1 : RenderColorTarget;
 texture Buffer_2 : RenderColorTarget;
 texture Buffer_3 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -160,9 +150,9 @@ sampler Buffer_3_S  = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -258,9 +248,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _Progress;
 
@@ -283,9 +273,9 @@ float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -462,9 +452,9 @@ float4 Combine_flat (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, starColour, stars);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique TopToBottom
 {
@@ -570,4 +560,3 @@ technique Flat
    pass P_7
    { PixelShader = compile PROFILE Combine_flat (); }
 }
-

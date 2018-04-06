@@ -1,17 +1,19 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Antialias.fx written by jwrl May 9 2016.
+// @Released 2018-04-06
 // @Author jwrl
-// @Created "May 9 2016"
+// @Created 2016-05-09
+// @see https://www.lwks.com/media/kunena/attachments/6375/Alias3.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Antialias.fx
 //
-// A two pass rotary anti-alias tool that samples first at 6
-// degree intervals then at 7.5 degree intervals using
-// different radii each pass.  This is done to give a very
-// smooth result.
+// A two pass rotary anti-alias tool that samples first at 6 degree intervals then at
+// 7.5 degree intervals using different radii each pass.  This is done to give a very
+// smooth result.  The radii can be scaled and the blur can be faded.
 //
-// The radii can be scaled and the blur can be faded.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -21,17 +23,17 @@ int _LwksEffectInfo
    string SubCategory = "Broadcast";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
 texture prelim : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
         Texture   = <Inp>;
@@ -51,9 +53,9 @@ sampler preSampler = sampler_state {
 	MipFilter = Linear;
         };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Radius
 <
@@ -69,9 +71,9 @@ float Opacity
    float MaxVal       = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define LOOP_1   30
 #define RADIUS_1 0.00125
@@ -86,9 +88,9 @@ float _OutputPixelHeight = 1.0;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_prelim (float2 uv : TEXCOORD1) : COLOR
 {
@@ -133,22 +135,16 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique anti_alias
 {
-   pass Pass_one
-   <
-      string Script = "RenderColorTarget0 = prelim;";
-   >
-   {
-      PixelShader = compile PROFILE ps_prelim ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = prelim;"; >
+   { PixelShader = compile PROFILE ps_prelim (); }
 
-   pass Pass_two
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }

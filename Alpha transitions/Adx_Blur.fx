@@ -25,7 +25,7 @@
 // Added subcategory "Alpha"
 //
 // Modified 8 August 2017 by jwrl.
-// Renamed from AlphaBarMix.fx for name consistency through alpha dissolve range.
+// Renamed from AlphaBlurMix.fx for name consistency through alpha dissolve range.
 //
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original

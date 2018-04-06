@@ -1,28 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-06-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBorderTrans_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBorder.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Borders.fx
 //
-// Created by LW user jwrl 10 June 2016
-// @Author jwrl
-// @Created "10 June 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaBorderMix.fx by jwrl 8 August 2017 for
-// name consistency through alpha dissolve range.
+// An alpha transition that generates borders from the title(s) then blows them apart
+// in four directions.  Each quadrant can be individually coloured.
 //
-// An alpha transition that generates borders from the title(s)
-// then blows them apart in four directions.  Each quadrant can
-// be individually coloured.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.
 //
-// Alpha levels are boosted to support Lightworks titles, which
-// is now the default setting.  The boost amount is tied to the
-// incoming and outgoing titles, rather than FX1 and FX2 as
-// with the earlier version.
+// The boost technique also now uses gamma rather than gain to adjust the alpha levels.
+// This more closely matches the way that Lightworks handles titles.
 //
-// The boost technique also now uses gamma rather than gain to
-// adjust the alpha levels.  This more closely matches the way
-// that Lightworks handles titles.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaBorderMix.fx for name consistency through alpha dissolve range.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,9 +36,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -47,9 +51,9 @@ texture border_1 : RenderColorTarget;
 texture border_2 : RenderColorTarget;
 texture diss_bgd : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state
 {
@@ -125,9 +129,9 @@ sampler DbSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -211,9 +215,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define LOOP_1   30
 #define RADIUS_1 0.01
@@ -239,9 +243,9 @@ float _OutputPixelHeight = 1.0;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -407,9 +411,9 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform bool fade_in, uniform float enhan
    return lerp (Fg2, retval, retval.a * Outline);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique fade_in
 {
@@ -512,4 +516,3 @@ technique diss_Fx2_Fx1
    pass P_10
    { PixelShader = compile PROFILE ps_main (FADE_IN, Boost_I); }
 }
-

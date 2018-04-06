@@ -1,38 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-08-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaKaleidoMix_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaKaleido.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Kaleido.fx
 //
-// Created by LW user jwrl 10 August 2016
-// @Author jwrl
-// @Created "10 August 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaKaleidoMix.fx by jwrl 8 August 2017 for
-// name consistency through alpha dissolve range.
+// This is loosely based on the userb effect Kaleido.fx by Lightworks user baopao
+// (http://www.alessandrodallafontana.com/) which was in turn based on a pixel shader
+// at http://pixelshaders.com/ which was fine tuned for Cg compliance by Lightworks user
+// nouanda.  This effect has been built from that original.  In the process some further
+// code optimisation has been done, mainly to address potential divide by zero errors.
 //
-// This is loosely based on Kaleido.fx by Lightworks user
-// baopao (http://www.alessandrodallafontana.com/) which was
-// in turn based on a pixel shader at http://pixelshaders.com/
-// which was fine tuned for Cg compliance by Lightworks user
-// nouanda.
+// Alpha levels are boosted to support Lightworks titles, which is the default setting.
+// The boost amount is tied to the incoming and outgoing titles, rather than FX1 and FX2
+// as with the earlier version.
 //
-// This effect has been built from that original.  In the
-// process some further code optimisation has been done,
-// mainly to address potental divide by zero errors.
+// The boost technique also now uses gamma rather than gain to adjust the alpha levels.
+// This more closely matches the way that Lightworks handles titles.
 //
-// Alpha levels can be boosted to support Lightworks titles,
-// which is the default setting.  The boost technique uses
-// gamma rather than simple amplification to correct alpha
-// levels.  This closely matches the way that Lightworks
-// handles titles internally.
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
+//
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaKaleidoMix.fx for name consistency through alpha dissolve range.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -42,9 +43,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -54,9 +55,9 @@ texture Fgd : RenderColorTarget;
 texture Bgd : RenderColorTarget;
 texture Bg1 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler In1Sampler = sampler_state {
    Texture = <In1>;
@@ -112,9 +113,9 @@ sampler Bg1Sampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -196,9 +197,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define HALF_PI 1.570796
 #define PI      3.141593
@@ -208,18 +209,18 @@ float Boost_I
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1_I (float2 uv : TEXCOORD1) : COLOR
 {
@@ -317,9 +318,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgd, Fgd, Fgd.a * mixval);
 }
 
-//--------------------------------------------------------------//
-// Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique fade_in
 {
@@ -380,4 +381,3 @@ technique diss_Fx2_Fx1
    pass P_5
    { PixelShader = compile PROFILE ps_main_in (); }
 }
-

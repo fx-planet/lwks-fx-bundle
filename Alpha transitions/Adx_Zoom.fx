@@ -1,35 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-06
+// @Author jwrl
+// @Created 2016-05-24
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaZoomMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaZoom.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Zoom.fx
 //
-// Created by LW user jwrl 24 May 2016
-// @Author jwrl
-// @Created "24 May 2016"
-//  LW 14+ version by jwrl 19 May 2017
-// Renamed from AlphaZoomMix.fx by jwrl 8 August 2017 for
-// name consistency through the alpha dissolve range.
+// This effect is a user-selectable zoom in or zoom out that transitions into or out of
+// a title or between titles.  It also composites the result over a background layer.
+// Alpha levels can be boosted to support Lightworks titles, which is the default
+// setting.  The boost technique uses gamma rather than simple amplification to correct
+// alpha levels.  This visually matches the way that Lightworks handles titles closely.
 //
-// This effect is a user-selectable zoom in or zoom out that
-// transitions into or out of a title or between titles.  It
-// also composites the result over a background layer.
+// LW 14+ version by jwrl 19 May 2017
+// Added subcategory "Alpha"
 //
-// Alpha levels can be boosted to support Lightworks titles,
-// which is the default setting.  The boost technique uses
-// gamma rather than simple amplification to correct alpha
-// levels.  This closely matches the way that Lightworks
-// handles titles internally.
+// Modified 8 August 2017 by jwrl.
+// Renamed from AlphaZoomMix.fx for name consistency through the alpha dissolve range.
 //
-// Version 14.1 update 24 March 2018 by jwrl.
+// Version 14.5 update 24 March 2018 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It now functions correctly when used with Lightworks versions 14.5
+// and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms.  The bug still exists in older versions of
+// Lightworks.
 //
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,9 +39,9 @@ int _LwksEffectInfo
    string SubCategory = "Alpha";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
@@ -55,9 +55,9 @@ texture blurBuff : RenderColorTarget;
 texture ovl1Proc : RenderColorTarget;
 texture ovl2Proc : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -150,9 +150,9 @@ sampler ovl2Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -225,9 +225,9 @@ float Boost_I
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define FX_IN   0
 #define FX_OUT  1
@@ -237,9 +237,9 @@ float Boost_I
 #define SAMPLE  61
 #define DIVISOR 61.0    // Sorts out float issues with Linux
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mode_sw_1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -376,9 +376,9 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, Fgnd, Fgnd.a * Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique ZoomDissolveOut
 {
@@ -433,4 +433,3 @@ technique ZoomDissolveIn
    pass P_8
    { PixelShader = compile PROFILE ps_main_in (); }
 }
-

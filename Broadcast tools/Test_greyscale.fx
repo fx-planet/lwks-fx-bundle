@@ -1,35 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// GreyscaleTest.fx written by jwrl 1 April 2017.
+// @Released 2018-04-06
 // @Author jwrl
-// @Created "1 April 2017"
+// @Created 2017-04-01
+// @see https://www.lwks.com/media/kunena/attachments/6375/TestGreyscale_3.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect GreyscaleTest.fx
 //
-// Inspired by an earlier version, this is a complete rewrite
-// from the ground up.  There are a total of ten unique
-// patterns which can be generated.  They are three versions
-// of simple ten step bars, three of a compound bar pattern,
-// two simple grey scales, and two compound grey scales.
-// Although it's possible to select both full gamut decimal
-// and full gamut hexadecimal versions of both gradients they
-// are identical.
+// Inspired by an earlier version, this is a complete rewrite from the ground up.  There
+// are a total of ten unique patterns which can be generated.  They are three versions
+// of simple ten step bars, three of a compound bar pattern, two simple grey scales, and
+// two compound grey scales.  Although it's possible to select both full gamut decimal
+// and full gamut hexadecimal versions of both gradients they are identical.
 //
-// The multiple conditional statements of the original version
-// have been replaced with a worst case of four.  The bar test
-// signals are now produced by indexing into arrays where
-// possible.  This has the advantages of speed and simplicity,
-// but ps_2.0 constraints mean that the full gamut versions
-// are produced by scaling the array indeces.
+// The multiple conditional statements of the original version have been replaced with a
+// worst case of four.  The bar test signals are now produced by indexing into arrays
+// where possible.  This has the advantages of speed and simplicity, but ps_2.b
+// constraints mean that the full gamut versions are produced by scaling the array
+// indeces.
 //
-// Bugfix by jwrl 14 July 2017 to correct an issue with Linux/
-// Mac versions of the Lightworks effects compiler that caused
-// the two bar patterns not to display.  The fix is to change
-// TEXCOORD1 declarations to TEXCOORD0.
+// Bugfix 14 July 2017 by jwrl.
+// Corrected an issue with Linux/Mac versions of the Lightworks effects compiler that
+// caused the two bar patterns not to display.  The fix is to change all TEXCOORD1
+// declarations to TEXCOORD0.
+// A second known bug correction addresses another issue with the compiler.  It doesn't
+// like const declarations outside shaders on the Mac/Linux platforms.
 //
-// A second known bug correction addresses another issue with
-// the compiler.  It doesn't like const declarations outside
-// shaders on the Mac/Linux platforms.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,17 +38,9 @@ int _LwksEffectInfo
    string SubCategory = "Broadcast";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int TestType
 <
@@ -63,9 +54,9 @@ int SetTechnique
    string Enum = "Bars,Composite bars,Gradient,Composite gradient";
 > = 1;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 // TestType enumeration indexing
 
@@ -91,9 +82,9 @@ float _BT_709 [11] = { BT709_B, 0.14862745, 0.2345098, 0.32039216, 0.40627451, 0
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_bars (float2 uv : TEXCOORD0) : COLOR
 {
@@ -151,9 +142,9 @@ float4 ps_grad_main (float2 uv : TEXCOORD0) : COLOR
    return float2 (abs (floor (y + 0.5) - x), 1.0).xxxy;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Bars
 {
@@ -178,4 +169,3 @@ technique CompositeGrad
    pass P_1
    { PixelShader = compile PROFILE ps_grad_main (); }
 }
-

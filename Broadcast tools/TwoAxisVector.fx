@@ -1,47 +1,43 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-06
 // @Author jwrl
-// @Created "5 June 2016"
-//--------------------------------------------------------------//
-// TwoAxisVector.fx by Lightworks user jwrl 5 June 2016
+// @Created 2016-06-05
+// @see https://www.lwks.com/media/kunena/attachments/6375/TwoAxisVector_3.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect TwoAxisVector.fx
 //
-// Written at the request of David Rasberry.  There are tools
-// supplied with Lightworks which give more precise colour
-// correction.  This is designed for fast efficient two-axis
-// colour cast removal where such precision may be overkill.
+// Written at the request of David Rasberry.  There are tools supplied with Lightworks
+// which give more precise colour correction.  This is designed for fast efficient
+// two-axis colour cast removal where such precision may be overkill.
 //
-// Changes to this, the 16 June 2016 release:
+// Modified 16 June 2016 by jwrl.
+// Reinstated hue adjustment.  Taken out of the original effect because of code "bloat",
+// a side effect of the other changes here was that the code became more compact and
+// efficient allowing its return, still with a total overall size reduction.
 //
-// Reinstated hue adjustment.  Taken out of the original
-// effect because of code "bloat", a side effect of the other
-// changes here was that the code became more compact and
-// efficient allowing its return, still with a total overall
-// size reduction.
+// Added U/V gain to the existing U/V offset functions and changed the algorithm used to
+// implement the offset.
 //
-// Added U/V gain to the existing U/V offset functions and
-// changed the algorithm used to implement the offset.
+// Signal clipping that could distort colour levels in whites and blacks under adverse
+// conditions has been addressed as far as is currently possible.  By its very nature
+// there will always be the potential to clip individual RGB levels.
 //
-// Signal clipping that could distort colour levels in whites
-// and blacks under adverse conditions has been addressed as
-// far as is currently possible.  By its very nature there
-// will always be the potential to clip individual RGB levels.
+// Execution order is now changed.  Gain and pedestal happen prior to anything else.
+// Then comes U/V gain and offset, master saturation, white and black desaturation,
+// then finally hue.
 //
-// Execution order is now changed.  Gain and pedestal happen
-// prior to anything else.  Then comes U/V gain and offset,
-// master saturation, white and black desaturation, then
-// finally hue.
-//
-// Since the range of gain adjustment available more than
-// compensates for it, automatic luminance tracking has been
-// removed.  It wasn't doing what it was designed to do very
+// Since the range of gain adjustment available more than compensates for it, automatic
+// luminance tracking has been removed.  It wasn't doing what it was designed to do very
 // well and had the potential to add significant distortion.
 //
 // Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to compensate for cross platform default sampler state
+// differences.  Some extra code cleanup to improve efficiency has also been done.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.  Some extra
-// code cleanup to improve efficiency has also been done.
-//--------------------------------------------------------------//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -51,15 +47,15 @@ int _LwksEffectInfo
    string SubCategory = "Broadcast";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state {
    Texture = <Input>;
@@ -70,9 +66,9 @@ sampler InputSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Gain
 <
@@ -169,9 +165,9 @@ float V_offs
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define UV_SCALE 0.175
 
@@ -188,9 +184,9 @@ float3 Crgb [] = { { 0.299, 0.587, 0.114 }, { 0.2126, 0.7152, 0.0722 }, {0.299, 
 
 float2 C_uv [] = { { 0.564, 0.713 }, { 0.539, 0.635 }, { 0.492, 0.877 } };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
@@ -235,15 +231,12 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return Image;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique TwoAxisColour
 {
-   pass pass_one
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1
+   { PixelShader = compile PROFILE ps_main (); }
 }
-

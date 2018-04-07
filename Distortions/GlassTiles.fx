@@ -1,35 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/GlassTiles.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect GlassTiles.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// Breaks the image into glass tiles.
+//
+// Added subcategory for LW14 - jwrl 18 Feb 2017
 //
 // Bug fix 13 July 2017 by jwrl:
-// This addresses a cross platform issue which may have caused
-// the effect not to behave as expected on either Linux or Mac
-// systems.
-//--------------------------------------------------------------//
+// This addresses a cross platform issue which may have caused the effect not to behave
+// as expected on either Linux or Mac systems.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Glass Tiles";       // The title
-   string Category    = "Stylize";           // Governs the category that the effect appears in in Lightworks
-   string SubCategory = "Distortion";        // Added for LW14 - jwrl
+   string Description = "Glass Tiles";
+   string Category    = "Stylize";
+   string SubCategory = "Distortion";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Input and shader
+//-----------------------------------------------------------------------------------------//
 
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-float _OutputWidth;
 texture Input;
-
 
 sampler FgSampler = sampler_state
 {
@@ -41,14 +42,10 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
 float Tiles
 <
    string Description = "Tiles";
@@ -76,19 +73,17 @@ float4 GroutColor
    bool SupportsAlpha = true;
 > = { 0.0f, 0.0f, 0.0f, 0.0f };
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 half4 GtilesPS(float2 uv : TEXCOORD1) : COLOR {
 	float2 newUV1;
@@ -102,11 +97,10 @@ half4 GtilesPS(float2 uv : TEXCOORD1) : COLOR {
 	return c1;
 }
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
 technique SampleFxTechnique
 {
    pass p0
@@ -114,4 +108,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE GtilesPS();
    }
 }
-

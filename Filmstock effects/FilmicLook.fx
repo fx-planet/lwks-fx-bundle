@@ -1,15 +1,14 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "19 March 2017"
-//--------------------------------------------------------------//
+// @Created 2017-03-19
+// @see https://www.lwks.com/media/kunena/attachments/6375/Filmic_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmicLook.fx
 //
-// Originally created by LW user jwrl 19 March 2017.
-// Modified by LW user jwrl 19 March 2017.
 //
-// This simulates a filmic curve with controllable halation and
-// vibrance.  There are five parameters, which are:
+// This simulates a filmic curve with controllable halation and vibrance.  There are
+// five parameters, which are:
 //
 // Amount     : Mixes the modified image with the original.
 // Curve      : Adjusts the ammount of S-curve correction.
@@ -17,20 +16,23 @@
 // Halation   : Mimics the back layer scatter of old film stocks.
 // Saturation : Increases or reduces master saturation.
 //
-// Both vibrance and halation are adjusted logarithmically.  By
-// doing this we get a more natural feel to the adjustment.
+// Both vibrance and halation are adjusted logarithmically.  By doing this we get a
+// more natural feel to the adjustment.
 //
-// The modification does two things.  It cleans up a bug that
-// caused the effect to only work in monochrome on Linux/Mac
-// platforms.  It also adds an extra parameter to provide
-// adjustment of colour temperature.
+// Modified by LW user jwrl 19 March 2017.
+// The modification does two things.  It cleans up a bug that caused the effect to
+// only work in monochrome on Linux/Mac platforms.  It also adds an extra parameter
+// to provide adjustment of colour temperature.
 //
-// The code to adjust colour temperature started out as a direct
-// transplant of the Editshare Colour Temperature effect with
-// some slight tweaks but has undergone more change than was
-// originally intended.  I don't think that even the original
-// author would recognise it now.
-//--------------------------------------------------------------//
+// The code to adjust colour temperature started out as a direct transplant of the
+// Editshare Colour Temperature effect with some slight tweaks but has undergone more
+// change than was originally intended.  I don't think that even the original author
+// would recognise it now.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -40,9 +42,9 @@ int _LwksEffectInfo
    string SubCategory = "Preset Looks";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -50,9 +52,9 @@ texture Cgrade  : RenderColorTarget;
 texture Clipped : RenderColorTarget;
 texture Halo    : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state
 {
@@ -94,9 +96,9 @@ sampler gloSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetRange
 <
@@ -146,9 +148,9 @@ float Saturation
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI 3.1415927
 
@@ -167,9 +169,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_colourgrade (float2 uv : TEXCOORD1) : COLOR
 {
@@ -310,9 +312,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, gloVal, amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique FilmicLook
 {
@@ -331,4 +333,3 @@ technique FilmicLook
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,45 +1,55 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
-//
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
-//
-// This shader written by Gary Hango (khaver) February 2013
+// @Released 2018-04-07
 // @Author khaver
-// @Created "01 February 2013"
+// @Created 2013-02-14
+// @see https://www.lwks.com/media/kunena/attachments/6375/CCH2.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect CCHelper2.fx
+//
+// CC Helper (Colour Correction Helper) is designed to provide up to six user selected
+// reference colour patches.  Individual colour patches can be turned off if you need
+// fewer than six and you can change the colour patches to gradients if you wish.  The
+// colour value range of the patches can be switched to 100% meaning that the selected
+// colour will be scaled so that the highest of the RGB channels will become 100%.  You
+// can also slide the bars up and down over the video to clear areas that you need to
+// see, and optional RGB level meters can be laid over individual colour patches.
+//
+// Add the effect to a clip, select the pixels you want to check and select "Display
+// Bars".  When using the colour picker, you can click and drag to select a rectangular
+// region.  The resultant colour will be the average of the selected pixels.  Then add
+// a Colour Correction effect to the chain and adjust using CC Helper to assist.
 //
 // This cross platform conversion by jwrl April 28 2016.
 //
 // Cross platform compatibility check 30 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "CC Helper";        // The title
-   string Category    = "Colour";            // Governs the category that the effect appears in in Lightworks
-   string SubCategory = "Analysis";        // Subcategory added by jwrl for version 14 and up 10 Feb 2017
+   string Description = "CC Helper";
+   string Category    = "Colour";
+   string SubCategory = "Analysis";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Bars1 : RenderColorTarget;
 texture Bars2 : RenderColorTarget;
 texture Bars3 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -81,13 +91,9 @@ sampler BarSampler3 = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool Graph
 <
@@ -291,9 +297,9 @@ float C6Y
    float MaxVal = 1.00;
 > = 0.9;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define ONE_SIXTH   0.1667    // float onesix   = 1.0 / 6.0
 #define TWO_SIXTH   0.3333    // float twosix   = 2.0 / 6.0
@@ -348,18 +354,18 @@ float C6Y
 #define CONST_65    0.9259    // 1.0 - (ONE_SIXTH * 0.4444)
 #define CONST_66    0.9444    // 1.0 - (ONE_SIXTH * TWO_SIXTH)
 
-const float4 _red   = float2 (0.0, 1.0).yxxy;
-const float4 _green = float2 (0.0, 1.0).xyxy;
-const float4 _blue  = float2 (0.0, 1.0).xxyy;
-const float4 _black = float2 (0.0, 1.0).xxxy;
+float4 _red   = float2 (0.0, 1.0).yxxy;
+float4 _green = float2 (0.0, 1.0).xyxy;
+float4 _blue  = float2 (0.0, 1.0).xxyy;
+float4 _black = float2 (0.0, 1.0).xxxy;
 
-const float4 _white = (1.0).xxxx;
+float4 _white = (1.0).xxxx;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Shaders
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float comax (float4 color)
 {
@@ -369,6 +375,10 @@ float comax (float4 color)
 
    return 1.0 / mcolor;
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 main1a (float2 uv : TEXCOORD1) : COLOR
 {
@@ -654,14 +664,11 @@ float4 main2 (float2 uv : TEXCOORD1) : COLOR
    return orig;
 }
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
+technique CCHelper
 {
    pass Pass1a
    <
@@ -692,4 +699,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE main2 ();
    }
 }
-

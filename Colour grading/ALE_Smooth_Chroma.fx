@@ -1,14 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// SMOOTH CHROMA
+// @Released 2018-04-07
+// @Author baopao
+// @see https://www.lwks.com/media/kunena/attachments/6375/Smoothed_2016-04-10.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ALE_Smooth_Chroma.fx
 //
-//http://www.alessandrodallafontana.com/
+// This smooths colour information.  Its most appropriate use is probably to smooth
+// chroma in 4:2:0 footage.  It works by converting the RGB signal to YCbCr then blurs
+// the chroma Cb/Cr components.  The result is then converted back to RGB using the
+// original Y channel.  This ensures that luminance sharpness is maintained and just
+// the colour component is softened.
+//
+// Feedback should be to http://www.alessandrodallafontana.com/ 
+//
+// Modified 11 February 2017 by jwrl:
+// Added subcategory to Fx header.
 //
 // Cross platform compatibility check 30 July 2017 jwrl.
 //
-// Added subcategory to Fx header.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 
 int _LwksEffectInfo
@@ -19,25 +32,12 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
-float BlurAmount
-<
-   string Description = "BlurAmount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
 texture fg;
 
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
 sampler InputSampler = sampler_state
 {
    Texture = <fg>;
@@ -48,9 +48,21 @@ sampler InputSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Pixel Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+float BlurAmount
+<
+   string Description = "BlurAmount";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.2;
+
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
+
 float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
    float4 ret = tex2D( InputSampler, xy1 );
@@ -93,7 +105,8 @@ float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
    return o_color;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+
 technique singletechnique { pass Single_Pass { PixelShader = compile PROFILE ps_main(); } }

@@ -1,42 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @OriginalAuthor abelmilanes
 // @Author jwrl
-// @Created "4 March 2017"
-// @See https://www.lwks.com/media/kunena/attachments/6375/FilmExp_2.png
-//--------------------------------------------------------------//
-// FilmExp.fx was started by user abelmilanes as FilmFx.fx in
-// 2011 but was never completed.
+// @Created 2017-03-04
+// @see https://www.lwks.com/media/kunena/attachments/6375/FilmExp_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FilmExp.fx
 //
-// This version by jwrl 4 March 2017.
+// This effect was started by user abelmilanes as FilmFx.fx in 2011 but was never
+// completed.  This version was completed by jwrl and is an effect that simulates
+// exposure adjustment using a Cineon profile.  It is fairly accurate at the expense
+// of requiring some reasonably complex maths.  With current GPU types this shouldn't
+// be an issue.
 //
-//  Bug fix to correct ambiguous declaration affecting Linux
-//  and Mac versions only 10 July 2017 - jwrl.
+// There has been considerable code cleanup for efficiency and speed reasons.  The
+// alpha channel is now preserved which the unfinished original didn't do.  The
+// "amount" parameter is an addition so that the effect can now be faded out.
 //
-// This is an effect that simulates exposure adjustment using
-// a Cineon profile.  It is fairly accurate at the expense of
-// requiring some reasonably complex maths.  With current GPU
-// types this shouldn't be an issue.
+// The explicit profile declaration ps_2_0 was changed to the generic PROFILE for
+// cross-platform reasons.  It now runs on all supported Lightworks platforms.
 //
-// There has been considerable code cleanup for efficiency and
-// speed reasons.  The alpha channel is now preserved which
-// the unfinished original didn't do.  The "amount" parameter
-// is an addition so that the effect can now be faded out.
+// The original version had a soft clip function which did not work - in fact it was
+// commented out by abelmilanes.  It's hard to see a need for it in this current form,
+// so it has been discarded.  The natural clipping in the GPU made this difficult to
+// implement in any case.
 //
-// The explicit profile declaration ps_2_0 was changed to the
-// preferred generic PROFILE for cross-platform reasons.  It
-// now runs on all supported Lightworks platforms.
+// The "magic numbers" used in the original have been kept at their original depths of
+// up to seven decimal places.  That surely can't really be necessary!!!
 //
-// The original version had a soft clip function which did
-// not work - in fact it was commented out by abelmilanes.
-// It's hard to see a need for it in this current form, so
-// it has been discarded.  The natural clipping in the GPU
-// made this difficult to implement in any case.
+// Bug fix 10 July 2017 by jwrl.
+// Corrected ambiguous declaration affecting Linux and Mac versions only.
 //
-// The "magic numbers" used in the original have been kept
-// at their original depths of up to seven decimal places.
-// That surely can't really be necessary!!!
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -46,21 +44,21 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state { Texture = <Input>; };
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Exposure
 <
@@ -101,9 +99,9 @@ float Amount
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -134,10 +132,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, Src, Amount);
 }
 
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique FilmExp
 {
@@ -146,4 +143,3 @@ technique FilmExp
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

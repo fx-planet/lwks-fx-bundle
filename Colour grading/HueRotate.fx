@@ -1,28 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author gr00by
+// @Created 2016-06-14
 // @OriginalAuthor "Mark Ransom"
-// @See https://www.lwks.com/media/kunena/attachments/6375/HueAdjust_2.png
-//--------------------------------------------------------------//
-// HueRotate.fx by Lightworks user gr00by 14 June 2016
+// @see https://www.lwks.com/media/kunena/attachments/6375/HueAdjust_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect HueRotate.fx
 //
-// This code is based on the Mark Ransom alghoritm 
-// written in Python and published on:
+// This code is based on the Mark Ransom alghoritm written in Python and published on:
 // http://stackoverflow.com/a/8510751/512594
 //
-// The template of this file is based on TwoAxis.fx by
-// Lightworks user jwrl.
+// The template of this file is based on TwoAxis.fx by Lightworks user jwrl.
 //
-// Bug fix by jwrl 4 January 2017 to add missing comma to
-// sincos (Hue * PI, s c).
+// Bug fix 4 January 2017 by jwrl.
+// Added missing comma to sincos (Hue * PI, s c).
 //
 // Subcategory added by jwrl for v.14 and up 10 Feb 2017
 //
 // Cross platform compatibility check 30 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,9 +33,9 @@ int _LwksEffectInfo
    string SubCategory = "Technical";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Hue
 <
@@ -43,22 +44,21 @@ float Hue
    float MaxVal = 1.0;
 > = 0.0;
 
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state { Texture = <Input>; };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Declarations and definitions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI         3.14159
 
@@ -66,10 +66,9 @@ sampler InputSampler = sampler_state { Texture = <Input>; };
 
 #define SQRT_THIRD 0.57735
 
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
@@ -92,9 +91,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique ColourTemp
 {
@@ -103,4 +102,3 @@ technique ColourTemp
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

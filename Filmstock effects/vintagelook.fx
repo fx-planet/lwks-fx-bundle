@@ -1,19 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author msi
+// @Original author "Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)"
 // @Created 2011
-// @License "CC BY-NC-SA"
-// ---------------------------------------------------------
-// Vintage look, 2011 msi.
-// [CC BY-NC-SA]
+// @see https://www.lwks.com/media/kunena/attachments/6375/VintageLook.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect vintagelook.fx
+//
+// Vintage look, 2011 msi [CC BY-NC-SA] - simulates what happens when the dye layers
+// of old colour film stock start to fade.  Uses Vintage Look routine by Wojciech
+// Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)
 //
 // Added subcategory for LW14 18 Feb 2017 - jwrl.
 //
 // Cross platform compatibility check 31 July 2017 jwrl.
+// Explicitly define float4 variables to address the behavioural differences between
+// the D3D and Cg compilers.
 //
-// Explicitly define float4 variables to address the
-// behavioural difference between the D3D and Cg compilers.
-// ---------------------------------------------------------
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -23,9 +30,9 @@ int _LwksEffectInfo
 	string SubCategory = "Preset Looks";
 > = 0;
 
-// ----------------------------------------
-// Parameters
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -38,6 +45,10 @@ sampler MsiVintageSampler = sampler_state
    MagFilter = Linear;
    MipFilter = Linear;
 };
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float4 Yellow
 <
@@ -83,9 +94,9 @@ float CyanLevel
 
 #pragma warning ( disable : 3571 )
 
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Shader
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float4 VintageLookFX( float2 xy: TEXCOORD1 ) : COLOR
 {
@@ -99,9 +110,9 @@ float4 VintageLookFX( float2 xy: TEXCOORD1 ) : COLOR
 	return corrected;	
 }
 
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique VintageLookFXTechnique
 {

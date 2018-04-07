@@ -1,20 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author khaver
-// @Created "December 2013"
-//--------------------------------------------------------------//
-// WarpedStretch.fx created by Gary Hango (khaver) December 2013.
+// @Created 2013-12-15
+// @see https://www.lwks.com/media/kunena/attachments/6375/WarpedStretch.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect WarpedStretch.fx
+//
+// This effect applies distortion to a region of the frame, and is intended for use as
+// a means of helping handle mixed aspect ratio media.  It was designed to do the 4:3
+// to 16:9 warped stretch we all hate having to do.  You can set the range of the inner
+// area that is not warped and set the outer limits at the edges of the crop.
+//
+// It defaults to a 4:3 image in a 16:9 frame, but since a "Strength" slider is
+// provided it can be used for other purposes as well.
 //
 // Cross platform conversion by jwrl May 1 2016.
+//
 // Added subcategory for LW14 - jwrl Feb 18 2017.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect now functions correctly when used with all
+// current and previous Lightworks versions.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -24,9 +36,9 @@ int _LwksEffectInfo
    string SubCategory = "Distortion";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -39,9 +51,9 @@ sampler InputSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool Grid
 <
@@ -124,26 +136,26 @@ float ORY
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define BLACK float2(0.0, 1.0).xxxy
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 main1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -187,9 +199,9 @@ float4 main1 (float2 uv : TEXCOORD1) : COLOR
    return color;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique NoStretchTechnique
 {
@@ -198,4 +210,3 @@ technique NoStretchTechnique
       PixelShader = compile PROFILE main1 ();
    }
 }
-

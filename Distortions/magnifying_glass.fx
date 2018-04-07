@@ -1,14 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author schrauber
+// @see https://www.lwks.com/media/kunena/attachments/6375/MagGlass.png
+// @see https://www.lwks.com/media/kunena/attachments/348533/temp08234262823.PNG
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect magnifying_glass.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// This is similar in operation to the regional zoom effect, but instead of non-linear
+// distortion a linear zoom is performed.  It can be used as-is, or fed into another
+// effect to generate borders and/or generate shadows or blend with another background.
 //
 // Added subcategory for LW14 - jwrl 18 February 2017
-//--------------------------------------------------------------//
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -142,4 +150,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE Zoom();
    }
 }
-

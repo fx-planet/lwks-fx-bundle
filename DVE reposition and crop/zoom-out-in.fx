@@ -1,12 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author schrauber
+// @see https://www.lwks.com/media/kunena/attachments/348533/temp0823410.PNG
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect zoom-out-in.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
-//--------------------------------------------------------------//
+// This is a zoom effect designed to allow zooming at frame edge without going outside
+// the frame.  With this effect it should be unnecessary to dynamically adjust the
+// effect position to prevent overrun because the interface is extremely simple.  You
+// should do any fine adjustment of position at maximum zoom used to prevent centring
+// problems.
+//
+// Modified 20 July 2017 by jwrl.
+// Changed category to DVE, added subcategory.
+//
+// Modified 7 April 2018 by jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -16,13 +27,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float zoom
 <
@@ -47,13 +54,9 @@ float Ypos
    float MaxVal = 1.00;
 > = 0.9;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
+// Input and shader
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -67,26 +70,15 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
 
 float4 universal (float2 xy : TEXCOORD1) : COLOR 
 { 
@@ -99,18 +91,14 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
  return tex2D (FgSampler, xy1); 
 } 
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
+technique ZoomOutIn
 {
    pass SinglePass
    {
       PixelShader = compile PROFILE universal();
    }
 }
-

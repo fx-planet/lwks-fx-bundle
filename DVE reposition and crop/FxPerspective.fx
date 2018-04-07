@@ -1,7 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
+// @Author windsturm
 // @OriginalAuthor "Evan Wallace"
-// @Author Windsturm
+// @Created 2017-05-03
+// @see https://www.lwks.com/media/kunena/attachments/6375/Perspective.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxPerspective.fx
+//-----------------------------------------------------------------------------------------//
 /**
   * FxPerspective.
   * @description  Warps one quadrangle to another with a perspective transform. This can be used to
@@ -32,13 +37,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-
-// Added subcategory and category changed to DVE by jwrl for
-// version 14, 31 July 2017.
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // FxPerspective
-//--------------------------------------------------------------//
+//
+// Added subcategory and category changed to DVE by jwrl for version 14, 31 July 2017.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -47,9 +55,9 @@ int _LwksEffectInfo
    string SubCategory = "Distortion";
 > = 0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Input and samplers
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -73,7 +81,10 @@ sampler s1 = sampler_state
     MipFilter = Linear;
 };
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
 bool viewSsource
 <
 	string Description = "View source";
@@ -230,9 +241,9 @@ float aBRY
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float3x3 getSquareToQuad (float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
 {
@@ -289,6 +300,10 @@ float2 matrixWarp (float3x3 m, float2 coord)
     return warp.xy / warp.z;
 }
 
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
+
 float4 FxPerspective (float2 xy : TEXCOORD1 ) : COLOR
 {
     if (viewSsource) {
@@ -309,10 +324,9 @@ float4 FxPerspective (float2 xy : TEXCOORD1 ) : COLOR
     return tex2D (s0, coord);
 }
 
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique Perspective
 {
@@ -321,4 +335,3 @@ technique Perspective
       PixelShader = compile PROFILE FxPerspective ();
    }
 }
-

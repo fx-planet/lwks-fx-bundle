@@ -1,21 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author khaver
-//--------------------------------------------------------------//
-// HSVWheel.fx
+// @see https://www.lwks.com/media/kunena/attachments/6375/HSV_WheelRef.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect HSVWheel.fx
 //
-// Original effect by khaver - Gary Hango
+// HSV Wheel is a colour analysis tool.  It shows one or optionally two pixel reference
+// points mapped onto the HSV wheel(s).  Select the pixels with the on-screen cross-hairs
+// and move and zoom the HSV wheels to wherever you need.  The small dot in each wheel
+// shows the hue and saturation of its associated reference point.  The outer ring
+// displays the brightness value.
 //
 // Cross platform conversion by jwrl April 30 2016
 //
-// Bug fix 10 July 2017 by jwrl to correct modulo usage
-// affecting Linux and Mac versions only.
+// Bug fix 10 July 2017 by jwrl.
+// Corrected modulo usage affecting Linux and Mac versions only.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
-//--------------------------------------------------------------//
+// Corrected for a bug in the way that Lightworks handles interlaced media.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -25,9 +32,9 @@ int _LwksEffectInfo
    string SubCategory = "Analysis";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -36,9 +43,9 @@ texture submaster : RenderColorTarget;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSamp = sampler_state {
         Texture = <Input>;
@@ -68,9 +75,9 @@ sampler Samp2 = sampler_state {
         MipFilter = Linear;
  };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool CW1
 <
@@ -172,18 +179,18 @@ float Pan2Y
    float MaxVal = 1.00;
 > = 0.25;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Hue (float angle)
 {
@@ -248,9 +255,9 @@ float3 rgb2hsv (float4 rgb)
    return float3 (H, S, V);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 wheel1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -404,9 +411,9 @@ float4 combine (float2 xy : TEXCOORD1) : COLOR
    return lerp (orig, wheel, wheel.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -440,4 +447,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE combine ();
    }
 }
-

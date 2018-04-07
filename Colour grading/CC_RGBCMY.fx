@@ -1,20 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author baopao
-//--------------------------------------------------------------//
-// CC_RGBCMY - a colorgrade tool based on individual red, green,
-// blue, cyan, magentan and yellow parameters.  This is a
-// "Color_NOT_Channel" correction based filter created for Mac
-// and Linux systems by user baopao.  Feedback should be to
-// http://www.alessandrodallafontana.com/ 
+// @see https://www.lwks.com/media/kunena/attachments/6375/CC_RGB_CMY.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect CC_RGBCMY.fx
+//
+// CC_RGBCMY - a colorgrade tool based on individual red, green, blue, cyan, magenta
+// and yellow parameters.  This is a "Color_NOT_Channel" correction based filter created
+// for Mac and Linux systems.
+//
+// Feedback should be to http://www.alessandrodallafontana.com/ 
 //
 // Cross platform compatibility check 31 July 2017 jwrl.
-//
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.  In the process
-// the original version has been rewritten to make it more
+// Explicitly defined samplers to compensate for cross platform default sampler state
+// differences.  In the process the original version has been rewritten to make it more
 // modular and to provide Windows support.
-//--------------------------------------------------------------//
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -24,17 +29,17 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture RGBout : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler   = sampler_state
 {
@@ -56,9 +61,9 @@ sampler rgbSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 // RED_P
 
@@ -396,9 +401,9 @@ float Y_Brightness
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_RGB (float2 xy : TEXCOORD1) : COLOR
 {
@@ -481,9 +486,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return float4 (lerp (RGBsCx, Fix_CC, saturate (yellow - max (magenta, cyan))), RGBa);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 //  Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique CC_RGBCMY
 {
@@ -494,4 +499,3 @@ technique CC_RGBCMY
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

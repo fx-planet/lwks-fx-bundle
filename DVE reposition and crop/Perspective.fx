@@ -1,54 +1,50 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/Perspective_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Perspective.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// The name of the effect describes what it does.
 //
-// jwrl changed category to DVE and added subcategory for
-// version 14, 21 May 2017.
+// Version 14 update 21 May 2017 by jwrl: Changed category to DVE and added subcategory.
 //
 // Cross platform compatibility check 31 July 2017 jwrl.
-//
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Fully defined float2 and float4 variables to address the
-// behavioural difference between the D3D and Cg compilers
-// when this is not done.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Fully defined float2 and float4 variables to address the behavioural difference
+// between the D3D and Cg compilers when this is not done.
 //
 // Version 14.1 update 5 December 2017 by jwrl.
+// Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms.  The bug still exists when using older versions
+// of Lightworks.
 //
-// Added LINUX and MAC test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Perspective";        // The title
-   string Category    = "DVE";                // Governs the category that the effect appears in in Lightworks
+   string Description = "Perspective";
+   string Category    = "DVE";
    string SubCategory = "Distortion";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -88,13 +84,9 @@ sampler Samp2 = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters 
+//-----------------------------------------------------------------------------------------//
 
 bool Grid
 <
@@ -180,6 +172,7 @@ float ORGY
    float MinVal = 0.00;
    float MaxVal = 1.00;
 > = 0.5;
+
 float Zoom
 <
 	string Description = "Zoom";
@@ -189,16 +182,9 @@ float Zoom
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 main2( float2 uv : TEXCOORD1 ) : COLOR
 {
@@ -264,13 +250,11 @@ float4 main1( float2 uv : TEXCOORD1 ) : COLOR
    return saturate(color);
 }
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
+technique Perspective
 {
    pass Pass1
    <
@@ -291,4 +275,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE main3();
    }
 }
-

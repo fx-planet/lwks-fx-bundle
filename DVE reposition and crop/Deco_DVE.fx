@@ -1,44 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-07
+// @Author jwrl
+// @Created 2017-04-27
+// @see https://www.lwks.com/media/kunena/attachments/6375/Deco_DVE_A.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Deco_DVE.fx
 //
-// Created by LW user jwrl 27 April 2017
-// @Author jwrl
-// @Created "27 April 2017"
-//
-// This is an Art Deco take on the classic DVE effect.  It
-// produces two independently adjustable borders around the
-// foreground image.  It also produces corner flash lines
+// This is an Art Deco take on the classic DVE effect.  It produces two independently
+// adjustable borders around the foreground image.  It also produces corner flash lines
 // inside the crop which are adjustable.
 //
-// It allows the foreground image to be resized and
-// positioned inside the crop window, as well as allowing
-// the foreground composite with borders to be scaled and
-// positioned.  Finally, as the composite is zoomed out the
-// user can choose to have a single instance on screen or
-// multiples.
+// It allows the foreground image to be resized and positioned inside the crop window,
+// as well as allowing the foreground composite with borders to be scaled and
+// positioned.  Finally, as the composite is zoomed out the user can choose to have a
+// single instance on screen or multiples.
 //
-// Although this uses four passes to perform its magic, they
-// are either very simple or use simple mathematics.  As a
-// result it should be capable of real time speeds on even
+// Although this uses four passes to perform its magic, they are either very simple or
+// use simple mathematics.  As a result it should be capable of real time speeds on even
 // minimal systems.
 //
 // Cross platform compatibility check 31 July 2017 jwrl.
-//
-// Explicitly defined float2 and float4 variables to address
-// behavioural differences between the D3D and Cg compilers.
-//
-// Inverted the position settings.  They originally worked
-// backwards. i.e., from the camera point of view.
+// Explicitly defined float2 and float4 variables to address behavioural differences
+// between the D3D and Cg compilers.
+// Inverted the position settings.  They originally worked backwards. i.e., from the
+// camera point of view.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect will function correctly when used with all
+// current and previous Lightworks versions.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -48,9 +43,9 @@ int _LwksEffectInfo
    string SubCategory = "Crop Presets";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
@@ -59,9 +54,9 @@ texture FgdAdj   : RenderColorTarget;
 texture FgdCrop  : RenderColorTarget;
 texture Multiple : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InSampler = sampler_state
 {
@@ -113,9 +108,9 @@ sampler FmSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float FgdZ
 <
@@ -304,9 +299,9 @@ float OverlayY
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define BLACK  float4(0.0.xxx,1.0)
 #define EMPTY  0.0.xxxx
@@ -317,9 +312,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_inRange (float2 uv, float2 r1, float2 r2)
 {
@@ -336,9 +331,9 @@ bool fn_illegal (float2 uv)
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_scale_fgd (float2 uv : TEXCOORD1) : COLOR
 {
@@ -449,9 +444,9 @@ float4 ps_main_single (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a * OverlayOpacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique crop_multiple
 {
@@ -516,4 +511,3 @@ technique crop
       PixelShader = compile PROFILE ps_main_single ();
    }
 }
-

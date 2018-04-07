@@ -1,33 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-07
+// @Author jwrl
+// @Created 2017-05-03
+// @see https://www.lwks.com/media/kunena/attachments/6375/BorderCrop_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect BorderCrop.fx
 //
-// Created by LW user jwrl 3 May 2017
-// @Author jwrl
-// @Created "3 May 2017"
+// This started out to be a revised SimpleCrop.fx, but since it adds a feathered,
+// coloured border and a soft drop shadow was given its own name.  It's now essentially
+// the same as DualDVE.fx without the DVE components but with input swapping instead.
 //
-// This started out to be a revised SimpleCrop.fx, but since
-// it adds a feathered, coloured border and a soft drop shadow
-// was given its own name.  It's now essentially the same as
-// DualDVE.fx without the DVE components but with input
-// swapping instead.
+// The alpha channel selection of SimpleCrop.fx was dropped, since it was never really
+// of any use.  Disconnecting the background layer achieves exactly the same result.
 //
-// The alpha channel selection of SimpleCrop.fx was dropped,
-// since it was never really of any use.  Disconnecting the
-// background layer achieves exactly the same result.
-//
-// Bug fix by LW user jwrl 20 July 2017 - this effect didn't
-// work on Linux/Mac platforms.  It now does.  In the process
+// Bug fix by LW user jwrl 20 July 2017
+// This effect didn't work on Linux/Mac platforms.  It now does.  In the process
 // significant code optimisation has been performed.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
-//
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect will now function correctly when used with
 // all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -37,18 +35,18 @@ int _LwksEffectInfo
    string SubCategory = "Crop Presets";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
 
 texture FgdCrop : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
    Texture   = <Fgd>;
@@ -77,9 +75,9 @@ sampler FcSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool Swap
 <
@@ -178,9 +176,9 @@ float Shadow_Y
    float MaxVal = 1.0;
 > = 0.4;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define BORDER_SCALE   0.0666667
 #define BORDER_FEATHER 0.05
@@ -195,18 +193,18 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
@@ -253,9 +251,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, Fgnd, Fgnd.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique crop
 {
@@ -272,4 +270,3 @@ technique crop
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

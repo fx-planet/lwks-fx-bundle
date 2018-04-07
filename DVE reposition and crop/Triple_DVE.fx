@@ -1,38 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Triple_DVE.fx
-//  Created by LW user jwrl 6 June 2017
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "6 June 2017"
+// @Created 2017-06-06
+// @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_4.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Triple_DVE.fx
 //
-//  Bug fix to correct ambiguous declaration affecting Linux
-//  and Mac versions only 17 July 2017.
+// This is a combination of three DVEs each of which has been reverse engineered to
+// match Editshare's 2D DVE parameters.  DVE 1 adjusts the foreground and DVE 2 adjusts
+// the background.  The foreground can be cropped with rounded corners and given a
+// bi-colour border.  Both the edges and borders can be feathered, and a drop shadow
+// is also provided.
 //
-// This is a combination of three DVEs each of which has been
-// reverse engineered to match Editshare's 2D DVE parameters.
-// DVE 1 adjusts the foreground and DVE 2 adjusts the back-
-// ground.  The foreground can be cropped with rounded corners
-// and given a bi-colour border.  Both the edges and borders
-// can be feathered, and a drop shadow is also provided.
+// DVE 3 takes the cropped, bordered output of DVE 1 as its input.  This means that you
+// can scale the background and foreground independently, then adjust position and size
+// of the cropped foreground.
 //
-// DVE 3 takes the cropped, bordered output of DVE 1 as its
-// input.  This means that you can scale the background and
-// foreground independently, then adjust position and size of
-// the cropped foreground.
-//
-// Because of the way that the DVEs are created and applied
-// they have exactly the same quality impact on the final
-// result as a single DVE would.  In effect it's three DVEs
+// Because of the way that the DVEs are created and applied they have exactly the same
+// quality impact on the final result as a single DVE would.  In effect it's three DVEs
 // for the price of one.
 //
-// Version 14.5 update 24 March 2018 by jwrl.
+// Bug fix 17 July 2017 by jwrl.
+// Corrected ambiguous declaration affecting Linux and Mac versions only.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect will function correctly when used with all
+// current and previous Lightworks versions.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -42,18 +42,18 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Dve1;
 texture Dve2;
 
 texture Msk : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 {
@@ -85,9 +85,9 @@ sampler MskSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float CropT
 <
@@ -323,9 +323,9 @@ float Amt_3
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define HALF_PI       1.5707963
 
@@ -349,18 +349,18 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
 {
@@ -450,9 +450,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, retval, Amt_3);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Triple_DVE
 {
@@ -463,4 +463,3 @@ technique Triple_DVE
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

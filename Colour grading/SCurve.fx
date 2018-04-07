@@ -1,45 +1,52 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// By JMovie for Lightworks
+// @Released 2018-04-07
+// @Author jMovie
+// @see https://www.lwks.com/media/kunena/attachments/6375/S_curve.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect SCurve.fx
+//
+// The effect adjusts RGB or HSV levels to give a smooth S-curve by means of fader
+// controls.  Care must be exercised not to push it too far, though, or discontinuities
+// in the curves will appear.
 //
 // Lightworks version 14+ update by jwrl 21 January 2017.
+// The code has been optimised to reduce the number of passes required from six to two.
+// The number of function calls has also been reduced to minimise the significant
+// function call overhead in the original.  The number of variables required has been
+// reduced and the alpha channel has been preserved.
 //
-// The code has been optimised to reduce the number of passes
-// required from six to two.  The number of function calls has
-// also been reduced to minimise the significant function call
-// overhead in the original.  The number of variables required
-// has been reduced and the alpha channel has been preserved.
+// The user interface has been improved to change the cryptic parameter labels to
+// something more meaningful.  Parameters have been logically grouped, and their ranges
+// have been altered to run from 0-100% instead of 0-255, consistent with Lightworks
+// effects useage.
 //
-// The user interface has been improved to change the cryptic
-// parameter labels to something more meaningful.  Parameters
-// have been logically grouped, and their ranges have been
-// altered to run from 0-100% instead of 0-255, consistent
-// with Lightworks effects useage.
+// This version has been compared against the original jMovie version to confirm its
+// functional equivalence.
 //
-// This version has been compared against the original jMovie
-// version to confirm functional equivalence.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "S-Curve";
    string Category    = "Colour";
-   string SubCategory = "Technical";        // Subcategory added by jwrl for version 14 and up 10 Feb 2017
+   string SubCategory = "Technical";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture HSVin : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state
 {
@@ -61,9 +68,9 @@ sampler HSVsampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float InY
 <
@@ -154,15 +161,15 @@ bool ValueChannel
    string Description = "Channel (HS)V Overrides RGB";
 > = false;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Declarations and definitions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float fn_curve_magic (float valueIn, float indexFraction)
 // _CurveMagic derived from http://www.codeproject.com/KB/graphics/Spline_ImageCurve.aspx
@@ -199,9 +206,9 @@ float fn_curve_magic (float valueIn, float indexFraction)
    return b.y;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_input (float2 xy : TEXCOORD1) : COLOR
 // Original Pass0_Input converted by changing _RGBtoHSV function to in-line code.
@@ -290,9 +297,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return src_rgba;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique ScurveTechnique
 {
@@ -303,4 +310,3 @@ technique ScurveTechnique
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

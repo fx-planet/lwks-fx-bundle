@@ -1,14 +1,21 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author schrauber
+// @see https://www.lwks.com/media/kunena/attachments/6375/Ripples_1_2016-12-06.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Ripples_manual_expansion.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// There are two related effects, "Ripples (automatic expansion)" and this version
+// "Ripples (manual expansion)".  This is the simple version, which is the one to use
+// when you want to control the wave expansion via keyframes. 
 //
-// Added subcategory for LW14 - jwrl 18 February 2017.
-//--------------------------------------------------------------//
+// Added subcatgory for LW14 - jwrl 18 Feb 2017.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -17,16 +24,9 @@ int _LwksEffectInfo
    string SubCategory = "Distortion";
 > = 0;
 
-
-
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool enable_timing
 <
@@ -110,14 +110,9 @@ bool Flip_edge
 	string Description = "Flip edge";
 > = true;
 
-
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
+// Input and shader
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -131,37 +126,19 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 	
 float _Progress;
 
-
-
 #pragma warning ( disable : 3571 )
 
-
-
-
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
-
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 universal (float2 xy : TEXCOORD1) : COLOR 
 { 
@@ -177,7 +154,7 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
  float phase = 0;
  float zoom;
  float freq = Frequency;
- if ((pulsing) || (pulse_negative)) freq = Frequency /2;							// Frequency adjustment, when the waveform was changed. ___________German: Frequenzanpassung, wenn die Wellenfom geändert wurde.
+ if ((pulsing) || (pulse_negative)) freq = Frequency /2;							// Frequency adjustment, when the waveform was changed. ___________German: Frequenzanpassung, wenn die Wellenfom geÃ¤ndert wurde.
  
  
  // ............ Effect without expansion rate...............
@@ -185,10 +162,10 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
  if (!enable_timing) {
   zoom =0.05 * pow((zoom_lin * 2.4),3);  
   phase = (sin (phase_shift +  (_Progress * (speed*-1)) + (freq * _distance))) ;				// Create a wave.
-  distortion = zoom * phase / _distance;									//  Wave height ____________ German: Wellenhöhe 
-  distortion = distortion / (_distance + 2.86);									// Wellenhöhe distanzabhängige Einstellungen
-  if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom ändern (ggf. auch für Druckwelle geeignet?)
-  if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom ändern (ggf. auch für Druckwelle geeignet?)
+  distortion = zoom * phase / _distance;									//  Wave height ____________ German: WellenhÃ¶he 
+  distortion = distortion / (_distance + 2.86);									// WellenhÃ¶he distanzabhÃ¤ngige Einstellungen
+  if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
+  if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
  }else{
 
 
@@ -202,13 +179,13 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
   phase = (sin (phase_shift +  (_Progress * (speed*-1)) + (freq * _distance))) ;					// Create a wave.
 
 	
-  distortion = zoom * phase / (1 + _distance);								// Wave height  ___________German: Wellenhöhe 
+  distortion = zoom * phase / (1 + _distance);								// Wave height  ___________German: WellenhÃ¶he 
 
   duration = pow(_distance , damping); 									// Time behavior of the wave ___________German: Zeitverhalten des Wellenlaufes
-  distortion = distortion / (pow(duration,4) + 28561E-12);						//	  Wave height, time-dependent attenuation. (Mainly through experiments determined) ___________German:  Wellenhöhe, zeitabhängige Dämpfung. (überwiegend durch Versuche ermittelt)
+  distortion = distortion / (pow(duration,4) + 28561E-12);						//	  Wave height, time-dependent attenuation. (Mainly through experiments determined) ___________German:  WellenhÃ¶he, zeitabhÃ¤ngige DÃ¤mpfung. (Ã¼berwiegend durch Versuche ermittelt)
 
-  if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom ändern (ggf. auch für Druckwelle geeignet?)
-  if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom ändern (ggf. auch für Druckwelle geeignet?)
+  if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
+  if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
  }
 
  // ..........................................................
@@ -227,12 +204,10 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
  return tex2D (FgSampler, xy1); 
 } 
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
 technique SampleFxTechnique
 {
    pass SinglePass
@@ -240,4 +215,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE universal();
    }
 }
-

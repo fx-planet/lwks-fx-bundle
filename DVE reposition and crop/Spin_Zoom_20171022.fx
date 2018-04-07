@@ -1,13 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @See https://www.lwks.com/media/kunena/attachments/348533/Temp20171022-02.JPG
-//--------------------------------------------------------------//
+// @Released 2018-04-07
+// @Author schrauber
+// @Created 2017-10-22
+// @see https://www.lwks.com/media/kunena/attachments/348533/Temp20171022-02.JPG
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Zoom_20171022
 //
-// Created by LW user schrauber 22 October 2017
-// @Author schrauber
-// @Created "22 October 2017"
-// 
 // The rotation code is based on the spin-dissolve effects of the user "jwrl".
 // The zoom code is based on the zoom out, zoom in effect of the user "schrauber".
 //
@@ -26,10 +24,11 @@
 //        Center of rotation:
 //        Zoom >= 0: rotation center = center of the output texture
 //        Zoom <  0: rotation center = center of the input textur
-//        For this purpose, the program sections ZOOM and ROTATION are run through in different order.
+//        For this purpose, the program sections ZOOM and ROTATION are run through in
+//        different order.
 //        Zoom >= 0: first ZOOM, then ROTATION
 //        Zoom <  0: first ROTATION, then ZOOM
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -38,14 +37,9 @@ int _LwksEffectInfo
    string Category    = "DVE"; 
 > = 0;
 
-
-
-
-
-//--------------------------------------------------------------//
-// Inputs und Samplers
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
+// Inputs and Samplers
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 sampler BorderSampler = sampler_state
@@ -82,13 +76,9 @@ sampler WrapSampler = sampler_state
    MipFilter = Linear;
 };
 
-
-
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
 
 float Spin
 <
@@ -161,32 +151,18 @@ int SetTechnique
    string Enum = "Bordered/transparent,Reflected image,Tiled image"; 
 > = 0;
 
-
-
-
-
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Common definitions, declarations, macros
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 
 #define ZOOM (Zoom * 10 + ZoomFine / 10)
 #define FRAMECENTER 0.5
      
-
-
-
-
-
-
-
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1, uniform sampler FgSampler) : COLOR
 { 
@@ -256,13 +232,9 @@ float4 ps_edge_mode (float2 uv : TEXCOORD1) : COLOR
    return tex2D (BorderSampler, uv);
 }
 
-
-
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
-
+//-----------------------------------------------------------------------------------------//
 
 technique SpinZoomBorder
 {
@@ -280,4 +252,3 @@ technique SpinZoomTile
    pass P_1 < string Script = "RenderColorTarget0 = Wrapped;"; >    { PixelShader = compile PROFILE ps_edge_mode (); }
    pass P_2 { PixelShader = compile PROFILE ps_main (WrapSampler); }
 }
-

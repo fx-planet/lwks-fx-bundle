@@ -1,22 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-07
+// @Author jwrl
+// @Created 2016-04-06
+// @see https://www.lwks.com/media/kunena/attachments/6375/PeakDesat_2016-04-10.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect PeakDesat.fx
 //
-// Created by LW user jwrl 6 April 2016.
-// @Author jwrl
-// @Created "6 April 2016"
-//
-// This is a tool designed to quickly and easily desaturate
-// whites and blacks, which can easily become contaminated
-// during other grading operations.  The turnover point and
+// This is a tool designed to quickly and easily desaturate whites and blacks, which can
+// easily become contaminated during other grading operations.  The turnover point and
 // blend smoothness are also adjustable.
 //
 // Cross platform compatibility check 30 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,15 +26,15 @@ int _LwksEffectInfo
    string SubCategory = "Technical";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -46,9 +46,9 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float WhtPnt
 <
@@ -98,9 +98,9 @@ float BlkDesat
    float MaxVal = 1.00;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 // Magic numbers for Y matrix calculation
 
@@ -109,9 +109,9 @@ float BlkDesat
 #define matScale  3.4095
 #define pSc       1.5
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 main (float2 xy : TEXCOORD1) : COLOR
 {
@@ -150,9 +150,9 @@ float4 main (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique deSat
 {
@@ -161,4 +161,3 @@ technique deSat
       PixelShader = compile PROFILE main ();
    }
 }
-

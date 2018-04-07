@@ -1,14 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author schrauber
+// @see https://www.lwks.com/media/kunena/attachments/6375/Zoom_focal_2.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Regional zoom.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// Regional zoom is designed to allow you to apply localised (focussed) distortion to a
+// region of the frame.  Either zoom in or zoom out can be applied, the area covered can
+// be varied, and the amount of distortion can be adjusted.  The edges of the image after
+// distortion can optionally be mirrored out to fill the frame.
 //
 // Added subcategory for version 14, 18 Feb 2017 - jwrl.
-//--------------------------------------------------------------//
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -150,4 +158,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE zoom();
    }
 }
-

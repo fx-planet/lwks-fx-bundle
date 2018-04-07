@@ -1,13 +1,20 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author khaver
-//--------------------------------------------------------------//
-// 3 Axis Colour Temperature
+// @see https://www.lwks.com/media/kunena/attachments/6375/3AxisColTemp_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect 3AxisColTemp.fx
 //
-// By khaver
+// 3 Axis Colour Temperature is a simple axis-based colourgrade tool, originally written
+// for David Rasberry.  It can adjust Red<>Cyan, Green<>Magenta, Blue<>Yellow (matches
+// the vector scope), plus luminance.
 //
 // Subcategory added by jwrl for version 14 and up 10 Feb 2017
-//--------------------------------------------------------------//
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -17,15 +24,17 @@ int _LwksEffectInfo
    string SubCategory = "Technical";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
-float4 _BlueColour = float4( 0.0, 0.0, 1.0, 1.0 );
-float4 _RedColour = float4( 1.0, 0.0, 0.0, 1.0 );
-float4 _GreenColour  = float4( 0.0, 1.0, 0.0, 1.0 );
-float4 _MagColour  = float4( 1.0, 0.0, 1.0, 1.0 );
-float4 _CyanColour  = float4( 0.0, 1.0, 1.0, 1.0 );
-float4 _YellowColour  = float4( 1.0, 1.0, 0.0, 1.0 );
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
+
+texture Input;
+
+sampler InputSampler = sampler_state { Texture = <Input>; };
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float AmountRC
 <
@@ -55,15 +64,21 @@ float Luma
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-texture Input;
-sampler InputSampler = sampler_state { Texture = <Input>; };
+//-----------------------------------------------------------------------------------------//
+// Descriptions and declarations
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+float4 _BlueColour = float4( 0.0, 0.0, 1.0, 1.0 );
+float4 _RedColour = float4( 1.0, 0.0, 0.0, 1.0 );
+float4 _GreenColour  = float4( 0.0, 1.0, 0.0, 1.0 );
+float4 _MagColour  = float4( 1.0, 0.0, 1.0, 1.0 );
+float4 _CyanColour  = float4( 0.0, 1.0, 1.0, 1.0 );
+float4 _YellowColour  = float4( 1.0, 1.0, 0.0, 1.0 );
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
 float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
    float4 src = tex2D( InputSampler, xy1 );
@@ -113,8 +128,8 @@ float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
    return ret;
 }
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------//
-// Technique Section for Image Processing Effects
-//--------------------------------------------------------------//
 technique ColourTemp { pass Single_Pass { PixelShader = compile PROFILE main(); } }

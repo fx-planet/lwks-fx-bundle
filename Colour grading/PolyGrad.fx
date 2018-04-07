@@ -1,14 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/PolyGrad.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect PolyGrad.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// PolyGrad emulates to a degree the operation of power windows.  This maskable grading
+// tool can add that little extra polish to your colourgrade.
+//
+// To use it, apply the effect and turn on "Show Guides".  This will allow you to position
+// the corners of the polygon mask.  The red area shows where the colourgrade effect will
+// be at 100%, and the green area is where the effect influence will be at 0%.  Increasing
+// the feather amount will increase the area between the red and green zones.  When a
+// corner node gets near the edge of frame it will snap to that edge.
+//
+// Once the areas are set turn off "Show Guides" and adjust the other parameters as you
+// would any other colourgrading tool.
 //
 // Subcategory added by jwrl for v.14 and up 10 Feb 2017
-//--------------------------------------------------------------//
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -17,20 +32,17 @@ int _LwksEffectInfo
    string SubCategory = "Repair";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
- float _OutputWidth,  _OutputHeight, _OutputAspectRatio;
-
-//texture fg;
 texture bg;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler BGround = sampler_state {
         Texture = <bg>;
@@ -57,13 +69,10 @@ sampler Samp2 = sampler_state {
         MipFilter = Linear;
  };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
 float4 MaskColor
 <
    string Description = "Grad Color";
@@ -243,21 +252,20 @@ float P8Y
    float MaxVal = 1.00;
 > = 0.2879;
 
-#pragma warning ( disable : 3571 )
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+float _OutputWidth,  _OutputHeight, _OutputAspectRatio;
 
 #define _psize 8
  
+#pragma warning ( disable : 3571 )
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
 float4 makePoly(float2 p, float2 poly[_psize]) {
 	bool oddNodes = false;
 	for(int i = 0; i < _psize; i++){
@@ -272,7 +280,6 @@ float4 makePoly(float2 p, float2 poly[_psize]) {
 	return float4(io,io,io,io);
 }
 
- 
 float distanceFromLine(float2 p, float2 l1, float2 l2) {
 	float xDelta = l2.x - l1.x;
 	float yDelta = l2.y - l1.y;
@@ -354,7 +361,6 @@ float3 method(float3 fg, float3 bg) {
 	return newc;
 }
 
-
 float4 main1( float2 xy : TEXCOORD1, uniform int run ) : COLOR
 {
 	float pixelsx = 0.04; //20.0 / _OutputWidth;
@@ -414,14 +420,11 @@ float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
 	return color;
 }
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+technique PolyGrad
 {
 
    pass Pass1
@@ -443,4 +446,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE Combine();
    }
 }
-

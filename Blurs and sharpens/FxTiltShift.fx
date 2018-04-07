@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author "Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)"
-// @Created -unknown-
+// 
 // @see https://www.lwks.com/media/kunena/attachments/6375/TiltShift.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxTiltShift.fx

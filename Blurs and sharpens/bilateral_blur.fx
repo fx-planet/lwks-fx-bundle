@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author baopao
-// @Created -undefined-
+// 
 // @see https://www.lwks.com/media/kunena/attachments/6375/Bilateral_blur_1.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect bilateral_blur.fx

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author Gary Hango (khaver)
-// @Created -unknown-
+// 
 // @see https://www.lwks.com/media/kunena/attachments/6375/Camera_Shake.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/CameraMotion.png
 //-----------------------------------------------------------------------------------------//

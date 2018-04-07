@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author rakusan/windsturm
-// @Created -unknown-
+// 
 // @see https://www.lwks.com/media/kunena/attachments/6375/spinblur.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxSpinBlur.fx

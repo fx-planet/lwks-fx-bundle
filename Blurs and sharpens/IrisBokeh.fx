@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author khaver
-// @Created 2012-??-??
+// @Created 2012
 // @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokehNew.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect IrisBokeh.fx

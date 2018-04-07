@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author jwrl
-// @Created 2016-06-31
+// @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaOptical_1.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaOptical.mp4
 //-----------------------------------------------------------------------------------------//

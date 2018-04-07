@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author khaver
-// @Created -unknown-
+// 
 // @see https://www.lwks.com/media/kunena/attachments/6375/Focal_Blur.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FocalBlur.fx

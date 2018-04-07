@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author idealsceneprod (Val Gameiro)
-// @Created -unknown-
+// 
 // @see https://www.lwks.com/media/kunena/attachments/6375/FourTone.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect fourtone.fx

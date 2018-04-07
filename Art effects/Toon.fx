@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author khaver
-// @Created -unknown-
+// 
 // @see https://www.lwks.com/media/kunena/attachments/6375/Toon.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Toon.fx

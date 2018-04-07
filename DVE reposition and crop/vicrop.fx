@@ -1,20 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author gr00by
 // @OriginalAuthor "EditShare EMEA"
-// @Created "26 November 2016"
-// @See https://www.lwks.com/media/kunena/attachments/6375/vicrop2.png
-//--------------------------------------------------------------//
-// VisualCrop by gr00by
-// based on DVE.fx created by EditShare
-// 26 Nov 2016
+// @Created 2016-11-26
+// @see https://www.lwks.com/media/kunena/attachments/6375/vicrop1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/vicrop3.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect VisualCrop
+//
+// Based on DVE.fx created by EditShare, this is a quick simple cropping tool that you
+// can set up by dragging corner pins around on the screen.  In effects edit mode, move
+// your mouse over your sequence viewer and the pins will appear.  Drag them where you
+// need them to visually adjust your cropping.
 //
 // Modifications for version 14 by jwrl 11 February 2017.
 // Category changed and subcategory added.
 //
-// Bug fix by LW user jwrl 13 July 2017 - this effect didn't
-// work as expected on Linux/Mac platforms.  It now does.
-//--------------------------------------------------------------//
+// Bug fix by LW user jwrl 13 July 2017
+// This effect didn't work as expected on Linux/Mac platforms.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,9 +34,9 @@ int _LwksEffectInfo
 
 float _OutputAspectRatio;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float CropLeft
 <
@@ -62,11 +70,16 @@ float CropBottom
    float MaxVal = 1.00;
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+
 texture Fg;
 texture Bg;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -92,9 +105,10 @@ float _FgNormWidth = 1.0;
 float _FgWidth  = 10.0;
 float _FgHeight = 10.0;
 
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
 float4 ps_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
    float croppedL      = CropLeft;
@@ -115,7 +129,8 @@ float4 ps_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
    return tex2D( FgSampler, fgPos );
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+
 technique DVE { pass Single_Pass { PixelShader = compile PROFILE ps_main(); } }

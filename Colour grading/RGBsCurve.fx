@@ -1,36 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-07
+// @Author jwrl
+// @Created 2017-01-04
+// @see https://www.lwks.com/media/kunena/attachments/6375/RGBsCurve_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect RGBsCurve.fx
 //
-// Created by LW user jwrl 4 January 2017
-// @Author jwrl
-// @Created "4 January 2017"
-//
-// This Lightworks effect allows the master luminance S curve
-// of the input to be adjusted.  Individual adjustment of RGB
-// S curves is also possible.  It does this by applying a
-// symmetrical quadratic level change to the image.
+// This Lightworks effect allows the master luminance S curve of the input to be
+// adjusted.  Individual adjustment of RGB S curves is also possible.  It does this by
+// applying a symmetrical quadratic level change to the image.
 //
 // Added the ability to set the curve profile 8 January 2017.
 //
-// The knee of the curve may be set either as a master S
-// profile or by means of individual YRGB settings.  More and
-// more positive values progressively increase the slope of
-// the S profile. A value of zero corresponds to a linear
-// transfer rate with no visible effect, while values below
-// zero invert the profile.  The profile in this version is
-// always symmetrical, ie., a breakpoint at 10% will always
-// have a corresponding breakpoint at 90%, 20% and 80% will
-// be paired, as will 30% and 70% and so on.
+// The knee of the curve may be set either as a master S profile or by means of
+// individual YRGB settings.  More and more positive values progressively increase the
+// slope of the S profile. A value of zero corresponds to a linear transfer rate with
+// no visible effect, while values below zero invert the profile.  The profile in this
+// version is always symmetrical, ie., a breakpoint at 10% will always have a
+// corresponding breakpoint at 90%, 20% and 80% will be paired, as will 30% and 70%
+// and so on.
 //
-// Note: the individual profile settings in this effect are
-// internally legalised to fall within the range of -1.00 to
-// 1.00.  Unlike most Lightworks effects, manually entering
-// values outside those limits will result in the same effect
-// as if that profile was set to the corresponding maximum
-// positive or negative value.
-//--------------------------------------------------------------//
+// Note: the individual profile settings in this effect are internally legalised to fall
+// within the range of -1.00 to 1.00.  Unlike most Lightworks effects, manually entering
+// values outside those limits will result in the same effect as if that profile was set
+// to the corresponding maximum positive or negative value.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -40,15 +38,15 @@ int _LwksEffectInfo
    string SubCategory = "Technical";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state
 {
@@ -60,9 +58,9 @@ sampler InpSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Y_amt
 <
@@ -144,9 +142,9 @@ float Bcurve
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI       3.1415927
 #define THIRD_PI 1.0471976
@@ -159,9 +157,9 @@ float Bcurve
 
 #define L_DIFF   0.1039928
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_exponential (float2 uv : TEXCOORD1) : COLOR
 {
@@ -345,9 +343,9 @@ float4 ps_log (float2 uv : TEXCOORD1) : COLOR
    return Fgnd;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique exponential
 {
@@ -366,4 +364,3 @@ technique logCurve
    pass P_1
    { PixelShader = compile PROFILE ps_log (); }
 }
-

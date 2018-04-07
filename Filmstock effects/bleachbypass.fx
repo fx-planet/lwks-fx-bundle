@@ -1,19 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author msi
 // @Created 2011
 // @License "CC BY-NC-SA"
-// ----------------------------------------
-// Bleach bypass, 2011 msi.
-// [CC BY-NC-SA]
+// @see https://www.lwks.com/media/kunena/attachments/6375/bleachBypass_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect bleachbypass.fx
 //
-// Added subcategory for LW14
-// - jwrl, 18 Feb 2017.
+// [CC BY-NC-SA]  This effect emulates the altered contrast and saturation obtained by
+// skipping the bleach step in classical colour film processing.
 //
-// Explicitly defined sampler to force
-// cross platform default sampler state
-// compatibility 31 July 2017 - jwrl.
-// ----------------------------------------
+// Added subcategory for LW14 - jwrl, 18 Feb 2017.
+//
+// Bug fix 31 July 2017 by jwrl.
+// Explicitly defined sampler to ensure cross platform default sampler state
+// compatibility.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -22,11 +29,12 @@ int _LwksEffectInfo
    string SubCategory = "Preset Looks";
 > = 0;
 
-// ----------------------------------------
-// Parameters
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
+
 sampler MsiBleachSampler = sampler_state
 {
    Texture   = <Input>;
@@ -36,6 +44,10 @@ sampler MsiBleachSampler = sampler_state
    MagFilter = Linear;
    MipFilter = Linear;
 };
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Red
 <
@@ -71,9 +83,9 @@ float BlendOpacity
 
 #pragma warning ( disable : 3571 )
 
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Shader
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float4 Bleach_v2_FX( float2 xy: TEXCOORD1 ) : COLOR
 {
@@ -90,9 +102,9 @@ float4 Bleach_v2_FX( float2 xy: TEXCOORD1 ) : COLOR
 	return float4( mixRGB, source.a );
 }
 
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Techniques
-// ----------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique BleachBypassFXTechnique
 {

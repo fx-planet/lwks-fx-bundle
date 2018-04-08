@@ -1,32 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author khaver
-//--------------------------------------------------------------//
-// Glint Effect - Gary Hango (khaver)
+// @see https://www.lwks.com/media/kunena/attachments/6375/Glint.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Glint.fx
 //
-// This cross-platform conversion jwrl May 1 2016
+// Glint Effect by Gary Hango (khaver) creates star filter-like highlights, with 4, 6
+// or 8 points selectable.  The glints/stars can be rotated and may be normal or
+// rainbow coloured.  They may also be blurred, and the "Show Glint" checkbox will
+// display the glints over a black background.
 //
-// Bug fix 26 February 2017 by jwrl to correct for a problem
-// with the way that Lightworks handles interlaced media.  THE
-// BUG WAS NOT IN THE WAY THIS EFFECT WAS IMPLEMENTED BY KHAVER.
+// Cross-platform conversion 1 May 2016 by jwrl.
 //
-// The recommended method of obtaining frame height is to use
-// _OutputHeight.  It has been discovered that this is unreliable
-// since it returns only half the true frame height if interlaced
-// media is played and only and only when it is played.  The bug
-// fix obtains the frame height by the division of _OutputWidth
-// by _OutputAspectRatio.  This is reliable in all conditions.
-//
+// Bug fix 26 February 2017 by jwrl.
+// Corrected for a problem with the way that Lightworks handles interlaced media.
 // Added subcategory to effect header for version 14.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Fully defined float3 and float4 variables to bypass the behavioural differences
+// between the D3D and Cg compilers.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Fully defined float3 and float4 variables to bypass the
-// behavioural differences between the D3D and Cg compilers.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -36,9 +34,74 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+texture Input;
+
+texture Sample1 : RenderColorTarget;
+texture Sample2 : RenderColorTarget;
+texture Sample3 : RenderColorTarget;
+texture Sample4 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler InputSampler = sampler_state
+{
+   Texture   = <Input>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler Samp1 = sampler_state
+{
+   Texture   = <Sample1>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler Samp2 = sampler_state
+{
+   Texture   = <Sample2>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler Samp3 = sampler_state
+{
+   Texture   = <Sample3>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler Samp4 = sampler_state
+{
+   Texture   = <Sample4>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -96,74 +159,9 @@ bool flare
    string Description = "Show Glint";
 > = false;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Input;
-
-texture Sample1 : RenderColorTarget;
-texture Sample2 : RenderColorTarget;
-texture Sample3 : RenderColorTarget;
-texture Sample4 : RenderColorTarget;
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture   = <Sample1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp2 = sampler_state
-{
-   Texture   = <Sample2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp3 = sampler_state
-{
-   Texture   = <Sample3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp4 = sampler_state
-{
-   Texture   = <Sample4>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 # define ROTATE_0    0.0      // 0.0, 1.0
 # define ROTATE_30   0.5236   // 30.0, 1.0
@@ -181,9 +179,9 @@ sampler Samp4 = sampler_state
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_adjust (float2 xy : TEXCOORD1) : COLOR
 {
@@ -319,9 +317,9 @@ float4 ps_combine (float2 xy : TEXCOORD1) : COLOR
    return lerp (source, comb, Strength);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique One
 {
@@ -682,4 +680,3 @@ technique Three
       PixelShader = compile PROFILE ps_combine ();
    }
 }
-

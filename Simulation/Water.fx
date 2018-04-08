@@ -1,35 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-08
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/water.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Water.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// Water makes waves as well as refraction, and provides X and Y adjustment of the
+// parameters.
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//--------------------------------------------------------------//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Water";       // The title
-   string Category    = "Stylize";                  // Governs the category that the effect appears in in Lightworks
+   string Description = "Water";
+   string Category    = "Stylize";
    string SubCategory = "Simulation";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _Progress;
-
-int iSeed = 15;
-
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -43,13 +39,9 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Speed
 <
@@ -91,18 +83,19 @@ bool Flip
 	string Description = "Waves";
 > = false;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _Progress;
+
+int iSeed = 15;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 Wavey( float2 xy : TEXCOORD1 ) : COLOR
 {
@@ -122,17 +115,14 @@ float4 Wavey( float2 xy : TEXCOORD1 ) : COLOR
 	return Color;
 }
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
+technique Water
 {
    pass SinglePass
    {
       PixelShader = compile PROFILE Wavey();
    }
 }
-

@@ -1,14 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Based on: http://glslsandbox.com/e#9996.0
+// @Released 2018-04-08
+// @Author baopao
+// @see https://www.lwks.com/media/kunena/attachments/129668/sine3.jpg
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect SineLights.fx
 //
-// Conversion for Lightworks Linux/Mac by baopao
-//
-// Windows conversion of baopao's code by jwrl
+// Based on: http://glslsandbox.com/e#9996.0, conversion for Lightworks Linux/Mac by
+// baopao.  Windows conversion of baopao's code by jwrl.
 //
 // This revision for version 14 by jwrl 6 February 2017.
-//--------------------------------------------------------------//
+// Changed category to "Mattes" and added subcategory "Patterns".
+//
+// LW 14.5 update by jwrl 30 March 2018
+// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
+// care of in versions of LW higher than 14.0.  If using an older version under
+// Windows the Legacy version must be used.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -18,15 +29,15 @@ int _LwksEffectInfo
    string SubCategory = "Patterns";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler Image = sampler_state {
    Texture   = <Input>;
@@ -37,9 +48,9 @@ sampler Image = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Num
 <
@@ -113,15 +124,15 @@ float Curve
    float MaxVal = 150.0;
 > = 4.00;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Declarations and definitions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _Progress;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD) : COLOR
 {
@@ -145,14 +156,12 @@ float4 ps_main (float2 uv : TEXCOORD) : COLOR
    return min (sum, 1.0).xxxx;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef WINDOWS
-
 #define PROFILE ps_3_0
-
 #endif
 
 technique SinglePass
@@ -162,4 +171,3 @@ technique SinglePass
       PixelShader = compile PROFILE ps_main (); 
    }
 }
-

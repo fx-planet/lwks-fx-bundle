@@ -1,28 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Lower3rd_A.fx
-// Created by LW user jwrl 15 March 2018
+// @Released 2018-04-08
 // @Author jwrl
-// @Created "15 March 2018"
+// @Created 2018-03-15
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower_third_1_grab_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Lower3rd_A.fx
 //
-// This moves a coloured bar on from one side of the screen
-// then lowers or raises it to reveal an alpha image connected
-// to the input In_1.  To remove the effect, the bar can be
-// moved up to hide the text again and then moved off.  This
-// combination move is all done in one operation using the
-// Transition parameter.
+// This moves a coloured bar on from one side of the screen then lowers or raises it to
+// reveal an alpha image connected to the input In_1.  To remove the effect, the bar
+// can be moved up to hide the text again and then moved off.  This combination move is
+// all done in one operation using the Transition parameter.
 //
-// This completely replaces Lower3rd_1.fx, which has now been
-// withdrawn.  While that version is still quite useable, the
-// significant user interface changes in this version have made
-// this a much better proposition.
+// This completely replaces Lower3rd_1.fx, which has now been withdrawn.  While that
+// version is still quite useable, the significant user interface changes in this
+// version have made this a much better proposition.
 //
 // Modified by LW user jwrl 16 March 2018
-// Cosmetic change only: "Transition" has been moved to the
-// top of the parameters, giving it higher priority than
-// "Opacity".
-//--------------------------------------------------------------//
+// Cosmetic change only: "Transition" has been moved to the top of the parameters,
+// giving it higher priority than "Opacity".
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,18 +32,18 @@ int _LwksEffectInfo
    string SubCategory = "Lower Third Tools";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In_1;
 texture In_2;
 
 texture Bar : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Input_1 = sampler_state
 {
@@ -75,9 +75,9 @@ sampler s_Bar = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Transition
 <
@@ -184,20 +184,20 @@ float BarPosY
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define EMPTY   (0.0).xxxx
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
 //
 // These two functions are designed as replacements for all ()
 // and any ().  fn_inRange (xy, range) returns true if all of
 // xy falls inside range.xy - range.zw, while fn_legal (xy)
 // returns true if all of xy is inside 0.0 - 1.0 inclusive.
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_inRange (float2 xy, float4 range)
 {
@@ -211,9 +211,9 @@ bool fn_legal (float2 xy)
           || (xy.y < 0.0) || (xy.y > 1.0));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_bar (float2 uv : TEXCOORD0) : COLOR
 {
@@ -277,9 +277,9 @@ float4 ps_main_1 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (tex2D (s_Input_2, xy2), Fgd, Fgd.a * Opacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Lower3rd_A_0
 {
@@ -298,4 +298,3 @@ technique Lower3rd_A_1
 
    pass P_2 { PixelShader = compile PROFILE ps_main_1 (); }
 }
-

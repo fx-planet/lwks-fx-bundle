@@ -1,31 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 4 April 2018
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/Letterbox.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Letterbox.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
-//--------------------------------------------------------------//
+// This effect applies a simple letterbox style mask at a range of industry standard
+// ratios or a user set custom mask.
+//
+// Modified by LW user jwrl 4 April 2018.
+// Metadata header block added to better support GitHub repository.  Description added,
+// code sections labelled.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Letterbox";        // The title
-   string Category    = "DVE";              // Governs the category that the effect appears in in Lightworks
-   string SubCategory = "Crop Presets";     // Parameter added for version 14
+   string Description = "Letterbox";
+   string Category    = "DVE";
+   string SubCategory = "Crop Presets";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-float _OutputAspectRatio, _OutputWidth, _OutputHeight;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Tex1 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state {
 	Texture = <Input>; 
@@ -36,6 +41,7 @@ sampler InputSampler = sampler_state {
         MipFilter = Linear;
 
 };
+
 sampler Samp1 = sampler_state {
 	Texture = <Tex1>; 
         AddressU = Clamp;
@@ -46,13 +52,9 @@ sampler Samp1 = sampler_state {
 
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int Mask
 <
@@ -101,18 +103,17 @@ float PanY
    float MaxVal = 2.00;
 > = 0.5;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio, _OutputWidth, _OutputHeight;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 main2( float2 uv : TEXCOORD1 ) : COLOR
 {
@@ -170,14 +171,11 @@ float4 main1( float2 uv : TEXCOORD1 ) : COLOR
    return color;
 }
 
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+
+technique Letterbox
 {
    pass Pass1
    <
@@ -191,4 +189,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE main2();
    }
 }
-

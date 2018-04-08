@@ -1,28 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author khaver
-//--------------------------------------------------------------//
-// Flare
+// @see https://www.lwks.com/media/kunena/attachments/6375/Flare.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Flare.fx
 //
-// Original effect by khaver, bug fix 26 February 2017 by
-// jwrl to correct for a problem with the way that Lightworks
-// handles interlaced media.  THE BUG WAS NOT IN THE WAY THIS
-// EFFECT WAS ORIGINALLY IMPLEMENTED BY KHAVER.
+// Flare - original effect by khaver creates an adjustable lens flare effect.  The
+// origin of the flare can be positioned by adjusting the X and Y sliders or by
+// dragging the on-viewer icon with the mouse.
 //
-// The recommended method of obtaining frame height is to use
-// _OutputHeight.  It has been discovered that this is unreliable
-// since it returns only half the true frame height if interlaced
-// media is played and only and only when it is played.  The bug
-// fix obtains the frame height by the division of _OutputWidth
-// by _OutputAspectRatio.  This is reliable in all conditions.
-//
+// Modified 11 February 2017 by jwrl.
 // Added subcategory to effect header for version 14.
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
+// Bug fix 26 February 2017 by jwrl.
+// Corrects for a problem with the way that Lightworks handles interlaced media.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,9 +31,40 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+texture Input;
+texture Sample : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler InputSampler = sampler_state
+{
+   Texture   = <Input>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler Samp1 = sampler_state
+{
+   Texture   = <Sample>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float CentreX
 <
@@ -73,39 +103,16 @@ float adjust
    float MaxVal = 1.0f;
 > = 0.25f;
 
-
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-texture Input;
-texture Sample : RenderColorTarget;
-
-sampler InputSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture   = <Sample>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_adjust ( float2 xy : TEXCOORD1 ) : COLOR
 {
@@ -143,6 +150,10 @@ float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
    return saturate(float4(ret.rgb,1.0f));
 }
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
 technique Blur
 {
    pass Pass1
@@ -158,4 +169,3 @@ technique Blur
       PixelShader = compile PROFILE ps_main();
    }
 }
-

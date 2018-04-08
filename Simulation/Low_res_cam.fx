@@ -1,40 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author jwrl
+// @Created 2016-02-12
+// @see https://www.lwks.com/media/kunena/attachments/6375/Low_res_cam.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Low_res_cam.fx
 //
-// Created by LW user jwrl 12 February 2016
-// @Author jwrl
-// @Created "12 February 2016"
-//
-// This effect was designed to simulate the pixellation that
-// you get when a low-res camera is blown up just that little
-// too much.
+// This effect was designed to simulate the pixellation that you get when a low-res
+// camera is blown up just that little too much.
 //
 // Version 14 update 18 Feb 2017 jwrl.
 // Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
-//
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -44,9 +31,9 @@ int _LwksEffectInfo
    string SubCategory = "Simulation";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -55,9 +42,9 @@ texture Buffer_1 : RenderColorTarget;
 texture Buffer_2 : RenderColorTarget;
 texture Buffer_3 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -109,9 +96,9 @@ sampler Buffer_3_S   = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -140,9 +127,9 @@ float Amount
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 // Pascal's triangle magic numbers for blur
 
@@ -154,9 +141,9 @@ float Amount
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 set_in (float2 xy : TEXCOORD1) : COLOR
 {
@@ -231,9 +218,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return lerp (Image, blurMosaic, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique pre_mosaic
 {

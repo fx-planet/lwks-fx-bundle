@@ -1,35 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author jwrl
+// @Created 2016-05-11
+// @see https://www.lwks.com/media/kunena/attachments/6375/Contours_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Contours_7_2016-08-16.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect 70s_psych.fx
 //
-// Created by LW user jwrl 11 May 2016
-// @Author jwrl
-// @Created "11 May 2016"
-//
-// This is an entirely original effect, but feel free to do
-// what you will with it.
+// This is an entirely original effect, but feel free to do what you will with it.
 //
 // Version 14 update 18 Feb 2017 jwrl.
 // Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,18 +28,18 @@ int _LwksEffectInfo
    string SubCategory = "Textures";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Processed : RenderColorTarget;
 texture Contours  : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
         Texture   = <Input>;
@@ -79,9 +68,9 @@ sampler Contour_S = sampler_state {
 	MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -149,9 +138,9 @@ float Monochrome
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define DELTANG_1  25
 #define ALIASFIX   50
@@ -172,9 +161,9 @@ float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_gene (float2 xy : TEXCOORD1) : COLOR
 {
@@ -289,9 +278,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return lerp (Fgnd, pattern, Amount);
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique TopToBottom
 {
@@ -306,4 +295,3 @@ technique TopToBottom
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
-

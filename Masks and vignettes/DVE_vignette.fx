@@ -1,61 +1,52 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 4 April 2018
+// @Author jwrl
+// @Created 28 May 2017
+// @see https://www.lwks.com/media/kunena/attachments/6375/DVEvignette_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect DVE_vignette.fx
 //
-// Created by LW user jwrl 28 May 2017.
-// @Author jwrl
-// @Created "28 May 2017"
+// This effect is a simple 2D DVE with the ability to apply a circular, diamond or
+// square shaped mask.  The foreground image can be sized, positioned, flipped and
+// flopped.  Since flipping or flopping will change the direction of movement of the
+// foreground position parameters it may be advisable to adjust the position before
+// changing the foreground orientation.
 //
-// This effect is a simple 2D DVE with the ability to apply a
-// circular, square or diamond shaped mask.  The foreground
-// image can be sized, positioned, flipped and flopped.  Since
-// flipping or flopping will change the direction of move-
-// ment of the foreground position parameters it may be
-// advisable to adjust the position before changing the
-// foreground orientation.
+// The aspect ratio of the mask can be adjusted, so ellipses and rectangles can be
+// created.  The aspect ratio will also affect the edge softness and border thickness.
+// Sufficient range has been given to the mask size parameter to allow the frame to
+// be filled if needed.
 //
-// The aspect ratio of the mask can be adjusted, so ellipses
-// and rectangles can be created.  The aspect ratio will also
-// affect the edge softness and border thickness.  Sufficient
-// range has been given to the mask size parameter to allow
-// the frame to be filled if needed.
-//
-// The mask can be repositioned, taking the foreground image
-// with it.  The edges of the mask can be bordered with a
-// bicolour shaded surround.  There is a drop shadow included,
+// The mask can be repositioned, taking the foreground image with it.  The edges of the
+// mask can be bordered with a bicolour shaded surround.  Drop shadowing is included,
 // and the border and shadow can be independently feathered.
 //
-// There is no cropping provided, since the vignette is felt to
-// be sufficient for most reasonable needs.
+// There is no cropping provided, since the vignette is felt to be sufficient for most
+// reasonable needs.
 //
 // Modified by LW user jwrl 6 July 2017.
+// Master scaling has been added to the vignette so that it and the foreground will
+// track when zoomed.
 //
-// The changes to this version are:
-//      The addition of master scaling to the vignette so
-//      that it and the foreground will track when zoomed.
+// A limited 2D DVE capability has been provided for the background image.
 //
-//      The addition of a limited 2D DVE capability to the
-//      background image.
+// The circle and diamond scaling have been adjusted to more closely match that of the
+// square.
 //
-//      The circle and diamond scaling have been adjusted
-//      to more closely match that of the square.
-//
-//      A bug which affected the position direction when
-//      the foreground was flipped or flopped has been fixed.
+// A bug which affected the position direction when the foreground was flipped or flopped
+// has been fixed.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Version 14.5 update 28 March 2018 by jwrl.
+// This will now function correctly when used with Lightworks versions 14.5 and higher
+// under Linux or OS-X.  It addresses the "Clamp/ClampToEdge" bug associated with using
+// DVE effects with transitions on those platforms.
 //
-// Version 14.1 update 28 March 2018 by jwrl.
-//
-// This will now function correctly when used with Lightworks
-// versions 14.5 and higher under Linux or OS-X.  It fixes a
-// bug associated with using this effect with transitions on
-// those platforms.
-//--------------------------------------------------------------//
+// Modified by LW user jwrl 4 April 2018.
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -65,18 +56,18 @@ int _LwksEffectInfo
    string SubCategory = "Crop Presets";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
 
 texture Inp : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 {
@@ -108,9 +99,9 @@ sampler InpSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float FgSize
 <
@@ -281,9 +272,9 @@ float BgPosY
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define RADIUS_SCALE  1.6666667
 #define SQUARE_SCALE  2.0
@@ -316,18 +307,18 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
 {
@@ -513,9 +504,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, Fgnd, Fgnd.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique circle_DVE
 {
@@ -526,6 +517,7 @@ technique circle_DVE
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
+
 technique square_DVE
 {
    pass P_1
@@ -535,6 +527,7 @@ technique square_DVE
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
+
 technique diamond_DVE
 {
    pass P_1
@@ -544,4 +537,3 @@ technique diamond_DVE
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

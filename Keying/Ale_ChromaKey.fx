@@ -1,19 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author "Alessandro Dalla Fontana"
-//--------------------------------------------------------------//
-// http://www.alessandrodallafontana.com/  
+// @Released 2018-04-07
+// @Author baopao
+// @see https://www.lwks.com/media/kunena/attachments/6375/baopaoCkey1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ALE_ChromaKey.fx
+//
+// Created by baopao (http://www.alessandrodallafontana.com), this sophisticated chroma
+// key has the same range of adjustments that you would expect to find on expensive
+// commercial tools.  It's particularly effective on fine detail.
 //
 // Version 14 update 18 Feb 2017 jwrl.
-//
-// Changed category from "Keying" to "Key", added subcategory
-// to effect header.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -23,17 +28,17 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture fg;
 texture bg;
 texture despill;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -65,9 +70,9 @@ sampler BgBlurSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -124,9 +129,9 @@ float4 ColorReplace
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 Green(float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR 
 {
@@ -202,9 +207,9 @@ float4 Blue(float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOOR
     return lerp(color, pow(color, 1/GammaMix), OverMask);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Green2
 {
@@ -221,5 +226,4 @@ technique Blue2
       PixelShader = compile PROFILE Blue();
    }
 }
-
 

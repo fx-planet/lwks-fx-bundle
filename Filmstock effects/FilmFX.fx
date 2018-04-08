@@ -1,35 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @OriginalAuthor "Avery Lee"
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "8 May 2017"
-//--------------------------------------------------------------//
-// Source credit:
-// http://www.loadusfx.net/virtualdub/filmfxguide.htm
-// Translated to be compatible with lightworks effects
+// @OriginalAuthor "Avery Lee"
+// @Created 2017-05-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/Film_Fx.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FilmFx_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FilmFx.fx
 //
-// Film shader (Softlightx2 Version) for video to be used in
-// Avery Lee's Virtualdub GPU Shader filter. v1.6 - 2008(c)
-// Jukka Korhonen from the original code by Avery Lee.
+// Source credit:
+// http://www.loadusfx.net/virtualdub/filmfxguide.htm.  Translated to be compatible with
+// lightworks effects by ramana with help from khaver.
+//
+// Film shader (Softlightx2 Version) for video to be used in Avery Lee's Virtualdub GPU
+// Shader filter. v1.6 - 2008(c) Jukka Korhonen from the original code by Avery Lee.
 //
 // This version by Lightworks user jwrl May 8, 2017.
+// It has been rewritten from the ground up for cross-platform compliance.  The effect
+// now compiles and runs under ps_2_b constraints, rather than the original requirement
+// to use ps_3_0.
 //
-// It has been rewritten from the ground up for cross-platform
-// compliance.  The effect now compiles and runs under PS 2.0
-// constraints, rather than the original requirement to use
-// PS 3.0.
+// The major changes have been to simplify the mathematical expressions, thus reducing
+// the number of variables that were required considerably.  This has as a bonus the
+// effect of improving the efficiency of the code.  Because of that this has in turn
+// permitted a revision to the user interface, allowing percentage ranges to be used
+// for the RGBY curves and the Linearization and Fade parameters.
 //
-// The major changes have been to simplify the mathematical
-// expressions, thus reducing the number of variables that
-// were required considerably.  This has as a bonus the effect
-// of improving the efficiency of the code.  Because of that
-// this has in turn permitted a revision to the user interface,
-// allowing percentage ranges to be used for the RGBY curves
-// and the Linearization and Fade parameters.
+// Because this has been such a major rewrite it has been rigorously cross-checked for
+// consistency withn the original effect.
 //
-// Because this has been such a major rewrite it has been
-// rigorously cross-checked for consistency.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,15 +42,15 @@ int _LwksEffectInfo
    string SubCategory = "Preset Looks";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state
 {
@@ -59,9 +62,9 @@ sampler InpSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float RedCurve
 <
@@ -183,9 +186,9 @@ float Strength
    float MaxVal = 1.0;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -212,7 +215,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    luma.b = (1.0 / (1.0 + exp (curve * (0.5 - luma.b))) - X) / (1.0 - 2.0 * X);
 
    luma = pow (luma, 1.0 / EffectGamma);
-   luma = lerp (luma, 1.0.xxxx - luma, Bleach);
+   luma = lerp (luma, 1.0.xxx - luma, Bleach);
 
    luma.r = (2.0 * pow (luma.r, 1.0 / EffectGammaR)) - 1.0;
    luma.g = (2.0 * pow (luma.g, 1.0 / EffectGammaG)) - 1.0;
@@ -247,9 +250,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Inp, retval, Strength);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique
 {
@@ -258,4 +261,3 @@ technique
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

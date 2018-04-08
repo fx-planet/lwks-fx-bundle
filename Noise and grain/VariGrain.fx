@@ -1,55 +1,48 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-08
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/VariGrain.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect VariGrain.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// This effect is an extended flexible means of adding grain to an image.  As well as
+// intensity adjustment it's also possible to adjust the size and softness of the grain.
+// The grain can be applied to the alpha channel alone with variable transparency.
+// This is designed to help with grain blending when combined with other video sources.
 //
 // Subcategory added by jwrl 10 Feb 2017
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
-//
-// When a height parameter is needed _OutputHeight returns
-// only half the actual frame height when interlaced media is
-// playing.  Now the output height is obtained by dividing
-// _OutputWidth by _OutputAspectRatio  This fix is reliable
-// regardless of the pixel aspect ratio.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Grain(Variable)";       // The title
-   string Category    = "Stylize";                  // Governs the category that the effect appears in in Lightworks
+   string Description = "Grain(Variable)";
+   string Category    = "Stylize";
    string SubCategory = "Grain and Noise";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _Progress;
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
 texture Tex3 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler Samp0 = sampler_state
 {
@@ -91,14 +84,9 @@ sampler Samp3 = sampler_state
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Strength
 <
@@ -135,25 +123,30 @@ float aadjust
 	float MaxVal = 1.0;
 > = 0.0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _Progress;
+
+float _OutputAspectRatio;
+float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float _rand(float2 co, float seed){
     float rand;
 	rand = frac((dot(co.xy,float2(co.x+123,co.y+13))) * seed + _Progress);
 	return rand;
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 Grain( float2 xy : TEXCOORD1 ) : COLOR
 {
@@ -286,9 +279,9 @@ float4 Combine( float2 xy : TEXCOORD1 ) : COLOR
    return source;
 }
 
-//--------------------------------------------------------------
-// Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique VariGrain
 {
@@ -322,4 +315,3 @@ technique VariGrain
    }
 
 }
-

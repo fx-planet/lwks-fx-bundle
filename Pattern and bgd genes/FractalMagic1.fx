@@ -1,22 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author jwrl
+// @OriginalAuthor "Robert Schütze"
+// @Created 2016-05-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/Fractal_3.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMagic1.fx
 //
-// Created by LW user jwrl 8 May 2016.
-// @Author jwrl
-// @Created "8 May 2016"
-//  LW 14+ version by jwrl 12 February 2017
-//  SubCategory "Patterns" added.
+// The fractal generation component was created by Robert Schütze in GLSL sandbox
+// (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better suit
+// the needs of its use in this context.
 //
-// The fractal generation component was created by Robert
-// Sch�tze in GLSL sandbox (http://glslsandbox.com/e#29611.0).
-// It has been somewhat modified to better suit the needs of its
-// use in this context.
+// Updated by jwrl 22 May 2016 by jwrl.
+// Added comprehensive effect colorgrading capability.
 //
-// Updated by jwrl 22 May 2016 to add comprehensive effect
-// colorgrading capability.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 12 February 2017
+// SubCategory "Patterns" added.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,17 +30,17 @@ int _LwksEffectInfo
    string SubCategory = "Patterns";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture FracOut : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -58,9 +62,9 @@ sampler Frac_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Opacity
 <
@@ -170,9 +174,9 @@ float Contrast
    float MaxVal = 4.00;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI_2     6.283185
 
@@ -188,9 +192,9 @@ float Contrast
 
 float _Progress;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
 {
@@ -251,9 +255,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique doMatte
 {
@@ -270,4 +274,3 @@ technique doMatte
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

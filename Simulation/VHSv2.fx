@@ -1,42 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// VHS by khaver - cross-platform V2 mod by jwrl
+// @Released 2018-04-08
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/VHS.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect VHSv2.fx
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// VHS by khaver (cross-platform V2 mod by jwrl) simulates a damaged VHS tape.  Use the
+// Source X pos slider to locate the vertical strip down the frame that affects the
+// distortion.  The horizontal distortion uses the luminance value along this vertical
+// strip.  The threshold adjusts the value that triggers the distortion and white, red
+// and blue noise can be added.  There's also a Roll control to roll the image up or
+// down at different speeds.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
+// LW 14+ version by jwrl 12 February 2017 - added subcategory.
 //
 // Code cleanup 25 February 2017 by jwrl:
-// Unused parameter to set the Y value in the distortion source
-// group removed.  A new group "Distortion" was added because
-// removing the Y parameter left an empty line in the settings.
+// Bug fix to correct for a bug in the way that Lightworks handles interlaced media.
+// All samplers explicitly declared to fix the differing Windows - Mac/Linux defaults.
+// Unused parameter to set the Y value in the distortion source group removed.
+// A new group "Distortion" was added because removing the Y parameter left an empty
+// line in the settings.
+// "Distortion Strength", "Distortion Threshold" and "Distortion Bias" are now grouped
+// in the new "Distortion" group and changed to "Strength", "Threshold" and "Bias".
+// For consistency two additional groups have been added, "Noise" and "Roll".
 //
-// "Distortion Strength", "Distortion Threshold" and also
-// "Distortion Bias" are now grouped there and changed to
-// "Strength", "Threshold" and "Bias" respectively.  This
-// addresses a problem with the originals displaying as
-// "Distortion Strengt" and "Distortion Thresho".
-//
-// For consistency two additional groups have been added,
-// "Noise" and "Roll".
-//
-// All samplers have been explicitly declared to address the
-// differing Windows - Mac/Linux defaults.
-//--------------------------------------------------------------//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -46,22 +37,17 @@ int _LwksEffectInfo
    string SubCategory = "Simulation";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _Progress;
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state { Texture = <Input>;
 	AddressU = Border;
@@ -85,13 +71,9 @@ sampler Samp2 = sampler_state { Texture = <Tex2>;
         MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Lines
 <
@@ -177,27 +159,32 @@ float Roll
 	float MaxVal = 10.00;
 > = 0.0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _Progress;
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
-
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float random( float2 p )
 {
 	const float2 r = float2(
 		23.1406926327792690,  // e^pi (Gelfond's constant)
-		2.6651441426902251); // 2^sqrt(2) (Gelfond–Schneider constant)
+		2.6651441426902251); // 2^sqrt(2) (Gelfondâ€“Schneider constant)
 	return frac( cos( fmod( 123456789., 1e-7 + 256. * dot(p,r) ) ) );  
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 main( float2 uv : TEXCOORD1 ) : COLOR
 {
@@ -258,12 +245,10 @@ float4 main1( float2 uv : TEXCOORD1 ) : COLOR
 	return orig;
 }
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
 technique SampleFxTechnique
 {
    pass Pass1
@@ -288,4 +273,3 @@ technique SampleFxTechnique
    }
    
 }
-

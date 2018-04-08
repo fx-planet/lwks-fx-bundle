@@ -1,5 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-08
+// @Author windsturm
+// @see https://www.lwks.com/media/kunena/attachments/6375/tilerotate.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxTile.fx
+//-----------------------------------------------------------------------------------------//
+
 /**
   * FxTile.
   * Tiling and Rotation effect.
@@ -11,26 +17,27 @@
   * @see <a href="http://kuramo.ch/webgl/videoeffects/">WebGL Video Effects Demo</a>
 */
 
-//--------------------------------------------------------------//
-// FxTile
+//-----------------------------------------------------------------------------------------//
+// Checked and modded for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
 //
-// Checked and modded for ps_2_0 compliance by Lightworks user
-// jwrl, 5 February 2016.
-//--------------------------------------------------------------//
+// LW 14+ version by jwrl 12 February 2017 - SubCategory added.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "FxTile";       // The title
-   string Category    = "Stylize";      // Governs the category that the effect appears in in Lightworks
+   string Description = "FxTile";
+   string Category    = "Stylize";
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-float _OutputAspectRatio;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -44,9 +51,9 @@ sampler s0 = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float threshold
 <
@@ -62,11 +69,17 @@ float angle
    float MaxVal = 360.00;
 > = 0.00;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio;
+
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Pixel Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float4 FxRotateTile (float2 xy : TEXCOORD1) : COLOR
 {
@@ -92,9 +105,9 @@ float4 FxRotateTile (float2 xy : TEXCOORD1) : COLOR
    return tex2D (s0, frac ((angXY - 0.5.xx) / (1.0 - threshold) + 0.5.xx));
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -103,4 +116,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE FxRotateTile ();
    }
 }
-

@@ -1,17 +1,17 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author "Nicholas Carroll"
-// @Created "2 May 2016"
-// @See https://www.lwks.com/media/kunena/attachments/6375/INK_2.png
-//--------------------------------------------------------------//
-// INK  proportionate colour difference keyer
-// Copyright 2016 Nicholas Carroll 
+// @Created 2016-05-02
+// @see https://www.lwks.com/media/kunena/attachments/6375/INK_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect INK.fx
+//
+// INK  proportionate colour difference keyer Copyright 2016 Nicholas Carroll
 // http://casanico.com
 //
-// INK is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License published
-// by the Free Software Foundation; either version 3 of the
-// License, or (at your option) any later version. See
+// INK is free software: you can redistribute it and/or modify it under the terms of
+// the GNU General Public License published by the Free Software Foundation; either
+// version 3 of the License, or (at your option) any later version. See
 // http://www.gnu.org/licenses/gpl-3.0.html
 //
 // VERSION HISTORY
@@ -20,15 +20,15 @@
 // 1.2  N. Carroll  4-MAY-16  Put the matte in the alpha channel.
 //
 // Version 14 update 18 Feb 2017 jwrl.
-//
-// Changed category from "Keying" to "Key", added subcategory
-// to effect header.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -38,12 +38,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture fg;
 texture bg;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -65,9 +69,9 @@ sampler BgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 keyColor
 <
@@ -83,9 +87,9 @@ float bal
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 MyFunction (float2 xy : TEXCOORD1) : COLOR
 {
@@ -178,9 +182,9 @@ float4 MyFunction (float2 xy : TEXCOORD1) : COLOR
    return float4 ((chan + background.rgb * (1 - matte)), matte);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique MyTechnique
 {
@@ -189,4 +193,3 @@ technique MyTechnique
       PixelShader = compile PROFILE MyFunction ();
    }
 }
-

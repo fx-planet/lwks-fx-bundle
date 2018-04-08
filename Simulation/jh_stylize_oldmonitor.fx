@@ -1,18 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------
+// @Released 2018-04-08
+// @Author juhartik
+// @see https://www.lwks.com/media/kunena/attachments/6375/Old_Monitor.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect jh_stylize_oldmonitor.fx
 // 
-// JH Stylize Vignette v1.0 - Juha Hartikainen - juha@linearteam.org
-// - Emulates old hercules monitor
+// JH Stylize Vignette v1.0 - Juha Hartikainen - juha@linearteam.org - Emulates old
+// Hercules monitor
 //
 // Version 14 update 18 Feb 2017 jwrl.
 // Added "Simulation" subcategory to effect header.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined FgSampler so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined FgSampler to fix cross platform default sampler state differences.
 // 
-//--------------------------------------------------------------
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -21,10 +27,10 @@ int _LwksEffectInfo
    string SubCategory = "Simulation";
 > = 0;
 
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------
-// Inputs
-//--------------------------------------------------------------
 texture Input;
 
 sampler FgSampler = sampler_state
@@ -37,10 +43,10 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+
 float4 LineColor
 <
    string Description = "Scanline Color";
@@ -54,13 +60,17 @@ float LineCount
    float MaxVal       = 1080.0f;
 > = 300.0f;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define _PI 3.14159265
+
 #pragma warning ( disable : 3571 )
 
-
-//--------------------------------------------------------------
-// Shader
-//--------------------------------------------------------------
-static const float _PI = 3.14159265f;
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 OldMonitorPS(float2 xy : TEXCOORD1) : COLOR {
     float4 color;
@@ -81,6 +91,10 @@ float4 OldMonitorPS(float2 xy : TEXCOORD1) : COLOR {
     return color;
 }
 
+//-----------------------------------------------------------------------------------------//
+//  Techniques
+//-----------------------------------------------------------------------------------------//
+
 technique SampleFxTechnique
 {
    pass p0
@@ -88,4 +102,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE OldMonitorPS();
    }
 }
-

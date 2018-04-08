@@ -1,49 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author baopao
-//SkinSmooth by baopao
+// @see https://www.lwks.com/media/kunena/attachments/6375/Skin_Smooth.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect SkinSmooth.fx
 
-//Based on:
+// SkinSmooth by baopao
 
-//http://www.blosser.org/d9/dlAviShader042.rar
+// Based on:
 
-//Graphic card that support at least pixel shader 2.a
+// http://www.blosser.org/d9/dlAviShader042.rar
 
-//--------------------------------------------------------------//
+// Graphic card that support at least pixel shader 2.a
+
+//-----------------------------------------------------------------------------------------//
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
-//
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Version 14 update 18 Feb 2017 jwrl.
-//
 // Added subcategory to effect header.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers so we aren't bitten by cross platform default sampler
+// state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Considerable code cleanup and redundancy removal has also been done.  In the process
+// the TEXCOORD0 declaration was changed to TEXCOORD1 to fix the half texel shift.
+// Removed redundant constants that did nothing except take up space and force needless
+// mathematical operations.  Preserved the alpha channel of the input, and reworded
+// several parameter strings to make more sense.
 //
-// Considerable code cleanup and redundancy removal also done.
-// In the process changed TEXCOORD0 declaration to TEXCOORD1
-// to fix the half texel shift.  Removed redundant constants
-// that did nothing except take up space and force needless
-// mathematical operations.  Preserved the alpha channel of
-// the input, and reworded several parameter strings to make
-// more sense.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -53,16 +43,16 @@ int _LwksEffectInfo
    string SubCategory = "Preset Looks";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture IMG;
 texture MSK;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler2D frameSampler = sampler_state {
    Texture   = <IMG>;
@@ -82,9 +72,9 @@ sampler2D MaskSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -147,16 +137,16 @@ float ShowMSKAmount
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 fold_bilateral (float2 tTex : TEXCOORD1) : COLOR
 {
@@ -272,12 +262,11 @@ float4 fold_bilateral (float2 tTex : TEXCOORD1) : COLOR
    return float4 (Color.rgb, bgPix.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique BilateralFilter
 {
    pass Single_Pass { PixelShader = compile PROFILE fold_bilateral (); }
 }
-

@@ -1,21 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author jwrl
+// @Created 2016-05-14
+// @see https://www.lwks.com/media/kunena/attachments/6375/Acid_1_2016-08-16.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Acidulate.fx
 //
-// Created by LW user jwrl 14 May 2016
-// @Author jwrl
-// @Created "14 May 2016"
+// I was going to call this LSD, but this name will do.  Original effect.
 //
-// I was going to call this LSD, but this name will do.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -25,17 +26,17 @@ int _LwksEffectInfo
    string SubCategory = "Textures";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Image : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -57,9 +58,9 @@ sampler ImgSample = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -68,15 +69,15 @@ float Amount
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1, uniform sampler extSampler, uniform int proc) : COLOR
 {
@@ -95,9 +96,9 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler extSampler, uniform int p
    return tex2D (extSampler, xy);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique LSD
 {
@@ -108,4 +109,3 @@ technique LSD
    pass P_2
    { PixelShader = compile PROFILE ps_main (ImgSample, 1); }
 }
-

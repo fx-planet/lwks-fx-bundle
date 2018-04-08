@@ -1,18 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Lower3dTkA.fx
-// Created by LW user jwrl 15 March 2018
+// @Released 2018-04-08
 // @Author jwrl
-// @Created "15 March 2018"
+// @Created 2018-03-15
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdKit_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdKit_A.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Lower3dTkA.fx
 //
-// This is a general purpose toolkit designed to build lower
-// thirds.  It can optionally be fed with a graphics layer or
-// other external image or effect.  It's designed to produce a
-// flat coloured ribbon with two overlaid floating flat colour
-// boxes. They can be used to generate borders, other graphical
-// components, or even be completely hidden.
-//--------------------------------------------------------------//
+// This is a general purpose toolkit designed to build lower thirds.  It can optionally
+// be fed with a graphics layer or other external image or effect.  It's designed to
+// produce a flat coloured ribbon with two overlaid floating flat colour boxes. They
+// can be used to generate borders, other graphical components, or even be completely
+// hidden.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -22,18 +26,18 @@ int _LwksEffectInfo
    string SubCategory = "Lower Third Tools";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In_1;
 texture In_2;
 
 texture Ribn : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Input_1 = sampler_state
 {
@@ -65,9 +69,9 @@ sampler s_Ribbon  = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Opacity
 <
@@ -251,20 +255,20 @@ float Master_Y
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define EMPTY (0.0).xxxx
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
 //
 // These two functions are designed as replacements for all ()
 // and any ().  fn_inRange (xy, range) returns true if all of
 // xy falls inside range.xy - range.zw, while fn_legal (xy)
 // returns true if all of xy is inside 0.0 - 1.0 inclusive.
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_inRange (float2 xy, float4 range)
 {
@@ -278,9 +282,9 @@ bool fn_legal (float2 xy)
           || (xy.y < 0.0) || (xy.y > 1.0));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_ribbon (float2 uv : TEXCOORD0, float2 xy : TEXCOORD1) : COLOR
 {
@@ -332,9 +336,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Lower3rd_A
 {
@@ -344,4 +348,3 @@ technique Lower3rd_A
 
    pass P_2 { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,17 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author khaver
-// @Created "February 2013"
-//--------------------------------------------------------------//
-// Rays.fx created by Gary Hango (khaver) February 2013.
+// @Created 2013-02-14
+// @see https://www.lwks.com/media/kunena/attachments/6375/Rays.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Rays.fx
+//
+// This effect radiates rays away from the highlights in the image.
 //
 // Cross platform conversion by jwrl May 2 2016.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined float2 and float4 variables to address behavioural differences
+// between the D3D and Cg compilers.
 //
-// Explicitly defined float2 and float4 variables to address
-// behavioural differences between the D3D and Cg compilers.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -21,14 +27,18 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Partial : RenderColorTarget;
 texture Mask    : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state {
 	Texture = <Input>;
@@ -119,13 +129,17 @@ float Mix
    float MaxVal = 10.00;
 > = 2.0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
 float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -190,9 +204,9 @@ float4 combine (float2 uv : TEXCOORD1) : COLOR
    return (base + blend * (1.0.xxxx - base));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -217,4 +231,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE combine ();
    }
 }
-

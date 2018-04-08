@@ -1,35 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// FxMangaShader originally by LW user windsturm.
+// @Released 2018-04-08
+// @Author jwrl
+// @OriginalAuthor windsturm
+// @see https://www.lwks.com/media/kunena/attachments/6375/Manga_shader_2016-08-16.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxManga.fx
 //
-// Converted for ps_2_0 compliance by Lightworks user jwrl,
-// 5 February 2016.
+// Basically as this now stands it's windsturm's algorithm, but with a completely
+// different implementation by jwrl (see 3 August 2017, below).  I'm still leaving
+// it credited to him on the Lightworks forums, because it is his original approach.
+// I appreciate that now it's like the old joke about the original George Washington
+// tomahawk with ten new handles and three new heads, but still...
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Converted for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
+//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in
-// Lightworks effects.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Rewrote the code that generates the lookup indexing to be array driven.
+// Extended the indexing to be 36 deep instead of the original 32, because for some
+// reason Linux got that part wrong and displayed white lines where it overflowed.
+// Changed the parameter text to actually mean something.
 //
-// Rewrote the code that generates the lookup indexing to be
-// array driven.  Extended the indexing to be 36 deep instead
-// of the original 32, because for some reason Linux got that
-// part wrong and displayed white lines where it overflowed.
-// Also changed the parameter text to actually mean something.
-//
-// Basically as it now stands it's windsturm's algorithm, but
-// a completely different implementation.  I'm still leaving
-// it credited to him on the Lightworks forums, because it is
-// his original approach.  I appreciate that now it's like the
-// old joke about the original George Washington tomahawk with
-// ten new handles and three new heads, but still...
-//--------------------------------------------------------------//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,18 +39,15 @@ int _LwksEffectInfo
     string SubCategory = "Textures";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -62,9 +59,9 @@ sampler InputSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int skipGS
 <
@@ -111,15 +108,18 @@ float td4
    float MaxVal = 1.0;
 > = 0.8;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+
+float _OutputAspectRatio;
+float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 FxMangaShader (float2 xy : TEXCOORD1) : COLOR
 {
@@ -152,9 +152,9 @@ float4 FxMangaShader (float2 xy : TEXCOORD1) : COLOR
    return (1.0).xxxx;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique FxTechnique
 {

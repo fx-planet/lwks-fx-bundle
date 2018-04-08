@@ -1,6 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author windsturm
+// @see https://www.lwks.com/media/kunena/attachments/6375/HalfTone2_2016-08-16.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxHalftone2.fx
+//-----------------------------------------------------------------------------------------//
+
  /**
   * FxHalftone2
   * Halftone effect.
@@ -8,15 +13,16 @@
   * @Auther Windsturm
   * @version 2.0.0
   */
-//--------------------------------------------------------------//
 
-//--------------------------------------------------------------//
-// This conversion for ps_2_0 compliance by Lightworks user
-// jwrl, 4 February 2016.
+//-----------------------------------------------------------------------------------------//
+// Conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//--------------------------------------------------------------//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,13 +32,25 @@ int _LwksEffectInfo
     string SubCategory = "Textures";
 > = 0;
 
-float _OutputAspectRatio;
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
 
-#pragma warning ( disable : 3571 )
+texture Input;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+sampler2D s0 = sampler_state
+{
+    Texture = <Input>;
+    AddressU = Clamp;
+    AddressV = Clamp;
+    MinFilter = Linear;
+    MagFilter = Linear;
+    MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int toneMode
 <
@@ -90,27 +108,19 @@ float4 colorBG
     bool SupportsAlpha = true;
 > = { 1.0, 1.0, 1.0, 1.0 };
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler2D s0 = sampler_state
-{
-    Texture = <Input>;
-    AddressU = Clamp;
-    AddressV = Clamp;
-    MinFilter = Linear;
-    MagFilter = Linear;
-    MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+float _OutputAspectRatio;
 
 #define SQRT_2 1.414214
+
+#pragma warning ( disable : 3571 )
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float2x2 RotationMatrix (float rotation)
 {
@@ -120,6 +130,10 @@ float2x2 RotationMatrix (float rotation)
 
    return float2x2 (c, -s, s ,c);
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 half_tone (float2 uv, float s, float angle, float a)
 {
@@ -176,6 +190,10 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
    return colorBG;
 }
+
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique Halftone
 {

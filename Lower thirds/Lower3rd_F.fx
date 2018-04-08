@@ -1,19 +1,21 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Lower3rd_F.fx
-// Created by LW user jwrl 17 March 2018
+// @Released 2018-04-08
 // @Author jwrl
-// @Created "17 March 2018"
+// @Created 2018-03-17
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdF_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Lower3rd_F.fx
 //
-// This effect does a twist of a text overlay over a standard
-// ribbon with adjustable opacity.  The direction of the twist
-// can be set to wipe on or wipe off.  "Wipe on" gives a left
-// to right transition on, and "Wipe off" gives a left to right
-// transition off.  As a result when setting the transition
-// range in "Wipe off" it's necessary to set the transition to
-// zero, unlike the usual 100%.
-//--------------------------------------------------------------//
+// This effect does a twist of a text overlay over a standard ribbon with adjustable
+// opacity.  The direction of the twist can be set to wipe on or wipe off.  "Wipe on"
+// gives a left to right transition on, and "Wipe off" gives a left to right transition
+// off.  As a result when setting the transition range in "Wipe off" it's necessary to
+// set the transition to zero, unlike the usual 100%.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -23,18 +25,18 @@ int _LwksEffectInfo
    string SubCategory = "Lower Third Tools";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In1;
 texture In2;
 
 texture Text : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Text = sampler_state
 {
@@ -66,9 +68,9 @@ sampler s_TextProc = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Transition
 <
@@ -210,9 +212,9 @@ float RibbonOpacity_BR
    float MaxVal = 1.00;
 > = -0.25;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define TWISTS   4.0
 #define SOFTNESS 0.45
@@ -226,14 +228,14 @@ float RibbonOpacity_BR
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
 //
 // These two functions are designed as replacements for all ()
 // and any ().  fn_outRange (xy, range) returns false if all of
 // xy falls inside range.xy - range.zw, while fn_illegal (xy)
 // returns false if all of xy is inside 0.0 - 1.0 inclusive.
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_outRange (float2 xy, float4 range)
 {
@@ -247,9 +249,9 @@ bool fn_illegal (float2 xy)
           || (xy.y < 0.0) || (xy.y > 1.0));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_text_pos (float2 uv : TEXCOORD1) : COLOR
 {
@@ -338,9 +340,9 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgd, Fgd, Fgd.a * Opacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Lower3rd_F_0
 {
@@ -359,4 +361,3 @@ technique Lower3rd_F_1
 
    pass P_2 { PixelShader = compile PROFILE ps_main_1 (); }
 }
-

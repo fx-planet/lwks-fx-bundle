@@ -1,24 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author "Juha Hartikainen"
+// @Released 4 April 2018
+// @Author juhartik
 // @AuthorEmail "juha@linearteam.org"
-//--------------------------------------------------------------
-// 
-// JH Stylize Vignette v1.0 - Juha Hartikainen - juha@linearteam.org
-// - Lens vignette effect
+
+// @see https://www.lwks.com/media/kunena/attachments/6375/Vignette_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect jh_stylize_vignette.fx
+//
+// Lens vignette effect v1.0 - Juha Hartikainen - juha@linearteam.org
 //
 // Version 14 update 18 Feb 2017 jwrl.
-//
 // Added subcategory to effect header.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Explicitly defined float3 variables to allow for the behavioural differences between
+// the D3D and Cg compilers.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Explicitly defined float3 variables to fix the behavioural
-// differences between the D3D and Cg compilers.
-//--------------------------------------------------------------
+// Modified by LW user jwrl 4 April 2018.
+// Metadata header block added to better support GitHub repository.
+// VignettePS() now returns float4 instead of half4.  This ensures that 32 bit floats
+// will be properly supported as Lightworks moves into those areas.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -28,9 +31,9 @@ int _LwksEffectInfo
    string SubCategory = "Vignettes";
 > = 0;
 
-//--------------------------------------------------------------
-// Inputs
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -44,9 +47,9 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float Radius
 <
@@ -71,11 +74,11 @@ float Softness
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
-half4 VignettePS(float2 xy : TEXCOORD1) : COLOR
+float4 VignettePS(float2 xy : TEXCOORD1) : COLOR
 {
     float4 c = tex2D(FgSampler, xy);
 
@@ -86,11 +89,14 @@ half4 VignettePS(float2 xy : TEXCOORD1) : COLOR
     return c;	
 }
 
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+// Technique
+//-----------------------------------------------------------------------------------------//
+
+technique Vignette
 {
    pass p0
    {
       PixelShader = compile PROFILE VignettePS();
    }
 }
-

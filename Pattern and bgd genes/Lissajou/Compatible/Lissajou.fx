@@ -1,35 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect FractalMagic1.fx
-//
-// Created by LW user jwrl 14 May 2016.
+// @Released 2018-04-08
 // @Author jwrl
-// @Created "14 May 2016"
-//  LW 14+ version by jwrl 12 February 2017
-//  Category changed from "Generators" to "Mattes"
-//  SubCategory "Patterns" added.
+// @OriginalAuthor baopao
+// @Created 2016-05-14
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Lissajou.fx
 //
-// Lissajou stars is based on SineLights, a semi-abstract
-// pattern generator created for Mac and Linux systems by
-// Lightworks user baopao.  That was in turn based on the
-// Lissajou code code at http://glslsandbox.com/e#9996.0
+// Lissajou stars is based on SineLights, a semi-abstract pattern generator created
+// for Mac and Linux systems by Lightworks user baopao.  That was in turn based on the
+// Lissajou code at http://glslsandbox.com/e#9996.0
 //
-// Windows conversion and further modification to add either
-// external video or a gradient background and colour to the
-// pattern was carried out by Lighworks user jwrl.  In the
-// process the range and type of some parameters were changed
-// to allow interactive adjustment on the edit viewer.
+// Windows conversion and further modification to add either external video or a colour
+// gradient background to the pattern was carried out by Lighworks user jwrl.  In the
+// process the range and type of some parameters were changed to allow interactive
+// adjustment on the edit viewer.
 //
-// Unlike the original which installed into the "Video, Mattes"
-// category, this version installs into the user-created class
-// "Video, Generators".
+// LW 14+ version by jwrl 12 February 2017
+// Category changed from "Generators" to "Mattes", SubCategory "Patterns" added.
 //
-// Note: under Windows this must compile as ps_3.0 or better.
-//       This is automatically taken care of in versions of LW
-//       higher than 14.5.  If using an older version under
-//       Windows the Legacy version must be used.
-//--------------------------------------------------------------//
+// LW 14.5 update by jwrl 30 March 2018
+// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
+// care of in versions of LW higher than 14.0.  If using an older version under
+// Windows the Legacy version must be used.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -39,18 +37,17 @@ int _LwksEffectInfo
    string SubCategory = "Patterns";
 > = 0;
 
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture bg : RenderColorTarget;                 // Gradient target
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler inSampler = sampler_state {
    Texture   = <Input>;
@@ -70,9 +67,9 @@ sampler bgSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Num
 <
@@ -203,13 +200,15 @@ float4 botRight
    bool SupportsAlpha = false;
 > = (0.0, 0.75, 0.25, 0.5);
 
-float _Progress;
-float _OutputWidth;
-float _OutputHeight;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------//
+float _Progress, _OutputWidth, _OutputHeight;
+
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 doBackground (float2 xy : TEXCOORD0) : COLOR
 {
@@ -257,9 +256,9 @@ float4 ps_main (float2 xy : TEXCOORD, float2 xy1 : TEXCOORD1) : COLOR
    return lerp (bgd, fgdPat, sum);
 }
 
-//--------------------------------------------------------------//
-//  Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+//  Techniques
+//-----------------------------------------------------------------------------------------//
 
 #ifdef WINDOWS
 #define PROFILE ps_3_0
@@ -280,4 +279,3 @@ technique TwoPass
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

@@ -1,20 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author khaver
-//--------------------------------------------------------------//
-// Anamorphic Lens Flare
+// @see https://www.lwks.com/media/kunena/attachments/6375/AnamorphicLensFlare.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect AnaFlare.fx
 //
-// Originally written by khaver, modified by jwrl to add a V14
-// subcategory February 18, 2017.
+// Anamorphic Lens Flare was originally written by khaver to simulate the non-linear
+// flare that an anamorphic lens produces - those purplish horizontal flares often
+// seen on movie blockbusters.  Use the Threshold slider to isolate just the bright
+// lights and the Length slider to adjust the size of the flare.  Checking the "Show
+// Flare" checkbox will display the flare against black.
+//
+// Modified by jwrl to add a V14 subcategory February 18, 2017.
 //
 // Cross platform compatibility check 31 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Explicitly defined float4 variables to avoid the difference in behaviour between
+// the D3D and Cg compilers.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Explicitly defined float4 variables to avoid the difference
-// in behaviour between the D3D and Cg compilers.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -24,52 +31,20 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
-
-float BlurAmount
-<
-   string Description = "Length";
-   float MinVal = 0.0f;
-   float MaxVal = 50.0f;
-> = 12.0f;
-
-float Strength
-<
-   string Description = "Strength";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.75f;
-
-float adjust
-<
-   string Description = "Threshold";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.25f;
-
-float Hue
-<
-   string Description = "Hue";
-   float MinVal = -0.5f;
-   float MaxVal = 0.5f;
-> = 0.0f;
-
-bool flare
-<
-   string Description = "Show Flare";
-> = false;
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+
 texture Input;
 texture Sample1 : RenderColorTarget;
 texture Sample2 : RenderColorTarget;
 texture Sample3 : RenderColorTarget;
 texture Sample4 : RenderColorTarget;
 texture Sample5 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -131,11 +106,53 @@ sampler Samp5 = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+float BlurAmount
+<
+   string Description = "Length";
+   float MinVal = 0.0f;
+   float MaxVal = 50.0f;
+> = 12.0f;
+
+float Strength
+<
+   string Description = "Strength";
+   float MinVal = 0.0f;
+   float MaxVal = 1.0f;
+> = 0.75f;
+
+float adjust
+<
+   string Description = "Threshold";
+   float MinVal = 0.0f;
+   float MaxVal = 1.0f;
+> = 0.25f;
+
+float Hue
+<
+   string Description = "Hue";
+   float MinVal = -0.5f;
+   float MaxVal = 0.5f;
+> = 0.0f;
+
+bool flare
+<
+   string Description = "Show Flare";
+> = false;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
 float _OutputWidth;//  = 1.0;
 float _OutputHeight;// = 1.0;
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_adjust ( float2 xy : TEXCOORD1 ) : COLOR {
    float4 Color = tex2D( InputSampler, xy);
@@ -224,6 +241,9 @@ float4 ps_combine( float2 xy : TEXCOORD1 ) : COLOR {
    else return float4(blr.rgb*Strength*2.0f,source.a);
 }
    
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique Blur
 {
@@ -272,5 +292,3 @@ technique Blur
       PixelShader = compile PROFILE ps_combine();
    }
 }
-
- 		 	   		  

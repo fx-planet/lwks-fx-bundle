@@ -1,54 +1,52 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect ChromakeyPlus.fx
-// Created by LW user jwrl 8 September 2016.
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "8 September 2016"
+// @Created 2016-09-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_4.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_9d.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_9b.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ChromakeyPlus.fx
 //
-// This is a combination chromakeyer and alpha cleanup tool to
-// be used on problem keys.  Since it needs a powerful GPU it
-// may not be appropriate for use on a minimal Lightworks
-// system.  It uses a modified version of the Editshare
-// chromakey engine at its core because after many attempts
-// to, I couldn't improve on it.
+// This is a combination chromakeyer and alpha cleanup tool to be used on problem keys.
+// Since it needs a powerful GPU it may not be appropriate for use on a minimal
+// Lightworks system.  It uses a modified version of the Editshare chromakey engine at
+// its core because after many attempts to, I couldn't improve on it.
 //
-// It comes with a fair degree of cleanup and despill, and top/
-// bottom, left/right cropping is also provided with ±45 degree
-// angular adjustment of the four individual crops.  Inner and
-// outer external masks are also supported.
+// It comes with a fair degree of cleanup and despill, and top/ bottom, left/right
+// cropping is also provided with Â±45 degree angular adjustment of the four individual
+// crops.  Inner and outer external masks are also supported.
 //
-// 11 September 2016 - modified to allow despill to operate on
-// the inner masked key component.  Also added an erode/expand
-// capability as well as reorganising and renaming some of the
-// parameters for better clarity.  Despill no longer operates
-// on the outer masked key component.  The mask and crop
-// overlay parameters have been expanded into their own group
-// and provided with a processed mask in and mask out display.
-// The overlay displays as the required colour normally, but
-// as black when over fully saturated matching backgrounds.
+// Modified 11 September 2016 by jwrl.
+// Despill now operates on the inner masked key component.  Also added an erode/expand
+// capability as well as reorganising and renaming some of the parameters for better
+// clarity.  Despill no longer operates on the outer masked key component.  The mask
+// and crop overlay parameters have been expanded into their own group and provided
+// with a processed mask in and mask out display.  The overlay displays the required
+// colour normally, but as black when over fully saturated matching backgrounds.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  When a height parameter is needed one
-// cannot reliably use _OutputHeight, which can return wrong
-// values when playing.  That is now fixed.
+// This corrects for a bug in the way that Lightworks handles interlaced media.  When
+// a height parameter is needed one cannot reliably use _OutputHeight, which can
+// return wrong values when playing.  That is now fixed.
 //
 // Bug fix 20 July 2017 by jwrl:
-// There was a compatibility issue between D3D (Windows) and
-// Cg (Mac/Linux) compilers which caused this effect to fail
-// on the latter.  The default state of the samplers differs
-// between the two.  In this version all samplers have now
-// been fully defined where they weren't previously.
+// There was a compatibility issue between D3D (Windows) and Cg (Mac/Linux) compilers
+// which caused this effect to fail on the latter.  The default state of the samplers
+// differs between the two.  In this version all samplers have now been fully defined
+// where they weren't previously.
 //
 // 8 December 2017 by jwrl:
-// The mask inputs were renamed so that they didn't obscure
-// each other when routing was shown vertically.  This then
-// necessitated a change to the mask settings dialogue so that
-// there was absolute clarity on what each mask did.  Finally
-// the ShowOverlay parameter was grouped at the top of the crop
-// setting parameters.
-//--------------------------------------------------------------//
+// The mask inputs were renamed so that they didn't obscure each other when routing
+// was shown vertically.  This then necessitated a change to the mask settings
+// dialogue so that there was absolute clarity on what each mask did.  Finally the
+// ShowOverlay parameter was grouped at the top of the crop setting parameters.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -58,9 +56,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -74,9 +72,9 @@ texture Crops  : RenderColorTarget;
 texture Buff_1 : RenderColorTarget;
 texture Buff_2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
    Texture = <Fg>;
@@ -154,9 +152,9 @@ sampler Buf2Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int showData
 <
@@ -355,9 +353,9 @@ int maskOut
    string Enum = "Red,Green,Blue,Alpha,Luminance";
 > = 4;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define BLACK     (0.0).xxxx
 #define GREEN     float2(0.0,1.0).xyxx
@@ -411,9 +409,9 @@ int maskOut
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
@@ -636,9 +634,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Comp, retval, retval.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique cKeyPlus
 {
@@ -669,4 +667,3 @@ technique cKeyPlus
    pass P_7
    { PixelShader = compile PROFILE ps_main (); }
 }
-

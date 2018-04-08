@@ -1,19 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author jwrl
+// @Created 2016-07-31
+// @see https://www.lwks.com/media/kunena/attachments/6375/Diss2col_2.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Multigrad.fx
 //
-// Written by LW user jwrl 31 July 2016
-// @Author jwrl
-// @Created "31 July 2016"
+// This creates a colour field which can be set up to be just a flat colour or a wide
+// range of gradients.  If the gradient blends to the centre, the position of the
+// centre point is fully adjustable.
 //
-// This creates a colour field which can be set up to be just
-// a flat colour or a wide range of gradients.  If the gradient
-// blends to the centre, the centre point is fully adjustable.
+// LW 14+ version by jwrl 12 February 2017
+// SubCategory "Patterns" added.
 //
-// Bug fix by LW user jwrl 14 July 2017 - previously this
-// effect didn't work reliably on Linux/Mac platforms.
-//--------------------------------------------------------------//
+// Bug fix by LW user jwrl 14 July 2017.
+// Due to Cg/D3D issues previously this was unreliable on Linux/Mac platforms.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -23,9 +29,29 @@ int _LwksEffectInfo
    string SubCategory = "Patterns";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+texture Input;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler FgSampler = sampler_state
+{
+   Texture   = <Input>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -84,37 +110,17 @@ float4 botRight
    bool SupportsAlpha = false;
 > = { 0.0, 0.8, 1.0, 0.5 };
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Input;
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI      3.141593
 
 #define HALF_PI 1.570796
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Pixel Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -352,9 +358,9 @@ float4 ps_main_9 (float2 uv : TEXCOORD1) : COLOR
    return lerp (Fgd, gradient, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Flat
 {
@@ -415,4 +421,3 @@ technique Radial
    pass P_1
    { PixelShader = compile PROFILE ps_main_9 (); }
 }
-

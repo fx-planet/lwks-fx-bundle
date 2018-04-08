@@ -1,34 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 4 April 2018
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/polynew.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect PolyMask08.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
-//--------------------------------------------------------------//
+// User adjustable mask with eight sides.  The edges of the mask can be feathered, and
+// a background colour can be set.
+//
+// 21 March 2018: Modification by jwrl
+// This will now compile in all Lightworks versions on Windows, Linux or OS-X.
+//
+// 4 April 2018: Modification by jwrl
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Poly08";         // The title
-   string Category    = "DVE";            // Governs the category that the effect appears in in Lightworks
-   string SubCategory = "Crop Presets";   // Additional parameter for V14
+   string Description = "PolyMask 08";
+   string Category    = "DVE";
+   string SubCategory = "Crop Presets";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
- float _OutputWidth,  _OutputHeight, _OutputAspectRatio;
+//-----------------------------------------------------------------------------------------//
 
 texture fg;
 texture bg;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler FGround = sampler_state {
         Texture = <fg>;
@@ -63,13 +69,9 @@ sampler Samp2 = sampler_state {
         MipFilter = Linear;
  };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool colormask
 <
@@ -270,21 +272,20 @@ float P8Y
    float MaxVal = 1.00;
 > = 0.2879;
 
-#pragma warning ( disable : 3571 )
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+float _OutputWidth,  _OutputHeight, _OutputAspectRatio;
 
 #define _psize 8
  
+#pragma warning ( disable : 3571 )
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
 float4 makePoly(float2 p, float2 poly[_psize]) {
 	bool oddNodes = false;
 	for(int i = 0; i < _psize; i++){
@@ -396,14 +397,11 @@ float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
   return color;
 }
 
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+
+technique PolyMask08
 {
 
    pass Pass1
@@ -425,4 +423,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE Combine();
    }
 }
-

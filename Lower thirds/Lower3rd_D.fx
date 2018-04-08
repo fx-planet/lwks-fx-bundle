@@ -1,21 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Lower3rd_D.fx
-// Created by LW user jwrl 15 March 2018
+// @Released 2018-04-08
 // @Author jwrl
-// @Created "15 March 2018"
+// @Created 2018-03-15
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdD_3.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Lower3rd_D.fx
 //
-// This effect pushes a text block on from the edge of frame
-// to reveal the lower third text.  The block has a coloured
-// edge which can be adjusted in widthe, and which vanishes as
-// the block reaches its final position.
+// This effect pushes a text block on from the edge of frame to reveal the lower third
+// text.  The block has a coloured edge which can be adjusted in widthe, and which
+// vanishes as the block reaches its final position.
 //
 // Modified by LW user jwrl 16 March 2018
-// Cosmetic change only: "Transition" has been moved to the
-// top of the parameters, giving it higher priority than
-// "Opacity".
-//--------------------------------------------------------------//
+// Cosmetic change only: "Transition" has been moved to the top of the parameters,
+// giving it higher priority than "Opacity".
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -25,18 +27,18 @@ int _LwksEffectInfo
    string SubCategory = "Lower Third Tools";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In_1;
 texture In_2;
 
 texture Ribn : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Input_1 = sampler_state
 {
@@ -68,9 +70,9 @@ sampler s_Ribbon = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Transition
 <
@@ -169,28 +171,28 @@ float4 EdgeColour
    bool SupportsAlpha = true;
 > = { 0.73, 0.51, 0.84, 1.0 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define EMPTY   (0.0).xxxx
 
 #define HALF_PI 1.5707963268
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
 //
 // This function returns true if any of xy is outside 0.0-1.0.
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 xy)
 {
    return (xy.x < 0.0) || (xy.x > 1.0) || (xy.y < 0.0) || (xy.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_block (float2 uv : TEXCOORD0) : COLOR
 {
@@ -288,9 +290,9 @@ float4 ps_main_H2 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (tex2D (s_Input_2, xy2), Fgnd, Fgnd.a * Opacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Lower3rd_D_V1
 {
@@ -327,4 +329,3 @@ technique Lower3rd_D_H2
 
    pass P_2 { PixelShader = compile PROFILE ps_main_H2 (); }
 }
-

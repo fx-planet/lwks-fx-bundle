@@ -1,15 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Kaleido   http://www.alessandrodallafontana.com/ 
-// based on the pixel shader of: http://pixelshaders.com/ 
-// corrected for HLSL by Lightworks user nouanda
+// @Released 2018-04-08
+// @Author baopao
+// @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido_2016-08-08.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Kaleido.fx
 //
-// Rewritten August 10 2016 to correct three potential divide
-// by zero errors by LW moderator jwrl.  In the process some
-// code optimisation was also done and the user interface was
-// slightly altered.
-//--------------------------------------------------------------//
+// Kaleido baopao (http://www.alessandrodallafontana.com) is based on the pixel shader
+// of: http://pixelshaders.com/ corrected for HLSL by Lightworks user nouanda.
+//
+// Modified August 10 2016 by jwrl.
+// Corrected three potential divide by zero errors by LW moderator jwrl.
+// Some code optimisation done mainly for Cg compliance.
+// User interface slightly altered.
+//
+// LW 14+ version by jwrl 12 February 2017
+// SubCategory "Patterns" added.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -19,15 +29,15 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -39,9 +49,9 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Sides
 <
@@ -80,18 +90,18 @@ float PosY
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI      3.141593
 #define TWO_PI  6.283185
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -115,9 +125,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return tex2D (FgSampler, xy);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SimpleTechnique
 {
@@ -126,4 +136,3 @@ technique SimpleTechnique
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

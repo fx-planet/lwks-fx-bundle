@@ -1,19 +1,20 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks effect Texturizer.fx
-//
-// Created by Lightworks user jwrl 22 April 2016.
+// @Released 2018-04-08
 // @Author jwrl
-// @Created "22 April 2016"
+// @Created 2016-04-22
+// @see https://www.lwks.com/media/kunena/attachments/6375/Texturizer_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Texturizer.fx
 //
-// This effect is designed to modulate the input with a texture
-// from an external piece of art.  The texture may be coloured
-// but only the luminance value will be used.
+// This effect is designed to modulate the input with a texture from an external piece
+// of art.  The texture may be coloured but only the luminance value will be used.
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//--------------------------------------------------------------//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <

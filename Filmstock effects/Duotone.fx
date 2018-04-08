@@ -1,24 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-07
+// @Author jwrl
+// @Created 2016-04-12
+// @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_4.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_9.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Duotone.fx
 //
-// Created by LW user jwrl 12 April 2016.
-// @Author jwrl
-// @Created "12 April 2016"
-//            This version 14 April 2016.
+// This simulates the effect of the old Duotone film colour process.
 //
-// This simulates the effect of the old Duotone film colour
-// process.  This version has changed the axes slightly to
-// better handle foliage and other greenery, and has added a
-// saturation control after requests for it.
+// Modified 14 April 2016 by jwrl.
+// This version has changed the axes slightly to better handle foliage and other
+// greenery, and has added a saturation control after requests for it.
 //
 // Update 31 July 2017 jwrl.
-// Added an extra profile and two extra parameters.  It's now
-// possible to mix between the original profile and a new one
-// that is better for flesh tones.  Additionally, a gamma tweak
-// has been added under the guise of a dye curve adjustment.
-//--------------------------------------------------------------//
+// Added an extra profile and two extra parameters.  It's now possible to mix between
+// the original profile and a new one that is better for flesh tones.  Additionally,
+// a gamma tweak has been added under the guise of a dye curve adjustment.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -28,15 +31,15 @@ int _LwksEffectInfo
    string SubCategory = "Preset Looks";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -48,9 +51,9 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Saturation
 <
@@ -73,9 +76,9 @@ float Curve
    float MaxVal = 1.0;
 > = 0.4;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define R_LUMA 0.2989
 #define G_LUMA 0.5866
@@ -89,9 +92,9 @@ float Curve
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
@@ -120,13 +123,12 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return lerp (desat, retval, Saturation * 4.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique duotone
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

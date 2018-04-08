@@ -1,20 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author "Alessandro Dalla Fontana"
-//--------------------------------------------------------------
-// KeyDespiil  Despill Background Based
-// http://www.alessandrodallafontana.com/ 
+// @Released 2018-04-07
+// @Author baopao
+// @see https://www.lwks.com/media/kunena/attachments/129668/KeyDespill.jpg
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect KeyDespill.fx
+//
+// KeyDespill  Despill Background Based http://www.alessandrodallafontana.com/ (baopao)
 //
 // Version 14 update 19 Feb 2017 jwrl.
-//
-// Changed category from "Keying" to "Key", added subcategory
-// to effect header.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -24,12 +26,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -51,9 +57,9 @@ sampler BgSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -70,9 +76,9 @@ float RedAmount
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float4 Green(float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
@@ -98,9 +104,9 @@ float4 Blue(float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
     return color;
 }
 
-///----------------------------------------------------
-///  Technique  //////
-///----------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+//  Technique
+//-----------------------------------------------------------------------------------------//
 
 technique GreenDespill
 {
@@ -117,4 +123,3 @@ technique BlueDespill
       PixelShader = compile PROFILE Blue();
    }
 }
-

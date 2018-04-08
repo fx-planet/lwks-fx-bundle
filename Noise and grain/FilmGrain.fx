@@ -1,27 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-08
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/Film_Grain.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FilmGrain.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// This effect adds grain to an image either as film-style grain or as random noise.
+// The grain can be applied to the luminance, chroma, luminance and chroma, or RGB.
 //
 // Subcategory added by jwrl 10 Feb 2017
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
-//
-// The output height is now obtained by dividing _OutputWidth
-// by _OutputAspectRatio.  This fix has been fully tested, and
-// is reliable regardless of the pixel aspect ratio.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined all samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Explicitly defined all samplers to fix crossplatform default sampler state differences.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -31,23 +29,18 @@ int _LwksEffectInfo
    string SubCategory = "Grain and Noise";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _Progress;
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture fg;
 texture Grain : RenderColorTarget;
 texture Blur : RenderColorTarget;
 texture Emboss : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler Input = sampler_state {
         Texture = <fg>;
@@ -82,13 +75,9 @@ sampler ESamp = sampler_state {
         MipFilter = Linear;
  };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int show
 <
@@ -146,20 +135,20 @@ float Ybias
 	string Group = "Film Grain Bias";
 > = 1.0f;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
+float _Progress;
+
+float _OutputAspectRatio;
+float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 //---------------- rand function by Windsturm ------------------
 float rand(float2 uv, float seed){
@@ -167,6 +156,10 @@ float rand(float2 uv, float seed){
     return clamp(rn, -0.5f, 0.5f);
 }
  
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
 //---------------------- Generate grain ------------------------
 float4 Graintex( float2 xy : TEXCOORD1) : COLOR
 {
@@ -273,14 +266,11 @@ float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
   return cout;
 }
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+technique FilmGrain
 {
 
    pass Pass1
@@ -312,4 +302,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE Combine();
    }
 }
-

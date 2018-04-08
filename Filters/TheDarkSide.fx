@@ -1,57 +1,49 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "25 February 2017"
-//--------------------------------------------------------------//
-// TheDarkSide.fx created by LW user jwrl 25 February 2017.
+// @Created 2017-02-25
+// @see https://www.lwks.com/media/kunena/attachments/6375/DarkSide_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect TheDarkSide.fx
 //
-// This effect gives a dark "glow" (don't know what else to
-// call it) to an image.  Sort of based on the Lightworks
-// "Glow" effect, I started work on it then decided to check
-// their code.  Accordingly, the user interface is now exactly
-// the same as theirs.  The code under the hood varies more
-// than somewhat in places.
+// This effect gives a dark "glow" (don't know what else to call it) to an image.  Sort
+// of based on the Lightworks "Glow" effect, I started work on it then decided to check
+// their code.  Accordingly, the user interface is now exactly the same as theirs.  The
+// code under the hood varies more than somewhat in places.
 //
-// The main difference is that they used different techniques
-// for their four options: I had already built just a luma
-// version and opted to use conditional execution to expand the
-// options to match theirs.  It's ever so slightly slower, but
-// it adds the benefit of being able to feather the RGB values
-// and apply a glow colour to them.
+// The main difference is that they used different techniques for their four options:
+// I had already built just a luma version and opted to use conditional execution to
+// expand the options to match theirs.  It's ever so slightly slower, but it adds the
+// benefit of being able to feather the RGB values and apply a glow colour to them.
 //
-// One minor difference is that the box blur samples fifteen
-// deep instead of thirteen.  I had already written that and
-// had arrived at that figure empirically, and didn't feel like
-// changing it.  I was in fact going to use my super blur
-// engine but decided that the complexity wasn't warranted,
-// and opted for simplicity instead.
+// One minor difference is that the box blur samples fifteen deep instead of thirteen.
+// I had already written that and had arrived at that figure empirically, and didn't
+// feel like changing it.  I was in fact going to use my super blur engine but decided
+// that the complexity wasn't warranted, and opted for simplicity instead.
 //
-// The feather scale factor was a late change that I stole
-// from the "Glow" effect, albeit done as a definition and
-// not a constant.  Previously I hadn't scaled the value at
-// all.  This is better because it gives better control.
+// The feather scale factor was a late change that I stole from the "Glow" effect,
+// albeit done as a definition and not a constant.  Previously I hadn't scaled the
+// value at all.  This is better because it gives better control.
 //
-// "GlowSpread" originally adjusted from 0 to 1 and was further
-// offset and scaled prior to use.  Their implementation of
-// "Spread" was simpler, so I used it.  I would have had to in
-// any case to make the user interfaces match.
+// "GlowSpread" originally adjusted from 0 to 1 and was further offset and scaled
+// prior to use.  Their implementation of "Spread" was simpler, so I used it.  I
+// would have had to in any case to make the user interfaces match.
 //
-// If you're interested, the original settings order was Source,
-// glowAmount, glowKnee, glowFeather, glowSpread then Colour.
-// You should be able to work out what the user would have seen
-// from the parameter names.
+// If you're interested, the original settings order was Source, glowAmount, glowKnee,
+// glowFeather, glowSpread then Colour.  You should be able to work out what the user
+// would have seen from the parameter names.
 //
-// All parameters are minimum range limited to prevent manual
-// entry of illegal negative values.  There is no such limit to
-// the maximum values possible.  The alpha channel is fully
-// preserved throughout.
+// All parameters are minimum range limited to prevent manual entry of illegal negative
+// values.  There is no such limit to the maximum values possible.  The alpha channel
+// is fully preserved throughout.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.  Shouldn't be
-// important in this effect, but it's good practice.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -61,18 +53,18 @@ int _LwksEffectInfo
    string SubCategory = "Preset Looks";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Glow_1 : RenderColorTarget;
 texture Glow_2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state
 {
@@ -104,9 +96,9 @@ sampler G2_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -147,9 +139,9 @@ float4 Colour
    string Description = "Colour difference";
 > = { 0.0, 0.0, 0.0, 1.0 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define RED        1
 #define GREEN      2
@@ -164,9 +156,9 @@ float4 Colour
 float _OutputWidth  = 1.0;
 float _OutputAspectRatio;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_extract_Y (float2 uv : TEXCOORD1) : COLOR
 {
@@ -289,9 +281,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, gloVal, amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique DarkSide_Y
 {
@@ -348,4 +340,3 @@ technique DarkSide_B
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
-

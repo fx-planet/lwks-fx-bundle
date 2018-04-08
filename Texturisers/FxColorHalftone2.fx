@@ -1,6 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author windsturm
+// @see https://www.lwks.com/media/kunena/attachments/6375/ColorHalftone2_2016-08-16.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxColorHalftone2.fx
+//-----------------------------------------------------------------------------------------//
+
  /**
   * FxColorHalftone2
   * Color Halftone effect.
@@ -8,19 +13,20 @@
   * @Auther Windsturm
   * @version 2.0.0
   */
-//--------------------------------------------------------------//
 
-//--------------------------------------------------------------//
-// This conversion for ps_2_0 compliance by Lightworks user
-// jwrl, 4 February 2016.
+//-----------------------------------------------------------------------------------------//
+// This conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined float3 and float4 variables to address
-// the behaviour differences between the D3D and Cg compilers.
-//--------------------------------------------------------------//
+// Explicitly defined float3 and float4 variables to address the behaviour differences
+// between the D3D and Cg compilers.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -30,13 +36,25 @@ int _LwksEffectInfo
    string SubCategory = "Textures";
 > = 0;
 
-float _OutputAspectRatio;
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
 
-#pragma warning ( disable : 3571 )
+texture Input;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+sampler2D s0 = sampler_state
+{
+   Texture = <Input>;
+   AddressU = Clamp;
+   AddressV = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float centerX
 <
@@ -128,26 +146,19 @@ float4 colorBG
    bool SupportsAlpha = true;
 > = { 1.0, 1.0, 1.0, 1.0 };
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Input;
-
-sampler2D s0 = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define SQRT_2 1.414214
+
+float _OutputAspectRatio;
+
+#pragma warning ( disable : 3571 )
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float2x2 RotationMatrix (float rotation)  
 {
@@ -157,6 +168,10 @@ float2x2 RotationMatrix (float rotation)
 
    return float2x2 (c, -s, s, c);
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 half_tone (float2 uv, float i, float s, float angle, float a)
 {

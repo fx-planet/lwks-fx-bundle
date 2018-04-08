@@ -1,12 +1,17 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//-----------------------------------------------------------------------------------------//
-// Lightworks user effect ChromakeyDVE.fx - Created by LW user jwrl 20 March 2018.
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "20 March 2018"
+// @Created 2018-03-20
+// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyDVE_3.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ChromakeyDVE.fx
 //
 // This effect is customised version of Editshare's Chromakey effect with cropping and
 // simple DVE adjustments added.  The ChromaKey sections are copyright (c) EditShare EMEA.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,7 +40,7 @@ texture BlurKey1 : RenderColorTarget;
 texture BlurKey2 : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers - one for each texture
+// Samplers
 //-----------------------------------------------------------------------------------------//
 
 sampler s_Foreground = sampler_state
@@ -509,4 +514,3 @@ technique ChromakeyDVE
    pass P_6
    { PixelShader = compile PROFILE ps_main (); }
 }
-

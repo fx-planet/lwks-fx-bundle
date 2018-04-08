@@ -1,52 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author jwrl
+// @Created 2016-04-16
+// @see https://www.lwks.com/media/kunena/attachments/6375/IR_3.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect NightVision.fx
 //
-// Created by LW user jwrl 16 April 2016
-// @Author jwrl
-// @Created "16 April 2016"
-// Updated by LW user jwrl 30 August 2016.
-//
-// The blur and glow engines in this version of the effect are
-// a total rewrite, replacing the original Editshare versions
-// previously used with a variant of my own radial blur.  While
-// more GPU intensive it's also more precise and has allowed a
+// The blur and glow engines in this version of the effect are a total rewrite,
+// replacing the original Editshare versions previously used with a variant of my own
+// radial blur.  While more GPU intensive it's also more precise and has allowed a
 // reduction in the number of passes required.
 //
-// While updating this a bug was found in the profile 3 code
-// which, while minor, affected the simulation significantly.
-// That has now been fixed.
+// Updated by LW user jwrl 30 August 2016.
+// While updating this a bug was found in the code which, while minor, affected the
+// simulation significantly.  That has now been fixed.
 //
 // Version 14 update 18 Feb 2017 by jwrl:
 // Added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
-//
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//
-// Explicitly defined float3 and float4 variables to address
-// the behavioural difference between the D3D and Cg compilers.
-//
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Explicitly defined float3 and float4 variables to address the behavioural difference
+// between the D3D and Cg compilers.
 // Removed overloading of "grain" variable.
-//--------------------------------------------------------------//
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -56,9 +40,9 @@ int _LwksEffectInfo
    string SubCategory = "Simulation";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -66,9 +50,9 @@ texture Gnoise : RenderColorTarget;
 texture Glow_1 : RenderColorTarget;
 texture Glow_2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -110,9 +94,9 @@ sampler g2_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int IRfilter
 <
@@ -155,9 +139,9 @@ float saturation
    float MaxVal       = 1.00;
 > = 1.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define R_LUMA   1.2
 #define G_LUMA   0.81356
@@ -187,9 +171,9 @@ float _Progress;
 float _OutputAspectRatio;
 float _OutputWidth;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_noise (float2 xy : TEXCOORD1) : COLOR
 {
@@ -296,9 +280,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return float4 (lerp (retval.ggg, retval.rgb, saturation), retval.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique nightVision
 {
@@ -317,4 +301,3 @@ technique nightVision
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,24 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Lower3rd_B.fx
-// Created by LW user jwrl 15 March 2018
+// @Released 2018-04-08
 // @Author jwrl
-// @Created "15 March 2018"
+// @Created 2018-03-15
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rd_B1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Lower3rd_B.fx
 //
-// This effect consists of a line with an attached bar.  The
-// bar can be locked at either end of the line or made to move
-// from right to left or left to right as the transition is
-// adjusted.  It can also be locked to either end of the line.
+// This effect consists of a line with an attached bar.  The bar can be locked at either
+// end of the line or made to move from right to left or left to right as the transition
+// is adjusted.  It can also be locked to either end of the line.
 //
-// External text can be input to In_1, and can wipe on or off
-// in sync with, or against the moving block.
+// External text can be input to In_1, and can wipe on or off in sync with, or against
+// the moving block.
 //
 // Modified by LW user jwrl 16 March 2018
-// Cosmetic change only: "Transition" has been moved to the
-// top of the parameters, giving it higher priority than
-// "Opacity".
-//--------------------------------------------------------------//
+// Cosmetic change only: "Transition" has been moved to the top of the parameters,
+// giving it higher priority than "Opacity".
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -28,18 +30,18 @@ int _LwksEffectInfo
    string SubCategory = "Lower Third Tools";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture In_1;
 texture In_2;
 
 texture Ribn : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Input_1 = sampler_state
 {
@@ -71,9 +73,9 @@ sampler s_Ribbon = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Transition
 <
@@ -192,20 +194,20 @@ float4 BlockColour
    bool SupportsAlpha = true;
 > = { 1.0, 0.0, 0.0, 1.0 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define EMPTY   (0.0).xxxx
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
 //
 // These two functions are designed as replacements for all ()
 // and any ().  fn_inRange (xy, range) returns true if all of
 // xy falls inside range.xy - range.zw, while fn_legal (xy)
 // returns true if all of xy is inside 0.0 - 1.0 inclusive.
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_inRange (float2 xy, float4 range)
 {
@@ -219,9 +221,9 @@ bool fn_legal (float2 xy)
           || (xy.y < 0.0) || (xy.y > 1.0));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_bar (float2 uv : TEXCOORD0) : COLOR
 {
@@ -278,9 +280,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (tex2D (s_Input_2, xy2), Text, Text.a * Opacity);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Lower3rd_B
 {
@@ -290,4 +292,3 @@ technique Lower3rd_B
 
    pass P_2 { PixelShader = compile PROFILE ps_main (); }
 }
-

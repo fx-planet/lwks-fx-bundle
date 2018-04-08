@@ -1,7 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-//
+// @Released 2018-04-08
+// @Author windsturm
+// @OriginalAuthor "Ian McEwan"
+// @see https://www.lwks.com/media/kunena/attachments/6375/Refraction_2016-08-16.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxRefraction.fx
+//-----------------------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------------------//
 // Description : Array and textureless GLSL 3D simplex noise function.
 //      Author : Ian McEwan, Ashima Arts.
 //  Maintainer : ijm
@@ -10,9 +16,8 @@
 //               Distributed under the MIT License. See LICENSE file.
 //
 // https://github.com/ashima/webgl-noise
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------//
  /**
   * FxRefraction.
   * Refraction effect.
@@ -28,63 +33,46 @@
   * @forked Windsturm
   * @version 1.0.0
   */
-//--------------------------------------------------------------//
 
-//--------------------------------------------------------------//
-// This conversion for ps_2_0 compliance by Lightworks user
-// jwrl, 5 February 2016.
+//-----------------------------------------------------------------------------------------//
+// This conversion for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this
+// effect with transitions on those platforms.
 //
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//
-// Version 14.1 update 5 December 2017 by jwrl.
-//
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "FxRefraction";         // The title
-   string Category    = "Stylize";              // Governs the category that the effect appears in in Lightworks
+   string Description = "FxRefraction";
+   string Category    = "Stylize";
    string SubCategory = "Textures";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture InputTex;
 texture MaskTex;
 
 texture NoiseTex : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -122,9 +110,9 @@ sampler noiseSampler = sampler_state {
 	MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float noisePhase
 <
@@ -187,18 +175,18 @@ bool useExternalImage
    string Description = "Use External Image";
 > = false;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
-// Procedures
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float4 permute (float4 x)
 {
@@ -282,9 +270,9 @@ float snoise (float3 v)
    return 42.0 * dot (m * m, float4 (dot (p0, x0), dot (p1, x1), dot (p2, x2), dot (p3, x3)));
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 createNoise (float2 xy : TEXCOORD1) : COLOR
 {
@@ -357,9 +345,9 @@ float4 FxRefraction (float2 xy : TEXCOORD1) : COLOR
    return tex2D (InputSampler, r);
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -376,4 +364,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE FxRefraction ();
    }
 }
-

@@ -1,17 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Header
+// @Released 2018-04-07
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/1246/DeltaMask.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect DeltaMask.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// This is a delta mask or difference matte effect which needs 3 video tracks. V1 is
+// the foreground clip, V2 the static background freeze frame and V3 the new background
+// to be added.  Once the delta key is set up the routing panel is used to route the
+// output of the delta mask effect to the foreground input of a blend effect and the new
+// background track to the background input.
 //
 // Version 14 update 18 Feb 2017 jwrl.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //
-// Changed category from "Keying" to "Key", added subcategory
-// to effect header.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -21,16 +27,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
 
 texture fg;
 texture bg;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler FGround = sampler_state {
         Texture = <fg>;
@@ -49,14 +55,9 @@ sampler BGround = sampler_state {
         MipFilter = Linear;
  };
 
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool show
 <
@@ -128,18 +129,9 @@ bool invert
 	string Description = "Invert Mask";
 > = false;
 
-
-
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
 
 float4 DoIt( float2 uv : TEXCOORD1 ) : COLOR
 {
@@ -174,12 +166,10 @@ float4 DoIt( float2 uv : TEXCOORD1 ) : COLOR
   return ocolor;
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+
 technique SampleFxTechnique
 {
 
@@ -188,4 +178,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE DoIt();
    }
 }
-

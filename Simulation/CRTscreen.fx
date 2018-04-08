@@ -1,30 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// CRTscreen.fx developed by jwrl 22 February 2017.
+// @Released 2018-04-08
+// @Author jwrl
+// @Created 2017-02-22
+// @see https://www.lwks.com/media/kunena/attachments/6375/CRTscreen_5.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user CRTscreen.fx
 //
-// This effect simulates a close-up look at an analogue colour
-// TV screen.  Three options are available: Trinitron (Sony),
-// Diamondtron (Mitusbishi/NEC) and Linitron.  For copyright
-// reasons they are identified as type 1, type 2 and type 3
-// respectively in this effect.  No attempt has been made to
-// emulate a dot matrix shadow mask tube, because in early
-// tests we just lost too much luminance for the effect to be
-// useful.  That's pretty much why the manufacturers stopped
-// using the real shadowmask too.
+// This effect simulates a close-up look at an analogue colour TV screen.  Three options
+// are available: Trinitron (Sony), Diamondtron (Mitusbishi/NEC) and Linitron.  For
+// copyright reasons they are identified as type 1, type 2 and type 3 respectively in
+// this effect.  No attempt has been made to emulate a dot matrix shadow mask tube,
+// because in early tests we just lost too much luminance for the effect to be useful.
+// That's pretty much why the manufacturers stopped using the real shadowmask too.
 //
-// The stabilising wires have not been emulated in the type
-// 1 tube for anything other than the lowest two pixel sizes.
-// They just looked absurd with the larger settings.
+// The stabilising wires have not been emulated in the type 1 tube for anything other
+// than the lowest two pixel sizes.  They just looked absurd with the larger settings.
 //
-// The glow/halation effect is just a simple box blur, slightly
-// modified to give a reasonable simulation of the burnout that
-// could be obtained by overdriving a CRT.
+// The glow/halation effect is just a simple box blur, slightly modified to give a
+// reasonable simulation of the burnout that could be obtained by overdriving a CRT.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined InpSampler{} to reduce the risk of cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Explicitly defined InpSampler{} to reduce the risk of cross platform default
+// sampler state differences.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -34,18 +36,18 @@ int _LwksEffectInfo
    string SubCategory = "Simulation";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture Fgd    : RenderColorTarget;
 texture prelim : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InpSampler = sampler_state
 {
@@ -75,9 +77,9 @@ sampler preSampler = sampler_state {
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Size
 <
@@ -106,9 +108,9 @@ float Opacity
    float MaxVal       = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define R_ON   0.00
 #define R_OFF  0.25
@@ -127,9 +129,9 @@ float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_raster (float2 uv : TEXCOORD1) : COLOR
 {
@@ -239,9 +241,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, Inp, luma);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique colourscreen
 {

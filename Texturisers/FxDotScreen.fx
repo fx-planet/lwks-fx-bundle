@@ -1,5 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-08
+// @Author windsturm
+// @OriginalAuthor "Evan Wallace"
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dot_screen_2016-08-16.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FxDotScreen.fx
+//-----------------------------------------------------------------------------------------//
+
 /*
   * FxDotScreen.
   * Dot Screen effect.
@@ -30,36 +37,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 */
-//--------------------------------------------------------------//
-// FxDotScreen
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+
+//-----------------------------------------------------------------------------------------//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in all
-// Lightworks effects.
+// Added workaround for the interlaced media height bug in all Lightworks effects.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Rewrote the body of the code to improve efficiency.
+// Removed two variables that had been declared but never used.
+// Removed an unnecessary const declaration.
+// Removed a function used to perform an operation that would more efficently be
+// executed as in-line code.
+// Minimum dotSize value has been constrained to 3.0, to protect against divide by
+// zero errors. 
+// Several instances of implicit casting of float types which would have failed in
+// Mac/Linux environments have now been explicitly defined.
+// In the process of doing all of the above, the original 20 lines of code have been
+// reduced to 10 with no loss of functionality.
 //
-// Rewrote the body of the code to improve efficiency.  In the
-// process found two variables that had been declared but never
-// used, an unnecessary const declaration, and the use of a
-// function to perform an operation that could more efficently
-// be executed as in-line code.
-//
-// The minimum dotSize value has been constrained to 3.0, to
-// protect against divide by zero errors.  Previously it was
-// possible to manually enter values lower than that.  There
-// were several instances of implicit casting of float types
-// which would have failed in Mac/Linux environments.  They
-// have now all been explicitly defined.
-//
-// In the process of the above, the original 20 lines of code
-// have been reduced to 10 with no loss of functionality.
-//--------------------------------------------------------------//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -69,15 +71,15 @@ int _LwksEffectInfo
     string SubCategory = "Textures";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -89,9 +91,9 @@ sampler InputSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int skipGS
 <
@@ -136,9 +138,9 @@ float Strength
     float MaxVal = 200.0;
 > = 4.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI 3.14159265358979323846264
 
@@ -147,9 +149,9 @@ float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 FxDotScreen (float2 xy : TEXCOORD1) : COLOR
 {
@@ -173,9 +175,9 @@ float4 FxDotScreen (float2 xy : TEXCOORD1) : COLOR
     return color;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique FxTechnique
 {

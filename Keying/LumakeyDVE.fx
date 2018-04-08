@@ -1,58 +1,52 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect LumakeyDVE.fx
-// Created by LW user jwrl 20 March 2018.
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "20 March 2018"
+// @Created 2018-03-20
+// @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect LumakeyDVE.fx
 //
-// This keyer uses an algorithm derived from the Editshare
-// lumakey effect, but this implementation is entirely my
-// own.  A crop function and a simple DVE has also been added
-// to provide these often-needed functions without the need
-// to add external effects.
+// This keyer uses an algorithm derived from the Editshare lumakey effect, but this
+// implementation is entirely my own.  A crop function and a simple DVE has also been
+// added to provide these often-needed functions without the need to add external
+// effects.
 //
-// The most obvious difference with the keyer is in the way
-// that the parameters are labelled.  "Tolerance" is now
-// called "Key clip", "Edge Softness" is "Key Softness" and
-// "Invert" has become "Invert key".  These are the industry
-// standard names used for these functions, so this change
-// makes the effect more consistent with existing tools.
+// The most obvious difference with the keyer is in the way that the parameters are
+// labelled.  "Tolerance" is now called "Key clip", "Edge Softness" is "Key Softness"
+// and "Invert" has become "Invert key".  These are the industry standard names used
+// for these functions, so this change makes the effect more consistent with existing
+// tools.
 //
-// Regardless of whether the key is inverted or not, the
-// clip setting always works from black at 0% to white at
-// 100%.  In the Lightworks effect the equivalent setting,
-// tolerance, changes sense when the key is inverted.  This
-// is unexpected to say the least and for that reason has
-// been discarded.
+// Regardless of whether the key is inverted or not, the clip setting always works
+// from black at 0% to white at 100%.  In the Lightworks effect the equivalent setting,
+// tolerance, changes sense when the key is inverted.  This is unexpected to say the
+// least and for that reason has been discarded.
 //
-// Key softness is produced symmetrically around the key
-// boundaries.  This behaviour is more consistent with the
-// way that a traditional analog luminance keyer works.
-// When the key clip level is exceeded by the luminance
-// full white is output to the alpha channel, unlike the
-// Lightworks keyer which passes the luminance value
-// unchanged.  That is completely incorrect and not at
-// all consistent with the way that a keyer should work.
+// Key softness is produced symmetrically around the key boundaries.  This behaviour
+// is more consistent with the way that a traditional analog luminance keyer works.
+// When the key clip level is exceeded by the luminance full white is output to the
+// alpha channel, unlike the Lightworks keyer which passes the luminance value
+// unchanged.  That is completely incorrect and not at all consistent with the way
+// that a keyer should work.
 //
-// The DVE is a simple 2D DVE, but zooming is achieved by
-// Z-axis adjustment.  This is treated as an offset from
-// zero, and has limted range only.  Negative values give
-// size reduction which strictly speaking is incorrect,
-// but feels more natural - smaller numbers equal smaller
-// images.
+// The DVE is a simple 2D DVE, but zooming is achieved by Z-axis adjustment.  This is
+// treated as an offset from zero, and has limted range only.  Negative values give
+// size reduction which strictly speaking is incorrect, but feels more natural -
+// smaller numbers equal smaller images.
 //
-// The crop section can be set up by dragging the upper left
-// and lower right corners of the crop on the edit viewer, or
-// in the normal way by dragging the sliders.  The crop is a
-// simple hard edged one, and operates before the DVE.
+// The crop section can be set up by dragging the upper left and lower right corners
+// of the crop on the edit viewer, or in the normal way by dragging the sliders.  The
+// crop is a simple hard edged one, and operates before the DVE.
 //
-// The alpha channel produced can either replace any existing
-// foreground alpha channel or can be gated with it.  It can
-// then be used to key the foreground over the background or
-// passed on to other effects.  In this latter mode any
-// background image will be suppressed.
-//--------------------------------------------------------------//
+// The alpha channel produced can either replace any existing foreground alpha channel
+// or can be gated with it.  It can then be used to key the foreground over the
+// background or passed on to other effects.  In this latter mode any background image
+// will be suppressed.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -62,9 +56,9 @@ int _LwksEffectInfo
    string SubCategory = "Custom";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -72,9 +66,9 @@ texture Bg;
 texture InpCrop  : RenderColorTarget;
 texture InpDVE   : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler s_Foreground = sampler_state
 {
@@ -116,9 +110,9 @@ sampler s_DVE = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -222,9 +216,9 @@ float CropBottom
    float MaxVal = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define R_LUMA    0.2989
 #define G_LUMA    0.5866
@@ -235,9 +229,9 @@ float CropBottom
 #define KEEP_BGD  0
 #define ADD_ALPHA 1
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
@@ -278,9 +272,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (Bgd, Fgd, alpha * Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique LumakeyDVE
 {
@@ -295,4 +289,3 @@ technique LumakeyDVE
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
-

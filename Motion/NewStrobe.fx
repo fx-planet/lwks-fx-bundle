@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 5 April 2018
+// @Released 2018-04-05
 // @Author jwrl
-// @Created 31 March 2018
+// @Created March 2018-03-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_UI.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_oldUI.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Newstrobe.mp4

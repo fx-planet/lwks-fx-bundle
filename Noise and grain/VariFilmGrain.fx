@@ -1,68 +1,61 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author khaver
+// @Created 2017-05-03
+// @see https://www.lwks.com/media/kunena/attachments/6375/VFgrain_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect VariFilmGrain.fx
 //
-// Created by LW user khaver May 3, 2017
-// @Author khaver
-// @Created "3 May 2017"
+// This effect is based on my earlier Grain(Variable) effect.  This effect rolls-off
+// the strength of the grain as the luma values in the image approach 0 and 1, much
+// like real film.
 //
-// Variable Film Grain
-//
-// This effect is based on my earlier Grain(Variable) effect.
-// This effect rolls-off the strength of the grain as the luma
-// values in the image approach 0 and 1, much like real film.
 // Controls are:
-// STRENGTH: controls the amount of grain added.
-// SIZE: controls the size of the grain.
-// DISTRIBUTION: controls the space between grains.
-// ROLL-OFF BIAS: contols the roll-off curve between
-// pure white and pure black.
-// GRAIN BLUR: adds blur to the grain.
-//  SHOW GRAIN: lets you see just the grain.
-// ALPHA GRAIN ONLY: replaces the source alpha channel
-// with the grain passing the RGB channels through from the
-// source image untouched.
-// ALPHA ADJUSTMENT: tweaks the alpha channel grain.
+//   STRENGTH:         controls the amount of grain added.
+//   SIZE:             controls the size of the grain.
+//   DISTRIBUTION:     controls the space between grains.
+//   ROLL-OFF BIAS:    contols the roll-off curve between pure white and pure black.
+//   GRAIN BLUR:       adds blur to the grain.
+//   SHOW GRAIN:       lets you see just the grain.
+//   ALPHA GRAIN ONLY: replaces the source alpha channel with the grain passing the
+//                     RGB channels through from the source image untouched.
+//   ALPHA ADJUSTMENT: tweaks the alpha channel grain.
 //
 // Subcategory added by jwrl 10 Feb 2017
 //
-// Frame height bugfix 8 May 2017 by jwrl: Added workaround
-// for the interlaced media height bug in Lightworks effects.
+// Bug fix 8 May 2017 by jwrl.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
 // Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Explicitly defined all float4 variables to address the behavioural difference
+// between the D3D and Cg compilers.
 //
-// Explicitly defined all float4 variables to address the
-// behavioural difference between the D3D and Cg compilers.
-//--------------------------------------------------------------//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup		= "GenericPixelShader";
-   string Description		= "Variable Film Grain";		// The title
-   string Category		= "Stylize";				// Governs the category that the effect appears in in Lightworks
+   string Description		= "Variable Film Grain";
+   string Category		= "Stylize";
    string SubCategory		= "Grain and Noise";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
-
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-float _Progress;
-
-float _OutputAspectRatio;
-float _OutputWidth;
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 texture Tex1 : RenderColorTarget;
 texture Tex2 : RenderColorTarget;
 texture Tex3 : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
 
 sampler Samp0 = sampler_state
 {
@@ -104,14 +97,9 @@ sampler Samp3 = sampler_state
    MipFilter = Linear;
 };
 
-
-//--------------------------------------------------------------//
-// Define parameters here.
-//
-// The Lightworks application will automatically generate
-// sliders/controls for all parameters which do not start
-// with a a leading '_' character
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float Strength
 <
@@ -168,6 +156,15 @@ float aadjust
 	float MaxVal = 1.0;
 > = 0.0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+float _Progress;
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
 float2 _TexelKernel[13] =
 	{
 	    { -6, 0 },
@@ -204,20 +201,17 @@ float _BlurWeights[13] =
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// Note that pixels are processed out of order, in parallel.
-// Using shader model 2.0, so there's a 64 instruction limit -
-// use multple passes if you need more.
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float _rand(float2 co, float seed){
 	return frac((dot(co.xy,float2(co.x+123.0,co.y+13.0))) * seed + _Progress);
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 Grain( float2 xy : TEXCOORD1 ) : COLOR
 {
@@ -288,9 +282,9 @@ float4 Combine( float2 xy : TEXCOORD1 ) : COLOR
    return source;
 }
 
-//--------------------------------------------------------------
-// Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique VariGrain
 {
@@ -324,4 +318,3 @@ technique VariGrain
    }
 
 }
-

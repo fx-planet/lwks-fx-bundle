@@ -1,31 +1,49 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @Author "Johannes Bausch"
-//--------------------------------------------------------------//
-// Chromatic Abberation
+// @Released 2018-04-07
+// @Author josely
+// @see https://www.lwks.com/media/kunena/attachments/6375/lwchromabb.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ChromAb.fx
 //
-// Copyright (c) Johannes Bausch. All rights reserved.
+// Chromatic Abberation Copyright (c) Johannes Bausch (josely). All rights reserved.
 //
 // This cross-platform conversion by jwrl April 28, 2016
 //
 // Version 14 update 18 Feb 2017 jwrl.
-//
 // Added subcategory to effect header.
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-//--------------------------------------------------------------//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "JB's Chromatic Abberation";
    string Category    = "Stylize";
-   string SubCategory = "Technical";          // Added for LW14 - jwrl
+   string SubCategory = "Technical";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
+
+texture Input;
+
+sampler texColor = sampler_state
+{
+   Texture   = <Input>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -40,34 +58,18 @@ float Amount
    float MaxVal = 1.00;
 > = 0.10;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Input;
-
-sampler texColor = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define STEPS   12
 #define STEPS_2 24               // STEPS * 2
 #define STEPS_3 36               // STEPS * 3
 #define STEP_RB 1.846            // STEPS / (1 - 0.5 * (STEPS + 1) + STEPS)
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main_half (float2 uv : TEXCOORD1) : COLOR
 {
@@ -142,9 +144,9 @@ float4 ps_main_full (float2 uv : TEXCOORD1) : COLOR
    return fragColor;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Half
 {
@@ -161,4 +163,3 @@ technique Full
       PixelShader = compile PROFILE ps_main_full ();
    }
 }
-

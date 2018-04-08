@@ -1,48 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 4 April 2018
+// @Author jwrl
+// @Created 5 August 2016
+// @see https://www.lwks.com/media/kunena/attachments/6375/Octagnette3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Octagonal_Vignette1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Octagonal_Vignette.fx
 //
-// Created by LW user jwrl 5 August 2016.
-// @Author jwrl
-// @Created "5 August 2016"
-//  LW 14+ version by jwrl 11 February 2017
-//  Category "Masks" is no longer defined in 14+, so category
-//  "DVEs" has been used with the subcategory "Crop Presets".
+// Originally this started life as a test-bed for an octagonal crop effect, but has had
+// other stuff thrown at it until we have what you see now.  It can be used as a simple
+// mask or vignette, or because it preserves the alpha channel, can be used in other,
+// more complex effect trees.
 //
-// Originally this started life as a test-bed for an octagonal
-// crop effect, but has had other stuff thrown at it until we
-// have what you see below.  It can be used as a simple mask
-// or vignette, or because it preserves the alpha channel,
-// can be used in other, more complex effect trees.
+// 6 August 2016: Bug fix
+// X and Y position controls behaved unpredictably during effect rotation.  Fixed.
 //
-// 6 August 2016: Bugfix - X and Y position controls behaved
-// unpredictably during effect rotation.  That has now been
-// fixed.
+// 17 August 2016: Bug fix and enhancement
+// Boundary calculation added to stop diagonals showing during repositioning.  This has
+// the added benefit of giving an extra four crop edges when scaling, allowing up to 12
+// convex crops to be applied at once.  At this stage concave crops are not possible.
 //
-// 17 August 2016: Boundary calculation added to stop diagonals
-// showing during repositioning.  This has the added benefit of
-// giving an extra four crop edges when scaling, allowing up to
-// twelve convex crops to be applied at once.  At this stage
-// concave crops are not possible at all.
+// 11 February 2017: LW 14+ modification
+// Category "Masks" is no longer defined in 14+, so category "DVEs" has been used with
+// the subcategory "Crop Presets".
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
+// 26 February 2017: Bug fix
+// Corrected for a bug in the way that Lightworks handles interlaced media.  When a height
+// parameter is needed one can not reliably use _OutputHeight with interlaced media unless
+// the media is in motion.  The output height is now obtained by dividing _OutputWidth by
+// _OutputAspectRatio.  This fix has been fully tested, and appears reliable regardless of
+// the pixel aspect ratio.
 //
-// It appears that when a height parameter is needed one can
-// not reliably use _OutputHeight.  It returns only half the
-// actual frame height when interlaced media is playing and
-// only when it is playing.  For that reason the output height
-// should always be obtained by dividing _OutputWidth by
-// _OutputAspectRatio until such time as the bug in the
-// Lightworks code can be fixed.  It seems that after contact
-// with the developers that is very unlikely to be soon.
-//
-// Note: This fix has been fully tested, and appears to be a
-// reliable solution regardless of the pixel aspect ratio.
-//--------------------------------------------------------------//
+// 4 April 2018: Modification
+// Metadata header block added to better support GitHub repository.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -52,9 +43,9 @@ int _LwksEffectInfo
    string SubCategory = "Crop Presets";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
@@ -62,9 +53,9 @@ texture Bgd;
 texture Buff_1 : RenderColorTarget;
 texture Buff_2 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgndSampler = sampler_state
 {
@@ -106,9 +97,9 @@ sampler Buf2Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float CropT
 <
@@ -299,9 +290,9 @@ float4 Colour
    string Description = "Border/background";
 > = { 0.2, 0.1, 1.0, 0.0 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define ZOOM     5.0
 #define AR_PLUS  4.0
@@ -331,9 +322,9 @@ float _OutputWidth;
 
 #define OutputHeight (_OutputWidth/_OutputAspectRatio)
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mask (float2 uv : TEXCOORD1) : COLOR
 {
@@ -459,63 +450,36 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Malpha.y);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-technique deSat
+technique OctagonalVignette
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Buff_1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_mask ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Buff_1;"; >
+   { PixelShader = compile PROFILE ps_mask (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = Buff_2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_rotate_scale ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = Buff_2;"; >
+   { PixelShader = compile PROFILE ps_rotate_scale (); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = Buff_1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_border ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = Buff_1;"; >
+   { PixelShader = compile PROFILE ps_border (); }
 
-   pass pass_four
-   <
-      string Script = "RenderColorTarget0 = Buff_2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_blur (Buf1Sampler, RADIUS_1);
-   }
+   pass P_4
+   < string Script = "RenderColorTarget0 = Buff_2;"; >
+   { PixelShader = compile PROFILE ps_blur (Buf1Sampler, RADIUS_1); }
 
-   pass pass_five
-   <
-      string Script = "RenderColorTarget0 = Buff_1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_blur (Buf2Sampler, RADIUS_2);
-   }
+   pass P_5
+   < string Script = "RenderColorTarget0 = Buff_1;"; >
+   { PixelShader = compile PROFILE ps_blur (Buf2Sampler, RADIUS_2); }
 
-   pass pass_six
-   <
-      string Script = "RenderColorTarget0 = Buff_2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_blur (Buf1Sampler, RADIUS_3);
-   }
+   pass P_6
+   < string Script = "RenderColorTarget0 = Buff_2;"; >
+   { PixelShader = compile PROFILE ps_blur (Buf1Sampler, RADIUS_3); }
 
-   pass pass_seven
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_7
+   { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,35 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-08
+// @Author jwrl
+// @Created 2016-03-12
+// @see https://www.lwks.com/media/kunena/attachments/6375/CamDistort_1.png
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect CameraDistortions.fx
 //
-// Created by LW user jwrl 12 March 2016
-// @Author jwrl
-// @Created "12 March 2016"
-//
-// This effect was suggested by CubicLensDistortion.fx by
-// Lightworks user brdloush.  This implementation is my own,
-// based on the cubic lens distortion algorithm from SSontech
-// (Syntheyes) - http://www.ssontech.com/content/lensalg.htm
+// This effect was suggested by CubicLensDistortion.fx by Lightworks user brdloush.
+// This implementation is my own, based on the cubic lens distortion algorithm from
+// SSontech (Syntheyes) - http://www.ssontech.com/content/lensalg.htm
 // 
 //     r2 = image_aspect*image_aspect*u*u + v*v
 //     f = 1 + r2*(k + kcube*sqrt(r2))
 //     u' = f*u
 //     v' = f*v
 //
-// Although brdloush's version was based on code published by
-// François Tarlier in 2010, this version re-implements the
-// original Ssontech algorithm, and uses none of M. Tarlier's
-// code.  I have deliberately maintained the variable names
-// used in the algorithm for consistency.
+// Although brdloush's version was based on code published by FranÃ§ois Tarlier in 2010,
+// this version re-implements the original Ssontech algorithm, and uses none of
+// M. Tarlier's code.  I have deliberately maintained the variable names used in the
+// algorithm for consistency.
 //
-// The most notable difference is the use of float2 variables
-// for screen coordinate mathematics wherever possible.  This
-// means that some parts require indexing where they didn't
-// in the original algorithm.  It also means that overall the
-// code is much simpler and will execute faster.  For example
-// the last two lines shown above can now be expressed as a
-// single line, viz:
+// The most notable difference is the use of float2 variables for screen coordinate
+// mathematics wherever possible.  This means that some parts require indexing where
+// they didn't in the original algorithm.  It also means that overall the code is much
+// simpler and will execute faster.  For example the last two lines shown above can
+// now be expressed as a single line, viz:
 //
 //     uv'= f*uv
 //
@@ -38,49 +33,42 @@
 //     uv'.x = f*uv.x
 //     uv'.y = f*uv.y
 //
-// The centring function is additional to any of the published
-// work as far as I'm aware, and is entirely my own.  Also new
-// is a means of automatically scaling the image while using
-// the basic distortion.  This only applies to positive values
-// of the basic distortion and doesn't apply at all to cubic
-// distortion.
+// The centring function is additional to any of the published work as far as I'm
+// aware, and is entirely my own.  Also new is a means of automatically scaling the
+// image while using the basic distortion.  This only applies to positive values of
+// the basic distortion and doesn't apply at all to cubic distortion.
 //
-// I also understand that one implementation of this algorithm
-// had chromatic aberration correction.  I've done something
-// similar, providing both optical and electronic aberrations.
-// As far as I'm aware these are both original work.
+// I understand that one implementation of this algorithm had chromatic aberration
+// correction.  I've done something similar, providing both optical and electronic
+// aberrations.  As far as I'm aware these are both original work.
 //
-// Optical color artefacts are applied prior to distortion, and
-// electronic artefacts are applied after it.  This ensures that
-// lens fringing stays inside the image boundary while colour
-// registration errors affect the whole frame.
+// Optical color artefacts are applied prior to distortion, and electronic artefacts
+// are applied after it.  This ensures that lens fringing stays inside the image
+// boundary while colour registration errors affect the whole frame.
 //
-// All of the above notwithstanding, you can do what you will
-// with this effect.  It would be nice to be credited if you
-// decide to use it elsewhere or change it in any way - jwrl.
+// All of the above notwithstanding, you can do what you will with this effect.  It
+// would be nice to be credited if you decide to use it elsewhere or change it in
+// any way - jwrl.
 //
-// Version 14 update 18 Feb 2017 jwrl: Added subcategory to
-// effect header.
+// Version 14 update 18 Feb 2017 jwrl: Added subcategory to effect header.
 //
 // Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Rewrote ps_lens() to speed things up a little by doing less
-// multiply operations in the loops and where possible by
-// making any mathematical processes work on float2 variables
-// rather than individually on two floats.
+// Rewrote ps_lens() to speed things up a little by doing less multiply operations
+// in the loops and where possible by making any mathematical processes work on
+// float2 variables rather than individually on two floats.
 //
 // Version 14.5 update 28 March 2018 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this
+// effect with transitions on those platforms.
 //
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -90,18 +78,18 @@ int _LwksEffectInfo
    string SubCategory = "Simulation";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
 texture L_Ab_Out : RenderColorTarget;
 texture Dist_Out : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -141,9 +129,9 @@ sampler DistSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool k_sc
 <
@@ -222,9 +210,9 @@ float Ycentre
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define STEPS     12
 #define FRNG_INC  1.0/STEPS      // 0.08333333
@@ -243,9 +231,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_lens (float2 uv : TEXCOORD1) : COLOR
 {
@@ -388,9 +376,9 @@ float4 ps_dichroic (float2 uv : TEXCOORD1, uniform bool is_horiz) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique OneChip
 {
@@ -447,4 +435,3 @@ technique ThreeChip_p
    pass P_3
    { PixelShader = compile PROFILE ps_dichroic (VERT); }
 }
-

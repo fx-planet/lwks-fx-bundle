@@ -1,65 +1,62 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-07
 // @Author jwrl
-// @Created "5 February 2017"
-//--------------------------------------------------------------//
-// ColourFilmAge.fx by Lightworks user jwrl 5 February 2017
+// @Created 2017-02-05
+// @see https://www.lwks.com/media/kunena/attachments/6375/ColourFilmAge_1.png
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect ColourFilmAge.fx
 //
-// This effect mimics the aging of colour film.  It starts by
-// emulating the fading of the film dye layers with age.  The
-// default order is yellow, magenta, then cyan, but that order
-// can be changed to the less common chemically induced yellow,
-// cyan, magenta variant (I've only ever seen that once).
+// This effect mimics the aging of colour film.  It starts by emulating the fading of
+// the film dye layers with age.  The default order is yellow, magenta, then cyan, but
+// that order can be changed to the less common chemically induced yellow, cyan,
+// magenta variant (I've only ever seen that once).
 //
-// Bleach bypass can also be applied in either the positive or
-// negative domains, and a vibrance parameter adds an S-curve
-// saturation adjustment.  Subjectively this gives a reasonably
-// close approximation to the appearance of early Technicolor
-// footage, although it makes no claim to be very accurate.
+// Bleach bypass can also be applied in either the positive or negative domains, and a
+// vibrance parameter adds an S-curve saturation adjustment.  Subjectively this gives a
+// reasonably close approximation to the appearance of early Technicolor footage,
+// although it makes no claim to be very accurate.
 //
-// Sprocket hole wear and tear can be emulated with separate
-// horizontal and vertical adjustments.  Fixed size grain
-// can also be applied, and is added prior to the dye layer
-// fade process for consistency of emulation.
+// Sprocket hole wear and tear can be emulated with separate horizontal and vertical
+// adjustments.  Fixed size grain can also be applied, and is added prior to the dye
+// layer fade process for consistency of emulation.
 //
-// The scratch generation has been adapted from the old time
-// movie effect created by khaver, now supplied as standard
-// with the Lightworks effects bundle.  The way that it has
-// been implemented is very much my own so please don't blame
-// him for any problems!  As with his effect the scratches
-// can be created from either the video layer or an external
-// damage input.
+// The scratch generation has been adapted from the old time movie effect created by
+// khaver, now supplied as standard with the Lightworks effects bundle.  The way that
+// it has been implemented is very much my own so please don't blame him for any
+// problems!  As with his effect the scratches can be created from either the video
+// layer or an external damage input.
 //
-// The neg scratches fade as the dye layers do, which they
-// would do in reality.  This has meant duplicating the
-// scratch code, because the pos scratches must be opaque as
-// the dye layers fade.  This doesn't seem to take too much
-// in the way of resources and is worth the improvement in
-// the look of the effect.  Duplication needs less overhead
-// than it would as a function call.
+// The neg scratches fade as the dye layers do, which they would do in reality.
+// This has meant duplicating the scratch code, because the pos scratches must be
+// opaque as the dye layers fade.  This doesn't seem to take too much in the way of
+// resources and is worth the improvement in the look of the effect.  Duplication
+// needs less overhead than it would as a function call.
 //
-// Because I haven't yet come up with a method of generating
-// convincing (to me) neg and/or pos dirt, I have provided an
-// external film dirt input instead.  I'm still trying to
-// develop a simple, fast algorithm for this that doesn't
-// yield square blocks.  Ideally, I would really like to have
-// both dust and hairs generated internally, but I doubt if
-// that would be realistically possible as a real-time effect.
+// Because I haven't yet come up with a method of generating convincing (to me) neg
+// and/or pos dirt, I have provided an external film dirt input instead.  I'm still
+// trying to develop a simple, fast algorithm for this that doesn't yield square
+// blocks.  Ideally, I would really like to have both dust and hairs generated
+// internally, but I doubt if that would be realistically possible as a real-time
+// effect.
 //
 // 31 July 2017 jwrl: Added flicker to the mix.
-//--------------------------------------------------------------//
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "Colour film aging";
    string Category    = "Colour";
-   string SubCategory = "Preset Looks";         // Added for LW14 - jwrl.
+   string SubCategory = "Preset Looks";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Inp;
 texture Dmg;
@@ -69,9 +66,9 @@ texture Noise : RenderColorTarget;
 texture Chem  : RenderColorTarget;
 texture Weave : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler InputSampler = sampler_state
 {
@@ -133,9 +130,9 @@ sampler WeaveSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Vibrance
 <
@@ -289,9 +286,9 @@ bool DamageTrack
    string Description = "Show damage track";
 > = false;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI      3.1415927
 
@@ -311,9 +308,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_noise (float2 uv : TEXCOORD0) : COLOR
 {
@@ -473,11 +470,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 //  Technique
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-technique Film_Fx
+technique ColourFilmAge
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Noise;"; >
@@ -494,4 +491,3 @@ technique Film_Fx
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

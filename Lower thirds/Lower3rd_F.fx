@@ -3,6 +3,7 @@
 // @Author jwrl
 // @Created 2018-03-17
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdF_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdF.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Lower3rd_F.fx
 //

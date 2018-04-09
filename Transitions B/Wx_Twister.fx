@@ -1,26 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Wx_Twister.fx
-// Created by LW user jwrl 8 November 2017
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "8 November 2017"
+// @Created 2017-11-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Wx_Twister.fx
 //
-// This is a dissolve/wipe that uses sine & cos distortions to
-// perform a rippling twist to transition between two images.
-// This does not preserve the alpha channels, so if you need
-// that use Adx_Twister.fx.
+// This is a dissolve/wipe that uses sine & cos distortions to perform a rippling twist
+// to transition between two images.  This does not preserve the alpha channels, so if
+// you need that use Adx_Twister.fx.
 //
 // Version 14.1 update 5 December 2017 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// as part of other transitions on those platforms.
 //
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -30,18 +30,18 @@ int _LwksEffectInfo
    string SubCategory = "Custom wipes";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
 texture Halfway : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -81,9 +81,9 @@ sampler HW_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -146,9 +146,9 @@ float Twist_Axis
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define RIPPLES  125.0
 #define SOFTNESS 0.45
@@ -162,18 +162,18 @@ float _OutputHeight;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 {
@@ -242,9 +242,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique WxTwister
 {
@@ -255,4 +255,3 @@ technique WxTwister
    pass P_2
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

@@ -1,23 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2017-03-25
+// @see https://www.lwks.com/media/kunena/attachments/6375/Sdissolve_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dissolve_S.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Scurve.fx
 //
-// Created by LW user jwrl 25 March 2017.
-// @Author jwrl
-// @Created "25 March 2017"
-//
-// This is essentially the same as Editshare's "Mix", with a
-// trigonometric curve applied to the "Amount" parameter.  If
-// you need to you can vary the linearity of the curve.
+// This is essentially the same as Editshare's "Mix", with a trigonometric curve
+// applied to the "Amount" parameter.  If you need to you can vary the linearity of
+// the curve.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Update August 10 2017 by jwrl - renamed from S_mix.fx for
-// consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl.
+// Renamed from S_mix.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -27,16 +30,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;            // Outgoing
 texture Bgd;            // Incoming
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 {
@@ -58,9 +61,9 @@ sampler BgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -78,17 +81,17 @@ float Linearity
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI      3.1415927
 
 #define HALF_PI 1.5707963
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Pixel Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -103,13 +106,12 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Fg, Bg, amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Sdissolve
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

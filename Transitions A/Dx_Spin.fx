@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Dx_Spin.fx written by LW user jwrl 15 February 2016.
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "15 February 2016"
+// @Created 2016-02-15
+// @see https://www.lwks.com/media/kunena/attachments/6375/SpinDissolve_2.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SpinDissolve.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Dx_Spin.fx
 //
-// This effect performs a transition between two sources,
-// During the process it also applies a rotational blur, the
-// direction, aspect ratio, centring and strength of which can
-// be adjusted.
+// This effect performs a transition between two sources.  During the process it applies
+// a rotational blur, the direction, aspect ratio, centring and strength of which can be
+// adjusted.
 //
-// The blur section is based on a rotational blur converted by
-// Lightworks user windsturm from original code created by
-// rakusan - http://kuramo.ch/webgl/videoeffects/
+// The blur section is based on a rotational blur converted by Lightworks user windsturm
+// from original code created by rakusan - http://kuramo.ch/webgl/videoeffects/
 //
 // This cross-platform version by jwrl 4 May 2016.
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
-// Update August 10 2017 by jwrl - renamed from SpinDissolve.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from SpinDissolve.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,9 +37,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -47,9 +52,9 @@ texture Spn2 : RenderColorTarget;
 texture Spn3 : RenderColorTarget;
 texture Spn4 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -131,9 +136,9 @@ sampler Spn4Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -183,9 +188,9 @@ float centreY
    float MaxVal = 1.50;
 > = 0.5;
 
-//--------------------------------------------------------------//
-// Common
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 #define RANGE_1    24
 #define RANGE_2    48
@@ -201,9 +206,9 @@ float _OutputAspectRatio;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_FgBlur (float2 uv : TEXCOORD1, uniform int base) : COLOR
 {
@@ -300,9 +305,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (outgoing, incoming, mixAmt);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SpinDiss
 {
@@ -349,4 +354,3 @@ technique SpinDiss
    pass P_b
    { PixelShader = compile PROFILE ps_main (); }
 }
-

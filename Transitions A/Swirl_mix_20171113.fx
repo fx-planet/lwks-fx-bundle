@@ -1,13 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-// @See https://www.lwks.com/media/kunena/attachments/6375/Swirl_mix_4.png
-//--------------------------------------------------------------//
-// Lightworks user effect
-//
-// Created by LW user schrauber  13 November 2017
+// @Released 2018-04-09
 // @Author schrauber
-// @Created "13 November 2017"
-//
+// @Created 2017-11-13
+// @see https://www.lwks.com/media/kunena/attachments/6375/Swirl_mix_3.png
+// @see https://www.lwks.com/media/kunena/attachments/348533/Swirlmix.mp4
+// @see https://www.lwks.com/media/kunena/attachments/348533/Swirlmixdeactivated_rotation.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Swirl_mix_20171113.fx
 // 
 // Phase of the transition effect:
 //
@@ -20,18 +19,18 @@
 //     Progress 0.75 to  1 : Positive zoom (geyser), oscillating zoom, subside
 //        Progress 0.78 to 0.95 : Mixing the inputs, starting in the center
 //
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
-// Version 14.1 update 5 December 2017 by jwrl.
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms.
 //
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
-
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -41,13 +40,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-
-
-
-
-//--------------------------------------------------------------//
-// Inputs und Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs and Samplers
+//-----------------------------------------------------------------------------------------//
 
 #ifdef LINUX
 #define Clamp ClampToEdge
@@ -131,13 +126,9 @@ sampler BgZoomSampler = sampler_state
    MipFilter = Linear;
 };
 
-
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
-
-
+//-----------------------------------------------------------------------------------------//
 
 float Progress
 <
@@ -173,10 +164,9 @@ float Border
    float MaxVal = 1.0;
 > = 0.9;
 
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Common definitions, declarations, macros
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 #define HALF_PI 1.5707963
@@ -184,21 +174,9 @@ float _OutputAspectRatio;
 #define TWO_PI  6.2831853
 #define CENTRE   0.5
 
-
-
-
-
-
-
-
-
-
-
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_rotation (float2 uvFg : TEXCOORD1, float2 uvBg : TEXCOORD2, uniform int texcoord, uniform sampler InpSampler) : COLOR
 { 
@@ -296,7 +274,7 @@ float4 ps_zoom (float2 uvFg : TEXCOORD1, float2 uvBg : TEXCOORD2, uniform int te
    float distortion2;  // Compensation distortion to avoid edge distortion.
 
    #define FREQ              20.0                             // Frequency of the zoom oscillation
-   #define PHASE              0.5                             // 90 ° phase shift of the zoom oscillation. Valid from progress 0.75
+   #define PHASE              0.5                             // 90 Â° phase shift of the zoom oscillation. Valid from progress 0.75
    #define AREA            100.0                              // Area of the regional zoom
    #define ZOOMPOWER        12.0
 
@@ -359,17 +337,9 @@ float4 ps_mix (float2 uvFg: TEXCOORD1, float2 uvBg: TEXCOORD2, float2 uvmix: TEX
 
 }
 
-
-
-
-
-
-
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
-
+//-----------------------------------------------------------------------------------------//
 
 technique main
 {
@@ -380,5 +350,4 @@ technique main
    pass P_5 { PixelShader = compile PROFILE ps_mix (); }
 
 }
-
 

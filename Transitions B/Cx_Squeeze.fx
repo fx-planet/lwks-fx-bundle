@@ -1,25 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// User effect Cx_Squeeze.fx
-// Created by jwrl 25 August 2017.
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "25 August 2017"
+// @Created 2017-08-25
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_Squeeze_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_squeeze.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Cx_Squeeze.fx
 //
-// This mimics Editshare's squeeze effect, customised to
-// suit its use with three or four-layer keying operations
-// and similar composite effects.  The mechanism used is an
-// adaption of the Editshare original.
-//
-// V2 is unused, and is provided to help automatic routing.
+// This mimics Editshare's squeeze effect, customised to suit its use with three or
+// four-layer keying operations and similar composite effects.  The mechanism used is
+// an adaption of the Editshare original.  V2 is unused, and is provided to help with
+// automatic routing.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+//// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -29,17 +29,17 @@ int _LwksEffectInfo
    string SubCategory = "Custom wipes";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture V1;
 texture V2;
 texture V3;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler V1sampler = sampler_state
 {
@@ -71,9 +71,9 @@ sampler V2sampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool Swapped
 <
@@ -95,26 +95,26 @@ float Amount
    float KF1    = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define EMPTY    (0.0).xxxx
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 squeeze_right (float2 uv : TEXCOORD1) : COLOR
 {
@@ -180,9 +180,9 @@ float4 squeeze_down (float2 uv : TEXCOORD1) : COLOR
    return fn_illegal (xy2) ? EMPTY : tex2D (V3sampler, xy2);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique squeezeRight
 {
@@ -207,4 +207,3 @@ technique squeezeDown
    pass P_1
    { PixelShader = compile PROFILE squeeze_down (); }
 }
-

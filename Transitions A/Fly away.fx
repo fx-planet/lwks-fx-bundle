@@ -1,24 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// User effect Fly away.fx by LW user schrauber.
+// @Released 2018-04-09
+// @Author schrauber
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Fly away.fx
+//
+// This cute transition effect "flies" the image off to reveal the new image.  The
+// process is divided into 2 phases in order to always ensure a clean transition at
+// different effect positions.  The first phase transforms the outgoing image into the
+// centre of the frame as a butterfly shape.  In this part of the transition the
+// position is fixed. The second part is the actual flight phase.  Adjustment of the
+// final destination is possible, but the default is a destination outside of the screen.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Version 14.1 update 5 December 2017 by jwrl.
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
+// those platforms.  It will now function correctly when used with Lightworks versions
+// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
+// with transitions on those platforms.
 //
-// Version 14.1 update 5 December 2017 by jwrl.
-//
-// Added LINUX and OSX test to allow support for changing
-// "Clamp" to "ClampToEdge" on those platforms.  It will now
-// function correctly when used with Lightworks versions 14.5
-// and higher under Linux or OS-X and fixes a bug associated
-// with using this effect with transitions on those platforms.
-//
-// The bug still exists when using older versions of Lightworks.
-//--------------------------------------------------------------//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -28,11 +38,48 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
 
-//--------------------------------------------------------------//
+texture Fg;
+texture Bg;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+#ifdef LINUX
+#define Clamp ClampToEdge
+#endif
+
+#ifdef OSX
+#define Clamp ClampToEdge
+#endif
+
+sampler FgSampler = sampler_state
+{
+   Texture   = <Fg>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler BgSampler = sampler_state
+{
+   Texture   = <Bg>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
 
 float Xcentre
 <
@@ -121,61 +168,17 @@ float fluttering_y
    float MaxVal = 20;
 > = 8;
 
-
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-
-texture Fg;
-texture Bg;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _Progress;
 
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
-
-#ifdef LINUX
-#define Clamp ClampToEdge
-#endif
-
-#ifdef OSX
-#define Clamp ClampToEdge
-#endif
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
-// Definitions and declarations
-//--------------------------------------------------------------//
-
-
 #pragma warning ( disable : 3571 )
 
-
-
-
-//--------------------------------------------------------------
-// Pixel Shader
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR : COLOR 
 { 
@@ -241,9 +244,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR : COLOR
    
 } 
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique SampleFxTechnique
 {
@@ -252,4 +255,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE ps_main ();
    }
 }
-

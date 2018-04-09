@@ -1,22 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2017-03-01
+// @see https://www.lwks.com/media/kunena/attachments/6375/Chinagraph_5.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Chinagraph.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks effect Dx_Chinagraph.fx
 //
-// Created by Lightworks user jwrl 1 March 2017.
-// @Author jwrl
-// @Created "1 March 2017"
+// This effect simulates the chinagraph marks used by film editors to mark up optical
+// effects on film rushes.
 //
-// This effect simulates the chinagraph marks used by film
-// editors to mark up optical effects on film rushes.
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their
-// default states between Windows and Linux/Mac compilers.
+// All samplers fully defined to avoid differences in their default states between Windows
+// and Linux/Mac compilers.
 //
-// Update August 10 2017 by jwrl - renamed from Chinagraph.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl - renamed from Chinagraph.fx for consistency across the
+// dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,18 +32,18 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
 texture chinatex : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 { 
@@ -69,9 +75,9 @@ sampler texSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int MarkType
 <
@@ -119,9 +125,9 @@ float Radius
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and constants
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define SIZE    8.0
 #define RAND_1  12.9898
@@ -150,9 +156,9 @@ float _Progress;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_markup (float2 uv : TEXCOORD1) : COLOR
 {
@@ -232,9 +238,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, china, china.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique chinagraph
 {
@@ -245,4 +251,3 @@ technique chinagraph
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

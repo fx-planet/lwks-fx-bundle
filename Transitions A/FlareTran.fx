@@ -1,25 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Flare
+// @Released 2018-04-09
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlareTran.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlareTran.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FlareTran.fx
+//
+// FlareTran is a transition that dissolves through an over-exposure style flare.
+// Amongst other things it can be used to simulate the burn out effect that happens
+// when a film camera stops.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  THE BUG WAS NOT IN THE WAY THIS EFFECT
-// WAS ORIGINALLY IMPLEMENTED.
-//
-// When a height parameter is needed one can not reliably
-// use _OutputHeight because it returns only half the
-// actual frame height when interlaced media is playing.
-// In this fix the output height is obtained by dividing
-// _OutputWidth by _OutputAspectRatio.  This fix has been
-// fully tested, and found to be a reliable solution in
-// all cases tested.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
-//--------------------------------------------------------------//
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -29,9 +31,51 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+texture InClip;
+texture OutClip;
+texture Sample : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler InputSampler = sampler_state
+{
+   Texture = <InClip>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler OutputSampler = sampler_state
+{
+   Texture = <OutClip>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler Samp1 = sampler_state
+{
+   Texture = <Sample>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 bool Swap
 <
@@ -84,51 +128,18 @@ float adjust
    float KF1    = 1.0;
 > = 0.5f;
 
-
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
-texture InClip;
-texture OutClip;
-texture Sample : RenderColorTarget;
-sampler InputSampler = sampler_state
-{
-   Texture = <InClip>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler OutputSampler = sampler_state
-{
-   Texture = <OutClip>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture = <Sample>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
 
 #define OutputHeight (_OutputWidth/_OutputAspectRatio)
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_adjust ( float2 xy : TEXCOORD1 ) : COLOR
 {
@@ -175,6 +186,10 @@ float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
    return saturate(float4(ret.rgb,1.0f));
 }
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
 technique Flare
 {
    pass Pass1
@@ -190,4 +205,3 @@ technique Flare
       PixelShader = compile PROFILE ps_main();
    }
 }
-

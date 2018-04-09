@@ -1,24 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Cx_Twister.fx
-// Created by LW user jwrl 8 September 2017.
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "8 September 2017"
+// @Created 2017-09-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_Twister_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_Twister.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Cx_Twister.fx
 //
-// This is a dissolve/wipe that uses sine & cos distortions to
-// perform a rippling twist to transition between two images.
-// It's the triple layer version of Wx_Twister.fx.  This does
-// not preserve the alpha channels, so if you need that use
-// Adx_Twister.fx.
+// This is a dissolve/wipe that uses sine & cos distortions to perform a rippling twist
+// to transition between two images.  It's the triple layer version of Wx_Twister.fx.
+// This does not preserve the alpha channels, so if you need that use Adx_Twister.fx.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -28,9 +28,9 @@ int _LwksEffectInfo
    string SubCategory = "Custom wipes";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture V1;
 texture V2;
@@ -41,9 +41,9 @@ texture Bg : RenderColorTarget;
 
 texture Halfway : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler V1sampler = sampler_state
 {
@@ -97,9 +97,9 @@ sampler HW_Sampler = sampler_state
 
 sampler V2sampler = sampler_state { Texture = <V2>; };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -168,9 +168,9 @@ float Twist_Axis
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define RIPPLES  125.0
 #define SOFTNESS 0.45
@@ -184,18 +184,18 @@ float _OutputHeight;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_set_V1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -282,9 +282,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique CxTwister_1
 {
@@ -321,4 +321,3 @@ technique CxTwister_2
    pass P_4
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

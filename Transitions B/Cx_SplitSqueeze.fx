@@ -1,16 +1,20 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// User effect Cx_SplitSqueeze.fx
-// Created by jwrl 25 August 2017.
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "25 August 2017"
+// @Created 2017-08-25
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_SplitSqueeze_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_SplitSqueeze.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Cx_SplitSqueeze.fx
 //
-// This is similar to the split squeeze effect, customised to
-// suit its use with three or four-layer keying operations and
-// similar composite effects.  V2 is unused, and is provided
-// to help automatic routing.
-//--------------------------------------------------------------//
+// This is similar to the split squeeze effect, customised to suit its use with three or
+// four-layer keying operations and similar composite effects.  V2 is unused, and is
+// provided to help automatic routing.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -20,17 +24,17 @@ int _LwksEffectInfo
    string SubCategory = "Custom wipes";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture V1;
 texture V2;
 texture V3;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler V1sampler = sampler_state
 {
@@ -54,9 +58,9 @@ sampler V3sampler = sampler_state
 
 sampler V2sampler = sampler_state { Texture = <V2>; };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool Swapped
 <
@@ -78,15 +82,15 @@ float Amount
    float KF1    = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 sqz_horiz (float2 uv : TEXCOORD1) : COLOR
 {
@@ -152,9 +156,9 @@ float4 exp_vert (float2 uv : TEXCOORD1) : COLOR
    return (uv.y > posAmt) ? tex2D (V3sampler, xy1) : (uv.y < negAmt) ? tex2D (V3sampler, xy2) : tex2D (V1sampler, uv);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique squeezeHoriz
 {
@@ -179,4 +183,3 @@ technique expandVert
    pass P_1
    { PixelShader = compile PROFILE exp_vert (); }
 }
-

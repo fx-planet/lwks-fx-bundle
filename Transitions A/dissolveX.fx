@@ -1,14 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Mix
+// @Released 2018-04-09
+// @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/DissolveX.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/DissolveX.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect dissolveX.fx
 //
-// Copyright (c) EditShare EMEA.  All Rights Reserved
+// This expanded dissolve allows optional blend modes to be applied during the transition
+// by adding a drop down menu to select different dissolve methods.  A timing slider has
+// also been added that adjusts where the 50% mix point happens in the dissolve (slider
+// to the left and the 50% mix point happens before the mid-point of the dissolve, slider
+// to the right and it happens after the mid-point), a layer swap option (some dissolve
+// methods are affected by which layer is on top or bottom), and a bypass option.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their
-// default states between Windows and Linux/Mac compilers.
-//--------------------------------------------------------------//
+// All samplers fully defined to avoid differences in their default states between Windows
+// and Linux/Mac compilers.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -18,9 +32,41 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+texture fg;
+texture bg;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler FgSampler = sampler_state
+{ 
+   Texture   = <fg>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler BgSampler = sampler_state
+{
+   Texture   = <bg>;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
 int SetTechnique
 <
    string Description = "Method";
@@ -53,40 +99,10 @@ bool Bypass
 	string Description = "Bypass";
 > = false;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
-texture fg;
-texture bg;
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
-
-sampler FgSampler = sampler_state
-{ 
-   Texture   = <fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state
-{
-   Texture   = <bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
-// Pixel Shader
-//--------------------------------------------------------------//
 float BlendAddf(float base, float blend) {
 	return min(base + blend, 1.0);
 }
@@ -148,6 +164,10 @@ float EaseAmountf(float ease) {
    }
    return amo;
 }
+
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 Default_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
@@ -939,9 +959,10 @@ float4 Reflect_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
    return cout;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+
 technique Default    { pass SinglePass { PixelShader = compile PROFILE Default_main(); } }
 technique Add        { pass SinglePass { PixelShader = compile PROFILE Add_main(); } }
 technique Subtract   { pass SinglePass { PixelShader = compile PROFILE Subtract_main(); } }

@@ -1,36 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2015-11-26
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dreams_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/DreamSequence.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Dreams.fx
 //
-// Written by LW user jwrl November 2015
-// @Author jwrl
-// @Created "November 2015"
+// This effect starts off by rippling the outgoing image for the first third of the
+// effect, then dissolves to the new image for the next third, then loses the ripple
+// over the remainder of the effect.  It simulates Hollywood's classic dream effect.
+// The default settings give exactly that result.
 //
-// This effect starts off by rippling the outgoing image for
-// the first third of the effect, then dissolves to the new
-// image for the next third, then loses the ripple over the
-// remainder of the effect.  It simulates Hollywood's classic
-// dream effect.  The default settings give exactly that
-// result.
+// It's based on khaver's water effect, but some parameters have been changed to better
+// mimic the original film effect.  Two directional blurs have also been added, one very
+// much weaker than the other.  Their comparative strengths depend on the predominant
+// direction of the wave effect.
 //
-// It's based on khaver's water effect, but some parameters
-// have been changed to better mimic the original film effect.
-// Two directional blurs have also been added, one very much
-// weaker than the other.  Their comparative strengths depend
-// on the predominant direction of the wave effect.
+// This has been written to be compatible with both D3D and Cg shader versions.  It
+// should therefore be fully cross platform compliant.
 //
-// This has been written to be compatible with both D3D and
-// Cg shader versions.  It should therefore be fully cross
-// platform compliant.
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their
-// default states between Windows and Linux/Mac compilers.
+// All samplers fully defined to avoid differences in their default states between
+// Windows and Linux/Mac compilers.
 //
-// Update August 10 2017 by jwrl - renamed from Dreaming.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl.
+// Renamed from Dreaming.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -40,9 +42,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
@@ -50,9 +52,9 @@ texture Bgd;
 texture BlurXinput : RenderColorTarget;
 texture BlurYinput : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -94,9 +96,9 @@ sampler YinSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -158,17 +160,17 @@ float StrengthY
    float MaxVal = 0.100;
 > = 0.02;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _Progress;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float2 fn_XYwave (float2 xy, float2 wv, float amt)
 {
@@ -208,9 +210,9 @@ float4 fn_blur_sub (sampler blurSampler, float2 blurXY, float2 blurOffs)
    return lerp (blurInp, result, Mix);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_dreams (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -260,9 +262,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return (BlurY > 0.0) ? fn_blur_sub (YinSampler, xy, offset) : tex2D (YinSampler, xy);
 }
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 technique Dreaming
 {
@@ -277,4 +279,3 @@ technique Dreaming
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
-

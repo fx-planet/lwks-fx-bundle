@@ -1,28 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2016-05-07
+// @see https://www.lwks.com/media/kunena/attachments/6375/ZoomDiss_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ZoomDissolve.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Zoom.fx
 //
-// This version by LW user jwrl 7 May 2016
-//
 // This effect either:
-//   Zooms into the outgoing image as it dissolves to the new
-//   image which zooms in to fill the frame.
+//   Zooms into the outgoing image as it dissolves to the new image which zooms in to
+//   fill the frame.
 // OR
-//   Zooms out of the outgoing image and dissolves to the new
-//   one while it's zooming out to full frame.
+//   Zooms out of the outgoing image and dissolves to the new one while it's zooming out
+//   to full frame.
 //
-// The blur algorithm I've found in too many places to be able
-// to reliably attribute it.  I'd like to be able to credit the
-// original author(s) if I knew who he/she/they were.
+// The blur algorithm I've found in too many places to be able to reliably attribute it.
+// I'd like to be able to credit the original author(s) if I knew who he/she/they were.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Update August 10 2017 by jwrl - renamed from zoom_mix.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl.
+// Renamed from zoom_mix.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -32,9 +38,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -42,9 +48,9 @@ texture Bg;
 texture inProc  : RenderColorTarget;
 texture outProc : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -86,9 +92,9 @@ sampler outSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -130,18 +136,18 @@ float Ycentre
    float MaxVal = 1.00;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define HALF_PI   1.570796
 
 #define SAMPLE    80
 #define DIVISOR   81.0
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_zoom_A_Fg (float2 xy : TEXCOORD1) : COLOR
 {
@@ -235,9 +241,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (fgImage, bgImage, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique ZoomDissolveIn
 {
@@ -266,4 +272,3 @@ technique ZoomDissolveOut
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
-

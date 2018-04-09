@@ -1,22 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2017-05-12
+// @see https://www.lwks.com/media/kunena/attachments/6375/SizzlerDx_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SizzlerDx_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SizzlerDx.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Sizzler.fx
 //
-// Created by LW jwrl 12 May 2017.
-// @Author jwrl
-// @Created "12 May 2017"
-//
-// This effect dissolves through a complex colour translation
-// while performing what is essentially a non-additive mix.
+// This effect dissolves through a complex colour translation while performing what is
+// essentially a non-additive mix.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Update August 10 2017 by jwrl - renamed from SizzlerDx.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl.
+// Renamed from SizzlerDx.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -26,16 +30,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 {
@@ -57,9 +61,9 @@ sampler BgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -84,16 +88,16 @@ float HueCycle
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define SQRT_3  1.7320508
 #define TWO_PI  6.2831853
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -128,13 +132,12 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, nonAdd, mixval);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique SizzlerDx
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

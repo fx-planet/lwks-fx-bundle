@@ -1,17 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Dx_Stretch.fx by jwrl 10 May 2016.
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2016-05-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/StretchDiss_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/StretchDissolve.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Dx_Stretch.fx
 //
 // Stretches the image horizontally through the dissolve.
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined float2 variables to allow for the
-// behaviour difference between the D3D and Cg compilers.
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
-// Update August 10 2017 by jwrl - renamed from StretchDiss.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined float2 variables to allow for the behaviour difference between
+// the D3D and Cg compilers.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from StretchDiss.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -21,16 +31,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
         Texture   = <Fg>;
@@ -50,9 +60,9 @@ sampler BgSampler = sampler_state {
 	MipFilter = Linear;
         };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int StretchMode
 <
@@ -76,17 +86,17 @@ float Stretch
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI      3.141593
 
 #define HALF_PI 1.570796
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -119,13 +129,12 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (fgPix, bgPix, dissAmt);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique stretchDissolve
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

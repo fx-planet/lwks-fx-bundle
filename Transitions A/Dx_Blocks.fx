@@ -1,29 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user Dx_Blocks.fx
-//
-// Written by LW user jwrl January 2016
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "January 2016"
+// @Created 2016-01-22
+// @see https://www.lwks.com/media/kunena/attachments/6375/BlockDissolve.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/BlockDissolve.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Dx_Blocks.fx
 //
-// This effect starts off by building blocks from the outgoing
-// image for the first third of the effect, then dissolves to
-// the new image for the next third, then loses the blocks over
-// the remainder of the effect.
+// This effect starts off by building blocks from the outgoing image for the first third
+// of the effect, then dissolves to the new image for the next third, then loses the
+// blocks over the remainder of the effect.
 //
-// It's based on Editshare's mosaic and mix effects, but some
-// parameters have been modified.  It has been written to be
-// compatible with both compiler versions used to compile
-// Lightworks effects.
+// It's based on Editshare's mosaic and mix effects, but some parameters have been modified.
+// It is compatible with both compiler versions used to compile Lightworks effects.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their
-// default states between Windows and Linux/Mac compilers.
+// All samplers fully defined to avoid differences in their default states between Windows
+// and Linux/Mac compilers.
 //
-// Update August 10 2017 by jwrl - renamed from block_mix.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl - renamed from block_mix.fx for consistency across the
+// dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -33,18 +36,18 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
 
 texture BlockInput : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 { 
@@ -76,9 +79,9 @@ sampler BlocksSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -96,17 +99,17 @@ float blockSize
    float MaxVal = 1.00;
 > = 0.10;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 
 #define HALF_PI 1.57079633
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 //  Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_mix (float2 uv : TEXCOORD1) : COLOR
 {
@@ -134,9 +137,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return tex2D (BlocksSampler, xy);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique blockDissolve
 {

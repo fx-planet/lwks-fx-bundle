@@ -1,31 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks effect Dx_Transmogrify.fx
-//
-// Created by Lightworks user jwrl 10 May 2016.
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "10 May 2016"
+// @Created 2016-05-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify_detail.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Dx_Transmogrify.fx
 //
-// This is is a truly bizarre transition.  Sort of a stripy
-// blurry dissolve, I guess.
+// This is is a truly bizarre transition.  Sort of a stripy blurry dissolve, I guess.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  When a height parameter is needed one
-// cannot use _OutputHeight because it returns only half the
-// actual frame height when interlaced media is playing.  In
-// this effect the output height is obtained by dividing
-// _OutputWidth by _OutputAspectRatio.  This is reliable
-// regardless of the pixel aspect ratio or interlace mode.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Swizzled two float variables to float2.  This addresses the
-// the behavioural differences between D3D and Cg compilers.
+// Swizzled two float variables to float2.  This addresses the behavioural differences
+// between D3D and Cg compilers.
 //
-// Update August 10 2017 by jwrl - renamed from Transmogrify.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl.
+// Renamed from Transmogrify.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -35,16 +35,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state {
         Texture   = <Fg>;
@@ -64,9 +64,9 @@ sampler BgSampler = sampler_state {
 	MipFilter = Linear;
         };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -77,9 +77,9 @@ float Amount
    float KF1    = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
-// Definitions and stuff
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _OutputWidth;
@@ -88,9 +88,9 @@ float _Progress;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
@@ -108,13 +108,12 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Fgd, Bgd, Amount);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique transmogrify
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

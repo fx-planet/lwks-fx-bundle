@@ -1,31 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Dx_Granular.fx was created by Lightworks user jwrl to
-// provide a granular noise driven dissolve, February 8 2016.
-// It is fully cross-platform compatible.  This version to
-// fix a transition linearity issued February 10 2016.
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2016-02-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/Granular_dissolve.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/GranularDissolve.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Dx_Granular.fx
 //
-// The noise component is based on work by users khaver and
-// windsturm.  The radial gradient generator is from an
-// effect created by Editshare.
+// This effect was created to provide a granular noise driven dissolve.  It is fully
+// cross-platform compatible.  The noise component is based on work by users khaver
+// and windsturm.  The radial gradient generator is from an effect created by Editshare.
+//
+// Modified February 10 2016 by jwrl - altered transition linearity.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles
-// interlaced media.  When a height parameter is needed one
-// cannot use _OutputHeight because it returns only half the
-// actual frame height when interlaced media is playing.  In
-// this effect the output height is obtained by dividing
-// _OutputWidth by _OutputAspectRatio.  This is reliable
-// regardless of the pixel aspect ratio or interlace mode.
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Update August 10 2017 by jwrl - renamed from Gran_mix.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl - renamed from Gran_mix.fx for consistency across the
+// dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -35,9 +37,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -47,9 +49,9 @@ texture Buffer_1 : RenderColorTarget;
 texture Buffer_2 : RenderColorTarget;
 texture Buffer_3 : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler Outgo_S = sampler_state
 {
@@ -111,9 +113,9 @@ sampler Buffer_3_S = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -178,9 +180,9 @@ float4 starColour
    bool SupportsAlpha = true;
 > = { 0.9, 0.75, 0.0, 1.0 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 // Pascal's triangle magic numbers for blur
 
@@ -198,9 +200,9 @@ float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_vert_grad (float2 xy : TEXCOORD1) : COLOR
 {
@@ -331,9 +333,9 @@ float4 ps_flat (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (retval, starColour, stars);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique TopToBottom
 {
@@ -418,4 +420,3 @@ technique Flat
    pass P_4
    { PixelShader = compile PROFILE ps_flat (); }
 }
-

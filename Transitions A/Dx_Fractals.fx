@@ -1,18 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Dx_Fractals.fx created by LW user jwrl 21 May 2016.
+// @Released 2018-04-09
+// @Author jwrl
+// @OriginalAuthor "Robert Schütze"
+// @Created 2016-05-21
+// @see https://www.lwks.com/media/kunena/attachments/6375/FractalDiss_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FractalDissolve.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Dx_Fractals.fx
 //
-// The fractal component is a conversion of GLSL sandbox
-// effect #308888 created by Robert Sch�tze (trirop) 07.12.2015.
+// The fractal component is a conversion of GLSL sandbox effect #308888 created by Robert
+// Schütze (trirop) 07.12.2015.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Update August 10 2017 by jwrl - renamed from FractalDiss.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl.
+// Renamed from FractalDiss.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -22,18 +32,18 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
 texture FracOut : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -65,9 +75,9 @@ sampler FracSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -106,16 +116,16 @@ float Feather
    float MaxVal = 1.00;
 > = 0.1;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 float _Progress;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_fractal (float2 xy : TEXCOORD1) : COLOR
 {
@@ -150,9 +160,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique FractalDissolve
 {
@@ -163,4 +173,3 @@ technique FractalDissolve
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

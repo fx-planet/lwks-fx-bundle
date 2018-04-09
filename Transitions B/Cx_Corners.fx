@@ -1,18 +1,20 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// User effect Cx_Corners.fx
-// Created by jwrl 25 August 2017.
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "25 August 2017"
+// @Created 2017-08-25
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_Corners_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_corners.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Cx_Corners.fx
 //
-// This is a four-way split which moves the image to or from
-// the corners of the frame.  It has been adapted for use
-// with three or four-layer keying operations and other
-// composite types of effects.
+// This is a four-way split which moves the image to or from the corners of the frame.
+// It has been adapted for use with three or four-layer keying operations and other
+// composite types of effects.  V2 is unused, and is provided to help automatic routing.
 //
-// V2 is unused, and is provided to help automatic routing.
-//--------------------------------------------------------------//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -22,9 +24,9 @@ int _LwksEffectInfo
    string SubCategory = "Custom wipes";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture V1;
 texture V2;
@@ -32,9 +34,9 @@ texture V3;
 
 texture Hc : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler V1sampler = sampler_state
 {
@@ -68,9 +70,9 @@ sampler HcSampler = sampler_state
 
 sampler V2sampler = sampler_state { Texture = <V2>; };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool Swapped
 <
@@ -92,17 +94,17 @@ float Amount
    float KF1    = 1.0;
 > = 0.0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define EMPTY (0.0).xxxx
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 open_horiz (float2 uv : TEXCOORD1) : COLOR
 {
@@ -168,9 +170,9 @@ float4 shut_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (V1sampler, uv), retval, retval.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique openCorner
 {
@@ -192,4 +194,3 @@ technique shutCorner
    pass P_2
    { PixelShader = compile PROFILE shut_main (); }
 }
-

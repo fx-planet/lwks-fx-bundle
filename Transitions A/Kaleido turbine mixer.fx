@@ -1,15 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------
-// From Schrauber revised for transitions.
-// The transition effect is based on baopao's (and/or nouanda?)  "Kaleido".
-// In  "Kaleido" - file were the following listed:
+// @Released 2018-04-09
+// @Author schrauber
+// @see https://www.lwks.com/media/kunena/attachments/6375/KaleidoTurbine_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Kaleido turbine mixer.fx
+//
+// From Schrauber revised for transitions.  The transition effect is based on baopao's
+// (and/or nouanda?)  "Kaleido".  In  "Kaleido" - file were the following listed:
 // Quote: ...................
 // Kaleido   http://www.alessandrodallafontana.com/ 
 // based on the pixel shader of: http://pixelshaders.com/ 
 // corrected for HLSL by Lightworks user nouanda
 // ..........................
-//--------------------------------------------------------------
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -18,16 +29,16 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
+
 texture FG;
 texture BG;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
-
+//-----------------------------------------------------------------------------------------//
 
 sampler FGSampler = sampler_state
 {
@@ -50,11 +61,9 @@ sampler BGSampler = sampler_state
 
 };
 
-
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 float amount
 <
@@ -97,7 +106,7 @@ bool fan
 
 
 //--------------------------------------------------------------
-// Shader
+// Functions
 //--------------------------------------------------------------
 
 // This function added to mimic the GLSL mod() function
@@ -107,6 +116,9 @@ float mod(float x, float y)
   return x - y * floor(x/y);
 }
 
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
 float4 main( float2 xy1 : TEXCOORD1 ) : COLOR 
 {
@@ -143,6 +155,10 @@ float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
      return color;
 }
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
+
 technique SimpleTechnique
 {
 pass MainPass
@@ -152,7 +168,6 @@ pass MainPass
    }
 
 }
-
 
 
 

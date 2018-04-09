@@ -1,25 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect Wx_Pinch.fx
-// Created by LW user jwrl 8 September 2017.
+// @Released 2018-04-09
 // @Author jwrl
-// @Created "8 September 2017"
+// @Created 2017-09-08
+// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Pinch_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Pinch.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Wx_Pinch.fx
 //
-// This effect pinches the outgoing video to a user-defined
-// point to reveal the incoming shot.  It can also reverse the
-// process to bring in the incoming video.
-//
-// I created this when I wanted to take my mind off a serious
-// family problem, so it makes no claim to be anything much.
+// This effect pinches the outgoing video to a user-defined point to reveal the incoming
+// shot.  It can also reverse the process to bring in the incoming video.  A really
+// simple effect, it makes no claim to be anything much.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //
-// Legality checking has been added to correct for a bug
-// in XY sampler addressing on Linux and OS-X platforms.
-// This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//--------------------------------------------------------------//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -29,16 +28,16 @@ int _LwksEffectInfo
    string SubCategory = "Custom wipes";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state
 {
@@ -60,9 +59,9 @@ sampler BgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 int SetTechnique
 <
@@ -95,9 +94,9 @@ float centreY
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define MID_PT  (0.5).xx
 #define HALF_PI 1.5707963
@@ -106,18 +105,18 @@ float centreY
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 {
@@ -147,9 +146,9 @@ float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
    return lerp (tex2D (FgdSampler, uv), incoming, incoming.a);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Pinch_1
 {
@@ -162,4 +161,3 @@ technique Pinch_2
    pass P_1
    { PixelShader = compile PROFILE ps_main_2 (); }
 }
-

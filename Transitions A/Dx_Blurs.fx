@@ -1,30 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2015-10-12
+// @see https://www.lwks.com/media/kunena/attachments/6375/BlurDiss.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/BlurDissolve.mp4
+//-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Blurs.fx
 //
-// Written by LW user jwrl October 2015
-// @Author jwrl
-// @Created "October 2015"
-//
-// This effect performs a transition between two sources,
-// During the process it also applies a directional blur,
-// the angle and strength of which can be independently set
+// This effect performs a transition between two sources.  During the process it also
+// applies a directional blur, the angle and strength of which can be independently set
 // for both the incoming and outgoing vision sources.
 //
-// This version of May 6 2016 has a changed blur engine and
-// offsets the incoming blur by 180 degrees so that the
-// incoming and outgoing blurs are perceived to match
-// direction.  A setting to tie both incoming and outgoing
-// blurs together has also been added.
+// Modified May 6 2016 by jwrl.
+// Changed the blur engine and offset the incoming blur by 180 degrees so that the
+// incoming and outgoing blurs are perceived to match direction.  A setting to tie both
+// incoming and outgoing blurs together has also been added.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
 // Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their
-// default states between Windows and Linux/Mac compilers.
+// All samplers fully defined to avoid differences in their default states between
+// Windows and Linux/Mac compilers.
 //
-// Update August 10 2017 by jwrl - renamed from BlurDissolve.fx
-// for consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Update August 10 2017 by jwrl.
+// Renamed from BlurDissolve.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -34,9 +38,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
@@ -44,9 +48,9 @@ texture Bg;
 texture FgBlur : RenderColorTarget;
 texture BgBlur : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 { 
@@ -88,9 +92,9 @@ sampler BbSampler = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -147,9 +151,9 @@ float i_Strength
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define SAMPLES   60
 
@@ -159,9 +163,9 @@ float i_Strength
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler bSamp, uniform float bStrn, uniform float bAng, uniform int bOffs) : COLOR
 {
@@ -193,9 +197,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    return lerp (outBlur, in_Blur, Mix);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique blurDiss_0
 {
@@ -224,4 +228,3 @@ technique blurDiss_1
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
-

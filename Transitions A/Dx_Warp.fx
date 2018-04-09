@@ -1,18 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Dx_Warp.fx created by Lightworks user jwrl.
-// 14 May 2016
+// @Released 2018-04-09
+// @Author jwrl
+// @Created 2016-05-14
+// @see https://www.lwks.com/media/kunena/attachments/6375/WarpDiss_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/WarpDissolve.mp4
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Dx_Warp.fx
 //
 // Dissolve that warps.  Nothing more to say really.
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers so we aren't bitten by cross
-// platform default sampler state differences.
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //
-// Update August 10 2017 by jwrl - renamed from WarpDiss.fx for
-// consistency across the dissolve range.
-//--------------------------------------------------------------//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from WarpDiss.fx for consistency across the dissolve range.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -21,18 +30,18 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 texture Fg;
 texture Bg;
 
 texture Image : RenderColorTarget;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Samplers
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 sampler FgSampler = sampler_state
 {
@@ -64,9 +73,9 @@ sampler ImgSample = sampler_state
    MipFilter = Linear;
 };
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -77,17 +86,17 @@ float Amount
    float KF1    = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 #define PI 3.141593
 
 #pragma warning ( disable : 3571 )
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float4 ps_dissolve (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -116,9 +125,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique WarpDiss
 {
@@ -129,4 +138,3 @@ technique WarpDiss
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

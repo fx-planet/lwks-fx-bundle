@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author schrauber
-// @see https://www.lwks.com/media/kunena/attachments/6375/Zoom_focal_2.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/RegionalZoom.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Regional zoom.fx
 //

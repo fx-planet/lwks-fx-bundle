@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-07-02
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSplit_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaWave_480.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaWave.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Wave.fx

@@ -193,6 +193,7 @@ def extract_metadata(path):
 
     metadata = {
             'path': os.path.relpath(path),
+            'abspath': os.path.abspath(os.path.expanduser(path)),
             'name': os.path.splitext(filename)[0],
             'filename': filename,
         }

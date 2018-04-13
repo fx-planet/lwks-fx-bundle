@@ -3,6 +3,7 @@
 // @Author schrauber
 // @see https://www.lwks.com/media/kunena/attachments/6375/Bulge_4.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Bulge_3_2016-04-10.png
+// @see https://www.youtube.com/watch?v=RDFyomV8g_s
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect bulge.fx
 //

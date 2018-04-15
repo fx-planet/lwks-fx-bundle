@@ -19,7 +19,6 @@
 // 15 April 2018 by LW users schrauber:    Lightworks category and subcategory changed
 // 19 February 2017 by LW users schrauber: If Channel 0 is set in the effect settings, the remote control is now disabled.
 // 17 February 2017 by LW user jwrl:       The effect now preserves the alpha channel
-// 17 February 2017 by LW user jwrl:       Prevention of potential override of the values.
 // 
 //
 //--------------------------------------------------------------//
@@ -32,9 +31,7 @@
 // LW user "schrauber" has significantly reduced this effect 
 //                     and equipped it with a remote control.
 //
-// This version modified by jwrl to preserve the alpha channel
-// and range limit the returned levels 17 February 2017.
-//
+// 17 February 2017: modified by jwrl to preserve the alpha channel//
 // 19 Febuary 2017; modified by user "schrauber": RcSampler settings, Clamp changed to Border
 //
 // 15 April 2018 modified by LW users schrauber:

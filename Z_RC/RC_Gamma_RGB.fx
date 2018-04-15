@@ -2,6 +2,7 @@
 // @Released 2018-04-15
 // @Author schrauber
 // @Created 2017-02-01
+// @see https://www.lwks.com/media/kunena/attachments/348533/RCRGB-Gamma.JPG
 //--------------------------------------------------------------//
 // Lightworks user effect RC_Gamma_RGB.fx
 // 

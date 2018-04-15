@@ -17,6 +17,7 @@
 //
 // Updates:
 // 15 April 2018 by LW users schrauber:    Lightworks category and subcategory changed
+// 15 April 2018 by LW users schrauber:    Prevention of potential override of the values.
 // 19 February 2017 by LW users schrauber: If Channel 0 is set in the effect settings, the remote control is now disabled.
 // 17 February 2017 by LW user jwrl:       The effect now preserves the alpha channel
 // 
@@ -36,6 +37,7 @@
 //
 // 15 April 2018 modified by LW users schrauber:
 //    Lightworks category and subcategory changed
+//    Range limit of the returned levels 
 //    GitHub-relevant: @Released, @Author, @Created, Effect description
 //
 //--------------------------------------------------------------//
@@ -146,7 +148,7 @@ float4 main( float2 xy : TEXCOORD1 ) : COLOR
 {
    float4 retval = tex2D (FgSampler, xy);
 
-   return float4 (retval.rgb * (RECEIVING (Ch) + 1.0), retval.a);
+   return min (float4 (retval.rgb * (RECEIVING (Ch) + 1.0), retval.a), 1.0);
 }
 
 

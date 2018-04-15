@@ -1,7 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-15
+// @Author schrauber
+// @Created 2017-02-01
 //--------------------------------------------------------------//
+// Lightworks user effect RC_Lift.fx
 //
+// This is a simple luminance lift control.
+// This effect can only be influenced by a remote control.
+//
+// Suitable remote controls can be found in the category "User" / Subcategory "Remote Control"
+// For this, the transmitting remote control is connected to the RC input. 
+// In the effect settings of this remotely controllable effect
+// the channel number should be adjusted, which should control this effect. 
+// Please note the description of the connected remote control effect
+// in order to determine the relevant remote control channel.
+//
+// Updates:
+// 15 April 2018 by LW users schrauber:    Lightworks category and subcategory changed
+// 19 February 2017 by LW users schrauber: If Channel 0 is set in the effect settings, the remote control is now disabled.
+// 17 February 2017 by LW user jwrl:       The effect now preserves the alpha channel
+// 17 February 2017 by LW user jwrl:       Prevention of potential override of the values.
+// 
+//
+//--------------------------------------------------------------//
+// Information for Effect Developer:
 // 
 // This effect is based on the effect: "Lift, Gamma, Gain"
 // Original file name: Sample 1 - Single input, Single pass.fx 
@@ -19,8 +41,9 @@
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "RC Lift";                       // The title
-   string Category    = "Remote Control Colour Grade";   // Governs the category that the effect appears in in Lightworks
+   string Description = "RC Lift";
+   string Category    = "Colour";
+   string SubCategory = "Requires remote control";
 > = 0;
 
 //--------------------------------------------------------------//

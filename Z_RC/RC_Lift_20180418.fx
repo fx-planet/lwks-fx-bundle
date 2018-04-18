@@ -5,7 +5,7 @@
 // @Version: 2.0
 // @see https://www.lwks.com/media/kunena/attachments/348533/RCLiftnew.JPG
 //--------------------------------------------------------------//
-// Lightworks user effect RC_Lift.fx
+// Lightworks user effect RC_Lift_20180418.fx
 //
 // This is a simple luminance lift control.
 // This effect can only be influenced by a remote control.

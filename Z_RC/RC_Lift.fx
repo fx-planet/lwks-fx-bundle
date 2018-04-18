@@ -117,7 +117,7 @@ float Ch
 
 
 
-float4 main( float2 xy : TEXCOORD1 ) : COLOR
+float4 ps_main( float2 xy : TEXCOORD1 ) : COLOR
 {
    float4 retval = tex2D (FgSampler, xy);
 

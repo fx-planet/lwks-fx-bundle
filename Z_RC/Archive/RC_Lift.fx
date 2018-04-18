@@ -55,7 +55,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "RC Lift -old-";
    string Category    = "Colour";
-   string SubCategory = "Archive, withdrawn";
+   string SubCategory = "Withdrawn";
 > = 0;
 
 //--------------------------------------------------------------//

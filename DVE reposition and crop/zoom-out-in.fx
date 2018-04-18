@@ -1,7 +1,9 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2017-07-20
 // @Author schrauber
+// @Created 2016-07-01
 // @see https://www.lwks.com/media/kunena/attachments/348533/temp0823410.PNG
+// @see https://www.youtube.com/watch?v=weSAKIDkWwk
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect zoom-out-in.fx
 //
@@ -11,12 +13,16 @@
 // should do any fine adjustment of position at maximum zoom used to prevent centring
 // problems.
 //
-// Modified 20 July 2017 by jwrl.
-// Changed category to DVE, added subcategory.
+// Update:
+// 20 July 2017 by LW user jwrl: Changed category to DVE, added subcategory.
 //
+//--------------------------------------------------------------//
+// Information for Effect Developer:
 // Modified 7 April 2018 by jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// GitHub-relevant modification, 18 April 2018 schrauber
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

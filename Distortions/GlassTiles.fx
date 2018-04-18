@@ -2,6 +2,7 @@
 // @Released 2018-04-07
 // @Author khaver
 // @see https://www.lwks.com/media/kunena/attachments/6375/GlassTiles.png
+// @see https://www.youtube.com/watch?v=O55QTV0gjmQ
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GlassTiles.fx
 //
@@ -16,6 +17,8 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// GitHub-relevant modification, 18 April 2018 schrauber
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

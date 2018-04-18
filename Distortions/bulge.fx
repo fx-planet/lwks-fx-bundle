@@ -1,8 +1,10 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2017-02-18
 // @Author schrauber
+// @Created 2016-03-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/Bulge_4.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Bulge_3_2016-04-10.png
+// @see https://www.youtube.com/watch?v=IZToP0MrbZM
 // @see https://www.youtube.com/watch?v=RDFyomV8g_s
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect bulge.fx
@@ -11,11 +13,17 @@
 // Optionally the background can have a radial distortion applied at the same time, or
 // can be made transparent black.
 //
-// Added subcategory for LW14 - jwrl 18 Feb 2017
+// Update: 
+// 18 Feb 2017 by LW user jwrl: Added subcategory for LW14
+//
+//--------------------------------------------------------------//
+// ---- Information for Effect Developer:
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// GitHub-relevant modification, 18 April 2018 schrauber
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

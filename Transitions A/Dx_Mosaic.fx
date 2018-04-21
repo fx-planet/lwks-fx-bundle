@@ -2,7 +2,7 @@
 // @Released 2018-04-21
 // @Author jwrl
 // @Created 2016-02-12
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic_3.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Mosaic.fx

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-15
+// @Released 2017-02-19
 // @Author schrauber
 // @Created 2017-02-01
 // @Version: 1.2
@@ -20,34 +20,14 @@
 //
 //--------------------------------------------------------------//
 // Information for Effect Developer:
-
-// This is a simple luminance lift control.
-// This effect can only be influenced by a remote control.
-//
-// Suitable remote controls can be found in the category "User" / Subcategory "Remote Control"
-// For this, the transmitting remote control is connected to the RC input. 
-// In the effect settings of this remotely controllable effect
-// the channel number should be adjusted, which should control this effect. 
-// Please note the description of the connected remote control effect
-// in order to determine the relevant remote control channel.
-//
-// Updates (all outdated):
-// 19 February 2017 by LW users schrauber: If Channel 0 is set in the effect settings, the remote control is now disabled.
-// 17 February 2017 by LW user jwrl:       The effect now preserves the alpha channel
-// 17 February 2017 by LW user jwrl:       Prevention of potential override of the values.
-// 
-//
-// This effect is based on the effect: "Lift, Gamma, Gain"
-// Original file name: Sample 1 - Single input, Single pass.fx 
-// And came from the Lightworks folder: "Effect Templates"
-// Thanks!
-// January 2017: LW user "schrauber" has significantly reduced this effect 
-//                                   and equipped it with a remote control.
 //
 // This version modified by jwrl to preserve the alpha channel
 // and range limit the returned levels 17 February 2017.
 //
 // 19 Febuary 2017; modified by user "schrauber": RcSampler settings, Clamp changed to Border
+//
+// 21 April 2018 modified for archive by LW users schrauber:
+// Effectname, category and subcategory, @Released etc.
 
 //--------------------------------------------------------------//
 int _LwksEffectInfo

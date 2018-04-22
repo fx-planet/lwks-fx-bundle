@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-04-22
 // @Author jwrl
 // @Created 2018-03-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_1.png
@@ -46,6 +46,22 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 22 April 2018 jwrl.
+// Merged DVE operation with main shader, reducing the number of passes required by one
+// and the samplers required by one also.
+// No longer explicitly define addressing/filtering of Fg and Bg.  Defaults are OK here.
+// Changed the exit implementation - logically the same, cosmetically different.
+// Range limited the crop settings.  It's no longer possible to exceed frame boundaries.
+// Restored comments to the code to assist anyone trying to work out what the hell I did.
+//
+// IMPORTANT ATTRIBUTION INFORMATION:
+// The code in this effect is original work by Lightworks user jwrl, and developed for
+// use in the Lightworks non-linear editor.  Should this effect be ported to another
+// edit platform or used in part or in whole in an effect in any other non-linear
+// editor this attribution in its entirety must be included.  Negotiations to modify or
+// suspend this requirement can be undertaken by contacting jwrl at www.lwks.com, where
+// the original effect and the software on which it was designed to run may also be found.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -64,45 +80,17 @@ texture Fg;
 texture Bg;
 
 texture InpCrop  : RenderColorTarget;
-texture InpDVE   : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
 sampler s_Cropped = sampler_state
 {
    Texture   = <InpCrop>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_DVE = sampler_state
-{
-   Texture   = <InpDVE>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -235,41 +223,54 @@ float CropBottom
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
-   return (uv.x >= CropLeft) && (uv.y >= 1.0 - CropTop)
-       && (uv.x <= CropRight) && (uv.y <= 1.0 - CropBottom)
+   // Range limit X and Y crop values and invert the Y values so that more positive
+   // Y settings move the crop line up the screen rather than down as they do in Cg.
+
+   float left  = max (0.0, CropLeft);
+   float right = min (1.0, CropRight);
+   float top   = max (0.0, 1.0 - CropTop);
+   float botm  = min (1.0, 1.0 - CropBottom);
+
+   return (uv.x >= left) && (uv.y >= top) && (uv.x <= right) && (uv.y <= botm)
           ? tex2D (s_Foreground, uv) : EMPTY;
-}
-
-float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
-{
-   float scale = pow (max ((CentreZ + 1.0) * 0.5, 0.0001) + 0.5, 4.0);
-
-   float2 xy = ((uv - 0.5.xx) / scale) + float2 (-CentreX, CentreY) + 0.5.xx;
-
-   return (xy.x >= 0.0) && (xy.x <= 1.0) && (xy.y >= 0.0) && (xy.y <= 1.0)
-          ? tex2D (s_Cropped, xy) : EMPTY;
 }
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   int BgMode = (int)floor (KeyMode * 0.5);
-   int FgMode = KeyMode - (BgMode * 2);
+   // Extract the background and foreground modes from KeyMode
 
-   float4 Fgd = tex2D (s_DVE, xy1);
+   int BgMode = (int)floor (KeyMode * 0.5);
+
+   bool addAlpha = (KeyMode - (BgMode * 2)) == ADD_ALPHA;
+
+   // Set up range limited DVE scaling.  Values of zero or below can't be manually input.
+
+   float scale = pow (max ((CentreZ + 2.0) * 0.5, 0.0001), 4.0);
+
+   // Set up pixel addressing for the Fgd parameter to produce the DVE effect
+
+   float2 xy3 = ((xy1 - 0.5.xx) / scale) + float2 (-CentreX, CentreY) + 0.5.xx;
+
+   // Recover background and foreground, limiting the foreground to legal addresses
+
    float4 Bgd = (BgMode == KEEP_BGD) ? tex2D (s_Background, xy2) : EMPTY;
+   float4 Fgd = (xy3.x >= 0.0) && (xy3.x <= 1.0) && (xy3.y >= 0.0) && (xy3.y <= 1.0)
+              ? tex2D (s_Cropped, xy3) : EMPTY;
+
+   // Set up the key clip and softness from the Fgd luminance
 
    float luma  = dot (Fgd.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
    float edge  = max (0.00001, Softness);
    float clip  = (KeyClip * 1.0002) - (edge * 0.5) - 0.0001;
    float alpha = saturate ((luma - clip) / edge);
 
+   // Invert the alpha if needed and optionally gate it with Fgd.a then quit
+
    if (InvertKey) alpha = 1.0 - alpha;
 
-   if (FgMode == ADD_ALPHA) alpha = min (Fgd.a, alpha);
+   if (addAlpha) alpha = min (Fgd.a, alpha);
 
-   if (ShowAlpha) return float4 (alpha.xxx, 1.0);
-
-   return lerp (Bgd, Fgd, alpha * Amount);
+   return (ShowAlpha) ? float4 (alpha.xxx, 1.0) : lerp (Bgd, Fgd, alpha * Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -283,9 +284,5 @@ technique LumakeyDVE
    { PixelShader = compile PROFILE ps_crop (); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = InpDVE;"; >
-   { PixelShader = compile PROFILE ps_dve (); }
-
-   pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }

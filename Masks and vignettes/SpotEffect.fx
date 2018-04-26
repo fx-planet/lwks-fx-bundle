@@ -217,7 +217,6 @@ float4 BgdColour
 
 #define PI            3.1415926536
 #define ROTATE        PI/180.0
-#define INVSQRT2      0.7071067812
 
 float Pascal [] = { 0.3125, 0.234375, 0.09375, 0.015625 };
 

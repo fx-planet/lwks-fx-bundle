@@ -17,6 +17,9 @@
 // attenuate or invert the individual control channels.
 // Each channel can be set directly, and the remote control signal may also be limited.
 //
+// Limitations and Known Problems:
+// The optional effect inputs are incompatible with GPU Precision Settings "16-bit Floating Point" (Lightworks 14.5)
+//
 // Update:
 // 26 April 2018 by LW user schrauber: Unnecessary sampler settings removed.
 //

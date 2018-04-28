@@ -33,7 +33,7 @@ int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "RC 1, Five channel remote"; 
-   string Category    = "User" 
+   string Category    = "User"; 
    string SubCategory = "Remote Control";  
 > = 0;
 
@@ -409,7 +409,7 @@ float LimitDown5
 
 // "RENDER_1_0_1(Tx)"  Numeral system input -1 to +1, output 0 to 1
 //                     Transmits the value of "Tx" as a 16-bit color by using two 8-bit colors ,
-//                     and transmits the value of Tx as  a 8-bit color
+//                     and transmits the value of ?Tx? as  a 8-bit color
  #define RENDER_1_0_1(Tx,Status)   return float4 (TRANSMIT(Tx) - BIT9TO16_1_0_1(Tx) / 255 , BIT9TO16_1_0_1(Tx) , Status , TRANSMIT(Tx))		// Return: Red = bit 1 to bit 8 of 16 Bit,     Green (BIT9TO16) = bit 9 to bit 16 of 16 Bit,      Blue = Status, transmitter ON,       Alpha = 8 Bit
     #define BIT9TO16_1_0_1(Tx)        fmod(TRANSMIT(Tx) * 255 , 1)										// Here the color channel for bit 9 to bit 16.
        #define TRANSMIT(Tx)              ((Tx + 1) / 2)												// Adjustment of the numeral system from (-1 ... +1)   to   ( 0 ... 1)

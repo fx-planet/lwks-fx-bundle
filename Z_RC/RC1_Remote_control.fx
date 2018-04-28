@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2017-07-09
+// @Released 2018-04-28
 // @Author schrauber
 // @Created 2017-01-31
 //--------------------------------------------------------------//
@@ -16,6 +16,9 @@
 // The "Multiply", parameter allows the master signal to amplify, 
 // attenuate or invert the individual control channels.
 // Each channel can be set directly, and the remote control signal may also be limited.
+//
+// Update:
+// 26 April 2018 by LW user schrauber: Unnecessary sampler settings removed.
 //
 // Insignificant updates at different times:
 // Too long effect name corrected, subcategory defined, effect description
@@ -38,53 +41,21 @@ int _LwksEffectInfo
 
 
 texture R1;
-sampler remoteImput1 = sampler_state
-{
-   Texture = <R1>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput1 = sampler_state { Texture = <R1>; };
 
 
 
 texture R2;
-sampler remoteImput2 = sampler_state
-{
-   Texture = <R2>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput2 = sampler_state { Texture = <R2>; };
 
 
 
 texture R3;
-sampler remoteImput3 = sampler_state
-{
-   Texture = <R3>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput3 = sampler_state { Texture = <R3>; };
 
 
 texture R4;
-sampler remoteImput4 = sampler_state
-{
-   Texture = <R4>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput4 = sampler_state { Texture = <R4>; };
 
 
 

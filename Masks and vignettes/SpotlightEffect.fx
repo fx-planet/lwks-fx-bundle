@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @Released 2018-04-26
+// @Released 2018-04-29
 // @Author jwrl
 // @Created 2017-12-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/Spotlight_1.png
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect SpotEffect.fx
+// Lightworks user effect SpotlightEffect.fx
 //
 // This effect is designed to produce a highlighted spotlight effect on the source video.
 // It's a simple single effect solution for the alternative, a wipe/matte combination
@@ -15,6 +15,11 @@
 // Foreground and background exposure can be adjusted, as can saturation and vibrance.
 // The background can also be slightly blurred to give a soft focus effect, and the
 // foreground and background can be individually tinted.
+//
+// Modified 2018-04-29
+// Corrected a bug which caused the angular adjustment to be always centred on the frame
+// centre, regardless of the spot position.  In the process the subcategory was changed
+// to "Matte" and the filename from SpotEffect.fx to SpotlightEffect.fx.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -22,7 +27,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Spotlight effect";
    string Category    = "Stylize";
-   string SubCategory = "User Effects";
+   string SubCategory = "Matte";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -213,8 +218,6 @@ float4 BgdColour
 #define FEATHER_SCALE 0.05
 #define RADIUS_SCALE  1.6666667
 
-#define FRAME_CENTRE  0.5.xx
-
 #define PI            3.1415926536
 #define ROTATE        PI/180.0
 
@@ -232,13 +235,13 @@ float4 ps_fgd (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Foreground, uv);
 
-   float alpha    = retval.a;
-   float exposure = saturate ((1.0 - FgdExposure) * 0.5);
+   float alpha = retval.a;
+   float gamma = saturate ((1.0 - FgdExposure) * 0.5);
 
    // Process the exposure
 
-   exposure = max (MIN_EXP, (exposure * exposure * 2.0) + 0.5);
-   retval   = saturate (pow (retval, exposure));
+   gamma  = max (MIN_EXP, (gamma * gamma * 2.0) + 0.5);
+   retval = saturate (pow (retval, gamma));
 
    // Process the saturation
 
@@ -270,11 +273,11 @@ float4 ps_bgd (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Foreground, uv);
 
-   float alpha    = retval.a;
-   float exposure = saturate ((1.0 - BgdExposure) * 0.5);
+   float alpha = retval.a;
+   float gamma = saturate ((1.0 - BgdExposure) * 0.5);
 
-   exposure = max (MIN_EXP, (exposure * exposure * 2.0) + 0.5);
-   retval   = saturate (pow (retval, exposure));
+   gamma  = max (MIN_EXP, (gamma * gamma * 2.0) + 0.5);
+   retval = saturate (pow (retval, gamma));
 
    float luma = dot (retval.rgb, LUMAFIX);
 
@@ -298,6 +301,8 @@ float4 ps_bgd (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_bgd_blur (float2 uv : TEXCOORD1) : COLOR
 {
+   // This is a simple box blur using Pascal's triangle to calculate the blur
+
    float4 retval = tex2D (s_BgdProc, uv);
 
    float2 xy1 = float2 ((2.0 - 2.0 * BgdFocus) / _OutputWidth, 0.0);
@@ -306,7 +311,7 @@ float4 ps_bgd_blur (float2 uv : TEXCOORD1) : COLOR
 
    float alpha = retval.a;
 
-   // Blur background component horizontally
+   // Blur the background component horizontally
 
    retval *= Pascal [0];
    retval += tex2D (s_BgdProc, uv + xy1) * Pascal [1];
@@ -329,7 +334,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float2 xy2 = xy1 + xy1;
    float2 xy3 = xy1 + xy2;
 
-   // Blur background component vertically
+   // Blur the background component vertically
 
    retval *= Pascal [0];
    retval += tex2D (s_BgdBlur, uv + xy1) * Pascal [1];
@@ -347,21 +352,22 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float feather = SpotFeather * FEATHER_SCALE;
 
    // Now compensate for the frame aspect ratio when scaling the spot vertically
+   // If the aspect ratio is negative we scale it, if not we use it as-is
 
    aspect = 1.0 - max (aspect, 0.0) - (min (aspect, 0.0) * _OutputAspectRatio);
 
-   // Put the rotational x and y scale factors in xy3 and frame centred uv in xy2
+   // Put position adjusted uv in xy2 and the rotational x and y scale factors in xy3
 
+   xy2 = float2 (CentreX, 1.0 - CentreY) - uv;
    sincos (SpotAngle * ROTATE, xy3.y, xy3.x);
-   xy2 = FRAME_CENTRE - uv;
 
    // Calculate the angular rotation and put the corrected position in xy1
 
-   xy1.x = (xy2.x * xy3.x) + (xy2.y * xy3.y / _OutputAspectRatio) + CentreX - 0.5;
-   xy1.y = (xy2.y * xy3.x) - (xy2.x * xy3.y * _OutputAspectRatio) - CentreY + 0.5;
+   xy1.x = (xy2.x * xy3.x) + (xy2.y * xy3.y / _OutputAspectRatio);
+   xy1.y = (xy2.y * xy3.x) - (xy2.x * xy3.y * _OutputAspectRatio);
 
-   // Now determine if the current pixel falls inside spot boundaries, and
-   // if so generate the appropriate alpha value to key the foreground in.
+   // Now determine if the current pixel falls inside the spot boundaries, and if so
+   // generate the appropriate alpha value to key the foreground over the background.
 
    float radius = length (float2 (xy1.x / aspect, (xy1.y / _OutputAspectRatio) * aspect)) * RADIUS_SCALE;
    float alpha  = feather > 0.0 ? saturate ((size + feather - radius) / (feather * 2.0))
@@ -393,4 +399,3 @@ technique SpotEffect
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

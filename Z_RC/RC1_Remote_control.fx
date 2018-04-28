@@ -1,73 +1,64 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
-
+// @Released 2018-04-28
+// @Author schrauber
+// @Created 2017-01-31
 //--------------------------------------------------------------//
+// Lightworks user effect RC1_Remote_control.fx
+//
+// This is the master controller for the entire remote control user effects subsystem.
+// It generates up to five separate remote control channels on the one output.
+// By itself it does very little, but when used with the appropriate effects it is a very powerful tool.
+// The desired channel to be used is selected in the custom remote-controllable effect.
+//
+// All channels can be controlled simultaneously by means of a "Master" slider.
+// As with all adjustable controls, here keyframing can be used.
+// In turn, that Master can itself be remote controlled.
+// The "Multiply", parameter allows the master signal to amplify, 
+// attenuate or invert the individual control channels.
+// Each channel can be set directly, and the remote control signal may also be limited.
+//
+// Limitations and Known Problems:
+// The optional effect inputs are incompatible with GPU Precision Settings "16-bit Floating Point" (Lightworks 14.5)
+//
+// Update:
+// 26 April 2018 by LW user schrauber: Unnecessary sampler settings removed.
+//
+// Insignificant updates at different times:
+// Too long effect name corrected, subcategory defined, effect description
+// and other data relevant to the user repository added.
+//--------------------------------------------------------------//
+
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "RC 1, Five channel remote";      // The title
-   string Category    = "Remote Control";                 // Governs the category that the effect appears in Lightworks
+   string Description = "RC 1, Five channel remote"; 
+   string Category    = "User"; 
+   string SubCategory = "Remote Control";  
 > = 0;
 
 
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Inputs       Samplers
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//-----------------------------------------------------------------------------------------//
+// Inputs and Samplers
+//-----------------------------------------------------------------------------------------//
 
 
 texture R1;
-sampler remoteImput1 = sampler_state
-{
-   Texture = <R1>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput1 = sampler_state { Texture = <R1>; };
 
 
 
 texture R2;
-sampler remoteImput2 = sampler_state
-{
-   Texture = <R2>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput2 = sampler_state { Texture = <R2>; };
 
 
 
 texture R3;
-sampler remoteImput3 = sampler_state
-{
-   Texture = <R3>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput3 = sampler_state { Texture = <R3>; };
 
 
 texture R4;
-sampler remoteImput4 = sampler_state
-{
-   Texture = <R4>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler remoteImput4 = sampler_state { Texture = <R4>; };
 
 
 
@@ -84,12 +75,12 @@ sampler InputMix = sampler_state
 };
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Parameters, which can be changed by the user in the effects settings.
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float ChannelInput
 <
@@ -352,12 +343,11 @@ float LimitDown5
 
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//Definitions and declarations
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+//-----------------------------------------------------------------------------------------//
+//Definitions, declarations, macros
+//-----------------------------------------------------------------------------------------//
 
 
 
@@ -378,10 +368,6 @@ float LimitDown5
 
 
 
-
-
-
-
 // ---- Receiving from the remote control input -------
 	
       #define MASTER_EXT    (    (   tex2D(InputMix, POSCHANNEL(floor(ChannelInput))).r					/* Receiving  Red = bit 1 to bit 8 of 16Bit     ,   The value of ChannelInput is only passed to sub macros  */\
@@ -395,12 +381,6 @@ float LimitDown5
             #define POSyCHANNEL(ch)        ( (floor( ch/100.0) )/ 50.0 )						  	// Sub macro,   y - position of the the color signal.    50 channel groups    ,     "ch" is the receiving channel. 
  
    
-
-
-
-
-
-
 
 
 
@@ -429,7 +409,7 @@ float LimitDown5
 
 // "RENDER_1_0_1(Tx)"  Numeral system input -1 to +1, output 0 to 1
 //                     Transmits the value of "Tx" as a 16-bit color by using two 8-bit colors ,
-//                     and transmits the value of ”Tx” as  a 8-bit color
+//                     and transmits the value of ?Tx? as  a 8-bit color
  #define RENDER_1_0_1(Tx,Status)   return float4 (TRANSMIT(Tx) - BIT9TO16_1_0_1(Tx) / 255 , BIT9TO16_1_0_1(Tx) , Status , TRANSMIT(Tx))		// Return: Red = bit 1 to bit 8 of 16 Bit,     Green (BIT9TO16) = bit 9 to bit 16 of 16 Bit,      Blue = Status, transmitter ON,       Alpha = 8 Bit
     #define BIT9TO16_1_0_1(Tx)        fmod(TRANSMIT(Tx) * 255 , 1)										// Here the color channel for bit 9 to bit 16.
        #define TRANSMIT(Tx)              ((Tx + 1) / 2)												// Adjustment of the numeral system from (-1 ... +1)   to   ( 0 ... 1)
@@ -437,18 +417,15 @@ float LimitDown5
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//               *****  Pixel Shader  *****
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// These functions are used by "Technique"
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-float4 Inputs (float2 xy : TEXCOORD0 , float2 xy1 : TEXCOORD1 , float2 xy2 : TEXCOORD2 , float2 xy3 : TEXCOORD3 , float2 xy4 : TEXCOORD4) : COLOR
+
+//-----------------------------------------------------------------------------------------//
+// Shaders 
+//-----------------------------------------------------------------------------------------//
+
+float4 ps_Inputs (float2 xy : TEXCOORD0 , float2 xy1 : TEXCOORD1 , float2 xy2 : TEXCOORD2 , float2 xy3 : TEXCOORD3 , float2 xy4 : TEXCOORD4) : COLOR
 { 
  
  // The following priorities apply when the channels are identical:
@@ -466,12 +443,7 @@ float4 Inputs (float2 xy : TEXCOORD0 , float2 xy1 : TEXCOORD1 , float2 xy2 : TEX
 
 
 
-
-
-
-
-
-float4 RemoteControl (float2 xy : TEXCOORD0) : COLOR
+float4 ps_RemoteControl (float2 xy : TEXCOORD0) : COLOR
 { 
  float Master = MasterInt;
  if ( STATUS_INPUT >= 0.4 ) Master = MASTER_EXT;				//Selects the common master remote control value for all output channels.
@@ -513,29 +485,13 @@ float4 RemoteControl (float2 xy : TEXCOORD0) : COLOR
 
 
 
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------------//
 
 
-
-
-technique Transmitter 
+technique main
 {
-   pass _1   < string Script = "RenderColorTarget0 = RenderInputMix;"; >        { PixelShader = compile PROFILE Inputs(); }		
-   pass _2   { PixelShader = compile PROFILE RemoteControl(); }
+   pass P_1   < string Script = "RenderColorTarget0 = RenderInputMix;"; >        { PixelShader = compile PROFILE ps_Inputs(); }		
+   pass P_2   { PixelShader = compile PROFILE ps_RemoteControl(); }
 }
-
-
-
-
-
-

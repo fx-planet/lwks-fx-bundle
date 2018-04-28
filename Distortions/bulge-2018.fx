@@ -12,7 +12,13 @@
 // Optionally the background can have a radial distortion applied at the same time, or
 // can be made black or transparent black.
 //
+// This effect  bulge-2018.fx replaces the withdrawn bulge.fx
+// This effect file is incompatible with the old bulge effect already added to the timeline.
+// You can also install this new effect in addition to the existing old effect,
+// but avoid using the withdrawn version for new editing operations.
+//
 // Update:
+// 26 April 2018 by LW user schrauber: This effect replaces the withdrawn bulge.fx
 // 26 April 2018 by LW user schrauber: The aspect ratio of the bulge is now adjustable and rotatable.
 // 26 April 2018 by LW user schrauber: Fixed cross-platform compatibility (Mode: Environment, distorted).
 // 18 Feb 2017 by LW user jwrl:        Added subcategory for LW14

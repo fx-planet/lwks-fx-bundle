@@ -18,7 +18,6 @@
 // but avoid using the withdrawn version for new editing operations.
 //
 // Update:
-// 26 April 2018 by LW user schrauber: This effect replaces the withdrawn bulge.fx
 // 26 April 2018 by LW user schrauber: The aspect ratio of the bulge is now adjustable and rotatable.
 // 26 April 2018 by LW user schrauber: Fixed cross-platform compatibility (Mode: Environment, distorted).
 // 18 Feb 2017 by LW user jwrl:        Added subcategory for LW14

@@ -18,7 +18,6 @@
 // but avoid using the withdrawn version for new editing operations.
 //
 // Update:
-// 26 April 2018 by LW user schrauber: This effect replaces the withdrawn bulge.fx
 // 26 April 2018 by LW user schrauber: The aspect ratio of the bulge is now adjustable and rotatable.
 // 26 April 2018 by LW user schrauber: Fixed cross-platform compatibility (Mode: Environment, distorted).
 // 18 Feb 2017 by LW user jwrl:        Added subcategory for LW14
@@ -141,17 +140,16 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float Tsin, Tcos;     // Sine and cosine of the set angle.
    float angle;
    float distortion = 0;
-   float dist;           // Corrected distance to the effect center (affects the shape and angle of the bulge).
+   float corRadius;           // Corrected object radius.
 
    // Position vectors
    float2 centre = float2 (Xcentre, 1.0 - Ycentre);
-   float2 posSpin;       // The not centered rotated Texel position.
-   float2 SpinPixel;     // The centered and rotated Texel position.
+   float2 SpinPixel;     // The rotated Texel position.
    float2 xy = uv;
 
    // Direction vectors
    float2 vcenter;    // Vector between Center and Texel
-
+   float2 Spin;       // Correction Vector for recalculation of objects Dimensions.
 
 
    // ------ Rotation of bulge dimensions. --------
@@ -162,25 +160,25 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    vcenter = float2(vcenter.x * _OutputAspectRatio, vcenter.y );
 
    sincos (angle, Tsin , Tcos);
-   posSpin = float2 ((vcenter.x * Tcos - vcenter.y * Tsin), (vcenter.x * Tsin + vcenter.y * Tcos)); 
-   posSpin = float2(posSpin.x / _OutputAspectRatio, posSpin.y );
-   SpinPixel = posSpin + centre;
+   Spin = float2 ((vcenter.x * Tcos - vcenter.y * Tsin), (vcenter.x * Tsin + vcenter.y * Tcos)); 
+   Spin = float2(Spin.x / _OutputAspectRatio, Spin.y );
+   SpinPixel = Spin + centre;
 
 
 
    // ------ Bulge --------
    vcenter = centre - uv;
-   if (Rotation == 1)  posSpin = vcenter;
-   dist = length (float2 (posSpin.x / AspectRatio, (posSpin.y / _OutputAspectRatio) * AspectRatio));
+   if (Rotation == 1)  Spin = vcenter;
+   corRadius = length (float2 (Spin.x / AspectRatio, (Spin.y / _OutputAspectRatio) * AspectRatio));
    
-   if (Mode == 1 || dist < Bulge_size) 
-      distortion = Zoom * sqrt (sin (abs(Bulge_size - dist) ));
-   if (Mode == 2 && dist > Bulge_size) return (0.0).xxxx;
-   if (Mode == 3 && dist > Bulge_size) return float4 (0.0.xxx, 1.0);
+   if (Mode == 1 || corRadius < Bulge_size) 
+      distortion = Zoom * sqrt (sin (abs(Bulge_size - corRadius) ));
+   if (Mode == 2 && corRadius > Bulge_size) return (0.0).xxxx;
+   if (Mode == 3 && corRadius > Bulge_size) return float4 (0.0.xxx, 1.0);
 
    if ( (Rotation == 3) 
-      || (Rotation == 2 && dist < Bulge_size)
-      || (Rotation == 1 && dist < Bulge_size)
+      || (Rotation == 2 && corRadius < Bulge_size)
+      || (Rotation == 1 && corRadius < Bulge_size)
       ) xy = SpinPixel;
    return tex2D (FgSampler, (distortion * (centre - xy)) + xy);
 } 

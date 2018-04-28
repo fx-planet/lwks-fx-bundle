@@ -21,6 +21,8 @@
 // Too long effect name corrected, subcategory defined, effect description
 // and other data relevant to the user repository added.
 //--------------------------------------------------------------//
+
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
@@ -30,14 +32,9 @@ int _LwksEffectInfo
 > = 0;
 
 
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Inputs       Samplers
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//-----------------------------------------------------------------------------------------//
+// Inputs and Samplers
+//-----------------------------------------------------------------------------------------//
 
 
 texture R1;
@@ -104,12 +101,12 @@ sampler InputMix = sampler_state
 };
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Parameters, which can be changed by the user in the effects settings.
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float ChannelInput
 <
@@ -372,12 +369,11 @@ float LimitDown5
 
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//Definitions and declarations
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+//-----------------------------------------------------------------------------------------//
+//Definitions, declarations, macros
+//-----------------------------------------------------------------------------------------//
 
 
 
@@ -398,10 +394,6 @@ float LimitDown5
 
 
 
-
-
-
-
 // ---- Receiving from the remote control input -------
 	
       #define MASTER_EXT    (    (   tex2D(InputMix, POSCHANNEL(floor(ChannelInput))).r					/* Receiving  Red = bit 1 to bit 8 of 16Bit     ,   The value of ChannelInput is only passed to sub macros  */\
@@ -415,12 +407,6 @@ float LimitDown5
             #define POSyCHANNEL(ch)        ( (floor( ch/100.0) )/ 50.0 )						  	// Sub macro,   y - position of the the color signal.    50 channel groups    ,     "ch" is the receiving channel. 
  
    
-
-
-
-
-
-
 
 
 
@@ -457,18 +443,15 @@ float LimitDown5
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//               *****  Pixel Shader  *****
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// These functions are used by "Technique"
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-float4 Inputs (float2 xy : TEXCOORD0 , float2 xy1 : TEXCOORD1 , float2 xy2 : TEXCOORD2 , float2 xy3 : TEXCOORD3 , float2 xy4 : TEXCOORD4) : COLOR
+
+//-----------------------------------------------------------------------------------------//
+// Shaders 
+//-----------------------------------------------------------------------------------------//
+
+float4 ps_Inputs (float2 xy : TEXCOORD0 , float2 xy1 : TEXCOORD1 , float2 xy2 : TEXCOORD2 , float2 xy3 : TEXCOORD3 , float2 xy4 : TEXCOORD4) : COLOR
 { 
  
  // The following priorities apply when the channels are identical:
@@ -486,12 +469,7 @@ float4 Inputs (float2 xy : TEXCOORD0 , float2 xy1 : TEXCOORD1 , float2 xy2 : TEX
 
 
 
-
-
-
-
-
-float4 RemoteControl (float2 xy : TEXCOORD0) : COLOR
+float4 ps_RemoteControl (float2 xy : TEXCOORD0) : COLOR
 { 
  float Master = MasterInt;
  if ( STATUS_INPUT >= 0.4 ) Master = MASTER_EXT;				//Selects the common master remote control value for all output channels.
@@ -533,29 +511,13 @@ float4 RemoteControl (float2 xy : TEXCOORD0) : COLOR
 
 
 
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------------//
 
 
-
-
-technique Transmitter 
+technique main
 {
-   pass _1   < string Script = "RenderColorTarget0 = RenderInputMix;"; >        { PixelShader = compile PROFILE Inputs(); }		
-   pass _2   { PixelShader = compile PROFILE RemoteControl(); }
+   pass P_1   < string Script = "RenderColorTarget0 = RenderInputMix;"; >        { PixelShader = compile PROFILE ps_Inputs(); }		
+   pass P_2   { PixelShader = compile PROFILE ps_RemoteControl(); }
 }
-
-
-
-
-
-

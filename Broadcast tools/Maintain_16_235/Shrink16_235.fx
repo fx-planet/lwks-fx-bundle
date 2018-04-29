@@ -69,7 +69,7 @@ float4 NullPS(float2 xy : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Shrink16-235
+technique Shrink16_235
 {
    pass p0
    {

@@ -93,7 +93,7 @@ float4 NullPS(float2 xy : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Expand16-235
+technique Expand16_235
 {
    pass p0
    {

@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author khaver
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Clamp16-235.fx
+// Lightworks user effect Clamp16_235.fx
 //
 // This is one of three tools to manage broadcast colour space.  The names are self-
 // explanatory.  They install into the custom category "User", subcategory "Broadcast".

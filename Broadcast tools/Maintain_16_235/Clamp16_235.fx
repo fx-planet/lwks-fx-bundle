@@ -64,7 +64,7 @@ float4 NullPS(float2 xy : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Clamp16-235
+technique Clamp16_235
 {
    pass p0
    {

@@ -1,19 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2017-02-18
+// @Author schrauber
+// @Created 2017-02-13
 //--------------------------------------------------------------//
-// Lightworks user effect 
-// 2017, Users "schrauber"
-// Last update: 18 February 2017
-//              - Status level of the blue transmission channel updated (standardization with the other remote control effects).
+// Lightworks user effect RC3001_Cyclic_Remote.fx
+//
+// This is a version of the master controller for the remote control user effects subsystem adds the ability to cycle the values of the effects channels.
+// This effect outputs the remote control signal on channel 3001.
+//
+//
+// Update:
+// 18 Feb 2017   by LW user schrauber: Status level of the blue transmission channel updated
+//                                     (standardization with the other remote control effects)
+//
+// Insignificant updates at different times:
+// Unnecessary sampler settings removed, Subcategory defined, 
+// effect description and other data relevant to the user repository added.
 //
 //
 //
-// Please excuse the Google translation:
-//
-// Thanks for your tips.
-// I would be glad about your participation in the further development of the effect,
-// as well as the code usage for other effects.
-//
+//--------------------------------------------------------------//
 //
 // Note: 
 // For some parameters, Lightworks keyframing should not be used; other parameters should be aware of unusual behaviors:
@@ -26,34 +32,29 @@
 // the cycle progress will occasionally pause for 2 frames
 // at a position to remain synchronized with the set value.
 //
-
-
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "RC 3001, cyclic control";        // The title
-   string Category    = "Remote Control";                 // Governs the category that the effect appears in Lightworks
+   string Description = "RC 3001, cyclic control";        
+   string Category    = "User"; 
+   string SubCategory = "Remote Control"; 
 > = 0;
 
 
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Inputs       Samplers
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------//
+// Inputs   &    Samplers
+//--------------------------------------------------------------//
 
 texture remote;
 sampler remoteImput = sampler_state
 {
    Texture = <remote>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = PYRAMIDALQUAD;		              // (MinFilter settings seem to have no influence on this user effect?)
-   MagFilter = PYRAMIDALQUAD;		// IMPORTANT: MagFilter setting when the sampler uses the pixel coordinates of "TEXCOORD0" .       The settings "PYRAMIDALQUAD" and "GAUSSIANQUAD" worked well in tests.  All other tested settings ("NONE", "POINT", "LINEAR", "ANISOTROPIC" ) caused small deterioration of image quality, which increased with each new rendering (even if the effect is only to pass the pixels unchanged).
-   MipFilter = PYRAMIDALQUAD;		              // (MipFilter settings seem to have no influence on this user effect?)
+   MagFilter = PYRAMIDALQUAD;
 };
 
 
@@ -62,23 +63,24 @@ texture Render_transmission : RenderColorTarget;
 sampler transmission = sampler_state
 { 
    Texture = <Render_transmission>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = PYRAMIDALQUAD;		               // (MinFilter settings seem to have no influence on this user effect?)
-   MagFilter = PYRAMIDALQUAD;		// IMPORTANT:  MagFilter setting when the sampler uses the pixel coordinates of "TEXCOORD0" .       The settings "PYRAMIDALQUAD" and "GAUSSIANQUAD" worked well in tests.  All other tested settings ("NONE", "POINT", "LINEAR", "ANISOTROPIC" ) caused small deterioration of image quality, which increased with each new rendering (even if the effect is only to pass the pixels unchanged).
-   MipFilter = PYRAMIDALQUAD;		               // (MipFilter settings seem to have no influence on this user effect?)
+   MagFilter = PYRAMIDALQUAD;
 };
 
+      // The MagFilter setting "PYRAMIDALQUAD" and "GAUSSIANQUAD" worked well in tests  
+      // when the sampler uses the pixel coordinates of "TEXCOORD0".
+      // All other tested settings ("NONE", "POINT", "LINEAR", "ANISOTROPIC" ) caused small deterioration of image quality,
+      // which increased with each new rendering (even if the effect is only to pass the pixels unchanged).
+      // A detailed test of the transmission quality with Linux / Mac is pending, 
+      // but the size of the Texel of 1% of the texture dimensions, provides a margin of safety.
+      // "TEXCOORD1" can not be used because the remote control input is only used optionally.
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Parameters, which can be changed by the user in the effects settings.
-//
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 
 
@@ -426,7 +428,7 @@ float _Progress;
     #define BIT9TO16(Tx)     fmod(Tx * 255 , 1)													// Submacro.   Here the color channel for bit 9 to bit 16.
 
 
-// "RENDER16BIT_1_0_1(Tx)"  (numeral system input -1 to +1, output 0 to 1), Transmits the value of "Tx" as a 16-bit color by using two 8-bit colors,  and transmits the value of ”Tx” as  a 8-bit color
+// "RENDER16BIT_1_0_1(Tx)"  (numeral system input -1 to +1, output 0 to 1), Transmits the value of "Tx" as a 16-bit color by using two 8-bit colors,  and transmits the value of "Tx" as  a 8-bit color
  #define RENDER16BIT_1_0_1(Tx,Status)   return float4 (TRANSMIT(Tx) - BIT9TO16_1_0_1(Tx) / 255 , BIT9TO16_1_0_1(Tx) , Status , TRANSMIT(Tx))	// Return: Red = bit 1 to bit 8 of 16 Bit,     Green (BIT9TO16) = bit 9 to bit 16 of 16 Bit,      Blue = Status, transmitter ON,       Alpha = 8 Bit
     #define BIT9TO16_1_0_1(Tx)             fmod(TRANSMIT(Tx) * 255 , 1)										// Submacro.    Here the color channel for bit 9 to bit 16.
        #define TRANSMIT(Tx)		      ((Tx + 1) / 2)											// Submacro.    Adjustment of the numeral system from (-1 ... +1)   to   ( 0 ... 1)
@@ -444,27 +446,13 @@ float _Progress;
 
 
 
-
-
-
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//               *****  Pixel Shader  *****
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//
-// These functions are used by "Technique"
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//-----------------------------------------------------------------------------------------//
+// Shaders 
+//-----------------------------------------------------------------------------------------//
 
 
 // ------------- Transmission Step No 1a ,  Calculate and render the waveform encoded as a colored line (occupies Canal 5001 to 5100) ,  Simulates a run through a cycle.  -------------------------
-float4 strengthCycleSimu (float2 xy : TEXCOORD0) : COLOR				// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
+float4 ps_strengthCycleSimu (float2 xy : TEXCOORD0) : COLOR				// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
 { 
  float strengthCycle = 0.0; 								// 1nd half wave, or after the combination half waves, the variable contains the sum of the first half waves and the second half wave.   Relative strenth of the effect of the current position in the cycle (relative from 0 to 1 or 0 to -1).
  float strengthCycle2 = 0.0; 								// 2nd half-wave: Relative strenth of the effect of the current position in the cycle, or mixed with the first half-wave
@@ -479,7 +467,7 @@ float4 strengthCycleSimu (float2 xy : TEXCOORD0) : COLOR				// "TEXCOORD0" is us
 
 
 // ------------- Transmission Step No 1b (curve in frame steps) ,  Calculate and render the waveform , show actual curve in frame steps, and encoded as a colored line (occupies Canal 5001 to 5100) ,  Simulates a run through a cycle.  -------------------------
-float4 strengthCycleSimuSteps (float2 xy : TEXCOORD0) : COLOR				// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
+float4 ps_strengthCycleSimuSteps (float2 xy : TEXCOORD0) : COLOR				// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
 { 
  float strengthCycle = 0.0; 								// 1nd half wave, or after the combination half waves, the variable contains the sum of the first half waves and the second half wave.   Relative strenth of the effect of the current position in the cycle (relative from 0 to 1 or 0 to -1).
  float strengthCycle2 = 0.0; 								// 2nd half-wave: Relative strenth of the effect of the current position in the cycle, or mixed with the first half-wave
@@ -499,7 +487,7 @@ float4 strengthCycleSimuSteps (float2 xy : TEXCOORD0) : COLOR				// "TEXCOORD0" 
 
 
 // ------------- Transmission Step No 2 ,   Calculate and render the remote control signal and pass the signal from Step No1
-float4 remoteControl (float2 xy : TEXCOORD0) : COLOR						// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
+float4 ps_remoteControl (float2 xy : TEXCOORD0) : COLOR						// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
 { 
  float strengthCycle = 0.0; 									// 1nd half wave, or after the combination half waves, the variable contains the sum of the first half waves and the second half wave.   Relative strenth of the effect of the current position in the cycle (relative from 0 to 1 or 0 to -1).
  float strengthCycle2 = 0.0; 									// 2nd half-wave: Relative strenth of the effect of the current position in the cycle, or mixed with the first half-wave
@@ -517,7 +505,7 @@ float4 remoteControl (float2 xy : TEXCOORD0) : COLOR						// "TEXCOORD0" is used
 
 // ------------- Transmission Step No 3 , Calculate and transmit selected values and pass the signal from Step No2
 
-float4 transmitValues (float2 xy : TEXCOORD0) : COLOR						// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
+float4 ps_transmitValues (float2 xy : TEXCOORD0) : COLOR						// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
 { 
  if (POS_CHANNELGROUP)									// Channel group for transmission of values needed to generate the graph.
  {
@@ -538,7 +526,7 @@ float4 transmitValues (float2 xy : TEXCOORD0) : COLOR						// "TEXCOORD0" is use
 
 
 // ------------- Remote Control Transmitter, if only one shader is used (do not send graphic data),   Calculate and render the remote control signal and selected values and pass the signal from the remote input.
-float4 singleRemoteControl (float2 xy : TEXCOORD0) : COLOR					// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
+float4 ps_singleRemoteControl (float2 xy : TEXCOORD0) : COLOR					// "TEXCOORD0" is used Because the effect can also be operated without a connected input, and the graphically encoded color signal is generated by the effect itself.
 { 
  float strengthCycle = 0.0; 									// 1nd half wave, or after the combination half waves, the variable contains the sum of the first half waves and the second half wave.   Relative strenth of the effect of the current position in the cycle (relative from 0 to 1 or 0 to -1).
  float strengthCycle2 = 0.0; 									// 2nd half-wave: Relative strenth of the effect of the current position in the cycle, or mixed with the first half-wave
@@ -559,35 +547,27 @@ float4 singleRemoteControl (float2 xy : TEXCOORD0) : COLOR					// "TEXCOORD0" is
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-#define PS_VERSION    PROFILE		// Pixel Shader version
-
+//-----------------------------------------------------------------------------------------//
 
 technique Transmitter 
 {
-   pass one   < string Script = "RenderColorTarget0 = Render_transmission;"; >	    { PixelShader = compile PS_VERSION strengthCycleSimu(); }		// Transmission Step No 1 ,  Calculate and render the waveform  encoded as a colored line (occupies Canal 5001 to 5100) ,  Simulates a run through a cycle.
-   pass two   < string Script = "RenderColorTarget0 = Render_transmission;"; >      { PixelShader = compile PS_VERSION remoteControl(); }		// Transmission Step No 2 ,  Calculate and render the remote control signal and selected values and pass the signal from Step No1
-   pass three  { PixelShader = compile PS_VERSION transmitValues(); }											// Transmission Step No 3 ,  Calculate and transmit selected values and pass the signal from Step No2
+   pass one   < string Script = "RenderColorTarget0 = Render_transmission;"; >	    { PixelShader = compile PROFILE ps_strengthCycleSimu(); }		// Transmission Step No 1 ,  Calculate and render the waveform  encoded as a colored line (occupies Canal 5001 to 5100) ,  Simulates a run through a cycle.
+   pass two   < string Script = "RenderColorTarget0 = Render_transmission;"; >      { PixelShader = compile PROFILE ps_remoteControl(); }		// Transmission Step No 2 ,  Calculate and render the remote control signal and selected values and pass the signal from Step No1
+   pass three  { PixelShader = compile PROFILE ps_transmitValues(); }											// Transmission Step No 3 ,  Calculate and transmit selected values and pass the signal from Step No2
 }
 
 
 technique Transmitter_curve_in_frame_steps
 {
-   pass one   < string Script = "RenderColorTarget0 = Render_transmission;"; >	    { PixelShader = compile PS_VERSION strengthCycleSimuSteps(); }	// Transmission Step No 1 ,  Calculate and render the waveform in frame steps, encoded as a colored line (occupies Canal 5001 to 5100) ,  Simulates a run through a cycle.
-   pass two   < string Script = "RenderColorTarget0 = Render_transmission;"; >      { PixelShader = compile PS_VERSION remoteControl(); }		// Transmission Step No 2 ,  Calculate and render the remote control signal and selected values and pass the signal from Step No1
-   pass three  { PixelShader = compile PS_VERSION transmitValues(); }											// Transmission Step No 3 ,  Calculate and transmit selected values and pass the signal from Step No2
+   pass one   < string Script = "RenderColorTarget0 = Render_transmission;"; >	    { PixelShader = compile PROFILE ps_strengthCycleSimuSteps(); }	// Transmission Step No 1 ,  Calculate and render the waveform in frame steps, encoded as a colored line (occupies Canal 5001 to 5100) ,  Simulates a run through a cycle.
+   pass two   < string Script = "RenderColorTarget0 = Render_transmission;"; >      { PixelShader = compile PROFILE ps_remoteControl(); }		// Transmission Step No 2 ,  Calculate and render the remote control signal and selected values and pass the signal from Step No1
+   pass three  { PixelShader = compile PROFILE ps_transmitValues(); }											// Transmission Step No 3 ,  Calculate and transmit selected values and pass the signal from Step No2
 }
 
 
 technique Transmitter_without_graphics_data  
 {
-   pass one    { PixelShader = compile PS_VERSION singleRemoteControl(); }										// Remote Control Transmitter, if only one shader is used (do not send graphic data),   Calculate and render the remote control signal and selected values and pass the signal from the remote input.
+   pass one    { PixelShader = compile PROFILE ps_singleRemoteControl(); }										// Remote Control Transmitter, if only one shader is used (do not send graphic data),   Calculate and render the remote control signal and selected values and pass the signal from the remote input.
 }
-

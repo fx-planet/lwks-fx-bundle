@@ -1,9 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-05-02
 // @Author jwrl
 // @Created 2018-03-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_UI.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_oldUI.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_interface.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Newstrobe.mp4
 // @see https://www.lwks.com/media/kunena/attachments/6375/Newstrobe1.mp4
 //-------------------------------------------------------------------------------------//
@@ -11,16 +10,20 @@
 //
 // Development of this effect was triggered by khaver's "Strobe" effect, but uses the
 // newer Lightworks variables to set the strobe rate accurately in frames, not as a
-// percentage of progress.  While the logic in some respects is similar to khaver's
-// the implementation is entirely my own.
+// percentage of progress.  While the logic for the older versions is similar to that
+// in khaver's effect, the implementation is entirely my own.
 //
-// Legacy support for older versions has been provided by incorporating a version
-// loosely based on the algorithm that khaver used, but again, the implementation is
-// my own.  This legacy version can never be truly frame accurate, since it operates
-// by scaling the effect's progress.  This makes the effect forward compatible, i.e.,
-// if it is compiled in version 14.0 then subsequently used in 14.5 it will work, but
-// without frame accuracy.  It isn't fully backward compatible because it won't work
-// at all if it is compiled under 14.5 then used in 14.0.
+// The legacy version incorporated in this effect can never be truly frame accurate,
+// since it operates by scaling the effect's progress.  This makes the effect forward
+// compatible, i.e., if it is compiled in version 14.0 then subsequently used in 14.5
+// it will work, but without frame accuracy.  It isn't fully backward compatible
+// because it won't work at all if it is compiled under 14.5 then used in 14.0.
+//
+// Moderated 2018-05-02:
+// Changed user interface to refer to "Flash" settings rather than "Strobe".  This
+// more accurately reflects what's going on.  This required a change to the .PNG
+// files referenced in the header.  They are now a single file incorporating both
+// user interfaces.  Finally, the effect has been posted on the main forums.
 //-------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -92,7 +95,7 @@ float _LengthFrames;
 
 float FrameRate
 <
-   string Description = "Strobe frame rate";
+   string Description = "Flash frame rate";
    float MinVal = 1;
    float MaxVal = 60;
 > = 1.0;
@@ -125,7 +128,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 float StrobeDuration
 <
-	string Description = "Strobe duration";
+	string Description = "Flash duration";
 	float MinVal = 0.0;
 	float MaxVal = 1.0;
 > = 0.1;
@@ -158,4 +161,3 @@ technique NewStrobe
 {
    pass P_1 { PixelShader = compile PROFILE ps_main (); }
 }
-

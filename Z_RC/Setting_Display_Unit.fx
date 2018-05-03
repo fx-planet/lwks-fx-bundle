@@ -1,61 +1,53 @@
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-04-28
+// @Author schrauber
+// @Created 2017-02-19
 //--------------------------------------------------------------//
-// Lightworks user effect
+// Lightworks user effect Setting_Display_Unit.fx
 //
-// 2017, Users "schrauber"
+// Designed to be used in conjunction with either of the RC controllers,
+// this displays the various channels as overlays on the background video.
+// It can also show error conditions and level boundary issues.
+// It's a very handy diagnostic tool for this class of effect.
 //
 //
-// Update: 18 February 2017 by "Schrauber"
-//        - Status level of the blue transmission channel updated (standardization with the other remote control effects).
+// Limitations and Known Problems:
+//    Incompatible with GPU Precision Settings "16-bit Floating Point" (Lightworks 14.5)
+//
+// Update 3. May 2018 by LW user schrauber:
+//    Unnecessary sampler settings removed.
+//    Subcategory defined, effect description
+//    and other data relevant to the user repository added.
 //
 // Update 23 October 2017 by "Schrauber"
-// Corrected typing errors in line 348,  #define  POS_WAVE (Data reception of the waveform)
-// Sampler Y offset was changed from 0.001 to 0.01 to use the center of color-coded data transmission.
+//    Corrected typing errors in line 348,  #define  POS_WAVE (Data reception of the waveform)
+//    Sampler Y offset was changed from 0.001 to 0.01 to use the center of color-coded data transmission.
+//
+// Update: 18 February 2017 by "Schrauber"
+//    Status level of the blue transmission channel updated (standardization with the other remote control effects).
 //
 //
-//
-//
-//
-//
-//
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Name and category of the effect
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+//--------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Settings Display Unit";       // The title
-   string Category    = "Remote Control";              // Lightworks 12.6: The Category    ,    Lightworks 14:  The sub-category in the main category "User" 
+   string Description = "Settings Display Unit";
+   string Category    = "User";
+   string SubCategory = "Remote Control";
 > = 0;
 
 
 
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Inputs       Samplers
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------------//
+// Inputs and Samplers
+//-----------------------------------------------------------------------------------------//
 
 
 
 texture Input;
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
-};
+sampler InputSampler = sampler_state { Texture = <Input>; };
 
 
 
@@ -63,11 +55,11 @@ texture RC;
 sampler remoteImput = sampler_state
 {
    Texture = <RC>;
-   AddressU = Border;					// Border is important for the split screen to turn off when searching for a pixel location outside the texture.
-   AddressV = Border;					// Border is important for the split screen to turn off when searching for a pixel location outside the texture.
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
+   AddressU = Border;      // Border is important for the split screen to turn off when searching for a pixel location outside the texture.
+   AddressV = Border;      // Border is important for the split screen to turn off when searching for a pixel location outside the texture.
+   MinFilter = Point;
+   MagFilter = Point;
+   MipFilter = Point;
 };
 
 
@@ -81,9 +73,9 @@ sampler GraphicSampler = sampler_state
    Texture = <RenderGraphic>;
    AddressU = Wrap;
    AddressV = Wrap;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
+   MinFilter = Point;
+   MagFilter = Point;
+   MipFilter = Point;
 };
 
 
@@ -94,15 +86,7 @@ sampler GraphicSampler = sampler_state
 
 //.... Rendered cycle graph step 2 & step 3
 texture RenderGraphic2 : RenderColorTarget;
-sampler Graphic2Sampler = sampler_state
-{
-   Texture = <RenderGraphic2>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler Graphic2Sampler = sampler_state { Texture = <RenderGraphic2>; };
 
 
 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2017-02-18
+// @Released 2018-05-03
 // @Author schrauber
 // @Created 2017-02-13
 //--------------------------------------------------------------//
@@ -10,14 +10,12 @@
 //
 //
 // Update:
-// 18 Feb 2017   by LW user schrauber: Status level of the blue transmission channel updated
-//                                     (standardization with the other remote control effects)
+// 3. May 2018 by LW user schrauber:  Unnecessary sampler settings removed.
+//                                    Subcategory defined, effect description
+//                                    and other data relevant to the user repository added.
 //
-// Insignificant updates at different times:
-// Unnecessary sampler settings removed, Subcategory defined, 
-// effect description and other data relevant to the user repository added.
-//
-//
+// 18 Feb 2017 by LW user schrauber:  Status level of the blue transmission channel updated
+//                                    (standardization with the other remote control effects)
 //
 //--------------------------------------------------------------//
 //

@@ -86,7 +86,13 @@ sampler GraphicSampler = sampler_state
 
 //.... Rendered cycle graph step 2 & step 3
 texture RenderGraphic2 : RenderColorTarget;
-sampler Graphic2Sampler = sampler_state { Texture = <RenderGraphic2>; };
+sampler Graphic2Sampler = sampler_state
+{
+   Texture = <RenderGraphic2>;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 
 

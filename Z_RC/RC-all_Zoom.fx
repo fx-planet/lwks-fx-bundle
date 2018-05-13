@@ -1,29 +1,47 @@
+// @Maintainer schrauber
 // @Maintainer jwrl
-// @Released 2018-03-31
+// @Released 2018-05-14
+// @Author schrauber
+// @Created 2017-02-01
 //--------------------------------------------------------------//
-// Header
+// Lightworks user effect RC-all_Zoom.fx
 //
-// Lightworks effects have to have a _LwksEffectInfo block
-// which defines basic information about the effect (ie. name
-// and category). EffectGroup must be "GenericPixelShader".
+// This is the remote control version of the earlier regional zoom effect.
+// This version only works when it is controlled by a master remote control.
+// All parameters are remote controlled, and require 4 remote control channels.
+//   Exception: If required, "Flip edge" can be activated in the effect itself.
+//
+//
+// Update 14 May 2018 by LW user schrauber:
+//   Category changed and subcategory defined.
+//   When channel 0 is set, the remote control for this parameter is now disabled,
+//      and a default value is applied.
+//   Cross-platform compatibility optimized.
 //--------------------------------------------------------------//
+//
+// ... Update information for effect developers ...
+//
+// Update 14 May 2018 by LW user schrauber:
+//   Only one sampler per input (cross-platform compatibility)
+//   Sampler settings RC-input (cross-platform compatibility and functional change)
+//   Effect description and other data relevant to the user repository added.
+//   
+//--------------------------------------------------------------//
+
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "RC Zoom plus";                // The title
-   string Category    = "Remote Control Distortion";   // Governs the category that the effect appears in in Lightworks
+   string Description = "RC-all Zoom";
+   string Category    = "Stylize";
+   string SubCategory = "Requires remote control";
 > = 0;
 
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Parameters, which can be changed by the user in the effects settings.
-//
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 
 float ChZoom
@@ -70,13 +88,10 @@ bool Flip_edge
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Inputs       Samplers
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
+//-----------------------------------------------------------------------------------------//
+// Inputs and Samplers
+//-----------------------------------------------------------------------------------------//
 
 texture Input;
 
@@ -90,46 +105,38 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler FgSamplerBorder = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Border;
-   AddressV = Border;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+
 
 
 texture RC;
 sampler RcSampler = sampler_state
 {
    Texture = <RC>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = None;
-   MagFilter = None;
-   MipFilter = None;
+   AddressU = Border;  // If a channel position is set outside the texture (e.g., channel 0), a black border turns off the remote control.
+   AddressU = Border;  // If a channel position is set outside the texture (e.g., channel 0), a black border turns off the remote control.
+   MinFilter = Point;
+   MagFilter = Point;
+   MipFilter = Point;
 };
 
 
 
-///////////////////////////////////////////////
-// Definitions  ,  declarations  , makro           //
-///////////////////////////////////////////////
+//-----------------------------------------------------------------------------------------//
+// Definitions  ,  declarations  , makro    
+//-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
 	
 
 #define AREA1       RECEIVING(ChArea)
-#define AREA        (200-AREA1*201)
+#define AREA        (200.0 - AREA1*201.0)
 
 #define X_CENTRE    RECEIVING_0_1(ChXcentre)
-#define Y_CENTRE    (1 - RECEIVING_0_1(ChYcentre))
+#define Y_CENTRE    (1.0 - RECEIVING_0_1(ChYcentre))
 
 
 
-// ---- Receiving from the remote control input -------
+// Receiving scalar value from the remote control input
 
 #define RECEIVING(Ch)       ( RECEIVING_COLOR(Ch) * 2 - step( 0.001 , STATUS_CH_IN(Ch) ) ) 			// Receiving,  numeral system (-1 ... +1) ,   Default value 0.0   ,  "Step" prevents a change in the received Default value if the channel can not be received.  If Status Channel > 0.001 then the calculation:   RECEIVING_COLOR * 2 - 1   ,     If the blue-status = 0.0 then the calculation:   RECEIVING_COLOR * 2 - 0 
 #define RECEIVING_0_1(Ch)   ( RECEIVING_COLOR(Ch) + step( STATUS_CH_IN(Ch) , 0.001 ) / 2 ) 			// Receiving,  numeral system  ( 0 ... 1) ,   Default value 0.5   ,  "Step" prevents a change in the received Default value if the channel can not be received.  If Status Channel > 0.001 then the calculation:   RECEIVING_COLOR + 1/2     ,     If the blue-status = 0.0 then the calculation:   RECEIVING_COLOR + 0/2 
@@ -148,41 +155,39 @@ float _OutputAspectRatio;
 
 
 
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//--------------------------------------------------------------
 
 
-float4 zoom (float2 xy : TEXCOORD1) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Shader
+//-----------------------------------------------------------------------------------------//
+
+float4 ps_zoom (float2 uv : TEXCOORD1) : COLOR
 {
- float2 xydist = float2 (X_CENTRE, Y_CENTRE) - xy; 				// XY Distance between the current position to the adjusted effect centering
+ float2 xydist = float2 (X_CENTRE, Y_CENTRE) - uv; 				// XY Distance between the current position to the adjusted effect centering
  float distance = length (float2 (xydist.x, xydist.y / _OutputAspectRatio)); 	// Hypotenuse of xydistance, the shortest distance between the currently processed pixels to the center of the distortion.
  										// Macro, Pick up the rendered variable ( "strengthCycle" (-1 to +1) , 16-bit color by using two 8-bit colors)
  float zoom = RECEIVING(ChZoom);						// Receiving from the remote control input
  float distortion = (distance * ((distance * AREA) + 1.0) + 1);			// Creates the distortion
  if (AREA1 != 1) zoom = zoom / max( distortion, 0.1 ); 				// If the area = 1, then normal zoom works. Otherwise, a local zoom is active.   "0.1" prevents a division by zero 
+ float2 xy = zoom * xydist + uv;
 
- if (!Flip_edge) return tex2D (FgSamplerBorder, zoom * xydist + xy);
- return tex2D (FgSampler, zoom * xydist + xy); 
-
+ if ((!Flip_edge) 
+    && (  (xy.x < 0.0) || (xy.y < 0.0) || (xy.x > 1.0) || (xy.y > 1.0) ))
+    return (0.0).xxxx; 
+ return tex2D (FgSampler, xy); 
 } 
 
 
 
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+//-----------------------------------------------------------------------------------------//
+
+technique main
 {
-   pass SinglePass
+   pass P_1
    {
-      PixelShader = compile PROFILE zoom();
+      PixelShader = compile PROFILE ps_zoom();
    }
 }
 

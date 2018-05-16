@@ -6,7 +6,6 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Zoom_RC_180516.fx
 //
-
 // This is a simple DVE tool that just does spins and zooms.
 // Created in parallel with Spin Zoom, in this version some of the parameters can be remote controlled.
 // If the remote control is not to be used, make sure that nothing or only black is connected in the "RC" input.

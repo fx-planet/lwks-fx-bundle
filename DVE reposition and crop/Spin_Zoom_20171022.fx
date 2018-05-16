@@ -1,14 +1,21 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2017-10-22
 // @Author schrauber
 // @Created 2017-10-22
 // @see https://www.lwks.com/media/kunena/attachments/348533/Temp20171022-02.JPG
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Zoom_20171022
 //
-// The rotation code is based on the spin-dissolve effects of the user "jwrl".
-// The zoom code is based on the zoom out, zoom in effect of the user "schrauber".
+// This has some of the same functions as the 3D DVE, but the settings menu does not look as interesting as that effect.
+// It trades that for simple functionality, and adds the ability to mirror or duplicate the image as you zoom out.
+// If you only need rotation and zoom, then you only need this effect.
+// The rotation axis is automatically adjusted in the same way as the 3D DVE does.
 //
+// This effect was originally developed because some users had problems with the 3D-DVE effect at that time.
+// The goal of this "Spin Zoom" effect was to simplify the keyframing of the rotation and to ensure pixel interpolation
+// (minimization of tiered lines and edges).
+//
+// ... More details:
 // Setting characteristics of the zoom slider
 //         The dimensions will be doubled or halved in setting steps of 10%:
 //         -40% Dimensions / 16
@@ -28,13 +35,20 @@
 //        different order.
 //        Zoom >= 0: first ZOOM, then ROTATION
 //        Zoom <  0: first ROTATION, then ZOOM
+//
+//-----------------------------------------------------------------------------------------//
+// Information for Effect Developer:
+// 16 May 2018 by LW user schrauber: Subcategory defined, and data relevant to the homepage.
+// The rotation code is based on the spin-dissolve effects of the user "jwrl".
+// The zoom code is based on the zoom out, zoom in effect of the user "schrauber".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Spin Zoom";  
-   string Category    = "DVE"; 
+   string Description = "Spin Zoom";
+   string Category    = "DVE";
+   string SubCategory = "User Effects";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

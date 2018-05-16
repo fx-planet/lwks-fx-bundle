@@ -11,10 +11,6 @@
 // If you only need rotation and zoom, then you only need this effect.
 // The rotation axis is automatically adjusted in the same way as the 3D DVE does.
 //
-// This effect was originally developed because some users had problems with the 3D-DVE effect at that time.
-// The goal of this "Spin Zoom" effect was to simplify the keyframing of the rotation and to ensure pixel interpolation
-// (minimization of tiered lines and edges).
-//
 // ... More details:
 // Setting characteristics of the zoom slider
 //         The dimensions will be doubled or halved in setting steps of 10%:

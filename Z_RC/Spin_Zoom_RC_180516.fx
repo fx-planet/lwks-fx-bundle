@@ -1,34 +1,62 @@
+// @Maintainer schrauber
 // @Maintainer jwrl
-// @Released 2018-03-31
-//--------------------------------------------------------------//
-// Lightworks user effect
-// Created by LW user schrauber 22 October 2017
+// @Released 2018-05-16
 // @Author schrauber
-// @Created "22 October 2017"
-// 20 December 2017: 
+// @Created 2017-10-22
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect Spin_Zoom_RC_180516.fx
+//
+// This is a simple DVE tool that just does spins and zooms.
+// Created in parallel with Spin Zoom, in this version some of the parameters can be remote controlled.
+// If the remote control is not to be used, make sure that nothing or only black is connected in the "RC" input.
+// Rotation centring can be either set automatically or manually.
+// With automatic centring if a zoom out is performed the centre of the effect will be around the centre of input image,
+// otherwise it's centred on the full frame of the output video.
+//
+// Limitations and Known Problems :
+// GPU Precision Settings "16-bit Floating Point": Not recommended for remote control (jumping angles)
+//
+// Compatibility of GPU Precision Settings:
+// 8-bit: Ok
+// "16-bit" and "32-bit Floating Point": Perfect for precise angles and smooth rotation.
+//
+// Updates:
+// 16 May 2018 by LW user schrauber:
+//   - Remote control of the position of the effect center: The setting range now corresponds to the manual setting range.
+//   - Subcategory defined, renamed file name and data relevant to the homepage.
+// 20 December 2017 by LW user schrauber: 
 //    - Fixed missing brackets added to the revolution calculation
 //    - Fixed unclear parameter setting (rotation center)
 //
 //
+// ... More details:
 //
-// The rotation code is based on the spin-dissolve effects of the user "jwrl".
-//
-//
-// .......................
-// 
-// With this version, some parameters can be controlled remotely.
+// Remote control channels:
+//    Channel 1: Revolutions
+//    Channel 2: Angle
+//    Channel 3: Zoom, Strength
+//    Channel 4: Zoom centre, vertical
+//    Channel 5: Zoom centre, horizontal
+// Suitable remote controls can be found in the category "User" / Subcategory "Remote Control"
+// For this, the transmitting remote control is connected to the RC input. 
+// The received remote control values are added to the values set within the effect.
+// To minimize the complexity of the effects settings, changing the remote control channels is not possible.
+// When selecting the optional remote control, please note that it transmits on the right channels
+// (for example "RC 1, Five channel remote").
+// If necessary, "RC 1, Five channel remote" can also be used as a channel converter
+// by remotely controlling this remote control as well.
 //
 // Setting characteristics of the zoom slider
-//         The dimensions will be doubled or halved in setting steps of 10%:
-//         -40% Dimensions / 16
-//         -30% Dimensions / 8
-//         -20% Dimensions / 4
-//         -10% Half dimensions
-//           0% No change
-//          10% Double dimensions
-//          20% Dimensions * 4
-//          30% Dimensions * 8
-//          40% Dimensions * 16
+//    The dimensions will be doubled or halved in setting steps of 10%:
+//    -40% Dimensions / 16
+//    -30% Dimensions / 8
+//    -20% Dimensions / 4
+//    -10% Half dimensions
+//      0% No change
+//     10% Double dimensions
+//     20% Dimensions * 4
+//     30% Dimensions * 8
+//     40% Dimensions * 16
 //
 // Center of rotation:
 // Switch between automatic centering, and manually adjustable position of the axis of rotation.
@@ -41,12 +69,12 @@
 //
 //--------------------------------------------------------------//
 
-
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Spin Zoom, RC";  
-   string Category    = "DVE"; 
+   string Description = "Spin Zoom, RC";
+   string Category    = "DVE";
+   string SubCategory = "User Effects";
 > = 0;
 
 
@@ -102,7 +130,7 @@ sampler RcSampler = sampler_state
    AddressV = Border;
    MinFilter = Point;
    MagFilter = Point;
-   MipFilter = Linear;
+   MipFilter = Point;
 };
 
 
@@ -301,7 +329,7 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler FgSampler) : COLOR
    // ------ positive ZOOM -------
    // Used only for positive zoom settings.
 
-   vCzT = (centreZoom + float2( RECEIVING(4.0), RECEIVING(5.0))) - posSpin;
+   vCzT = (centreZoom + float2( RECEIVING(4.0)/2.0, RECEIVING(5.0)/2.0 )) - posSpin;
    posOut = ( (1- (exp2( ZOOM * -1))) * vCzT ) + posSpin;            // The set value Zoom has been replaced by the formula  (1- (exp2( Zoom * -1)))   to get the setting characteristic described in the header. 
 
 
@@ -350,4 +378,3 @@ technique SpinZoomTile
    pass P_1 < string Script = "RenderColorTarget0 = Wrapped;"; >    { PixelShader = compile PROFILE ps_edge_mode (); }
    pass P_2 { PixelShader = compile PROFILE ps_main (WrapSampler); }
 }
-

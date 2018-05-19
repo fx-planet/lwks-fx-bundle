@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author rhinox202
 // @Created 2012-11-21
-// @see https://www.lwks.com/media/kunena/attachments/6375/Border_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Border_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Border.fx
 //

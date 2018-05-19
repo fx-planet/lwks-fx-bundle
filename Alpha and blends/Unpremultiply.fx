@@ -1,8 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author baopao
-// 
-// @see https://www.lwks.com/media/kunena/attachments/129668/Unpremultiply.jpg
+// @see https://www.lwks.com/media/kunena/attachments/6375/Unpremultiply_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Unpremultiply.fx
 //

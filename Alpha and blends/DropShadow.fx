@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-03-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/DropShadow_5.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks effect DropShadow.fx
 //

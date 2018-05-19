@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2017-09-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/ColourMask_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ColourMask_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ColourMask.fx
 //

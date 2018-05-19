@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author idealsceneprod (Val Gameiro)
 // 
-// @see https://www.lwks.com/media/kunena/attachments/6375/FourTone.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FourTone_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect fourtone.fx
 //

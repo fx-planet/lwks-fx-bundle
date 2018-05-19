@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-11-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/FloatGraphic_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FloatImages_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FloatImage.fx
 //

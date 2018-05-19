@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-06-30
-// @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect EdgeGlow.fx
 //

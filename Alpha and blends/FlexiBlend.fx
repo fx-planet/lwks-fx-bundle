@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2017-12-23
-// @see https://www.lwks.com/media/kunena/attachments/6375/FlexiBlend_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlexiBlend_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FlexiBlend.fx
 //

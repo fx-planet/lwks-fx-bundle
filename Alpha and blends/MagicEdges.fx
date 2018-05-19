@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-05-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/MagicEdge_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Magic_Edges_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect MagicEdges.fx
 //

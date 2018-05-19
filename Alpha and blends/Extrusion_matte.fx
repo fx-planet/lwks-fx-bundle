@@ -2,8 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-04-02
-// @see https://www.lwks.com/media/kunena/attachments/6375/Extrusion_1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Extrusion_matte_route.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ExtrusionMatte_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Extrusion_matte.fx
 //

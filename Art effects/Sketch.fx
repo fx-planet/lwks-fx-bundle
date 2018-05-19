@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author khaver
 // @Created 2012-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/Sketch.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Sketch_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Sketch.fx
 //

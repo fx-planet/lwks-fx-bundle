@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2013-03-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/alphaAdjust.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaAdjust_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect alphaAdjust.fx
 //

@@ -4,7 +4,7 @@
 // @author EditShare
 // @created 2018-04-02
 // @Licence Copyright (c) EditShare EMEA.  All Rights Reserved
-// @see https://www.lwks.com/media/kunena/attachments/6375/Transporter_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Transporter_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transporter.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Transporter.fx

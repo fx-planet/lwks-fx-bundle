@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-03-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/Light_rays_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect light_ray_keys.fx
 //

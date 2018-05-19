@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author khaver
 // 
-// @see https://www.lwks.com/media/kunena/attachments/6375/Tiles.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Tiles_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Tiles.fx
 //
@@ -31,8 +31,6 @@ int _LwksEffectInfo
 //-----------------------------------------------------------------------------------------//
 // Inputs and shaders
 //-----------------------------------------------------------------------------------------//
-
-float _OutputWidth;
 
 texture Input;
 

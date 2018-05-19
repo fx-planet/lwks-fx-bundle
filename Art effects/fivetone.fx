@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author idealsceneprod (Val Gameiro)
 // 
-// @see https://www.lwks.com/media/kunena/attachments/6375/FiveTone.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FiveTone_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect fivetone.fx
 //

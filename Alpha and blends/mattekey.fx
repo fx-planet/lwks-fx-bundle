@@ -2,8 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-02-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/MatteKey_0_2016-08-07.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/DropShadow13.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/MatteKey_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect mattekey.fx
 //

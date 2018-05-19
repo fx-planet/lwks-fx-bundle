@@ -2,7 +2,7 @@
 // @Released 2018-05-05
 // @Author Alexander Alekseev
 // @Created 2014
-// @see https://www.lwks.com/media/kunena/attachments/6375/Seascape_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SeaScape_640.png
 // @see https://www.lwks.com/media/kunena/attachments/32848/Demo-Seascape-FX-Lightworks.mp4
 // @see https://www.lwks.com/media/kunena/attachments/6375/Seascape.mp4
 //-----------------------------------------------------------------------------------------//

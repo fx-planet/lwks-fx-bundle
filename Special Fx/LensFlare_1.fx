@@ -1,10 +1,12 @@
 // @Maintainer jwrl
-// @Released NOT YET APPROVED FOR RELEASE
+// @Released 2018-05-19
 // @Author khaver
 // @Author mu6k
 // @Author Icecool
 // @Author Yusef28
 // @Created 2018-05-16
+// @see https://www.lwks.com/media/kunena/attachments/6375/LensFlare_1_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/LensFlare_1.mp4
 //-----------------------------------------------------------------------------------------//
 // Original Shadertoy authors:
 // mu6k (2013-08-13) https://www.shadertoy.com/view/4sX3Rs
@@ -13,6 +15,9 @@
 //
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 //-----------------------------------------------------------------------------------------//
+//
+//   ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
+//
 // LensFlare1.fx for Lightworks was adapted by user khaver 16 May 2018 from original
 // code by the above authors taken from the Shadertoy website:
 // https://www.shadertoy.com/view/4sX3Rs
@@ -31,7 +36,8 @@
 //
 // I chose not to do anything to correct the y coordinates, which in Lightworks are the
 // inverse of the way that they're used in GLSL.  I simply changed the default CENTERY
-// setting from 0.25 to 0.75 to make the flare appear in the upper half of the frame.
+// setting from 0.25 to 0.75 to make the flare appear in the upper half of the frame by
+// default.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,9 +65,9 @@ texture Input;
 
 sampler InputSampler = sampler_state { Texture = <Input>; };
 
-// jwrl: At khaver's suggestion, renamed the file below from noise.png to LensFlare1.png.
+// jwrl: At khaver's suggestion, renamed the file below from noise.png to LensFlare_1.png.
 
-texture _Grain < string Resource = "LensFlare1.png"; >;
+texture _Grain < string Resource = "LensFlare_1.png"; >;
 
 sampler GSampler = sampler_state
 {

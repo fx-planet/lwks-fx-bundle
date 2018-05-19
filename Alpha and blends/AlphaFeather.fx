@@ -1,8 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author khaver
-// 
-// @see http://www.lwks.com/media/kunena/attachments/1246/AFExample.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaFeather_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AlphaFeather.fx
 //

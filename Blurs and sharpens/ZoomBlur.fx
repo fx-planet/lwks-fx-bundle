@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author khaver
 // @Created 2012-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/ZoomBlur.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ZoomBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ZoomBlur.fx
 //

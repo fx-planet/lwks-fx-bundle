@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2017-06-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/JLspinBlur_2.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SoftSpinBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SoftSpinBlur.fx
 //

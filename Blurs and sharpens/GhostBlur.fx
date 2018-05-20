@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2016-05-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/YAblur_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/GhostBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GhostBlur.fx
 //

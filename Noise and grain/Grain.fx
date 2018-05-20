@@ -77,7 +77,7 @@ float _rand(float2 co, float seed){
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 Grain( float2 xy : TEXCOORD1 ) : COLOR
+float4 ps_main ( float2 xy : TEXCOORD1 ) : COLOR
 {
    float2 loc;
    loc.x = xy.x + 0.00013f;
@@ -102,6 +102,6 @@ technique Grain
 {
    pass SinglePass
    {
-      PixelShader = compile PROFILE Grain();
+      PixelShader = compile PROFILE ps_main ();
    }
 }

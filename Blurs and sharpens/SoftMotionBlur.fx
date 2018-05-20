@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2017-07-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/SoftMotion_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SoftMotionBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SoftMotionBlur.fx
 //

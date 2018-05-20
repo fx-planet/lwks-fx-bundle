@@ -2,10 +2,10 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2017-06-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/Unsharpmask_2016-04-07.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/UnsharpMask_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect UnsharpMask.fx
-/
+//
 // History of this effect:
 //
 // ORIGINAL HEADER:

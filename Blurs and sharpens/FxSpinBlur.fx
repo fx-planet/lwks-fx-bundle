@@ -1,8 +1,8 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author rakusan/windsturm
-// 
-// @see https://www.lwks.com/media/kunena/attachments/6375/spinblur.png
+// @Created 
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxSpinBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxSpinBlur.fx
 //
@@ -124,7 +124,7 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 FxSpinBlur (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
+float4 ps_main (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
 {
    if (threshold == 0.0) return tex2D (InputSampler, xy);
 
@@ -175,11 +175,11 @@ technique FxSpinBlur
       string Script = "RenderColorTarget0 = prelim;";
    >
    {
-      PixelShader = compile PROFILE FxSpinBlur (false);
+      PixelShader = compile PROFILE ps_main (false);
    }
 
    pass Pass_2
    {
-      PixelShader = compile PROFILE FxSpinBlur (true);
+      PixelShader = compile PROFILE ps_main (true);
    }
 }

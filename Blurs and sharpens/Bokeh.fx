@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author khaver
 // 
-// @see https://www.lwks.com/media/kunena/attachments/6375/Bokeh.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Bokeh_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Bokeh.fx
 //

@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-05-20
 // @Author khaver
-// @Created 2012
-// @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokehNew.png
+// 
+// @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect IrisBokeh.fx
 // (c) 2012 - Gary Hango
@@ -37,6 +37,11 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 20 May 2018.
+// This version will only run on versions of Lightworks better than version 14 if it is
+// compile on a Windows system.  There is a legacy version available for older Windows
+// Lightworks versions.  This restriction doesn't apply to Windows or Mac.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -65,6 +70,10 @@ texture Bokeh2 : RenderColorTarget;
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
 #ifdef LINUX
 #define Clamp ClampToEdge

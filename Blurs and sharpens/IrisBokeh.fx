@@ -41,7 +41,7 @@
 // Modified by LW user jwrl 20 May 2018.
 // This version will only run on versions of Lightworks better than version 14 if it is
 // compile on a Windows system.  There is a legacy version available for older Windows
-// Lightworks versions.  This restriction doesn't apply to Windows or Mac.
+// Lightworks versions.  This restriction doesn't apply to Linux or Mac.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

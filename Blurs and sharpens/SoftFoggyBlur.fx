@@ -2,7 +2,7 @@
 // @Released 2018-04-05
 // @Author jwrl
 // @Created 2017-06-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/SoftFog_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SoftFoggyBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SoftFoggyBlur.fx
 //

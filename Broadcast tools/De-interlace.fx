@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-03-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/Deinterlace_1_2017-03-08.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Deinterlace_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect De-interlace.fx
 //

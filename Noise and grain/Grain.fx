@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleGrain.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Grain_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Grain.fx
 //

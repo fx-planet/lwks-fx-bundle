@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-04-06
+// @Released 2018-05-21
 // @Author jwrl
 // @Created 2016-06-05
-// @see https://www.lwks.com/media/kunena/attachments/6375/TwoAxisVector_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Two_Axis_Vector_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TwoAxisVector.fx
 //
@@ -37,6 +37,9 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 21 May 2018 jwrl.
+// Corrected spurious display of _Crgb and _C_uv arrays as user parameters.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -180,9 +183,9 @@ float V_offs
 
 #define BLACK    float2(0.0, 1.0).xxxy
 
-float3 Crgb [] = { { 0.299, 0.587, 0.114 }, { 0.2126, 0.7152, 0.0722 }, {0.299, 0.587, 0.114 } };
+float3 _Crgb [] = { { 0.299, 0.587, 0.114 }, { 0.2126, 0.7152, 0.0722 }, { 0.299, 0.587, 0.114 } };
 
-float2 C_uv [] = { { 0.564, 0.713 }, { 0.539, 0.635 }, { 0.492, 0.877 } };
+float2 _C_uv [] = { { 0.564, 0.713 }, { 0.539, 0.635 }, { 0.492, 0.877 } };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -193,9 +196,9 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    float  cosHue, sinHue;
    float  _gamma = (Gamma > 0.0) ? 1.0 - Gamma * 0.8 : 1.0 - Gamma * 4.0;
 
-   float2 UVval   = C_uv [BT_ver];
+   float2 UVval   = _C_uv [BT_ver];
 
-   float3 RGBluma = Crgb [BT_ver];
+   float3 RGBluma = _Crgb [BT_ver];
 
    float4 Image  = tex2D (InputSampler, xy);
    float4 retval = saturate ((pow (Image, _gamma) * (1.0 + Gain)) + (Ped / 3.0));

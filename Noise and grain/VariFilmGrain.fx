@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author khaver
 // @Created 2017-05-03
-// @see https://www.lwks.com/media/kunena/attachments/6375/VFgrain_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/VariFilmGrain_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect VariFilmGrain.fx
 //

@@ -2,8 +2,7 @@
 // @Released 2018-04-26
 // @Author schrauber
 // @Created 2016-03-16
-// @see https://www.lwks.com/media/kunena/attachments/6375/Bulge_4.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Bulge_3_2016-04-10.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/bulge-2018_640.png
 // @see https://www.youtube.com/watch?v=IZToP0MrbZM
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect bulge-2018.fx

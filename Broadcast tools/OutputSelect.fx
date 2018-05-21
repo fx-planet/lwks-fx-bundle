@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author baopao
-// @see https://www.lwks.com/media/kunena/attachments/129668/OutputSelect.jpg
+// @see https://www.lwks.com/media/kunena/attachments/6375/OutputSelect_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect OutputSelect.fx
 //

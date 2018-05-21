@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author jMovie
-// @see https://www.lwks.com/media/kunena/attachments/6375/S_curve.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SCurve_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SCurve.fx
 //

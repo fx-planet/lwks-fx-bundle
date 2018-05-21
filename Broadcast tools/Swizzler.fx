@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-10-19
-// @see https://www.lwks.com/media/kunena/attachments/6375/Swizzler_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Swizzler_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Swizzler.fx
 //

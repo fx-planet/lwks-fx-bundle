@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-01-23
-// @see https://www.lwks.com/media/kunena/attachments/6375/SafeArea.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SafeAreaAndXhatch_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Crosshatch.fx
 //

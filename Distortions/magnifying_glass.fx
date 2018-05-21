@@ -1,8 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author schrauber
-// @see https://www.lwks.com/media/kunena/attachments/6375/MagGlass.png
-// @see https://www.lwks.com/media/kunena/attachments/348533/temp08234262823.PNG
+// @see https://www.lwks.com/media/kunena/attachments/6375/magnifying_glass_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect magnifying_glass.fx
 //

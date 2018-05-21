@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author schrauber
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ripples_manual_expansion_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Ripples_automatic_expansion_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Ripples_automatic_expansion.fx
 //

@@ -3,7 +3,7 @@
 // @Author juhartik
 // @AuthorEmail juha@linearteam.org
 // @Created 2016-05-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/Analyze.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/JHshowHiLo_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect jh_analysis_show_hilo.fx
 //

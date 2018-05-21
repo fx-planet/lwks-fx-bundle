@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author khaver
 // @Created 2013-02-14
-// @see https://www.lwks.com/media/kunena/attachments/1246/PixFix.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/PixelFixer_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PixFix.fx
 //

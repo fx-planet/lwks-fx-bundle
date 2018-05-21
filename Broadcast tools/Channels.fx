@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2015-12-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/Channels_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Channels.fx
 //

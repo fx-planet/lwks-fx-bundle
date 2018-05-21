@@ -2,7 +2,7 @@
 // @Released 2018-05-03
 // @Author jwrl
 // @Created 2017-05-18
-// @see https://www.lwks.com/media/kunena/attachments/6375/QuickLevel_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/QuickLevels_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuickLevels.fx
 //

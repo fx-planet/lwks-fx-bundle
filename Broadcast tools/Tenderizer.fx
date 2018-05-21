@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/1246/Tenderizer.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Tenderizer_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Tenderizer.fx
 //

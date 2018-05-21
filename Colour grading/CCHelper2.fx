@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author khaver
 // @Created 2013-02-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/CCH2.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CCHelper2_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CCHelper2.fx
 //

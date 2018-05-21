@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-05-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/Alias3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AntiAlias_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Antialias.fx
 //

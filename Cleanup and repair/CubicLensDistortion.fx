@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author brdloush
-// @see https://www.lwks.com/media/kunena/attachments/6375/CubicLensDistortion.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CubicLensDistortion_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CubicLensDistortion.fx 
 //

@@ -2,7 +2,7 @@
 // @Released 2017-11-06
 // @Author schrauber
 // @Created 2017-11-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/Whirl_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/whirl20171106_640.png
 // @see https://www.youtube.com/watch?v=LB5-_cvkRb0
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect whirl20171106.fx

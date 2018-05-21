@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author baopao
-// @see https://www.lwks.com/media/kunena/attachments/6375/Smoothed_2016-04-10.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ALE_Smooth_Chroma.fx
 //

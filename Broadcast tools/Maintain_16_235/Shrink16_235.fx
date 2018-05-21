@@ -1,6 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author khaver
+// @see https://www.lwks.com/media/kunena/attachments/6375/Shrink16_235_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Shrink16_235.fx
 //

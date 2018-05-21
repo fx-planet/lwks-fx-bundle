@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-04-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/Zebra_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Zebra_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks effect ZebraStripes.fx
 //

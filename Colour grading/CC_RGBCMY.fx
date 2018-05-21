@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author baopao
-// @see https://www.lwks.com/media/kunena/attachments/6375/CC_RGB_CMY.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CC_RGBCMY_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CC_RGBCMY.fx
 //

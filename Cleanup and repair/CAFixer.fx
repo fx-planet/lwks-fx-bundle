@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/6375/ChromaticAbberationFixer.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ChromaticAbberationFixer_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CAFixer.fx
 //

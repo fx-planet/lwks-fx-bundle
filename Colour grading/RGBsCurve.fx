@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2017-01-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/RGBsCurve_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/RGBsCurve_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RGBsCurve.fx
 //

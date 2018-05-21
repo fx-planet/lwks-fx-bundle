@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-04-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/TestGreyscale_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/TestGreyscale_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GreyscaleTest.fx
 //

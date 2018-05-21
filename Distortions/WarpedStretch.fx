@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author khaver
 // @Created 2013-12-15
-// @see https://www.lwks.com/media/kunena/attachments/6375/WarpedStretch.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/WarpedStretch_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect WarpedStretch.fx
 //

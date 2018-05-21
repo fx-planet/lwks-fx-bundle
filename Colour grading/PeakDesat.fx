@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2016-04-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/PeakDesat_2016-04-10.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/PeakDesat_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PeakDesat.fx
 //

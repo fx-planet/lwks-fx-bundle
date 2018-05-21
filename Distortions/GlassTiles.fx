@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/6375/GlassTiles.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/GlassTiles_2018.png
 // @see https://www.youtube.com/watch?v=O55QTV0gjmQ
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GlassTiles.fx

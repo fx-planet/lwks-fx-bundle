@@ -3,7 +3,7 @@
 // @OriginalAuthor abelmilanes
 // @Author jwrl
 // @Created 2017-03-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmExp_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FilmExp_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmExp.fx
 //

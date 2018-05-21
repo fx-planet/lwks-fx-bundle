@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author nouanda
-// @see https://www.lwks.com/media/kunena/attachments/6375/clonestamp.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CloneStamp_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CloneStamp.fx version alpha 0.03
 //

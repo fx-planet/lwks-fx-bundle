@@ -3,7 +3,7 @@
 // @Author gr00by
 // @Created 2016-06-14
 // @OriginalAuthor "Mark Ransom"
-// @see https://www.lwks.com/media/kunena/attachments/6375/HueAdjust_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/HueRotate_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect HueRotate.fx
 //

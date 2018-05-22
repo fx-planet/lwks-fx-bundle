@@ -3,8 +3,7 @@
 // @Author gr00by
 // @OriginalAuthor "EditShare EMEA"
 // @Created 2016-11-26
-// @see https://www.lwks.com/media/kunena/attachments/6375/vicrop1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/vicrop3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/vicrop_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect VisualCrop
 //

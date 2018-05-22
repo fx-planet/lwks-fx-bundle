@@ -3,7 +3,7 @@
 // @Author juhartik
 // @AuthorEmail "juha@linearteam.org"
 
-// @see https://www.lwks.com/media/kunena/attachments/6375/Vignette_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/jh_stylize_vignette_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect jh_stylize_vignette.fx
 //

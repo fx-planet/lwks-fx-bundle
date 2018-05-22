@@ -2,7 +2,7 @@
 // @Released 2018-04-29
 // @Author jwrl
 // @Created 2017-12-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/Spotlight_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SpotlightEffect_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SpotlightEffect.fx
 //

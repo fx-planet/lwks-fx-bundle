@@ -2,8 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2018-03-15
-// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdKit_1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdKit_A.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdKitA_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Lower3dTkA.fx
 //

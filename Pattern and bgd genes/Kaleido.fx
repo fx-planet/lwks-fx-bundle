@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author baopao
-// @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido_2016-08-08.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Kaleido.fx
 //

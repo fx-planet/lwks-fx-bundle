@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2018-03-15
-// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rd_B1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdB_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdB_1.mp4
 // @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdB_2.mp4
 //-----------------------------------------------------------------------------------------//

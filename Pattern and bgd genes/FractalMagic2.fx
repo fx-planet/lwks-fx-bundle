@@ -3,7 +3,7 @@
 // @Author jwrl
 // @OriginalAuthor "Robert Schütze"
 // @Created 2016-05-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/Fractal2_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Fractal2_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMagic2.fx
 //

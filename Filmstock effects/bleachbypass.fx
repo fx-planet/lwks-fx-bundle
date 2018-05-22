@@ -3,7 +3,7 @@
 // @Author msi
 // @Created 2011
 // @License "CC BY-NC-SA"
-// @see https://www.lwks.com/media/kunena/attachments/6375/bleachBypass_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/bleachbypass_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect bleachbypass.fx
 //

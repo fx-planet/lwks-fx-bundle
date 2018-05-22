@@ -4,7 +4,7 @@
 // @OriginalAuthor "Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)"
 // @Created 2011
 // @License "CC BY-NC-SA"
-// @see https://www.lwks.com/media/kunena/attachments/6375/VintageLook.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/vintagelook_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect vintagelook.fx
 //

@@ -2,8 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2018-01-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleMatte_6.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleMatte_5.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleMatte_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SimpleMatte.fx
 //

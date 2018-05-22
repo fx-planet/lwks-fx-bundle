@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author baopao
-// @see https://www.lwks.com/media/kunena/attachments/6375/Skin_Smooth.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SkinSmooth_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SkinSmooth.fx
 

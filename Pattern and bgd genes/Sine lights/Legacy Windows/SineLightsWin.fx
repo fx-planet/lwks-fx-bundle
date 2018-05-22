@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author baopao
-// @see https://www.lwks.com/media/kunena/attachments/129668/sine3.jpg
+// @see https://www.lwks.com/media/kunena/attachments/6375/SineLights_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SineLightsWin.fx
 //

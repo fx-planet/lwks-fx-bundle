@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2018-03-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/FlipFlop.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Flip_Flop_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Flip_Flop.fx
 //

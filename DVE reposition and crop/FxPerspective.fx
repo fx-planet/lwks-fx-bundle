@@ -3,7 +3,7 @@
 // @Author windsturm
 // @OriginalAuthor "Evan Wallace"
 // @Created 2017-05-03
-// @see https://www.lwks.com/media/kunena/attachments/6375/Perspective.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxPerspective_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxPerspective.fx
 //-----------------------------------------------------------------------------------------//

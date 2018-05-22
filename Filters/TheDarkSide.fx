@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2017-02-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/DarkSide_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/TheDarkSide_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TheDarkSide.fx
 //

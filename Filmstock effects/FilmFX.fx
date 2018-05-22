@@ -3,8 +3,7 @@
 // @Author jwrl
 // @OriginalAuthor "Avery Lee"
 // @Created 2017-05-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/Film_Fx.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmFx_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FilmFX_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmFx.fx
 //
@@ -27,7 +26,7 @@
 // for the RGBY curves and the Linearization and Fade parameters.
 //
 // Because this has been such a major rewrite it has been rigorously cross-checked for
-// consistency withn the original effect.
+// consistency with the original effect.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original

@@ -2,7 +2,7 @@
 // @Released 4 April 2018
 // @Author jwrl
 // @Created 28 May 2017
-// @see https://www.lwks.com/media/kunena/attachments/6375/DVEvignette_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/DVE_vignette_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DVE_vignette.fx
 //

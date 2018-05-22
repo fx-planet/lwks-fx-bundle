@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2017-04-27
-// @see https://www.lwks.com/media/kunena/attachments/6375/Deco_DVE_A.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Deco_DVE_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Deco_DVE.fx
 //

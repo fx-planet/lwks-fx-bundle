@@ -2,8 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2017-06-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_4.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Triple_DVE.fx
 //

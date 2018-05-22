@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2016-07-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/Diss2col_2.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Multigrad_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Multigrad.fx
 //

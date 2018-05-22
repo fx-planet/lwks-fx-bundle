@@ -2,7 +2,7 @@
 // @Released 2018-04-27
 // @Author jwrl
 // @Created 2018-04-19
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmicLook2018.fx
 //

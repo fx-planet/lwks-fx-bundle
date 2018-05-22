@@ -2,9 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2017-03-23
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCrop_1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/vCropPlus1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCrop_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCrop_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SimpleCrop.fx
 //

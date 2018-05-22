@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author josely
-// @see https://www.lwks.com/media/kunena/attachments/6375/lwchromabb.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ChromAb_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromAb.fx
 //

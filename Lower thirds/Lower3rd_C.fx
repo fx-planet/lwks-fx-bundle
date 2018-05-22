@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2018-03-15
-// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rd_C1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdC_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdC.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Lower3rd_C.fx

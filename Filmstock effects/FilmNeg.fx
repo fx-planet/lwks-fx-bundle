@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2016-05-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmNeg_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FilmNeg_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmNeg.fx
 //

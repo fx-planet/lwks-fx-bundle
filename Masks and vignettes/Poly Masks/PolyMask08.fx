@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 4 April 2018
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/6375/polynew.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Polymask_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PolyMask08.fx
 //

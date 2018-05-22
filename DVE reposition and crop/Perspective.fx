@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/6375/Perspective_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Perspective_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Perspective.fx
 //

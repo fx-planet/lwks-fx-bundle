@@ -2,8 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2016-04-12
-// @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_4.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_9.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Duotone.fx
 //

@@ -2,8 +2,7 @@
 // @Released 4 April 2018
 // @Author jwrl
 // @Created 5 August 2016
-// @see https://www.lwks.com/media/kunena/attachments/6375/Octagnette3.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Octagonal_Vignette1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Octagonal_Vignette_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Octagonal_Vignette.fx
 //

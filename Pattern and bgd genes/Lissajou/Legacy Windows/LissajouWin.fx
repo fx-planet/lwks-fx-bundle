@@ -3,7 +3,7 @@
 // @Author jwrl
 // @OriginalAuthor baopao
 // @Created 2016-05-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LissajouWin.fx
 //

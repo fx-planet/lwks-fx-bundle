@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author windsturm
-// @see https://www.lwks.com/media/kunena/attachments/6375/tilerotate.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxTile_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxTile.fx
 //-----------------------------------------------------------------------------------------//

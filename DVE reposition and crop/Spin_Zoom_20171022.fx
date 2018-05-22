@@ -2,7 +2,7 @@
 // @Released 2017-10-22
 // @Author schrauber
 // @Created 2017-10-22
-// @see https://www.lwks.com/media/kunena/attachments/348533/Temp20171022-02.JPG
+// @see https://www.lwks.com/media/kunena/attachments/6375/Spin_Zoom_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Zoom_20171022
 //

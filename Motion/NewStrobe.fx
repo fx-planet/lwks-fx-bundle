@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-05-02
+// @Released 2018-05-23
 // @Author jwrl
 // @Created 2018-03-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_interface.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Newstrobe.mp4
 // @see https://www.lwks.com/media/kunena/attachments/6375/Newstrobe1.mp4
 //-------------------------------------------------------------------------------------//
-// Lightworks user effect NewStrobe.fx
+// Lightworks user effect NewStrobe_20180523.fx
 //
 // Development of this effect was triggered by khaver's "Strobe" effect, but uses the
 // newer Lightworks variables to set the strobe rate accurately in frames, not as a
@@ -24,6 +24,10 @@
 // more accurately reflects what's going on.  This required a change to the .PNG
 // files referenced in the header.  They are now a single file incorporating both
 // user interfaces.  Finally, the effect has been posted on the main forums.
+//
+// Updated 2018-05-23:
+// Added a means of turning the background off and replacing it with black.  This
+// should help the drag and drop multitrack editors.
 //-------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

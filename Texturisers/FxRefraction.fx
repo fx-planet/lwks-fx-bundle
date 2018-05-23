@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author windsturm
 // @OriginalAuthor "Ian McEwan"
-// @see https://www.lwks.com/media/kunena/attachments/6375/Refraction_2016-08-16.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxRefraction_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxRefraction.fx
 //-----------------------------------------------------------------------------------------//

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author juhartik
-// @see https://www.lwks.com/media/kunena/attachments/6375/Old_Monitor.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/jh_stylize_oldmonitor_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect jh_stylize_oldmonitor.fx
 // 

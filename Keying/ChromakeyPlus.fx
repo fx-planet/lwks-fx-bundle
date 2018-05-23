@@ -2,10 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2016-09-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_4.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_9d.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/CkeyPlus_9b.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyPlus_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromakeyPlus.fx
 //

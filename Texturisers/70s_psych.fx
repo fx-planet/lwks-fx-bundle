@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2016-05-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/Contours_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/70s_psych_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Contours_7_2016-08-16.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect 70s_psych.fx

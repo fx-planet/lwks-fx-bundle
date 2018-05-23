@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author "Nicholas Carroll"
 // @Created 2016-05-02
-// @see https://www.lwks.com/media/kunena/attachments/6375/INK_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/INK_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect INK.fx
 //

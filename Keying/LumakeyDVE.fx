@@ -2,7 +2,7 @@
 // @Released 2018-04-22
 // @Author jwrl
 // @Created 2018-03-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LumakeyDVE.fx
 //

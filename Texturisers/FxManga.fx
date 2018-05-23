@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @OriginalAuthor windsturm
-// @see https://www.lwks.com/media/kunena/attachments/6375/Manga_shader_2016-08-16.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxManga_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxManga.fx
 //

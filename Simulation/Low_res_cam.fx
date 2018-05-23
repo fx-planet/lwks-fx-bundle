@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2016-02-12
-// @see https://www.lwks.com/media/kunena/attachments/6375/Low_res_cam.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Low_res_cam_2018-05-23.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Low_res_cam.fx
 //

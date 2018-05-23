@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author windsturm
-// @see https://www.lwks.com/media/kunena/attachments/6375/ColorHalftone2_2016-08-16.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxColorHalftone2_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxColorHalftone2.fx
 //-----------------------------------------------------------------------------------------//

@@ -1,9 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author Gary Hango (khaver)
-// 
-// @see https://www.lwks.com/media/kunena/attachments/6375/Camera_Shake.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/CameraMotion.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CameraShake_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CameraShake.fx
 //

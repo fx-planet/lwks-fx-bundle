@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author windsturm
 // @OriginalAuthor "Evan Wallace"
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dot_screen_2016-08-16.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxDotScreen_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxDotScreen.fx
 //-----------------------------------------------------------------------------------------//

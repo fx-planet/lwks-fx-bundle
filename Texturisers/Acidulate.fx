@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2016-05-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/Acid_1_2016-08-16.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Acidulate_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Acidulate.fx
 //

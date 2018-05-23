@@ -1,8 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author khaver
-// 
-// @see https://www.lwks.com/media/kunena/attachments/6375/Strobe.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Strobe_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Strobe.fx
 //

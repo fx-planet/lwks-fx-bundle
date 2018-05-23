@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-07
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/1246/DeltaMask.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/DeltaMask_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DeltaMask.fx
 //

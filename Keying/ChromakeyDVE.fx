@@ -2,7 +2,7 @@
 // @Released 2018-04-07
 // @Author jwrl
 // @Created 2018-03-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyDVE_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyDVE_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromakeyDVE.fx
 //

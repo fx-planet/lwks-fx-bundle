@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2017-02-22
-// @see https://www.lwks.com/media/kunena/attachments/6375/CRTscreen_5.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CRTscreen_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user CRTscreen.fx
 //

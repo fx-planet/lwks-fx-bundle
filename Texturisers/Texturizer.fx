@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2016-04-22
-// @see https://www.lwks.com/media/kunena/attachments/6375/Texturizer_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Texturizer_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Texturizer.fx
 //

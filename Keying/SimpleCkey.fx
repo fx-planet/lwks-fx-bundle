@@ -2,7 +2,7 @@
 // @Released 2018-05-01
 // @Author jwrl
 // @Created 2016-09-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCkey_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCkey_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SimpleCkey.fx
 //

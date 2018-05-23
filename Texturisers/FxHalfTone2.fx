@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author windsturm
-// @see https://www.lwks.com/media/kunena/attachments/6375/HalfTone2_2016-08-16.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FxHalfTone2_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxHalftone2.fx
 //-----------------------------------------------------------------------------------------//

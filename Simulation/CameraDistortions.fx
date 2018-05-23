@@ -2,7 +2,7 @@
 // @Released 2018-04-08
 // @Author jwrl
 // @Created 2016-03-12
-// @see https://www.lwks.com/media/kunena/attachments/6375/CamDistort_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/CameraDistortions_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CameraDistortions.fx
 //

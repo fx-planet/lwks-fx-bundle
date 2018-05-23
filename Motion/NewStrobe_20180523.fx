@@ -97,6 +97,12 @@ float _LengthFrames;
 // Parameters for version 14.5+
 //-------------------------------------------------------------------------------------//
 
+int SetBgd
+<
+   string Description = "Vision seen when flash is off";
+   string Enum = "Background,Black";
+> = 0;
+
 float FrameRate
 <
    string Description = "Flash frame rate";
@@ -121,7 +127,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    if ((SwapStart && !flash) || (flash && !SwapStart)) return tex2D (s_Fgnd, uv);
 
-   return tex2D (s_Bgnd, uv);
+   return SetBgd == 0 ? tex2D (s_Bgnd, uv) : float2 (0.0, 1.0).xxxy;
 }
 
 #else
@@ -129,6 +135,12 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 //-------------------------------------------------------------------------------------//
 // Parameters for legacy version
 //-------------------------------------------------------------------------------------//
+
+int StrobeBgd
+<
+   string Description = "Flash off vision";
+   string Enum = "Background input,Black";
+> = 0;
 
 float StrobeDuration
 <
@@ -152,7 +164,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    if ((SwapFirst && !strobe) || (strobe && !SwapFirst)) return tex2D (s_Fgnd, uv);
 
-   return tex2D (s_Bgnd, uv);
+   return StrobeBgd == 0 ? tex2D (s_Bgnd, uv) : float2 (0.0, 1.0).xxxy;
 }
 
 #endif

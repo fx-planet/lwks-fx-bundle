@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2017-03-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/Chinagraph_5.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Chinagraph_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Chinagraph.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks effect Dx_Chinagraph.fx

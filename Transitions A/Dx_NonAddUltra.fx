@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2017-05-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/NonAddUltra_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_NonAddUltra_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/NonAddUltraDx.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_NonAddUltra.fx

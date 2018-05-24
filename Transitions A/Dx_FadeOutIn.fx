@@ -2,7 +2,7 @@
 // @Released 2018-04-29
 // @Author jwrl
 // @Created 2016-08-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_FadeOutIn_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_FadeOutIn_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_FadeOutIn.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_FadeOutIn.fx

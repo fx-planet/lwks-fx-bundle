@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2018-04-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/DX_Slice_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Slice_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Slice.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Slice.fx

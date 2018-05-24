@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-07-30
-// @see https://www.lwks.com/media/kunena/attachments/6375/OpticalDx_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Optical_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/OpticalDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Optical.fx

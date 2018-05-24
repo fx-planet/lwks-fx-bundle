@@ -2,7 +2,7 @@
 // @Released 2018-04-14
 // @Author jwrl
 // @Created 2018-04-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_RGBdrift_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_RGBdrift_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_RGBdrifter.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_RGBdrift.fx

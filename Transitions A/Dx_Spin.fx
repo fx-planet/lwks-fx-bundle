@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-02-15
-// @see https://www.lwks.com/media/kunena/attachments/6375/SpinDissolve_2.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Spin_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/SpinDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Spin.fx

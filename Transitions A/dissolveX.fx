@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-09
 // @Author khaver
-// @see https://www.lwks.com/media/kunena/attachments/6375/DissolveX.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/dissolveX_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DissolveX.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect dissolveX.fx

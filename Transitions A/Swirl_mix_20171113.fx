@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author schrauber
 // @Created 2017-11-13
-// @see https://www.lwks.com/media/kunena/attachments/6375/Swirl_mix_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Swirl_mix_640.png
 // @see https://www.lwks.com/media/kunena/attachments/348533/Swirlmix.mp4
 // @see https://www.lwks.com/media/kunena/attachments/348533/Swirlmixdeactivated_rotation.mp4
 //-----------------------------------------------------------------------------------------//

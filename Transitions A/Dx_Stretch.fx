@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-05-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/StretchDiss_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Stretch_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/StretchDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Stretch.fx

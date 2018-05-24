@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2015-10-12
-// @see https://www.lwks.com/media/kunena/attachments/6375/BlurDiss.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Blurs_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/BlurDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Blurs.fx

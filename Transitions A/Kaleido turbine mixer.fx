@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-09
 // @Author schrauber
-// @see https://www.lwks.com/media/kunena/attachments/6375/KaleidoTurbine_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/KaleidoTurbine_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Kaleido turbine mixer.fx

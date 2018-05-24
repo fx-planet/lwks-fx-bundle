@@ -2,8 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2017-05-12
-// @see https://www.lwks.com/media/kunena/attachments/6375/SizzlerDx_1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/SizzlerDx_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Sizzler_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/SizzlerDx.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Sizzler.fx

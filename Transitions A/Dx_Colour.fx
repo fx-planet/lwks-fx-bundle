@@ -2,8 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-07-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dip2colour.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Diss2col_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Colour_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DissolveThruColour.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Colour.fx

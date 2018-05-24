@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-01-22
-// @see https://www.lwks.com/media/kunena/attachments/6375/BlockDissolve.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Blocks_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/BlockDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Blocks.fx

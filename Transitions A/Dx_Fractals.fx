@@ -3,7 +3,7 @@
 // @Author jwrl
 // @OriginalAuthor "Robert Schütze"
 // @Created 2016-05-21
-// @see https://www.lwks.com/media/kunena/attachments/6375/FractalDiss_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Fractals_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FractalDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Fractals.fx

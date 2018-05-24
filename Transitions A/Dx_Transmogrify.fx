@@ -2,8 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-05-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify_1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify_detail.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Transmogrify_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Transmogrify.fx

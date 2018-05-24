@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-05-07
-// @see https://www.lwks.com/media/kunena/attachments/6375/ZoomDiss_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Zoom_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/ZoomDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Zoom.fx

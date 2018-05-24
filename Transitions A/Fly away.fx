@@ -1,8 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-09
 // @Author schrauber
-// @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway1.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Flyaway_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Fly away.fx

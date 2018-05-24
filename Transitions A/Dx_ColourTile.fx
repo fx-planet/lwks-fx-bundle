@@ -2,7 +2,7 @@
 // @Released 2018-04-28
 // @Author jwrl
 // @Created 2016-02-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/DX_ColourTile_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourTile_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourTile.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_ColourTile.fx

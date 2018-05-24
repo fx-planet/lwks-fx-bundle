@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-02-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/Granular_dissolve.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Granular_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/GranularDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Granular.fx

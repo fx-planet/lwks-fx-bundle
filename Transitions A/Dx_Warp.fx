@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2016-05-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/WarpDiss_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Warp_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/WarpDissolve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Warp.fx

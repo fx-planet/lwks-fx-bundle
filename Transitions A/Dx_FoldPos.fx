@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2018-03-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/DX_FoldPos_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_FoldPos_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DX_FoldPos.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_FoldPos.fx

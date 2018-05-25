@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-06-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBars_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Bars_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBar.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Bars.fx

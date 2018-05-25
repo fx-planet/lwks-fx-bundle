@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-10-26
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSplit_1_2017-10-29.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Split_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSplit.mp4
 //-----------------------------------------------------------------------------------------//
 // User effect Adx_Split.fx

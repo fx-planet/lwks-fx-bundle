@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-05-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaZoomMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Zoom_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaZoom.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Zoom.fx

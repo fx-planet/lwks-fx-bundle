@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2017-09-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Pinch_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Pinch_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Pinch.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Wx_Pinch.fx

@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-10-27
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaPinchR_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_PinchR_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaPinchR.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_PinchR.fx

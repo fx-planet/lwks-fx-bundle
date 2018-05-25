@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-05-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaGranMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Granular_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaGranular.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Granular.fx

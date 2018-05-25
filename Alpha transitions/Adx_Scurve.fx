@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-05-19
-// @see https://www.lwks.com/media/kunena/attachments/6375/A_Dx_S_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Scurve-640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaScurve.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Scurve.fx

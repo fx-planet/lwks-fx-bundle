@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-06-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBlurMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Blur_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBlur.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Blur.fx

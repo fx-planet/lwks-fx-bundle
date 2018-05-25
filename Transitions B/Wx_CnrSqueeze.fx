@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2017-08-26
-// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_CnrSqueeze_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_CnrSqueeze_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_CnrSqueeze.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Wx_CnrSqueeze.fx

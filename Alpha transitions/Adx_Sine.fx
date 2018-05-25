@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-10-30
-// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Sine_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Sine_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Sine.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Sine.fx

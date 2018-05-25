@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-08-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaKaleidoMix_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Kaleido_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaKaleido.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Kaleido.fx

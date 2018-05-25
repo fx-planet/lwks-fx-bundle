@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-06-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaRotate_1_2016-08-14.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Rotate_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaRotate.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Rotate.fx

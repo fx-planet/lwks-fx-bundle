@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-05-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaRippleMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Ripples_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaRipple.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Ripples.fx

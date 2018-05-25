@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-07-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaOptical_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Optical_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaOptical.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Optical.fx

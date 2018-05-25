@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-10-27
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaCornerSqz_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_CnrSqueeze_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaCnrSqz.mp4
 //-----------------------------------------------------------------------------------------//
 // User effect aDx_CnrSqueeze.fx

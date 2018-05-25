@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2017-11-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Wx_Twister.fx

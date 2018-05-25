@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-05-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBlockMix_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Blocks_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaBlock.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Blocks.fx

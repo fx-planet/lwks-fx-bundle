@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-07-03
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaStrips_3.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Strips_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaStrips.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Strips.fx

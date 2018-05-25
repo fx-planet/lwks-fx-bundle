@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-05-27
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaWarp_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Warp_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaWarp.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Warp.fx

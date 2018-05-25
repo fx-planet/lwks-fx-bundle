@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-05-28
-// @see https://www.lwks.com/media/kunena/attachments/6375/Alpha2Colour_1_2016-08-14.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Colour_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaColour.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Colour.fx

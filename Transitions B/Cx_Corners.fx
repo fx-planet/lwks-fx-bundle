@@ -2,7 +2,7 @@
 // @Released 2018-04-09
 // @Author jwrl
 // @Created 2017-08-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_Corners_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Cx_Corners_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Cx_corners.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Cx_Corners.fx

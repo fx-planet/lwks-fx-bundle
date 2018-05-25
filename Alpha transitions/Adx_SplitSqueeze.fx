@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2017-10-26
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSplitSqz_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_SplitSqueeze_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaSplitSqz.mp4
 //-----------------------------------------------------------------------------------------//
 // User effect Adx_SplitSqueeze.fx

@@ -2,7 +2,7 @@
 // @Released 2018-04-06
 // @Author jwrl
 // @Created 2016-06-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaPush_1.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Push_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaPush.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Adx_Push.fx

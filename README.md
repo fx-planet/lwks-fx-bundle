@@ -95,7 +95,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Four Tone                |fourtone.fx                                     |
 |Five Tone                |fivetone.fx                                     |
 |Pencil Sketch            |/PencilSketch/PencilSketch.fx                   |
-|  Windows legacy version |/PencilSketch/Legacy Windows/PencilSketchWin.fx |
+|> Windows legacy version |/PencilSketch/Legacy Windows/PencilSketchWin.fx |
 |Sketch                   |Sketch.fx                                       |
 |Tiles                    |Tiles.fx                                        |
 |Toon                     |Toon.fx                                         |
@@ -111,7 +111,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |FxTiltShift              |FxTiltShift.fx                            |
 |Ghost blur               |GhostBlur.fx                              |
 |Iris Bokeh               |/IrisBokeh/IrisBokeh.fx                   |
-|  Windows legacy version |/IrisBokeh/Legacy Windows/IrisBokehWin.fx |
+|> Windows legacy version |/IrisBokeh/Legacy Windows/IrisBokehWin.fx |
 |Masked Blur              |MaskBlur.fx                               |
 |Masked Motion Blur       |MaskedMotionBlur.fx                       |
 |Motion Blur              |motionblur.fx                             |
@@ -260,9 +260,9 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Poly10                   |/Poly Masks/PolyMask10.fx                   |
 |Poly12                   |/Poly Masks/PolyMask12.fx                   |
 |Poly14                   |/Poly Masks/PolyMask14.fx                   |
-|  Windows legacy version |/Poly Masks/Legacy Windows/PolyMask14Win.fx |
+|> Windows legacy version |/Poly Masks/Legacy Windows/PolyMask14Win.fx |
 |Poly16                   |/Poly Masks/PolyMask16.fx                   |
-|  Windows legacy version |/Poly Masks/Legacy Windows/PolyMask16Win.fx |
+|> Windows legacy version |/Poly Masks/Legacy Windows/PolyMask16Win.fx |
 
 ## CATEGORY FOLDER: Motion
 |EFFECT             |FILE NAME             |
@@ -291,10 +291,10 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Kaleido                  |Kaleido.fx                                   |
 |Kaleidoscope             |Kaleidoscope.fx                              |
 |Lissajou stars           |/Lissajou/Lissajou.fx                        |
-|  Windows legacy version |/Lissajou/Legacy Windows/LissajouWin.fx      |
+|> Windows legacy version |/Lissajou/Legacy Windows/LissajouWin.fx      |
 |Multigradient            |Multigrad.fx                                 |
 |SineLight                |/Sine lights/SineLights.fx                   |
-|  Windows legacy version |/Sine lights/Legacy Windows/SineLightsWin.fx |
+|> Windows legacy version |/Sine lights/Legacy Windows/SineLightsWin.fx |
 
 ## CATEGORY FOLDER: Simulation
 |EFFECT             |FILE NAME                |

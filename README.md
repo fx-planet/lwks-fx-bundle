@@ -1,10 +1,4 @@
-# Lightworks user Fx archive, March 31, 2018.
-
-> **WARNING:** Most Lightworks users should download the current library zip file or the individual effects zips from either of the two user effects threads (use the links below to get to them). Once version 14.1 is released this archive version of the library will be solely for Windows users of version 14.0 and earlier. It will be locked off at the state that the library was in on December 21 2017, and is highly unlikely to be updated.
-> 
-> If you are a Windows user of one of those earlier versions of Lightworks and need any effect that isn't here try it from the standard library first. Most will compile without issue. The effects that are most impacted by the update are DVE effects and similar.
-> 
-> If the effect you want doesn't compile you should directly contact the author of that effect. You could alternatively edit the effect code in a text editor (not a word processor) and search for “ClampToEdge” and replace it with “Clamp” anywhere it appears. It should then work, but if it doesn't you could be on your own I'm afraid.
+# Lightworks user Fx archive, May 26, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users – thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -41,7 +35,6 @@ One alternative approach is to change the category the effect is stored under. L
 Alpha transitions are a special kind of effect, and require slightly different setting up to other transitions. The setup instructions for them can be found at the following link. https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135925 A newer group of composite wipe transitions have also been developed. They are also a special kind of effect. The very simple technique for using them can be found at the following link. https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135945 Finally, there is a special category of remote control effects, the brain child of user schrauber. The way that they work is unique, and the special setup and control instructions for them can be found in the thread [here](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918).
 
 ## CATEGORY FOLDER: Alpha and blends
-
 |EFFECT                 |FILE NAME          |
 |:--------------------- |:----------------- |
 |Adjustable blend       |AdjBlend.fx        |
@@ -94,58 +87,61 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Alpha zoom dissolve¹       |Adx_Zoom.fx         |
 
 ## CATEGORY FOLDER: Art effects
-|EFFECT      |FILE NAME      |
-|:---------- |:------------- |
-|Colour mask |ColourMask.fx  |
-|Edge        |Edge.fx        |
-|Edge glow   |EdgeGlow.fx    |
-|Four Tone   |fourtone.fx    |
-|Five Tone   |fivetone.fx    |
-|Sketch      |Sketch.fx      |
-|Tiles       |Tiles.fx       |
-|Toon        |Toon.fx        |
+|EFFECT                   |FILE NAME                                       |
+|:----------------------- |:---------------------------------------------- |
+|Colour mask              |ColourMask.fx                                   |
+|Edge                     |Edge.fx                                         |
+|Edge glow                |EdgeGlow.fx                                     |
+|Four Tone                |fourtone.fx                                     |
+|Five Tone                |fivetone.fx                                     |
+|Pencil Sketch            |/PencilSketch/PencilSketch.fx                   |
+|  Windows legacy version |/PencilSketch/Legacy Windows/PencilSketchWin.fx |
+|Sketch                   |Sketch.fx                                       |
+|Tiles                    |Tiles.fx                                        |
+|Toon                     |Toon.fx                                         |
 
 ## CATEGORY FOLDER: Blurs and sharpens
-|EFFECT             |FILE NAME                            |
-|:----------------- |:----------------------------------- |
-|Big Blur           |BigBlur.fx                           |
-|bilateral blur     |bilateral_blur.fx                    |
-|Bokeh              |Bokeh.fx                             |
-|Focal Blur         |FocalBlur.fx                         |
-|FxSpinBlur         |FxSpinBlur.fx                        |
-|FxTiltShift        |FxTiltShift.fx                       |
-|Ghost blur         |GhostBlur.fx                         |
-|Iris Bokeh         |Iris bokeh/IrisBokeh.fx              |
-|Masked Blur        |MaskBlur.fx                          |
-|Masked Motion Blur |MaskedMotionBlur.fx                  |
-|Motion Blur        |motionblur.fx                        |
-|Soft foggy blur    |SoftFoggyBlur.fx                     |
-|Soft motion blur   |SoftMotionBlur.fx                    |
-|Soft spin blur     |SoftSpinBlur.fx                      |
-|Soft zoom blur     |SoftZoomBlur.fx                      |
-|Super blur         |SuperBlur.fx                         |
-|Unsharp Mask       |UnsharpMask.fx                       |
-|Zoom Blur          |ZoomBlur.fx                          |
+|EFFECT                   |FILE NAME                                 |
+|:----------------------- |:---------------------------------------- |
+|Big Blur                 |BigBlur.fx                                |
+|bilateral blur           |bilateral_blur.fx                         |
+|Bokeh                    |Bokeh.fx                                  |
+|Focal Blur               |FocalBlur.fx                              |
+|FxSpinBlur               |FxSpinBlur.fx                             |
+|FxTiltShift              |FxTiltShift.fx                            |
+|Ghost blur               |GhostBlur.fx                              |
+|Iris Bokeh               |/IrisBokeh/IrisBokeh.fx                   |
+|  Windows legacy version |/IrisBokeh/Legacy Windows/IrisBokehWin.fx |
+|Masked Blur              |MaskBlur.fx                               |
+|Masked Motion Blur       |MaskedMotionBlur.fx                       |
+|Motion Blur              |motionblur.fx                             |
+|Soft foggy blur          |SoftFoggyBlur.fx                          |
+|Soft motion blur         |SoftMotionBlur.fx                         |
+|Soft spin blur           |SoftSpinBlur.fx                           |
+|Soft zoom blur           |SoftZoomBlur.fx                           |
+|Super blur               |SuperBlur.fx                              |
+|Unsharp Mask             |UnsharpMask.fx                            |
+|Zoom Blur                |ZoomBlur.fx                               |
 
 ## CATEGORY FOLDER: Broadcast tools
-|EFFECT                   |FILE NAME                       |
-|:----------------------- |:------------------------------ |
-|Antialias                |AntiAlias.fx                    |
-|Channels                 |Channels.fx                     |
-|Clamp to 16-235          |Maintain_16_235/Clamp16-235.fx  |
-|Color Bars               |ColorBars.fx                    |
-|Colour swizzler          |Swizzler.fx                     |
-|De-interlace             |De-interlace.fx                 |
-|Expand 16-235 to 0-255   |Maintain_16_235/Expand16-235.fx |
-|Exposure Leveler         |ExpoLeveler.fx                  |
-|JH Show Hi/Lo            |jh_analysis_show_hilo.fx        |
-|OutputSelect             |OutputSelect.fx                 |
-|Safe area and crosshatch |Crosshatch.fx                   |
-|Shrink 0-255 to 16-235   |Maintain_16_235/Shrink16-235.fx |
-|Tenderizer               |Tenderizer.fx                   |
-|Test greyscale           |Test_greyscale.fx               |
-|Two-axis vector balance  |TwoAxisVector.fx                |
-|Zebra pattern            |ZebraStripes.fx                 |
+|EFFECT                   |FILE NAME                        |
+|:----------------------- |:------------------------------- |
+|Antialias                |AntiAlias.fx                     |
+|Channels                 |Channels.fx                      |
+|Clamp to 16-235          |/Maintain_16_235/Clamp16-235.fx  |
+|Color Bars               |ColorBars.fx                     |
+|Colour swizzler          |Swizzler.fx                      |
+|De-interlace             |De-interlace.fx                  |
+|Expand 16-235 to 0-255   |/Maintain_16_235/Expand16-235.fx |
+|Exposure Leveler         |ExpoLeveler.fx                   |
+|JH Show Hi/Lo            |jh_analysis_show_hilo.fx         |
+|OutputSelect             |OutputSelect.fx                  |
+|Safe area and crosshatch |Crosshatch.fx                    |
+|Shrink 0-255 to 16-235   |/Maintain_16_235/Shrink16-235.fx |
+|Tenderizer               |Tenderizer.fx                    |
+|Test greyscale           |Test_greyscale.fx                |
+|Two-axis vector balance  |TwoAxisVector.fx                 |
+|Zebra pattern            |ZebraStripes.fx                  |
 
 ## CATEGORY FOLDER: Cleanup and repair
 |EFFECT                     |FILE NAME              |
@@ -199,17 +195,17 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |zoom-out-in   |zoom-out-in.fx        |
 
 ## CATEGORY FOLDER: Filmstock effects
-|EFFECT             |FILE NAME        |
-|:----------------- |:--------------- |
-|Bleach Bypass      |bleachbypass.fx  |
-|Colour film ageing |ColourFilmAge.fx |
-|Duotone            |Duotone.fx       |
-|Film negative      |FilmNeg.fx       |
-|FilmFx             |FilmFx.fx        |
-|Filmic look        |FilmicLook.fx    |
-|Old Time Movie     |OldTime.fx       |
-|Technicolor        |Technicolor.fx   |
-|Vintage Look       |vintagelook.fx   |
+|EFFECT             |FILE NAME         |
+|:----------------- |:---------------- |
+|Bleach Bypass      |bleachbypass.fx   |
+|Colour film ageing |ColourFilmAge.fx  |
+|Duotone            |Duotone.fx        |
+|Film negative      |FilmNeg.fx        |
+|FilmFx             |FilmFx.fx         |
+|Filmic look        |FilmicLook2018.fx |
+|Old Time Movie     |OldTime.fx        |
+|Technicolor        |Technicolor.fx    |
+|Vintage Look       |vintagelook.fx    |
 
 ## CATEGORY FOLDER: Filters
 |EFFECT                   |FILE NAME            |
@@ -224,39 +220,57 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |The dark side            |TheDarkSide.fx       |
 
 ## CATEGORY FOLDER: Keying
-|EFFECT            |FILE NAME        |
-|:---------------- |:--------------- |
-|Ale_ChromaKey     |ALE_ChromaKey.fx |
-|Chromakey plus    |ChromakeyPlus.fx |
-|DeltaMask         |DeltaMask.fx     |
-|INK               |INK.fx           |
-|KeyDespill        |KeyDespill.fx    |
-|Lumakey with crop |LumakeyCrop.fx   |
+|EFFECT             |FILE NAME        |
+|:----------------- |:--------------- |
+|Ale_ChromaKey      |ALE_ChromaKey.fx |
+|Chromakey with DVE |ChromakeyDVE.fx  |
+|Chromakey plus     |ChromakeyPlus.fx |
+|DeltaMask          |DeltaMask.fx     |
+|INK                |INK.fx           |
+|KeyDespill         |KeyDespill.fx    |
+|Lumakey with DVE   |LumakeyDVE.fx    |
+|Simple chromakey   |SimpleCkey.fx    |
+
+## CATEGORY FOLDER: Lower thirds
+|EFFECT              |FILE NAME     |
+|:------------------ |:------------ |
+|Lower 3rd toolkit A |Lower3dTkA.fx |
+|Lower 3rd toolkit B |Lower3dTkB.fx |
+|Lower third A       |Lower3d_A.fx  |
+|Lower third B       |Lower3d_B.fx  |
+|Lower third C       |Lower3d_C.fx  |
+|Lower third D       |Lower3d_D.fx  |
+|Lower third E       |Lower3d_E.fx  |
+|Lower third F       |Lower3d_F.fx  |
+|Lower third G       |Lower3d_G.fx  |
 
 ## CATEGORY FOLDER: Masks and vignettes
-|EFFECT             |FILE NAME                              |
-|:----------------- |:------------------------------------- |
-|DVE with vignette  |DVE_vignette.fx                        |
-|JH Vignette        |jh_stylize_vignette.fx                 |
-|Letterbox          |Letterbox.fx                           |
-|Octagonal vignette |Octagonal_Vignette.fx                  |
-|Poly03             |/Poly Masks/PolyMask03.fx              |
-|Poly04             |/Poly Masks/PolyMask04.fx              |
-|Poly05             |/Poly Masks/PolyMask05.fx              |
-|Poly06             |/Poly Masks/PolyMask06.fx              |
-|Poly07             |/Poly Masks/PolyMask07.fx              |
-|Poly08             |/Poly Masks/PolyMask08.fx              |
-|Poly10             |/Poly Masks/PolyMask10.fx              |
-|Poly12             |/Poly Masks/PolyMask12.fx              |
-|Poly14             |/Poly Masks/[LW_VERSION]/PolyMask14.fx |
-|Poly16             |/Poly Masks/[LW_VERSION]/PolyMask16.fx |
+|EFFECT                   |FILE NAME                                   |
+|:----------------------- |:------------------------------------------ |
+|DVE with vignette        |DVE_vignette.fx                             |
+|JH Vignette              |jh_stylize_vignette.fx                      |
+|Letterbox                |Letterbox.fx                                |
+|Octagonal vignette       |Octagonal_Vignette.fx                       |
+|Poly03                   |/Poly Masks/PolyMask03.fx                   |
+|Poly04                   |/Poly Masks/PolyMask04.fx                   |
+|Poly05                   |/Poly Masks/PolyMask05.fx                   |
+|Poly06                   |/Poly Masks/PolyMask06.fx                   |
+|Poly07                   |/Poly Masks/PolyMask07.fx                   |
+|Poly08                   |/Poly Masks/PolyMask08.fx                   |
+|Poly10                   |/Poly Masks/PolyMask10.fx                   |
+|Poly12                   |/Poly Masks/PolyMask12.fx                   |
+|Poly14                   |/Poly Masks/PolyMask14.fx                   |
+|  Windows legacy version |/Poly Masks/Legacy Windows/PolyMask14Win.fx |
+|Poly16                   |/Poly Masks/PolyMask16.fx                   |
+|  Windows legacy version |/Poly Masks/Legacy Windows/PolyMask16Win.fx |
 
 ## CATEGORY FOLDER: Motion
 |EFFECT             |FILE NAME             |
 |:----------------- |:-------------------- |
 |Camera Shake       |CameraShake.fx        |
+|New Strobe         |NewStrobe_20180523.fx |
 |Rhythmic pulsation |Rhythmic_pulsation.fx |
-|Strobe Motion      |Strobe.fx             |
+|Strobe             |Strobe.fx             |
 
 ## CATEGORY FOLDER: Noise and grain
 |EFFECT              |FILE NAME        |
@@ -268,17 +282,19 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Variable Film Grain |VariFilmGrain.fx |
 
 ## CATEGORY FOLDER: Pattern and bgd genes
-|EFFECT          |FILE NAME                               |
-|:-------------- |:-------------------------------------- |
-|Fractal magic 1 |FractalMagic1.fx                        |
-|Fractal magic 2 |FractalMagic2.fx                        |
-|Fractal magic 3 |FractalMagic3.fx                        |
-|FxTile          |FxTile.fx                               |
-|Kaleido         |Kaleido.fx                              |
-|Kaleidoscope    |Kaleidoscope.fx                         |
-|Lissajou stars  |/Lissajou/[LW_VERSION]/Lissajou.fx      |
-|Multigradient   |Multigrad.fx                            |
-|SineLight       |/Sine lights/[LW_VERSION]/SineLights.fx |
+|EFFECT                   |FILE NAME                                    |
+|:----------------------- |:------------------------------------------- |
+|Fractal magic 1          |FractalMagic1.fx                             |
+|Fractal magic 2          |FractalMagic2.fx                             |
+|Fractal magic 3          |FractalMagic3.fx                             |
+|FxTile                   |FxTile.fx                                    |
+|Kaleido                  |Kaleido.fx                                   |
+|Kaleidoscope             |Kaleidoscope.fx                              |
+|Lissajou stars           |/Lissajou/Lissajou.fx                        |
+|  Windows legacy version |/Lissajou/Legacy Windows/LissajouWin.fx      |
+|Multigradient            |Multigrad.fx                                 |
+|SineLight                |/Sine lights/SineLights.fx                   |
+|  Windows legacy version |/Sine lights/Legacy Windows/SineLightsWin.fx |
 
 ## CATEGORY FOLDER: Simulation
 |EFFECT             |FILE NAME                |
@@ -287,9 +303,16 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |CRT TV screen      |CRTscreen.fx             |
 |JH Old Monitor     |jh_stylize_oldmonitor.fx |
 |Low-res camera     |Low_res_cam.fx           |
-|Night vision       |NightVision.fx           |
+|Night vision 2018  |NightVision_20180523.fx  |
 |VHS v2             |VHSv2.fx                 |
 |Water              |Water.fx                 |
+
+## CATEGORY FOLDER: Special Fx
+|EFFECT        |FILE NAME      |
+|:------------ |:------------- |
+|Lens Flare #1 |LensFlare_1.fx |
+|Sea Scape     |SeaScape.fx    |
+|Transporter   |Transporter.fx |
 
 ## CATEGORY FOLDER: Textures
 |EFFECT            |FILE NAME           |
@@ -310,19 +333,27 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Blur dissolve           |Dx_Blurs.fx               |
 |Chinagraph pencil       |Dx_Chinagraph.fx          |
 |Colour sizzler          |Dx_Sizzler.fx             |
+|Coloured tiles          |Dx_ColourTile.fx          |
 |Dissolve through Colour |Dx_Colour.fx              |
 |DissolveX               |dissolveX.fx              |
 |Dream sequence          |Dx_Dreams.fx              |
+|Erosion                 |Erosion.fx                |
+|Fade to or from black   |Dx_FadeOutIn.fx           |
 |FlareTran               |FlareTran.fx              |
 |Fly away                |Fly away.fx               |
+|Folded neg dissolve     |Dx_FoldNeg.fx             |
+|Folded pos dissolve     |Dx_FoldPos.fx             |
 |Fractal dissolve        |Dx_Fractals.fx            |
 |Granular dissolve       |Dx_Granular.fx            |
 |Kaleido turbine mixer   |Kaleido turbine mixer.fx  |
+|Mosaic transfer         |Dx_Mosaic.fx              |
 |Non-add dissolve ultra  |Dx_NonAddUltra.fx         |
 |Non-additive mixer      |Dx_NonAdd.fx              |
 |Optical dissolve        |Dx_Optical.fx             |
+|RGB drifter             |Dx_RGBdrift.fx            |
 |S dissolve              |Dx_Scurve.fx              |
 |Sinusoidal mix          |Dx_Sine.fx                |
+|Slice transition        |Dx_Slice.fx               |
 |Spin dissolve           |Dx_Spin.fx                |
 |Stretch dissolve        |Dx_Stretch.fx             |
 |Subtractive dissolve    |Dx_Subtract.fx            |
@@ -354,20 +385,20 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |X-pinch                   |Wx_xPinch.fx       |
 
 ## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
-|EFFECT                       |FILE NAME                |
-|:--------------------------- |:----------------------- |
-|RC 1, Five channel remote    |RC1_Remote_control.fx    |
-|RC 3001, cyclic User control |RC3001_Cyclic_Remote.fx  |
-|Settings Display Unit        |Setting_Display_Unit.fx  |
-|RC Gain                      |RC_Gain.fx               |
-|RC RGB-Gain                  |RC_Gain_RGB.fx           |
-|RC Gamma                     |RC_Gamma.fx              |
-|RC RGB-Gamma                 |RC_Gamma_RGB.fx          |
-|RC Lift                      |RC_Lift.fx               |
-|RC RGB-Lift                  |RC_Lift_RGB.fx           |
-|RC regional zoom             |RC_Zoom_Regional.fx      |
-|RC regional zoom plus        |RC_Zoom_Regional_Plus.fx |
-|Spin Zoom, RC                |Spin_Zoom_20171220_RC.fx |
+|EFFECT                       |FILE NAME                    |
+|:--------------------------- |:--------------------------- |
+|RC 1, Five channel remote    |RC1_Remote_control.fx        |
+|RC 3001, cyclic User control |RC3001_Cyclic_Remote.fx      |
+|Settings Display Unit        |Setting_Display_Unit.fx      |
+|RC Gain                      |RC_Gain.fx                   |
+|RC RGB-Gain                  |RC_Gain_RGB.fx               |
+|RC Gamma                     |RC_Gamma.fx                  |
+|RC RGB-Gamma                 |RC_Gamma_RGB.fx              |
+|RC Lift                      |RC_Lift_20180418.fx          |
+|RC RGB-Lift                  |RC_Lift_RGB_20180421.fx      |
+|RC regional zoom             |RC_Zoom_Regional.fx          |
+|RC regional zoom plus        |RC_Zoom_Regional_20180506.fx |
+|Spin Zoom, RC                |Spin_Zoom_RC_180516.fx       |
 
 (1) [Install and use alpha dissolves and transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135925)
 

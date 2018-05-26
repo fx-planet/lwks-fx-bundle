@@ -6,6 +6,10 @@
 // @see https://www.lwks.com/media/kunena/attachments/32848/Demo-Seascape-FX-Lightworks.mp4
 // @see https://www.lwks.com/media/kunena/attachments/6375/Seascape.mp4
 //-----------------------------------------------------------------------------------------//
+//
+//   ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
+//
+//-----------------------------------------------------------------------------------------//
 // "Seascape" by Alexander Alekseev aka TDM - 2014
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 // Contact: tdmaav@gmail.com

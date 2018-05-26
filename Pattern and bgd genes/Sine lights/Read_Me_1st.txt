@@ -1,1 +1,3 @@
-This folder contains two versions of baopao's sine lights effect, one for Windows versions of Lightworks more recent than version 14.0 and all Linux and Mac systems, and the other for older Windows versions.
+This folder contains two versions of baopao's sine lights effect, one for Windows versions of Lightworks more recent than version
+14.0 and for all Linux and Mac systems, and the other for older Windows versions.  That latter version is in the "Legacy Windows"
+folder.

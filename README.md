@@ -319,7 +319,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |:---------------- |:------------------ |
 |70s Psychedelia   |70s_psych.fx        |
 |Acidulate         |Acidulate.fx        |
-||FxColorHalftone2 |FxColorHalftone2.fx |
+|FxColorHalftone2  |FxColorHalftone2.fx |
 |FxDotScreen       |FxDotScreen.fx      |
 |FxHalftone2       |FxHalftone2.fx      |
 |FxMangaShader     |FxManga.fx          |

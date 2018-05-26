@@ -8,6 +8,10 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/LensFlare_1_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/LensFlare_1.mp4
 //-----------------------------------------------------------------------------------------//
+//
+//   ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
+//
+//-----------------------------------------------------------------------------------------//
 // Original Shadertoy authors:
 // mu6k (2013-08-13) https://www.shadertoy.com/view/4sX3Rs
 // Icecool (2014-07-06) https://www.shadertoy.com/view/XdfXRX
@@ -15,9 +19,6 @@
 //
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 //-----------------------------------------------------------------------------------------//
-//
-//   ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
-//
 // LensFlare1.fx for Lightworks was adapted by user khaver 16 May 2018 from original
 // code by the above authors taken from the Shadertoy website:
 // https://www.shadertoy.com/view/4sX3Rs

@@ -1,9 +1,8 @@
-// @Maintainer jwrl
 // @Released 2018-04-21
 // @Author schrauber
 // @Created 2017-02-01
 // @Version: 2.0
-// exceptional aspect ratio: https://www.lwks.com/media/kunena/attachments/348533/RCRGB_Liftnew.JPG
+// @see https://www.lwks.com/media/kunena/attachments/348533/RC_RGB-Lift.png
 //--------------------------------------------------------------//
 // Lightworks user effect RC_Lift_RGB_20180421.fx
 //

@@ -1,9 +1,8 @@
-// @Maintainer jwrl
 // @Released 2018-04-18
 // @Author schrauber
 // @Created 2017-02-01
 // @Version: 2.0
-// exceptional aspect ratio. https://www.lwks.com/media/kunena/attachments/348533/RCLiftnew.JPG
+// @see https://www.lwks.com/media/kunena/attachments/348533/RC_Lift.png
 //--------------------------------------------------------------//
 // Lightworks user effect RC_Lift_20180418.fx
 //

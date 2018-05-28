@@ -18,6 +18,12 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 28 May 2018 jwrl.
+// Corrected an implicit cast of int to float in fmod().  This something that the Windows
+// compiler does by default but Cg refuses to allow in Linux and Mac.
+// Changed mode switching by passing samplers to the shaders.  This reduces the shaders
+// required and reduces the samplers from seven to four.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,10 +42,7 @@ texture Inp_1;
 texture Inp_2;
 texture Inp_3;
 
-texture In_1 : RenderColorTarget;
-texture In_2 : RenderColorTarget;
-
-texture Bgd : RenderColorTarget;
+texture Inp_4 : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -65,45 +68,8 @@ sampler In2Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler In3Sampler = sampler_state
-{
-   Texture   = <Inp_3>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler FgdSampler = sampler_state
-{
-   Texture   = <In_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Fg2Sampler = sampler_state
-{
-   Texture   = <In_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgdSampler = sampler_state
-{
-   Texture   = <Bgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler In3Sampler = sampler_state { Texture = <Inp_3>; };
+sampler In4Sampler = sampler_state { Texture = <Inp_4>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -241,29 +207,9 @@ bool fn_illegal (float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_inp_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_in (float2 uv : TEXCOORD1, uniform sampler FgSampler, uniform sampler BgSampler) : COLOR
 {
-   return tex2D (In1Sampler, uv);
-}
-
-float4 ps_inp_2 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (In2Sampler, uv);
-}
-
-float4 ps_inp_3 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (In3Sampler, uv);
-}
-
-float4 ps_fg_2 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (Fg2Sampler, uv);
-}
-
-float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
-{
-   int  Mode = (int) fmod (TransProfile, 2);                            // If TransProfile is odd it's mode B
+   int Mode = (int) fmod ((float)TransProfile, 2.0);                    // If TransProfile is odd it's mode B
 
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;                 // Calculate softness range of the effect
    float maxVis = (Mode == TransProfile) ? uv.x : 1.0 - uv.x;           // If mode and profile match it's left > right
@@ -283,11 +229,11 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);                                   // If the transition profile is positive correct Y
 
-   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);       // This version of the foreground has the modulation applied
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgSampler, xy);        // This version of the foreground has the modulation applied
 
    if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_I + 1.0));   // Apply the appropriate boost factor
 
-   float4 Bgd = lerp (tex2D (BgdSampler, uv), Fgd, Fgd.a * amount);     // Produce the final composite blend
+   float4 Bgd = lerp (tex2D (BgSampler, uv), Fgd, Fgd.a * amount);      // Produce the final composite blend
 
    if (!Show_In_Axis) { return Bgd; }                                   // Get out if we don't want to see the axis
 
@@ -304,9 +250,9 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
    return Bgd;
 }
 
-float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_out (float2 uv : TEXCOORD1, uniform sampler FgSampler, uniform sampler BgSampler) : COLOR
 {
-   int  Mode = (int) fmod (TransProfile, 2);
+   int Mode = (int) fmod ((float)TransProfile, 2.0);
 
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;
    float maxVis = (Mode == TransProfile) ? 1.0 - uv.x : uv.x;           // Here the sense of the x position is opposite to above
@@ -326,11 +272,11 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    xy.y += offset * float (Mode * 2);
 
-   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgdSampler, xy);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgSampler, xy);
 
    if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_O + 1.0));
 
-   float4 Bgd = lerp (tex2D (BgdSampler, uv), Fgd, Fgd.a * amount);
+   float4 Bgd = lerp (tex2D (BgSampler, uv), Fgd, Fgd.a * amount);
 
    if (!Show_Out_Axis) { return Bgd; }
 
@@ -354,79 +300,31 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 technique AdxTwisterIn
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = In_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_in (In1Sampler, In2Sampler); }
 }
 
 technique AdxTwisterOut
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = In_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main_out (); }
+   { PixelShader = compile PROFILE ps_main_out (In1Sampler, In2Sampler); }
 }
 
 technique AdxTwisterFX1_FX2
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = In_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
+   < string Script = "RenderColorTarget0 = Inp_4;"; >
+   { PixelShader = compile PROFILE ps_main_out (In1Sampler, In3Sampler); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_3 (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = In_2;"; >
-   { PixelShader = compile PROFILE ps_main_out (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = In_1;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_fg_2 (); }
-
-   pass P_6
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_in (In2Sampler, In4Sampler); }
 }
 
 technique AdxTwisterFX2_FX1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = In_1;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
+   < string Script = "RenderColorTarget0 = Inp_4;"; >
+   { PixelShader = compile PROFILE ps_main_out (In2Sampler, In3Sampler); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_3 (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = In_2;"; >
-   { PixelShader = compile PROFILE ps_main_out (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = In_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_fg_2 (); }
-
-   pass P_6
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_in (In1Sampler, In4Sampler); }
 }

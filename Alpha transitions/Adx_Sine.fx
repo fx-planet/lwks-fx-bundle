@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-06
+// @Released 2018-05-28
 // @Author jwrl
 // @Created 2017-10-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Adx_Sine_640.png
@@ -17,6 +17,14 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 28 May 2018 jwrl.
+// Fixed bug with alpha boost parameters.  Only Boost_O would ever have done anything.
+// Simplified mode switching to a maximum of two passes at the expense of passing the
+// samplers required to the shaders.  This also reduced the number of samplers required
+// from seven to four.
+// Corrected an implicit cast of float2 to float in ps_main_out(), which broke the
+// outgoing and dissolve transitions in Linux and Mac.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,10 +43,7 @@ texture In_1;
 texture In_2;
 texture In_3;
 
-texture Inp_1 : RenderColorTarget;
-texture Inp_2 : RenderColorTarget;
-
-texture Bgd : RenderColorTarget;
+texture In_4 : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -64,44 +69,8 @@ sampler In2Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler In3Sampler = sampler_state
-{
-   Texture   = <In_3>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Fg1Sampler = sampler_state {
-   Texture   = <Inp_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Fg2Sampler = sampler_state
-{
-   Texture   = <Inp_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgdSampler = sampler_state
-{
-   Texture   = <Bgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler In3Sampler = sampler_state { Texture = <In_3>; };
+sampler In4Sampler = sampler_state { Texture = <In_4>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -206,27 +175,7 @@ bool fn_illegal (float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_inp_1 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (In1Sampler, uv);
-}
-
-float4 ps_inp_2 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (In2Sampler, uv);
-}
-
-float4 ps_inp_3 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (In3Sampler, uv);
-}
-
-float4 ps_fg_2 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (Fg2Sampler, uv);
-}
-
-float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_in (float2 uv : TEXCOORD1, uniform sampler FgSampler, uniform sampler BgSampler) : COLOR
 {
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;
    float maxVis = Amount * (1.0 + range);
@@ -243,21 +192,21 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = (Mode == 0) ? float2 (uv.x, uv.y + offset) : float2 (uv.x, uv.y - offset);
 
-   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (Fg1Sampler, xy);
-   float4 Bgd = tex2D (BgdSampler, uv);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgSampler, xy);
+   float4 Bgd = tex2D (BgSampler, uv);
 
-   if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_O + 1.0));
+   if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_I + 1.0));
 
    return lerp (Bgd, Fgd, Fgd.a * amount);
 }
 
-float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_out (float2 uv : TEXCOORD1, uniform sampler FgSampler, uniform sampler BgSampler) : COLOR
 {
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;
    float maxVis = (1.0 - Amount) * (1.0 + range);
    float minVis = maxVis - range;
 
-   float2 x = (Direction == 0) ? 1.0 - uv.x : uv.x;
+   float x = (Direction == 0) ? 1.0 - uv.x : uv.x;
 
    float amount = (x <= minVis) ? 1.0
                 : (x >= maxVis) ? 0.0 : (maxVis - x) / range;
@@ -268,8 +217,8 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = (Mode == 0) ? float2 (uv.x, uv.y + offset) : float2 (uv.x, uv.y - offset);
 
-   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (Fg1Sampler, xy);
-   float4 Bgd = tex2D (BgdSampler, uv);
+   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (FgSampler, xy);
+   float4 Bgd = tex2D (BgSampler, uv);
 
    if (Boost_On) Fgd.a = pow (Fgd.a, 1.0 / max (1.0, Boost_O + 1.0));
 
@@ -283,79 +232,31 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 technique WarpDissIn
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Inp_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_in (In1Sampler, In2Sampler); }
 }
 
 technique WarpDissOut
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Inp_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main_out (); }
+   { PixelShader = compile PROFILE ps_main_out (In1Sampler, In2Sampler); }
 }
 
 technique WarpDissFX1_FX2
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Inp_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
+   < string Script = "RenderColorTarget0 = In_4;"; >
+   { PixelShader = compile PROFILE ps_main_out (In1Sampler, In3Sampler); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_3 (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Inp_2;"; >
-   { PixelShader = compile PROFILE ps_main_out (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Inp_1;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_fg_2 (); }
-
-   pass P_6
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_in (In2Sampler, In4Sampler); }
 }
 
 technique WarpDissFX2_FX1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Inp_1;"; >
-   { PixelShader = compile PROFILE ps_inp_2 (); }
+   < string Script = "RenderColorTarget0 = In_4;"; >
+   { PixelShader = compile PROFILE ps_main_out (In2Sampler, In3Sampler); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_inp_3 (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Inp_2;"; >
-   { PixelShader = compile PROFILE ps_main_out (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Inp_1;"; >
-   { PixelShader = compile PROFILE ps_inp_1 (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_fg_2 (); }
-
-   pass P_6
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_in (In1Sampler, In4Sampler); }
 }

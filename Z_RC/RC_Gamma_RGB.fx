@@ -1,8 +1,7 @@
-// @Maintainer jwrl
 // @Released 2018-04-15
 // @Author schrauber
 // @Created 2017-02-01
-// exceptional aspect ratio. https://www.lwks.com/media/kunena/attachments/348533/RCRGB-Gamma.JPG
+// @see https://www.lwks.com/media/kunena/attachments/348533/RC_RGB-Gamma.png
 //--------------------------------------------------------------//
 // Lightworks user effect RC_Gamma_RGB.fx
 // 

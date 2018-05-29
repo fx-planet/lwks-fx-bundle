@@ -1,5 +1,3 @@
-// @Maintainer schrauber
-// @Maintainer jwrl
 // @Released 2018-05-16
 // @Author schrauber
 // @Created 2017-10-22

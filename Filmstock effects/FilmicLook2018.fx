@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-27
+// @Released 2018-05-29
 // @Author jwrl
 // @Created 2018-04-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_640.png
@@ -35,6 +35,11 @@
 // altered from that used in the earlier effect for a result that more closely resembles
 // the look of film.  Vibrance is very similar to the sort of effect you get with
 // the Photoshop vibrance filter - thanks gr00by for the algorithm.
+//
+// Bugfix and enhancement 2018-05-29 - jwrl.
+// Discovered a bug that affects Linux and Mac versions when setting colour temperature.
+// Highlights would invert when setting higher colour temperatures.  While correcting
+// that the way the function performed subjectively was also improved.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -151,17 +156,13 @@ float Vibrance
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define PI 3.1415927
-
 #define E_SCALE  0.25
-
-#define B_POINT  0.0627451
-#define W_SCALE  1.1643836
-#define W_RANGE  0.8588235
-#define H_RANGE  0.8150685
+#define W_RANGE  0.07058825
 
 #define LUMACONV float3(0.2989, 0.5866, 0.1145)
-#define COLTEMP  float3(1.0, 0.5, 0.0)
+
+#define COOLTEMP float3(1.68861871, 0.844309355, 0.0)
+#define WARMTEMP float3(0.0, 0.95712098, 3.82848392)
 
 float _OutputWidth;
 float _OutputAspectRatio;
@@ -187,24 +188,23 @@ float4 ps_colourgrade (float2 uv : TEXCOORD1) : COLOR
    // Apply the colour temperature shift.  This version ensures that the luminance
    // values no longer vary slightly over the adjustment range.
 
-   float luma  = dot (retval.rgb, LUMACONV);
+   float luma    = dot (retval.rgb, LUMACONV);
+   float maxTemp = clamp (ColTemp, -1.0, 1.0) * 0.5;
+   float minTemp = abs (min (0.0, maxTemp));
 
-   float3 retRGB = COLTEMP * luma + retval;
+   float3 retRGB = lerp (retval.rgb, saturate (COOLTEMP * luma), minTemp);
 
-   float trimLuma = luma / dot (retRGB, LUMACONV);
-
-   retRGB = saturate (retRGB * trimLuma);
-   retRGB = lerp (retval.rgb, retRGB, -ColTemp * 0.5);
+   maxTemp = max (0.0, maxTemp);
+   retRGB = lerp (retRGB, saturate (WARMTEMP * luma), maxTemp);
 
    // Apply the S-curve adjustment to the modified video.
 
    float3 vidY = 1.0.xxx - abs ((2.0 * retRGB) - 1.0.xxx);
 
    float Scurve = 1.0 + (4.0 * min (Curve * E_SCALE, 1.0));
-   float range  = SetRange == 1 ? 1.0 : W_RANGE;
+   float range  = SetRange == 1 ? 0.5 : 0.5 - (Curve * W_RANGE);
 
-   range = lerp (1.0, range, Curve);
-   vidY  = (1.0.xxx - pow (vidY, Scurve)) * range * 0.5;
+   vidY  = (1.0.xxx - pow (vidY, Scurve)) * range;
 
    retRGB.r = (retRGB.r > 0.5) ? 0.5 + vidY.r : 0.5 - vidY.r;
    retRGB.g = (retRGB.g > 0.5) ? 0.5 + vidY.g : 0.5 - vidY.g;

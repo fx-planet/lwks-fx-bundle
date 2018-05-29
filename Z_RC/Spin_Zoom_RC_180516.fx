@@ -3,6 +3,7 @@
 // @Released 2018-05-16
 // @Author schrauber
 // @Created 2017-10-22
+// @see https://www.lwks.com/media/kunena/attachments/6375/Spin_Zoom_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Zoom_RC_180516.fx
 //

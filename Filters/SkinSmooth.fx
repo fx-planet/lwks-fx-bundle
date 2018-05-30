@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-05-30
 // @Author baopao
 // @see https://www.lwks.com/media/kunena/attachments/6375/SkinSmooth_640.png
 //-----------------------------------------------------------------------------------------//
@@ -33,6 +33,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 30 May 2018 jwrl.
+// Corrected a potential divide by zero bug when using the Amount parameter.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -168,7 +171,7 @@ float4 fold_bilateral (float2 tTex : TEXCOORD1) : COLOR
 
    float startX = -stepX * 2.0;
    float startY = -stepY * 2.0;
-   float p = 0.5 / (Amount * Amount);
+   float p = Amount == 0.0 ? 5000000000.0 : 0.5 / (Amount * Amount);
    float x = stepX;
    float optX, optY, y;
 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-05-31
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdA_640.png
@@ -24,6 +24,10 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Bugfixes 31 May 2018 jwrl.
+// Corrected text legality check to prevent mirroring.
+// Corrected X direction sense of TxtPosX.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -57,15 +61,7 @@ sampler s_Input_1 = sampler_state
    MipFilter = Linear;
 };
 
-sampler s_Input_2 = sampler_state
-{
-   Texture   = <In_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Input_2 = sampler_state { Texture = <In_2>; };
 
 sampler s_Bar = sampler_state
 {
@@ -195,22 +191,19 @@ float BarPosY
 //-----------------------------------------------------------------------------------------//
 // Functions
 //
-// These two functions are designed as replacements for all ()
-// and any ().  fn_inRange (xy, range) returns true if all of
-// xy falls inside range.xy - range.zw, while fn_legal (xy)
-// returns true if all of xy is inside 0.0 - 1.0 inclusive.
+// These two functions are designed as replacements for all () and any ().
+// fn_inRange (xy, range) returns true if all of xy falls inside range.xy to range.zw.
+// fn_legal (xy) returns true if all of xy is inside 0.0 to 1.0 inclusive.
 //-----------------------------------------------------------------------------------------//
 
 bool fn_inRange (float2 xy, float4 range)
 {
-   return !((xy.x < range.x) || (xy.y < range.y)
-         || (xy.x > range.z) || (xy.y > range.w));
+   return !((xy.x < range.x) || (xy.y < range.y) || (xy.x > range.z) || (xy.y > range.w));
 }
 
 bool fn_legal (float2 xy)
 {
-   return !((xy.x < 0.0) || (xy.x > 1.0)
-          || (xy.y < 0.0) || (xy.y > 1.0));
+   return !((xy.x < 0.0) || (xy.x > 1.0) || (xy.y < 0.0) || (xy.y > 1.0));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -235,21 +228,18 @@ float4 ps_main_0 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float trans_2 = 1.0 - max (0.0, (Transition * 4.0) - 3.0);
 
    float2 uv = float2 (BarPosX * trans_1, -BarPosY * trans_2);
-   float2 xy = xy1 + float2 (TxtPosX, TxtPosY);
+   float2 xy = xy1 - float2 (TxtPosX, -TxtPosY);
 
    float y = 1.0 - Bar_Y + uv.y;
 
-   float4 bar = EMPTY, Fgd = EMPTY;
+   uv = xy1 - uv;
 
-   if (fn_legal (xy1)) {
-      uv = xy1 - uv;
-      bar = fn_legal (uv) ? tex2D (s_Bar, uv) : EMPTY;
-      Fgd = xy1.y < y ? tex2D (s_Input_1, xy) : EMPTY;
+   float4 bar = fn_legal (uv) ? tex2D (s_Bar, uv) : EMPTY;
+   float4 Fgd = xy1.y >= y ? EMPTY : fn_legal (xy) ? tex2D (s_Input_1, xy) : EMPTY;
 
-      if (TxtAlpha == 1) Fgd.a = pow (Fgd.a, 0.5);
+   if (TxtAlpha == 1) Fgd.a = pow (Fgd.a, 0.5);
 
-      Fgd = lerp (Fgd, bar, bar.a);
-   }
+   Fgd = lerp (Fgd, bar, bar.a);
 
    return lerp (tex2D (s_Input_2, xy2), Fgd, Fgd.a * Opacity);
 }
@@ -260,21 +250,18 @@ float4 ps_main_1 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float trans_2 = 1.0 - max (0.0, (Transition * 4.0) - 3.0);
 
    float2 uv = float2 (BarPosX * trans_1, -BarPosY * trans_2);
-   float2 xy = xy1 + float2 (TxtPosX, TxtPosY);
+   float2 xy = xy1 - float2 (TxtPosX, -TxtPosY);
 
    float y = 1.0 - Bar_Y + uv.y;
 
-   float4 bar = EMPTY, Fgd = EMPTY;
+   uv = xy1 - uv;
 
-   if (fn_legal (xy1)) {
-      uv = xy1 - uv;
-      bar = fn_legal (uv) ? tex2D (s_Bar, uv) : EMPTY;
-      Fgd = xy1.y > y ? tex2D (s_Input_1, xy) : EMPTY;
+   float4 bar = fn_legal (uv) ? tex2D (s_Bar, uv) : EMPTY;
+   float4 Fgd = xy1.y <= y ? EMPTY : fn_legal (xy) ? tex2D (s_Input_1, xy) : EMPTY;
  
-      if (TxtAlpha == 1) Fgd.a = pow (Fgd.a, 0.5);
+   if (TxtAlpha == 1) Fgd.a = pow (Fgd.a, 0.5);
 
-     Fgd = lerp (Fgd, bar, bar.a);
-   }
+   Fgd = lerp (Fgd, bar, bar.a);
 
    return lerp (tex2D (s_Input_2, xy2), Fgd, Fgd.a * Opacity);
 }

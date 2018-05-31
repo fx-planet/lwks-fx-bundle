@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-05-31
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdB_640.png
@@ -22,6 +22,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Bugfix 31 May 2018 jwrl.
+// Corrected X direction sense of ArtPosX.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,15 +58,7 @@ sampler s_Input_1 = sampler_state
    MipFilter = Linear;
 };
 
-sampler s_Input_2 = sampler_state
-{
-   Texture = <In_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Input_2 = sampler_state { Texture = <In_2>; };
 
 sampler s_Ribbon = sampler_state
 {
@@ -205,22 +200,19 @@ float4 BlockColour
 //-----------------------------------------------------------------------------------------//
 // Functions
 //
-// These two functions are designed as replacements for all ()
-// and any ().  fn_inRange (xy, range) returns true if all of
-// xy falls inside range.xy - range.zw, while fn_legal (xy)
-// returns true if all of xy is inside 0.0 - 1.0 inclusive.
+// These two functions are designed as replacements for all () and any ().
+// fn_inRange (xy, range) returns true if all of xy falls inside range.xy to range.zw.
+// fn_legal (xy) returns true if all of xy is inside 0.0 to 1.0 inclusive.
 //-----------------------------------------------------------------------------------------//
 
 bool fn_inRange (float2 xy, float4 range)
 {
-   return !((xy.x < range.x) || (xy.y < range.y)
-         || (xy.x > range.z) || (xy.y > range.w));
+   return !((xy.x < range.x) || (xy.y < range.y) || (xy.x > range.z) || (xy.y > range.w));
 }
 
 bool fn_legal (float2 xy)
 {
-   return !((xy.x < 0.0) || (xy.x > 1.0)
-          || (xy.y < 0.0) || (xy.y > 1.0));
+   return !((xy.x < 0.0) || (xy.x > 1.0) || (xy.y < 0.0) || (xy.y > 1.0));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -255,7 +247,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float aTrans = ArtWipe == 0 ? LineLength : LineLength * (1.0 - BlockLength);
 
-   float2 uv = xy1 + float2 (ArtPosX, ArtPosY);
+   float2 uv = xy1 - float2 (ArtPosX, -ArtPosY);
 
    float4 Fgnd = tex2D (s_Ribbon, xy1);
    float4 Text = fn_legal (uv) ? tex2D (s_Input_1, uv) : EMPTY;

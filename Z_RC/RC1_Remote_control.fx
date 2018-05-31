@@ -1,4 +1,3 @@
-// @Maintainer jwrl
 // @Released 2018-04-28
 // @Author schrauber
 // @Created 2017-01-31

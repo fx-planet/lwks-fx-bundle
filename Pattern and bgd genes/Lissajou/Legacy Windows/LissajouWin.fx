@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-05-31
 // @Author jwrl
 // @OriginalAuthor baopao
 // @Created 2016-05-14
@@ -26,12 +26,20 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 31 May 2018 jwrl.
+// Changed Num description from "Number" to "Star number".
+// Changed Level description from "Intensity" to "Glow intensity".
+// Reversed direction of action of CentreX parameter.
+// Fixed default colours not displaying.
+// Performed general code cleanup to improve efficiency.
+// Added "for Windows" to the effect description.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Lissajou stars";
+   string Description = "Lissajou stars for Windows";
    string Category    = "Mattes";
    string SubCategory = "Patterns";
 > = 0;
@@ -40,25 +48,18 @@ int _LwksEffectInfo
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+texture Inp;
 
-texture bg : RenderColorTarget;                 // Gradient target
+texture Bgd : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler inSampler = sampler_state {
-   Texture   = <Input>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Input = sampler_state { Texture = <Inp>; };
 
-sampler bgSampler = sampler_state {
-   Texture   = <bg>;
+sampler s_Background = sampler_state {
+   Texture   = <Bgd>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -70,9 +71,9 @@ sampler bgSampler = sampler_state {
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Num
+float StarNumber
 <
-   string Description = "Number";
+   string Description = "Star number";
    string Group = "Pattern";
    float MinVal = 0.0;
    float MaxVal = 400;
@@ -96,7 +97,7 @@ float Scale
 
 float Level
 <
-   string Description = "Intensity";
+   string Description = "Glow intensity";
    string Group = "Pattern";
    float MinVal = 0.00;
    float MaxVal = 1.00;
@@ -161,7 +162,7 @@ float4 fgdColour
    string Description = "Colour";
    string Group = "Pattern";
    bool SupportsAlpha = false;
-> = (0.0, 0.0, 0.0, 1.0);
+> = { 0.85, 0.75, 0.0, 1.0 };
 
 float extBgd
 <
@@ -176,101 +177,92 @@ float4 topLeft
    string Description = "Top Left";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = (0.0, 0.25, 0.75, 0.5);
+> = { 0.375, 0.5, 0.75, 0.0 };
 
 float4 topRight
 <
    string Description = "Top Right";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = (0.5, 0.5, 0.0, 0.5);
+> = { 0.375, 0.375, 0.75, 0.0 };
 
 float4 botLeft
 <
    string Description = "Bottom Left";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = (0.5, 0.0, 0.5, 0.5);
+> = { 0.375, 0.625, 0.75, 0.0 };
 
 float4 botRight
 <
    string Description = "Bottom Right";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = (0.0, 0.75, 0.25, 0.5);
+> = { 0.375, 0.5625, 0.75, 0.0 };
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float _Progress, _OutputWidth, _OutputHeight;
+float _Progress;
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 doBackground (float2 xy : TEXCOORD0) : COLOR
+float4 ps_background (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 bgdVid = tex2D (inSampler, xy);
+   float4 topRow = lerp (topLeft, topRight, uv.x);
+   float4 botRow = lerp (botLeft, botRight, uv.x);
+   float4 cField = lerp (topRow, botRow, uv.y);
 
-   float4 topRow = lerp (topLeft, topRight, xy.x);
-   float4 botRow = lerp (botLeft, botRight, xy.x);
-   float4 cField = lerp (topRow, botRow, xy.y);
-
-   return lerp (cField, bgdVid, extBgd);
+   return lerp (cField, tex2D (s_Input, uv), extBgd);
 }
 
-float4 ps_main (float2 xy : TEXCOORD, float2 xy1 : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float time_step, curve_step = 0.0;
-   float2 position;
-
    float4 fgdPat = fgdColour;
 
-   float2 centre_XY = float2 (CentreX, CentreY);
+   float2 xy = uv + float2 (0.5 - CentreX, CentreY - 0.5) * 2.0;
+   float2 position;
 
-   float sc      = Scale * 3;
-   float sum     = 0.0;
-   float time    = _Progress * Speed * 10;
-   float Curve   = SineX * 12.5;
-   float keyClip = sc / ((19 - (Level * 14)) * 100);
+   float scale_X    = Scale * 3.0;
+   float scale_Y    = scale_X * ResY;
+   float sum        = 0.0;
+   float time       = _Progress * Speed * 10.0;
+   float Curve      = SineX * 12.5;
+   float keyClip    = scale_X / ((19.0 - (Level * 14.0)) * 100.0);
+   float curve_step = 0.0;
+   float time_step;
 
-   centre_XY = (centre_XY * 2) - 1.00;
+   scale_X *= ResX;
 
-   for (int i = 0; i < Num; ++i) {
+   for (int i = 0; i < StarNumber; ++i) {
       time_step = (float (i) + time) / 5.0;
 
-      position.x = (sin (SineY * time_step + curve_step) * sc * ResX) + 0.5;
-      position.y = (sin (time_step) * sc * ResY) + 0.5;
+      position.x = sin (SineY * time_step + curve_step) * scale_X;
+      position.y = sin (time_step) * scale_Y;
 
-      sum += keyClip / length (xy + centre_XY - position);
+      sum += keyClip / length (xy - position - 0.5.xx);
       curve_step += Curve;
       }
 
    fgdPat.rgb *= sum;
    sum = saturate ((sum * 1.5) - 0.25);
 
-   float4 bgd = tex2D (bgSampler, xy1);
-
-   return lerp (bgd, fgdPat, sum);
+   return lerp (tex2D (s_Background, uv), fgdPat, sum);
 }
 
 //-----------------------------------------------------------------------------------------//
 //  Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique TwoPass
+technique Lissajou
 {
-   pass First_Pass
-   <
-      string Script = "RenderColorTarget0 = bg;";
-   >
-   {
-      PixelShader = compile ps_3_0 doBackground ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Bgd;"; >
+   { PixelShader = compile ps_3_0 ps_background (); }
 
-   pass Second_Pass
-   {
-      PixelShader = compile ps_3_0 ps_main ();
-   }
+   pass P_2
+   { PixelShader = compile ps_3_0 ps_main (); }
 }

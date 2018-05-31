@@ -1,7 +1,7 @@
-// @Maintainer jwrl
 // @Released 2018-04-28
 // @Author schrauber
 // @Created 2017-02-19
+// @see https://www.lwks.com/media/kunena/attachments/348533/Settings_Display_Unit.png
 //--------------------------------------------------------------//
 // Lightworks user effect Setting_Display_Unit.fx
 //

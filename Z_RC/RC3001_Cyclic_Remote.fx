@@ -1,11 +1,12 @@
-// @Maintainer jwrl
 // @Released 2018-05-03
 // @Author schrauber
 // @Created 2017-02-13
+// @see https://www.lwks.com/media/kunena/attachments/348533/RC_3001_cycliccontrol.png
 //--------------------------------------------------------------//
 // Lightworks user effect RC3001_Cyclic_Remote.fx
 //
-// This is a version of the master controller for the remote control user effects subsystem adds the ability to cycle the values of the effects channels.
+// This is a version of the master controller for the remote control user effects subsystem
+//    adds the ability to cycle the values of the effects channels.
 // This effect outputs the remote control signal on channel 3001.
 //
 //

@@ -1,7 +1,7 @@
-// @Maintainer jwrl
 // @Released 2018-05-04
 // @Author schrauber
 // @Created 2017-02-01
+// @see https://www.lwks.com/media/kunena/attachments/6375/RegionalZoom_640.jpg
 //--------------------------------------------------------------//
 // Lightworks user effect RC_Zoom_Regional_20180506.fx
 //

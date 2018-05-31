@@ -1,12 +1,13 @@
-// @Maintainer jwrl
 // @Released 2018-04-28
 // @Author schrauber
 // @Created 2017-01-31
+// @see https://www.lwks.com/media/kunena/attachments/348533/RC_1_Five_channel_remote.png
 //--------------------------------------------------------------//
 // Lightworks user effect RC1_Remote_control.fx
 //
 // This is the master controller for the entire remote control user effects subsystem.
-// It generates up to five separate remote control channels on the one output.
+// It generates the remote control channels 1 to 5 at the one output 
+//    (to which, of course, several effects can be connected).
 // By itself it does very little, but when used with the appropriate effects it is a very powerful tool.
 // The desired channel to be used is selected in the custom remote-controllable effect.
 //

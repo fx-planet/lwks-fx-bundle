@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-05-31
 // @Author jwrl
 // @Created 2018-03-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdG_640.png
@@ -14,6 +14,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Bugfix 31 May 2018 jwrl.
+// Corrected X direction sense of ArtPosX.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,15 +50,7 @@ sampler s_Input_1 = sampler_state
    MipFilter = Linear;
 };
 
-sampler s_Input_2 = sampler_state
-{
-   Texture   = <In_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Input_2 = sampler_state { Texture = <In_2>; };
 
 sampler s_Wipe = sampler_state
 {
@@ -200,8 +195,7 @@ float _OutputAspectRatio;
 
 bool fn_legal (float2 xy)
 {
-   return !((xy.x < 0.0) || (xy.x > 1.0)
-          || (xy.y < 0.0) || (xy.y > 1.0));
+   return !((xy.x < 0.0) || (xy.x > 1.0) || (xy.y < 0.0) || (xy.y > 1.0));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -253,7 +247,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float trans = max ((Transition - 0.75) * 4.0, 0.0);
 
    float2 pos, uv;
-   float2 xy = xy1 + float2 (ArtPosX, ArtPosY);
+   float2 xy = xy1 - float2 (ArtPosX, -ArtPosY);
 
    if (Direction < 2) {
       uv = xy1 - 0.5.xx;

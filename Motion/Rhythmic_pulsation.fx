@@ -1,10 +1,9 @@
-// @Maintainer jwrl
 // @Released 2018-04-05
 // @Author schrauber
 // @Created 2017
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rhythmic_pulsation_640.png
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect CameraShake.fx
+// Lightworks user effect Rhythmic_pulsation.fx
 //
 //
 // Thanks for your tips.

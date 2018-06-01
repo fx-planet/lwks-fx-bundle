@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-09
+// @Released 2018-06-01
 // @Author jwrl
 // @Created 2017-09-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Cx_Twister_640.png
@@ -18,6 +18,10 @@
 // Modified 9 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Bugfix 1 June 2018 jwrl.
+// Fixed implicit int to float conversion in fmod() which broke this effect in Linux and
+// Mac.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -217,7 +221,7 @@ float4 ps_set_V3 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 {
-   int  Mode = (int) fmod (TransProfile, 2);                            // If TransProfile is odd it's mode B
+   int  Mode = (int) fmod ((float)TransProfile, 2);                     // If TransProfile is odd it's mode B
 
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;                 // Calculate softness range of the effect
    float maxVis = (Mode == TransProfile) ? uv.x : 1.0 - uv.x;           // If mode and profile match it's left > right
@@ -244,7 +248,7 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 {
-   int  Mode = (int) fmod (TransProfile, 2);
+   int  Mode = (int) fmod ((float)TransProfile, 2);
 
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;
    float maxVis = (Mode == TransProfile) ? 1.0 - uv.x : uv.x;           // Here the sense of the x position is opposite to above

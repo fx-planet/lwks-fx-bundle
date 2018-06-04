@@ -22,6 +22,10 @@
 // NOTE:  Where letterbox or pillarbox boundaries are exceeded the alpha channel will be
 // set to zero.  That means that the output of this effect can be blended with background
 // layers using Blend, DVEs and the like.
+//
+// Modified 2018-06-04 jwrl.
+// I realised that I didn't need a second pass to letterbox, so I removed it.  It won't
+// make a great deal of difference, but it should execute slightly more efficiently.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -33,19 +37,12 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
-texture AR : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
 sampler s_Input = sampler_state { Texture = <Inp>; };
-sampler s_Aspect = sampler_state { Texture = <AR>; };
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -133,7 +130,7 @@ float PosY
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_aspect (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float zoom = max (Zoom + 1.0, 0.0001);
    float size = AspectRatio == 0 ? _OutputAspectRatio : _aspect [AspectRatio];
@@ -167,28 +164,23 @@ float4 ps_aspect (float2 uv : TEXCOORD1) : COLOR
 
    xy1 += 0.5.xx;
 
-   return max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1);
-}
+   float4 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1);
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
-{
    if (Letterbox != 0) {
-
-      float x = abs (uv.x - 0.5);
-      float y = abs (uv.y - 0.5);
-      float ratio = _aspect [Letterbox];
+      xy2 = abs (uv - 0.5.xx);
+      ratio = _aspect [Letterbox];
 
       if (ratio == 0.0) ratio = CustomLetterbox;
 
       ratio /= _OutputAspectRatio;
 
-      if (ratio < 1.0) x /= ratio;
-      else y *= ratio;
+      if (ratio < 1.0) xy2.x /= ratio;
+      else xy2.y *= ratio;
 
-      if (max (x, y) > 0.5) return EMPTY;
+      if (max (xy2.x, xy2.y) > 0.5) return EMPTY;
    }
 
-   return tex2D (s_Aspect, uv);
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -198,9 +190,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique Anamorphic
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = AR;"; > 
-   { PixelShader = compile PROFILE ps_aspect (); }
-
-   pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }

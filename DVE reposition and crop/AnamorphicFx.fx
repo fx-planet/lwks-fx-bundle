@@ -24,7 +24,8 @@
 // layers using Blend, DVEs and the like.
 //
 // Modified 2018-06-04 jwrl.
-// I realised that I didn't need a second pass to perform the letterbox, so I removed it.
+// Range limited CustomAspect and CustomLetterbox to prevent divide by zero.  I also
+// realised that I didn't need a second pass to perform the letterbox, so I removed it.
 // It won't make a huge difference, but it should execute slightly more efficiently.
 //-----------------------------------------------------------------------------------------//
 
@@ -135,7 +136,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float zoom = max (Zoom + 1.0, 0.0001);
    float size = AspectRatio == 0 ? _OutputAspectRatio : _aspect [AspectRatio];
 
-   if (size == 0.0) size = CustomAspect;
+   if (size == 0.0) size = max (CustomAspect, 0.0001);
 
    float ratio = size / _OutputAspectRatio;
 
@@ -151,10 +152,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
          xy1.x -= PanPosition * (size - _OutputAspectRatio) * 0.5 / size;
       }
    }
-   else {
-      if (ratio < 1.0) xy1.x /= ratio;
-      else xy1.y *= ratio;
-   }
+   else if (ratio < 1.0) xy1.x /= ratio;
+   else xy1.y *= ratio;
 
    xy1 /= zoom;
    xy1 -= float2 (PosX, -PosY);
@@ -169,7 +168,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       xy2 = abs (uv - 0.5.xx);
       ratio = _aspect [Letterbox];
 
-      if (ratio == 0.0) ratio = CustomLetterbox;
+      if (ratio == 0.0) ratio = max (CustomLetterbox, 0.0001);
 
       ratio /= _OutputAspectRatio;
 

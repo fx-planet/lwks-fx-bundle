@@ -140,7 +140,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float ratio = size / _OutputAspectRatio;
 
    float2 xy1 = uv - 0.5.xx;
-   float2 position = float2 (PosX, -PosY);
 
    if (PanAndScan) {
       if (ratio < 1.0) {
@@ -158,7 +157,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    }
 
    xy1 /= zoom;
-   xy1 -= position;
+   xy1 -= float2 (PosX, -PosY);
 
    float2 xy2 = abs (xy1);
 

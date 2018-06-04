@@ -24,8 +24,8 @@
 // layers using Blend, DVEs and the like.
 //
 // Modified 2018-06-04 jwrl.
-// I realised that I didn't need a second pass to letterbox, so I removed it.  It won't
-// make a great deal of difference, but it should execute slightly more efficiently.
+// I realised that I didn't need a second pass to perform the letterbox, so I removed it.
+// It won't make a huge difference, but it should execute slightly more efficiently.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

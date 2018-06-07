@@ -3,6 +3,7 @@
 // @Author jwrl
 // @Created 2018-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction1_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction1.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Abstraction1.fx
 //
@@ -85,7 +86,6 @@ float CentreY
 
 #define LOOP     50
 
-#define FOUR_PI  12.5663706144
 #define TWO_PI   6.2831853072
 #define HALF_PI  1.5707963268
 

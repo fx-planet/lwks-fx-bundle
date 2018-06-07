@@ -3,6 +3,7 @@
 // @Author jwrl
 // @Created 2018-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction2_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction2.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dx_Abstraction2.fx
 //

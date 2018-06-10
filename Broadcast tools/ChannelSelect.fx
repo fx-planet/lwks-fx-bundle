@@ -99,11 +99,6 @@ float4 fn_select (sampler vidSample, float2 xy, int vidSelect)
    if (vidSelect == 6) return float4 (0.0.xxx, luma);
 
    return float4 (luma.xxx, 0.0);
-/*
-   if (vidSelect == 6) return float4 (0.0.xxx, max (retval.r, max (retval.g, retval.b)));
-
-   return float4 (dot (retval.rgb, LUMA).xxx, 0.0);
-*/
 }
 
 //-----------------------------------------------------------------------------------------//

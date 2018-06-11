@@ -1,7 +1,7 @@
 # Lightworks user Fx archive, June 11, 2018.
 
 
-The effects in this ZIP file were created by Lightworks users â€“ thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
+The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
 
 
 [https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81#ftop](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81#ftop)
@@ -56,37 +56,37 @@ Alpha transitions are a special kind of effect, and require slightly different s
 ## CATEGORY FOLDER: Alpha transitions
 |EFFECT                      |FILE NAME           |
 |:-------------------------- |:------------------ |
-|Alpha bar transitionÂ¹      |Adx_Bars.fx         |
-|Alpha block dissolveÂ¹      |Adx_Blocks.fx       |
-|Alpha blur dissolveÂ¹       |Adx_Blur.fx         |
-|Alpha border transitionÂ¹   |Adx_Borders.fx      |
-|Alpha corner splitÂ¹        |Adx_Corners.fx      |
-|Alpha corner squeezeÂ¹      |Adx_CnrSqueeze.fx   |
-|Alpha dissolve thru colourÂ¹|Adx_Colour.fx       |
-|Alpha fractal dissolveÂ¹    |Adx_Fractals.fx     |
-|Alpha granular dissolveÂ¹   |Adx_Granular.fx     |
-|Alpha kaleido mixÂ¹         |Adx_Kaleido.fx      |
-|Alpha optical transitionÂ¹  |Adx_Optical.fx      |
-|Alpha pinchÂ¹               |Adx_Pinch.fx        |
-|Alpha pushÂ¹                |Adx_Push.fx         |
-|Alpha radial pinchÂ¹        |Adx_PinchR.fx       |
-|Alpha ripple dissolveÂ¹     |Adx_Ripples.fx      |
-|Alpha rotateÂ¹              |Adx_Rotate.fx       |
-|Alpha S dissolveÂ¹          |Adx_Scurve.fx       |
-|Alpha sine mixÂ¹            |Adx_Sine.fx         |
-|Alpha spin dissolveÂ¹       |Adx_Spin.fx         |
-|Alpha splitÂ¹               |Adx_Split.fx        |
-|Alpha split squeezeÂ¹       |Adx_SplitSqueeze.fx |
-|Alpha squeezeÂ¹             |Adx_Squeeze.fx      |
-|Alpha stretch dissolveÂ¹    |Adx_Stretch.fx      |
-|Alpha stripsÂ¹              |Adx_Strips.fx       |
-|Alpha tile transitionÂ¹     |Adx_Tiles.fx        |
-|Alpha transmogrifyÂ¹        |Adx_Transmogrify.fx |
-|Alpha twisterÂ¹             |Adx_Twister.fx      |
-|Alpha warp dissolveÂ¹       |Adx_Warp.fx         |
-|Alpha wave collapseÂ¹       |Adx_Wave.fx         |
-|Alpha X-pinchÂ¹             |Adx_PinchX.fx       |
-|Alpha zoom dissolveÂ¹       |Adx_Zoom.fx         |
+|Alpha bar transition¹       |Adx_Bars.fx         |
+|Alpha block dissolve¹       |Adx_Blocks.fx       |
+|Alpha blur dissolve¹        |Adx_Blur.fx         |
+|Alpha border transition¹    |Adx_Borders.fx      |
+|Alpha corner split¹         |Adx_Corners.fx      |
+|Alpha corner squeeze¹       |Adx_CnrSqueeze.fx   |
+|Alpha dissolve thru colour¹ |Adx_Colour.fx       |
+|Alpha fractal dissolve¹     |Adx_Fractals.fx     |
+|Alpha granular dissolve¹    |Adx_Granular.fx     |
+|Alpha kaleido mix¹          |Adx_Kaleido.fx      |
+|Alpha optical transition¹   |Adx_Optical.fx      |
+|Alpha pinch¹                |Adx_Pinch.fx        |
+|Alpha push¹                 |Adx_Push.fx         |
+|Alpha radial pinch¹         |Adx_PinchR.fx       |
+|Alpha ripple dissolve¹      |Adx_Ripples.fx      |
+|Alpha rotate¹               |Adx_Rotate.fx       |
+|Alpha S dissolve¹           |Adx_Scurve.fx       |
+|Alpha sine mix¹             |Adx_Sine.fx         |
+|Alpha spin dissolve¹        |Adx_Spin.fx         |
+|Alpha split¹                |Adx_Split.fx        |
+|Alpha split squeeze¹        |Adx_SplitSqueeze.fx |
+|Alpha squeeze¹              |Adx_Squeeze.fx      |
+|Alpha stretch dissolve¹     |Adx_Stretch.fx      |
+|Alpha strips¹               |Adx_Strips.fx       |
+|Alpha tile transition¹      |Adx_Tiles.fx        |
+|Alpha transmogrify¹         |Adx_Transmogrify.fx |
+|Alpha twister¹              |Adx_Twister.fx      |
+|Alpha warp dissolve¹        |Adx_Warp.fx         |
+|Alpha wave collapse¹        |Adx_Wave.fx         |
+|Alpha X-pinch¹              |Adx_PinchX.fx       |
+|Alpha zoom dissolve¹        |Adx_Zoom.fx         |
 
 ## CATEGORY FOLDER: Art effects
 |EFFECT                   |FILE NAME                                       |
@@ -374,28 +374,28 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Zoom dissolve           |Dx_Zoom.fx                |
 
 ## CATEGORY FOLDER: Transitions B
-|EFFECT                     |FILE NAME          |
-|:------------------------- |:----------------- |
-|Barn door split            |Wx_Split.fx        |
-|Barn door squeeze          |Wx_SplitSqueeze.fx |
-|Composite corner split Â²  |Cx_Corners.fx      |
-|Composite corner squeezeÂ² |Cx_CnrSqueeze.fx   |
-|Composite pinchÂ²          |Cx_Pinch.fx        |
-|Composite pushÂ²           |Cx_Push.fx         |
-|Composite radial pinchÂ²   |Cx_rPinch.fx       |
-|Composite splitÂ²          |Cx_Split.fx        |
-|Composite split squeezeÂ²  |Cx_SplitSqueeze.fx |
-|Composite squeezeÂ²        |Cx_Squeeze.fx      |
-|Composite twisterÂ²        |Cx_Twister.fx      |
-|Composite X-pinchÂ²        |Cx_xPinch.fx       |
-|Corner split               |Wx_Corners.fx      |
-|Corner squeeze             |Wx_CnrSqueeze.fx   |
-|Pinch transition           |Wx_Pinch.fx        |
-|Radial pinch               |Wx_rPinch.fx       |
-|The twister                |Wx_Twister.fx      |
-|X-pinch                    |Wx_xPinch.fx       |
+|EFFECT                    |FILE NAME          |
+|:------------------------ |:----------------- |
+|Barn door split           |Wx_Split.fx        |
+|Barn door squeeze         |Wx_SplitSqueeze.fx |
+|Composite corner split²   |Cx_Corners.fx      |
+|Composite corner squeeze² |Cx_CnrSqueeze.fx   |
+|Composite pinch²          |Cx_Pinch.fx        |
+|Composite push²           |Cx_Push.fx         |
+|Composite radial pinch²   |Cx_rPinch.fx       |
+|Composite split²          |Cx_Split.fx        |
+|Composite split squeeze²  |Cx_SplitSqueeze.fx |
+|Composite squeeze²        |Cx_Squeeze.fx      |
+|Composite twister²        |Cx_Twister.fx      |
+|Composite X-pinch²        |Cx_xPinch.fx       |
+|Corner split              |Wx_Corners.fx      |
+|Corner squeeze            |Wx_CnrSqueeze.fx   |
+|Pinch transition          |Wx_Pinch.fx        |
+|Radial pinch              |Wx_rPinch.fx       |
+|The twister               |Wx_Twister.fx      |
+|X-pinch                   |Wx_xPinch.fx       |
 
-## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RCÂ³
+## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
 |EFFECT                       |FILE NAME                    |
 |:--------------------------- |:--------------------------- |
 |RC 1, Five channel remote    |RC1_Remote_control.fx        |

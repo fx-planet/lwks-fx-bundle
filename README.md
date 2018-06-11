@@ -53,40 +53,40 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Matte key              |mattekey.fx        |
 |Unpremultiply          |Unpremultiply.fx   |
 
-## CATEGORY FOLDER: Alpha transitions
-|EFFECT                      |FILE NAME           |
-|:-------------------------- |:------------------ |
-|Alpha bar transition¹       |Adx_Bars.fx         |
-|Alpha block dissolve¹       |Adx_Blocks.fx       |
-|Alpha blur dissolve¹        |Adx_Blur.fx         |
-|Alpha border transition¹    |Adx_Borders.fx      |
-|Alpha corner split¹         |Adx_Corners.fx      |
-|Alpha corner squeeze¹       |Adx_CnrSqueeze.fx   |
-|Alpha dissolve thru colour¹ |Adx_Colour.fx       |
-|Alpha fractal dissolve¹     |Adx_Fractals.fx     |
-|Alpha granular dissolve¹    |Adx_Granular.fx     |
-|Alpha kaleido mix¹          |Adx_Kaleido.fx      |
-|Alpha optical transition¹   |Adx_Optical.fx      |
-|Alpha pinch¹                |Adx_Pinch.fx        |
-|Alpha push¹                 |Adx_Push.fx         |
-|Alpha radial pinch¹         |Adx_PinchR.fx       |
-|Alpha ripple dissolve¹      |Adx_Ripples.fx      |
-|Alpha rotate¹               |Adx_Rotate.fx       |
-|Alpha S dissolve¹           |Adx_Scurve.fx       |
-|Alpha sine mix¹             |Adx_Sine.fx         |
-|Alpha spin dissolve¹        |Adx_Spin.fx         |
-|Alpha split¹                |Adx_Split.fx        |
-|Alpha split squeeze¹        |Adx_SplitSqueeze.fx |
-|Alpha squeeze¹              |Adx_Squeeze.fx      |
-|Alpha stretch dissolve¹     |Adx_Stretch.fx      |
-|Alpha strips¹               |Adx_Strips.fx       |
-|Alpha tile transition¹      |Adx_Tiles.fx        |
-|Alpha transmogrify¹         |Adx_Transmogrify.fx |
-|Alpha twister¹              |Adx_Twister.fx      |
-|Alpha warp dissolve¹        |Adx_Warp.fx         |
-|Alpha wave collapse¹        |Adx_Wave.fx         |
-|Alpha X-pinch¹              |Adx_PinchX.fx       |
-|Alpha zoom dissolve¹        |Adx_Zoom.fx         |
+## CATEGORY FOLDER: Alpha transitions¹
+|EFFECT                     |FILE NAME           |
+|:------------------------- |:------------------ |
+|Alpha bar transition       |Adx_Bars.fx         |
+|Alpha block dissolve       |Adx_Blocks.fx       |
+|Alpha blur dissolve        |Adx_Blur.fx         |
+|Alpha border transition    |Adx_Borders.fx      |
+|Alpha corner split         |Adx_Corners.fx      |
+|Alpha corner squeeze       |Adx_CnrSqueeze.fx   |
+|Alpha dissolve thru colour |Adx_Colour.fx       |
+|Alpha fractal dissolve     |Adx_Fractals.fx     |
+|Alpha granular dissolve    |Adx_Granular.fx     |
+|Alpha kaleido mix          |Adx_Kaleido.fx      |
+|Alpha optical transition   |Adx_Optical.fx      |
+|Alpha pinch                |Adx_Pinch.fx        |
+|Alpha push                 |Adx_Push.fx         |
+|Alpha radial pinch         |Adx_PinchR.fx       |
+|Alpha ripple dissolve      |Adx_Ripples.fx      |
+|Alpha rotate               |Adx_Rotate.fx       |
+|Alpha S dissolve           |Adx_Scurve.fx       |
+|Alpha sine mix             |Adx_Sine.fx         |
+|Alpha spin dissolve        |Adx_Spin.fx         |
+|Alpha split                |Adx_Split.fx        |
+|Alpha split squeeze        |Adx_SplitSqueeze.fx |
+|Alpha squeeze              |Adx_Squeeze.fx      |
+|Alpha stretch dissolve     |Adx_Stretch.fx      |
+|Alpha strips               |Adx_Strips.fx       |
+|Alpha tile transition      |Adx_Tiles.fx        |
+|Alpha transmogrify         |Adx_Transmogrify.fx |
+|Alpha twister              |Adx_Twister.fx      |
+|Alpha warp dissolve        |Adx_Warp.fx         |
+|Alpha wave collapse        |Adx_Wave.fx         |
+|Alpha X-pinch              |Adx_PinchX.fx       |
+|Alpha zoom dissolve        |Adx_Zoom.fx         |
 
 ## CATEGORY FOLDER: Art effects
 |EFFECT                   |FILE NAME                                       |
@@ -373,27 +373,27 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Warp dissolve           |Dx_Warp.fx                |
 |Zoom dissolve           |Dx_Zoom.fx                |
 
-## CATEGORY FOLDER: Transitions B
-|EFFECT                    |FILE NAME          |
-|:------------------------ |:----------------- |
-|Barn door split           |Wx_Split.fx        |
-|Barn door squeeze         |Wx_SplitSqueeze.fx |
-|Composite corner split²   |Cx_Corners.fx      |
-|Composite corner squeeze² |Cx_CnrSqueeze.fx   |
-|Composite pinch²          |Cx_Pinch.fx        |
-|Composite push²           |Cx_Push.fx         |
-|Composite radial pinch²   |Cx_rPinch.fx       |
-|Composite split²          |Cx_Split.fx        |
-|Composite split squeeze²  |Cx_SplitSqueeze.fx |
-|Composite squeeze²        |Cx_Squeeze.fx      |
-|Composite twister²        |Cx_Twister.fx      |
-|Composite X-pinch²        |Cx_xPinch.fx       |
-|Corner split              |Wx_Corners.fx      |
-|Corner squeeze            |Wx_CnrSqueeze.fx   |
-|Pinch transition          |Wx_Pinch.fx        |
-|Radial pinch              |Wx_rPinch.fx       |
-|The twister               |Wx_Twister.fx      |
-|X-pinch                   |Wx_xPinch.fx       |
+## CATEGORY FOLDER: Transitions B²
+|EFFECT                   |FILE NAME          |
+|:----------------------- |:----------------- |
+|Barn door split          |Wx_Split.fx        |
+|Barn door squeeze        |Wx_SplitSqueeze.fx |
+|Composite corner split   |Cx_Corners.fx      |
+|Composite corner squeeze |Cx_CnrSqueeze.fx   |
+|Composite pinch          |Cx_Pinch.fx        |
+|Composite push           |Cx_Push.fx         |
+|Composite radial pinch   |Cx_rPinch.fx       |
+|Composite split          |Cx_Split.fx        |
+|Composite split squeeze  |Cx_SplitSqueeze.fx |
+|Composite squeeze        |Cx_Squeeze.fx      |
+|Composite twister        |Cx_Twister.fx      |
+|Composite X-pinch        |Cx_xPinch.fx       |
+|Corner split             |Wx_Corners.fx      |
+|Corner squeeze           |Wx_CnrSqueeze.fx   |
+|Pinch transition         |Wx_Pinch.fx        |
+|Radial pinch             |Wx_rPinch.fx       |
+|The twister              |Wx_Twister.fx      |
+|X-pinch                  |Wx_xPinch.fx       |
 
 ## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
 |EFFECT                       |FILE NAME                    |
@@ -413,9 +413,9 @@ Alpha transitions are a special kind of effect, and require slightly different s
 
 (1) [Install and use alpha dissolves and transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135925)
 
-(2) [Simple instructions on how to use these composite transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&limit=15&limitstart=15&Itemid=81#135945)
+(2) [Simple instructions on how to use any composite (Cx) transition](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&limit=15&limitstart=15&Itemid=81#135945)
 
-(3) [Instructions on how to install and use these rather complex effects.](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)
+(3) [Instructions on how to install and use these rather complex effects](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)
 
 
 # MetaParser

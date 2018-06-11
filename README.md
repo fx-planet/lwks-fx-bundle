@@ -10,7 +10,7 @@ The effects in this ZIP file were created by Lightworks users - thank you to all
 [https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#ftop](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#ftop)
 
 
-First, a warning: you shouldn't import effects files that you're unlikely to need. If you do Lightworks startup times can be affected. This is a **library** and should be treated as such - you don't take home all the books in your local library at once either.
+First, a warning: you shouldn't import effects files that you're unlikely to need. If you do Lightworks startup times may be affected. This is a **library** and should be treated as such - you don't take home all the books in your local library at once either.
 
 In this library where alternative versions of the effects exist they are separately listed and the entry includes the path that they are in. Where necessary a Read Me file may also be included in the folder with those versions.
 

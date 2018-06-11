@@ -1,7 +1,7 @@
-# Lightworks user Fx archive, May 26, 2018.
+# Lightworks user Fx archive, June 11, 2018.
 
 
-The effects in this ZIP file were created by Lightworks users – thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
+The effects in this ZIP file were created by Lightworks users â€“ thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
 
 
 [https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81#ftop](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81#ftop)
@@ -10,7 +10,7 @@ The effects in this ZIP file were created by Lightworks users – thank you to a
 [https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#ftop](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#ftop)
 
 
-First, a warning: you shouldn't import effects files that you're unlikely to need. If you do Lightworks startup times can become very slow. This is a **library** and should be treated as such – you don't take home all the books in your local library at once either.
+First, a warning: you shouldn't import effects files that you're unlikely to need. If you do Lightworks startup times can become very slow. This is a **library** and should be treated as such â€“ you don't take home all the books in your local library at once either.
 
 In this library where alternative versions of the effects exist they are separately listed and the entry includes the path that they are in. Where necessary a Read Me file may also be included in the folder with those versions.
 
@@ -44,47 +44,49 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Drop shadow and border |DropShadow.fx      |
 |Drop shadow plus       |DropShadowPlus.fx  |
 |Extrusion Matte        |Extrusion_Matte.fx |
+|Flexi-blend            |FlexiBlend.fx      |
 |Floating images        |FloatImage.fx      |
 |Glitter edge           |GlitterEdge.fx     |
 |Light ray keys         |light_ray_keys.fx  |
+|Lumakey and matte      |LumaMatte.fx       |
 |Magic edges            |MagicEdges.fx      |
 |Matte key              |mattekey.fx        |
 |Unpremultiply          |Unpremultiply.fx   |
 
 ## CATEGORY FOLDER: Alpha transitions
-|EFFECT                     |FILE NAME           |
-|:------------------------- |:------------------ |
-|Alpha bar transition¹      |Adx_Bars.fx         |
-|Alpha block dissolve¹      |Adx_Blocks.fx       |
-|Alpha blur dissolve¹       |Adx_Blur.fx         |
-|Alpha border transition¹   |Adx_Borders.fx      |
-|Alpha corner split¹        |Adx_Corners.fx      |
-|Alpha corner squeeze¹      |Adx_CnrSqueeze.fx   |
-|Alpha dissolve thru colour¹|Adx_Colour.fx       |
-|Alpha fractal dissolve¹    |Adx_Fractals.fx     |
-|Alpha granular dissolve¹   |Adx_Granular.fx     |
-|Alpha kaleido mix¹         |Adx_Kaleido.fx      |
-|Alpha optical transition¹  |Adx_Optical.fx      |
-|Alpha pinch¹               |Adx_Pinch.fx        |
-|Alpha push¹                |Adx_Push.fx         |
-|Alpha radial pinch¹        |Adx_PinchR.fx       |
-|Alpha ripple dissolve¹     |Adx_Ripples.fx      |
-|Alpha rotate¹              |Adx_Rotate.fx       |
-|Alpha S dissolve¹          |Adx_Scurve.fx       |
-|Alpha sine mix¹            |Adx_Sine.fx         |
-|Alpha spin dissolve¹       |Adx_Spin.fx         |
-|Alpha split¹               |Adx_Split.fx        |
-|Alpha split squeeze¹       |Adx_SplitSqueeze.fx |
-|Alpha squeeze¹             |Adx_Squeeze.fx      |
-|Alpha stretch dissolve¹    |Adx_Stretch.fx      |
-|Alpha strips¹              |Adx_Strips.fx       |
-|Alpha tile transition¹     |Adx_Tiles.fx        |
-|Alpha transmogrify¹        |Adx_Transmogrify.fx |
-|Alpha twister¹             |Adx_Twister.fx      |
-|Alpha warp dissolve¹       |Adx_Warp.fx         |
-|Alpha wave collapse¹       |Adx_Wave.fx         |
-|Alpha X-pinch¹             |Adx_PinchX.fx       |
-|Alpha zoom dissolve¹       |Adx_Zoom.fx         |
+|EFFECT                      |FILE NAME           |
+|:-------------------------- |:------------------ |
+|Alpha bar transitionÂ¹      |Adx_Bars.fx         |
+|Alpha block dissolveÂ¹      |Adx_Blocks.fx       |
+|Alpha blur dissolveÂ¹       |Adx_Blur.fx         |
+|Alpha border transitionÂ¹   |Adx_Borders.fx      |
+|Alpha corner splitÂ¹        |Adx_Corners.fx      |
+|Alpha corner squeezeÂ¹      |Adx_CnrSqueeze.fx   |
+|Alpha dissolve thru colourÂ¹|Adx_Colour.fx       |
+|Alpha fractal dissolveÂ¹    |Adx_Fractals.fx     |
+|Alpha granular dissolveÂ¹   |Adx_Granular.fx     |
+|Alpha kaleido mixÂ¹         |Adx_Kaleido.fx      |
+|Alpha optical transitionÂ¹  |Adx_Optical.fx      |
+|Alpha pinchÂ¹               |Adx_Pinch.fx        |
+|Alpha pushÂ¹                |Adx_Push.fx         |
+|Alpha radial pinchÂ¹        |Adx_PinchR.fx       |
+|Alpha ripple dissolveÂ¹     |Adx_Ripples.fx      |
+|Alpha rotateÂ¹              |Adx_Rotate.fx       |
+|Alpha S dissolveÂ¹          |Adx_Scurve.fx       |
+|Alpha sine mixÂ¹            |Adx_Sine.fx         |
+|Alpha spin dissolveÂ¹       |Adx_Spin.fx         |
+|Alpha splitÂ¹               |Adx_Split.fx        |
+|Alpha split squeezeÂ¹       |Adx_SplitSqueeze.fx |
+|Alpha squeezeÂ¹             |Adx_Squeeze.fx      |
+|Alpha stretch dissolveÂ¹    |Adx_Stretch.fx      |
+|Alpha stripsÂ¹              |Adx_Strips.fx       |
+|Alpha tile transitionÂ¹     |Adx_Tiles.fx        |
+|Alpha transmogrifyÂ¹        |Adx_Transmogrify.fx |
+|Alpha twisterÂ¹             |Adx_Twister.fx      |
+|Alpha warp dissolveÂ¹       |Adx_Warp.fx         |
+|Alpha wave collapseÂ¹       |Adx_Wave.fx         |
+|Alpha X-pinchÂ¹             |Adx_PinchX.fx       |
+|Alpha zoom dissolveÂ¹       |Adx_Zoom.fx         |
 
 ## CATEGORY FOLDER: Art effects
 |EFFECT                   |FILE NAME                                       |
@@ -128,6 +130,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |:----------------------- |:------------------------------- |
 |Antialias                |AntiAlias.fx                     |
 |Channels                 |Channels.fx                      |
+|Channel selector         |ChannelSelect.fx                 |
 |Clamp to 16-235          |/Maintain_16_235/Clamp16-235.fx  |
 |Color Bars               |ColorBars.fx                     |
 |Colour swizzler          |Swizzler.fx                      |
@@ -136,6 +139,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Exposure Leveler         |ExpoLeveler.fx                   |
 |JH Show Hi/Lo            |jh_analysis_show_hilo.fx         |
 |OutputSelect             |OutputSelect.fx                  |
+|Quick video levels       |QuickLevels.fx                   |
 |Safe area and crosshatch |Crosshatch.fx                    |
 |Shrink 0-255 to 16-235   |/Maintain_16_235/Shrink16-235.fx |
 |Tenderizer               |Tenderizer.fx                    |
@@ -180,19 +184,21 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Whirl                         |whirl20171106.fx               |
 
 ## CATEGORY FOLDER: DVE reposition and crop
-|EFFECT        |FILE NAME             |
-|:------------ |:-------------------- |
-|Bordered crop |BorderCrop.fx         |
-|Deco DVE      |Deco_DVE.fx           |
-|Flip/flop     |FlipFlop.fx           |
-|Format fixer  |FormatFixer.fx        |
-|FxPerspective |FxPerspective.fx      |
-|Perspective   |Perspective.fx        |
-|Simple crop   |SimpleCrop.fx         |
-|Spin Zoom     |Spin_Zoom_20171022.fx |
-|Triple DVE    |Triple_DVE.fx         |
-|VisualCrop    |vicrop.fx             |
-|zoom-out-in   |zoom-out-in.fx        |
+|EFFECT            |FILE NAME             |
+|:---------------- |:-------------------- |
+|Anamorphic tools  |AnamorphicFx.fx       |
+|Bordered crop     |BorderCrop.fx         |
+|Deco DVE          |Deco_DVE.fx           |
+|Flip/flop         |FlipFlop.fx           |
+|Format fixer      |FormatFixer.fx        |
+|FxPerspective     |FxPerspective.fx      |
+|Perspective       |Perspective.fx        |
+|Simple crop       |SimpleCrop.fx         |
+|Simple matte      |SimpleMatte.fx        |
+|Spin Zoom         |Spin_Zoom_20171022.fx |
+|Triple DVE        |Triple_DVE.fx         |
+|VisualCrop        |vicrop.fx             |
+|zoom-out-in       |zoom-out-in.fx        |
 
 ## CATEGORY FOLDER: Filmstock effects
 |EFFECT             |FILE NAME         |
@@ -263,13 +269,13 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |> Windows legacy version |/Poly Masks/Legacy Windows/PolyMask14Win.fx |
 |Poly16                   |/Poly Masks/PolyMask16.fx                   |
 |> Windows legacy version |/Poly Masks/Legacy Windows/PolyMask16Win.fx |
+|Spotlight effect         |SpotlightEffect.fx                          |
 
 ## CATEGORY FOLDER: Motion
 |EFFECT             |FILE NAME             |
 |:----------------- |:-------------------- |
 |Camera Shake       |CameraShake.fx        |
 |New Strobe         |NewStrobe_20180523.fx |
-|Rhythmic pulsation |Rhythmic_pulsation.fx |
 |Strobe             |Strobe.fx             |
 
 ## CATEGORY FOLDER: Noise and grain
@@ -329,14 +335,18 @@ Alpha transitions are a special kind of effect, and require slightly different s
 ## CATEGORY FOLDER: Transitions A
 |EFFECT                  |FILE NAME                 |
 |:---------------------- |:------------------------ |
+|Abstraction #1          |Dx_Abstraction1.fx        |
+|Abstraction #2          |Dx_Abstraction2.fx        |
+|Abstraction #3          |Dx_Abstraction3.fx        |
 |Block dissolve          |Dx_Blocks.fx              |
 |Blur dissolve           |Dx_Blurs.fx               |
 |Chinagraph pencil       |Dx_Chinagraph.fx          |
 |Colour sizzler          |Dx_Sizzler.fx             |
 |Coloured tiles          |Dx_ColourTile.fx          |
-|Dissolve through Colour |Dx_Colour.fx              |
+|Dissolve through colour |Dx_Colour.fx              |
 |DissolveX               |dissolveX.fx              |
 |Dream sequence          |Dx_Dreams.fx              |
+|Dry brush mix           |Dx_DryBrush.fx            |
 |Erosion                 |Erosion.fx                |
 |Fade to or from black   |Dx_FadeOutIn.fx           |
 |FlareTran               |FlareTran.fx              |
@@ -350,6 +360,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Non-add dissolve ultra  |Dx_NonAddUltra.fx         |
 |Non-additive mixer      |Dx_NonAdd.fx              |
 |Optical dissolve        |Dx_Optical.fx             |
+|Page Roll               |PageRoll.fx               |
 |RGB drifter             |Dx_RGBdrift.fx            |
 |S dissolve              |Dx_Scurve.fx              |
 |Sinusoidal mix          |Dx_Sine.fx                |
@@ -363,28 +374,28 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Zoom dissolve           |Dx_Zoom.fx                |
 
 ## CATEGORY FOLDER: Transitions B
-|EFFECT                    |FILE NAME          |
-|:------------------------ |:----------------- |
-|Barn door split           |Wx_Split.fx        |
-|Barn door squeeze         |Wx_SplitSqueeze.fx |
-|Composite corner split ²  |Cx_Corners.fx      |
-|Composite corner squeeze² |Cx_CnrSqueeze.fx   |
-|Composite pinch²          |Cx_Pinch.fx        |
-|Composite push²           |Cx_Push.fx         |
-|Composite radial pinch²   |Cx_rPinch.fx       |
-|Composite split²          |Cx_Split.fx        |
-|Composite split squeeze²  |Cx_SplitSqueeze.fx |
-|Composite squeeze²        |Cx_Squeeze.fx      |
-|Composite twister²        |Cx_Twister.fx      |
-|Composite X-pinch²        |Cx_xPinch.fx       |
-|Corner split              |Wx_Corners.fx      |
-|Corner squeeze            |Wx_CnrSqueeze.fx   |
-|Pinch transition          |Wx_Pinch.fx        |
-|Radial pinch              |Wx_rPinch.fx       |
-|The twister               |Wx_Twister.fx      |
-|X-pinch                   |Wx_xPinch.fx       |
+|EFFECT                     |FILE NAME          |
+|:------------------------- |:----------------- |
+|Barn door split            |Wx_Split.fx        |
+|Barn door squeeze          |Wx_SplitSqueeze.fx |
+|Composite corner split Â²  |Cx_Corners.fx      |
+|Composite corner squeezeÂ² |Cx_CnrSqueeze.fx   |
+|Composite pinchÂ²          |Cx_Pinch.fx        |
+|Composite pushÂ²           |Cx_Push.fx         |
+|Composite radial pinchÂ²   |Cx_rPinch.fx       |
+|Composite splitÂ²          |Cx_Split.fx        |
+|Composite split squeezeÂ²  |Cx_SplitSqueeze.fx |
+|Composite squeezeÂ²        |Cx_Squeeze.fx      |
+|Composite twisterÂ²        |Cx_Twister.fx      |
+|Composite X-pinchÂ²        |Cx_xPinch.fx       |
+|Corner split               |Wx_Corners.fx      |
+|Corner squeeze             |Wx_CnrSqueeze.fx   |
+|Pinch transition           |Wx_Pinch.fx        |
+|Radial pinch               |Wx_rPinch.fx       |
+|The twister                |Wx_Twister.fx      |
+|X-pinch                    |Wx_xPinch.fx       |
 
-## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
+## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RCÂ³
 |EFFECT                       |FILE NAME                    |
 |:--------------------------- |:--------------------------- |
 |RC 1, Five channel remote    |RC1_Remote_control.fx        |
@@ -404,7 +415,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 
 (2) [Simple instructions on how to use these composite transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&limit=15&limitstart=15&Itemid=81#135945)
 
-(3) [Instructions on how to install and use these rather complex effects. Since they are in very active development by schrauber that thread is also a good place to go to ensure that you have the most up-to-date versions.](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)
+(3) [Instructions on how to install and use these rather complex effects.](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)
 
 
 # MetaParser

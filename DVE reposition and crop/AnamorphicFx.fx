@@ -27,6 +27,9 @@
 // Range limited CustomAspect and CustomLetterbox to prevent divide by zero.  I also
 // realised that I didn't need a second pass to perform the letterbox, so I removed it.
 // It won't make a huge difference, but it should execute slightly more efficiently.
+//
+// Modified 2018-06-05 jwrl.
+// Re-ordered parameters, added the ability to correct non-full frame anamorphs.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,6 +38,7 @@ int _LwksEffectInfo
    string Description = "Anamorphic tools";
    string Category    = "DVE";
    string SubCategory = "Custom";
+   string Note        = "A general purpose toolkit for dealing with anamorphic footage";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -59,6 +63,13 @@ float _aspect [] = { 0.0, 1.33333333, 1.375, 1.5, 1.66666667, 1.77777778,
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
+
+int InputFormat
+<
+   string Group = "Anamorphic correction";
+   string Description = "Frame format";
+   string Enum = "Full frame input (pan and scan allowed),Squeezed and boxed (pan and scan unavailable)";
+> = 0;
 
 int AspectRatio
 <
@@ -89,6 +100,32 @@ float PanPosition
    float MaxVal = 1.0;
 > = 0.0;
 
+float Zoom
+<
+   string Group = "Scale and position";
+   string Description = "Zoom";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float PosX
+<
+   string Group = "Scale and position";
+   string Description = "Position";
+   string Flags = "SpecifiesPointX";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float PosY
+<
+   string Group = "Scale and position";
+   string Description = "Position";
+   string Flags = "SpecifiesPointY";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
 int Letterbox
 <
    string Group = "Letterbox";
@@ -103,29 +140,6 @@ float CustomLetterbox
    float MinVal = 0.5;
    float MaxVal = 4.0;
 > = 1.78;
-
-float Zoom
-<
-   string Description = "Zoom";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float PosX
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float PosY
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -142,7 +156,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy1 = uv - 0.5.xx;
 
-   if (PanAndScan) {
+   if (InputFormat == 1) {
+      if (ratio < 1.0) xy1.x *= ratio;
+      else xy1.y /= ratio;
+   }
+   else if (PanAndScan) {
       if (ratio < 1.0) {
          xy1.y *= ratio;
          xy1.y -= PanPosition * (ratio - 1.0) * 0.5;

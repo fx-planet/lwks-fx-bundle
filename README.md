@@ -174,7 +174,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 ## CATEGORY FOLDER: Distortions
 |EFFECT                        |FILE NAME                      |
 |:---------------------------- |:----------------------------- |
-|Bulge                         |bulge.fx                       |
+|Bulge                         |bulge-2018.fx                  |
 |Glass Tiles                   |GlassTiles.fx                  |
 |Magnifying glass              |magnifying_glass.fx            |
 |Regional zoom                 |Regional zoom.fx               |
@@ -317,6 +317,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |EFFECT        |FILE NAME      |
 |:------------ |:------------- |
 |Lens Flare #1 |LensFlare_1.fx |
+|Lens Flare #2 |LensFlare_2.fx |
 |Sea Scape     |SeaScape.fx    |
 |Transporter   |Transporter.fx |
 
@@ -347,7 +348,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |DissolveX               |dissolveX.fx              |
 |Dream sequence          |Dx_Dreams.fx              |
 |Dry brush mix           |Dx_DryBrush.fx            |
-|Erosion                 |Erosion.fx                |
+|Erosion                 |Dx_Erosion.fx             |
 |Fade to or from black   |Dx_FadeOutIn.fx           |
 |FlareTran               |FlareTran.fx              |
 |Fly away                |Fly away.fx               |
@@ -374,26 +375,26 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Zoom dissolve           |Dx_Zoom.fx                |
 
 ## CATEGORY FOLDER: Transitions B²
-|EFFECT                   |FILE NAME          |
-|:----------------------- |:----------------- |
-|Barn door split          |Wx_Split.fx        |
-|Barn door squeeze        |Wx_SplitSqueeze.fx |
-|Composite corner split   |Cx_Corners.fx      |
-|Composite corner squeeze |Cx_CnrSqueeze.fx   |
-|Composite pinch          |Cx_Pinch.fx        |
-|Composite push           |Cx_Push.fx         |
-|Composite radial pinch   |Cx_rPinch.fx       |
-|Composite split          |Cx_Split.fx        |
-|Composite split squeeze  |Cx_SplitSqueeze.fx |
-|Composite squeeze        |Cx_Squeeze.fx      |
-|Composite twister        |Cx_Twister.fx      |
-|Composite X-pinch        |Cx_xPinch.fx       |
-|Corner split             |Wx_Corners.fx      |
-|Corner squeeze           |Wx_CnrSqueeze.fx   |
-|Pinch transition         |Wx_Pinch.fx        |
-|Radial pinch             |Wx_rPinch.fx       |
-|The twister              |Wx_Twister.fx      |
-|X-pinch                  |Wx_xPinch.fx       |
+|EFFECT                    |FILE NAME          |
+|:------------------------ |:----------------- |
+|Barn door split           |Wx_Split.fx        |
+|Barn door squeeze         |Wx_SplitSqueeze.fx |
+|Composite corner split    |Cx_Corners.fx      |
+|Composite corner squeeze  |Cx_CnrSqueeze.fx   |
+|Composite pinch           |Cx_Pinch.fx        |
+|Composite push            |Cx_Push.fx         |
+|Composite radial pinch    |Cx_rPinch.fx       |
+|Composite split           |Cx_Split.fx        |
+|Composite split squeeze   |Cx_SplitSqueeze.fx |
+|Composite squeeze         |Cx_Squeeze.fx      |
+|Composite twister         |Cx_Twister.fx      |
+|Composite X-pinch         |Cx_xPinch.fx       |
+|Corner split              |Wx_Corners.fx      |
+|Corner squeeze            |Wx_CnrSqueeze.fx   |
+|Pinch transition          |Wx_Pinch.fx        |
+|Radial pinch              |Wx_rPinch.fx       |
+|The twister               |Wx_Twister.fx      |
+|X-pinch                   |Wx_xPinch.fx       |
 
 ## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
 |EFFECT                       |FILE NAME                    |
@@ -413,9 +414,9 @@ Alpha transitions are a special kind of effect, and require slightly different s
 
 (1) [Install and use alpha dissolves and transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135925)
 
-(2) [Simple instructions on how to use any composite (Cx) transition](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&limit=15&limitstart=15&Itemid=81#135945)
+(2) [Simple instructions on how to use these composite transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&limit=15&limitstart=15&Itemid=81#135945)
 
-(3) [Instructions on how to install and use these rather complex effects](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)
+(3) [Instructions on how to install and use these rather complex effects.](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=127918&Itemid=81#127918)
 
 
 # MetaParser

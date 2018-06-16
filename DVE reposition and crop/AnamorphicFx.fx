@@ -30,6 +30,9 @@
 //
 // Modified 2018-06-05 jwrl.
 // Re-ordered parameters, added the ability to correct non-full frame anamorphs.
+//
+// Modified 2018-06-16 jwrl.
+// Explicitly defined addressing modes to avoid a flicker on frame boundaries.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,7 +50,15 @@ int _LwksEffectInfo
 
 texture Inp;
 
-sampler s_Input = sampler_state { Texture = <Inp>; };
+sampler s_Input = sampler_state
+{
+   Texture   = <In1>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations

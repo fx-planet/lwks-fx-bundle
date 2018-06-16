@@ -52,7 +52,7 @@ texture Inp;
 
 sampler s_Input = sampler_state
 {
-   Texture   = <In1>;
+   Texture   = <Inp>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;

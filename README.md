@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, June 13, 2018.
+# Lightworks user Fx archive, June 21, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -201,17 +201,18 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |zoom-out-in       |zoom-out-in.fx        |
 
 ## CATEGORY FOLDER: Filmstock effects
-|EFFECT             |FILE NAME         |
-|:----------------- |:---------------- |
-|Bleach Bypass      |bleachbypass.fx   |
-|Colour film ageing |ColourFilmAge.fx  |
-|Duotone            |Duotone.fx        |
-|Film negative      |FilmNeg.fx        |
-|FilmFx             |FilmFx.fx         |
-|Filmic look        |FilmicLook2018.fx |
-|Old Time Movie     |OldTime.fx        |
-|Technicolor        |Technicolor.fx    |
-|Vintage Look       |vintagelook.fx    |
+|EFFECT                   |FILE NAME                                     |
+|:----------------------- |:-------------------------------------------- |
+|Bleach Bypass            |bleachbypass.fx                               |
+|Colour film ageing       |ColourFilmAge.fx                              |
+|Duotone                  |Duotone.fx                                    |
+|Film negative            |FilmNeg.fx                                    |
+|FilmFx                   |FilmFx.fx                                     |
+|Filmic look              |FilmicLook2018.fx                             |
+|Old Film Look            |/OldFilmLook/OldFilmLook.fx                   |
+|> Windows legacy version |/OldFilmLook/Legacy Windows/OldFilmLookWin.fx |
+|Technicolor              |Technicolor.fx                                |
+|Vintage Look             |vintagelook.fx                                |
 
 ## CATEGORY FOLDER: Filters
 |EFFECT                   |FILE NAME            |

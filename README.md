@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, June 21, 2018.
+# Lightworks user Fx archive, June 22, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -54,39 +54,48 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Unpremultiply          |Unpremultiply.fx   |
 
 ## CATEGORY FOLDER: Alpha transitions¹
-|EFFECT                     |FILE NAME           |
-|:------------------------- |:------------------ |
-|Alpha bar transition       |Adx_Bars.fx         |
-|Alpha block dissolve       |Adx_Blocks.fx       |
-|Alpha blur dissolve        |Adx_Blur.fx         |
-|Alpha border transition    |Adx_Borders.fx      |
-|Alpha corner split         |Adx_Corners.fx      |
-|Alpha corner squeeze       |Adx_CnrSqueeze.fx   |
-|Alpha dissolve thru colour |Adx_Colour.fx       |
-|Alpha fractal dissolve     |Adx_Fractals.fx     |
-|Alpha granular dissolve    |Adx_Granular.fx     |
-|Alpha kaleido mix          |Adx_Kaleido.fx      |
-|Alpha optical transition   |Adx_Optical.fx      |
-|Alpha pinch                |Adx_Pinch.fx        |
-|Alpha push                 |Adx_Push.fx         |
-|Alpha radial pinch         |Adx_PinchR.fx       |
-|Alpha ripple dissolve      |Adx_Ripples.fx      |
-|Alpha rotate               |Adx_Rotate.fx       |
-|Alpha S dissolve           |Adx_Scurve.fx       |
-|Alpha sine mix             |Adx_Sine.fx         |
-|Alpha spin dissolve        |Adx_Spin.fx         |
-|Alpha split                |Adx_Split.fx        |
-|Alpha split squeeze        |Adx_SplitSqueeze.fx |
-|Alpha squeeze              |Adx_Squeeze.fx      |
-|Alpha stretch dissolve     |Adx_Stretch.fx      |
-|Alpha strips               |Adx_Strips.fx       |
-|Alpha tile transition      |Adx_Tiles.fx        |
-|Alpha transmogrify         |Adx_Transmogrify.fx |
-|Alpha twister              |Adx_Twister.fx      |
-|Alpha warp dissolve        |Adx_Warp.fx         |
-|Alpha wave collapse        |Adx_Wave.fx         |
-|Alpha X-pinch              |Adx_PinchX.fx       |
-|Alpha zoom dissolve        |Adx_Zoom.fx         |
+|EFFECT                       |FILE NAME          |
+|:--------------------------- |:----------------- |
+|Alpha bar wipe               |Ax_Bars.fx         |
+|Alpha block dissolve         |Ax_Blocks.fx       |
+|Alpha blur dissolve          |Ax_Blur.fx         |
+|Alpha border transition      |Ax_Borders.fx      |
+|Alpha corner split           |Ax_Corners.fx      |
+|Alpha corner squeeze         |Ax_CnrSqueeze.fx   |
+|Alpha colour sizzler         |Ax_Sizzler.fx      |
+|Alpha dissolve thru colour   |Ax_Colour.fx       |
+|Alpha dissolveX              |Ax_DissolveX.fx    |
+|Alpha dry brush mix          |Ax_DryBrush.fx     |
+|Alpha folded neg dissolve    |Ax_FoldNeg.fx      |
+|Alpha folded pos dissolve    |Ax_FoldPos.fx      |
+|Alpha fractal dissolve       |Ax_Fractals.fx     |
+|Alpha granular dissolve      |Ax_Granular.fx     |
+|Alpha kaleido mix            |Ax_Kaleido.fx      |
+|Alpha non-additive mix       |Ax_Non_Add.fx      |
+|Alpha ultra non-add dissolve |Ax_NonAddUltra.fx  |
+|Alpha optical transition     |Ax_Optical.fx      |
+|Alpha pinch                  |Ax_Pinch.fx        |
+|Alpha push                   |Ax_Push.fx         |
+|Alpha radial pinch           |Ax_PinchR.fx       |
+|Alpha RGB drifter            |Ax_RGBdrift.fx     |
+|Alpha ripple dissolve        |Ax_Ripples.fx      |
+|Alpha rotate                 |Ax_Rotate.fx       |
+|Alpha S dissolve             |Ax_Scurve.fx       |
+|Alpha sine mix               |Ax_Sine.fx         |
+|Alpha slice                  |Ax_Slice.fx        |
+|Alpha spin dissolve          |Ax_Spin.fx         |
+|Alpha split                  |Ax_Split.fx        |
+|Alpha split squeeze          |Ax_SplitSqueeze.fx |
+|Alpha squeeze                |Ax_Squeeze.fx      |
+|Alpha stretch dissolve       |Ax_Stretch.fx      |
+|Alpha strips                 |Ax_Strips.fx       |
+|Alpha tile transition        |Ax_Tiles.fx        |
+|Alpha transmogrify           |Ax_Transmogrify.fx |
+|Alpha twister                |Ax_Twister.fx      |
+|Alpha warp dissolve          |Ax_Warp.fx         |
+|Alpha wave collapse          |Ax_Wave.fx         |
+|Alpha X-pinch                |Ax_PinchX.fx       |
+|Alpha zoom dissolve          |Ax_Zoom.fx         |
 
 ## CATEGORY FOLDER: Art effects
 |EFFECT                   |FILE NAME                                       |

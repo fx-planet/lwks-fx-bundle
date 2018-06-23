@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-06-23
 // @Author jwrl
 // @Created 2016-11-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FloatImages_640.png
@@ -25,6 +25,10 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 23 June 2018 jwrl.
+// Added unpremultiply to the alpha channel procesing for Lightworks titles.  Moved the
+// alpha test into its own function, which simplifies ps_main() considerably.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -99,7 +103,7 @@ sampler s_Bgnd_3  = sampler_state {
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int enhanceKey
+int KeyMode
 <
    string Group = "Disconnect the video input to Lightworks titles if used.";
    string Description = "Type of foreground layer";
@@ -266,13 +270,27 @@ float D_Yc
 
 #define A_On  true
 
+#define SOLID  0
+#define NORMAL 0
+
+#define EMPTY  (0.0).xxxx
+
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-bool fn_illegal (float2 xy)
+float4 fn_tex2D (sampler Vsample, float2 uv)
 {
-   return (xy.x < 0.0) || (xy.y < 0.0) || (xy.x > 1.0) || (xy.y > 1.0);
+   if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
+
+   float4 retval = tex2D (Vsample, uv);
+
+   if (KeyMode == NORMAL) return retval;
+   else if (KeyMode == SOLID) return float4 (retval.rgb, 1.0);
+
+   retval.a = pow (retval.a, 0.5);
+
+   return float4 (retval.rgb / retval.a, retval.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -293,13 +311,7 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform sampler img,
    float2 zoomCentre = float2 (1.0 - Xc, Yc);
    float2 uv = ((xy - zoomCentre) * scale) + zoomCentre;
 
-   if (fn_illegal (uv)) { return bgdImage; }
-
-   float4 fgdImage = tex2D (s_Fgnd, uv);
-
-   if (enhanceKey == 0) fgdImage.a = 1.0;
-
-   if (enhanceKey == 2) fgdImage.a = pow (fgdImage.a, 0.5);
+   float4 fgdImage = fn_tex2D (s_Fgnd, uv);
 
    return lerp (bgdImage, fgdImage, fgdImage.a * Opac);
 }

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-06-23
 // @Author jwrl
 // @Created 2013-03-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaAdjust_640.png
@@ -12,6 +12,9 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 23 June 2018 jwrl.
+// Added unpremultiply, applied after all other adjustments.  Obvious need, really.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -79,6 +82,11 @@ float alphaGain
    float MaxVal = 4.00;
 > = 1.0;
 
+bool Unpremultiply
+<
+   string Description = "Unpremultiply";
+> = false;
+
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
@@ -89,9 +97,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    retval.a = saturate (((((pow (retval.a, 1 / alphaGamma) * alphaGain) + alphaBrightness) - 0.5) * alphaContrast) + 0.5);
 
-   if (showAlpha) return retval.aaaa;
+   if (showAlpha) retval.rgb = retval.aaa;
 
-   return retval;
+   return Unpremultiply ? float4 (retval.rgb / retval.a, retval.a) : retval;
 }
 
 //-----------------------------------------------------------------------------------------//

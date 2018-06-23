@@ -4,7 +4,7 @@
 // @Created 2016-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect light_ray_keys.fx
+// Lightworks user effect LightRayKeys.fx
 //
 // This effect adds directional blurs to a key or any image with an alpha channel.  The
 // default is to apply a radial blur away from the effect centre.  That centre can be

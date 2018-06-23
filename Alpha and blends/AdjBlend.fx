@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-06-23
 // @Author jwrl
 // @Created 2017-10-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/AdjustableBlend_640.png
@@ -17,6 +17,9 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship, links and description information for GitHub, and reformatted the
 // original code to be consistent with other Lightworks user effects.
+//
+// Bugfix 23 June 2018 jwrl.
+// Corrected unpremultiply - instead of dividing the RGB by alpha I was multiplying!!!
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -113,7 +116,7 @@ float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
    if (Boost_alpha < 0.0) { Fgd.a = pow (Fgd.a, scale); }
    else if (Boost_alpha > 0.0) { Fgd.a = 1.0 - pow (1.0 - Fgd.a, scale); }
 
-   Fgd.rgb *= Fgd.a;
+   Fgd.rgb /= Fgd.a;
    Fgd.a = lerp (1.0, Fgd.a, Transparency);
 
    return lerp (Bgd, Fgd, Fgd.a * Amount);

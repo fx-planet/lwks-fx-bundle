@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, June 22, 2018.
+# Lightworks user Fx archive, June 23, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -43,6 +43,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Border                 |Border.fx          |
 |Drop shadow and border |DropShadow.fx      |
 |Drop shadow plus       |DropShadowPlus.fx  |
+|Enhanced blend         |BlendX.fx          |
 |Extrusion Matte        |Extrusion_Matte.fx |
 |Flexi-blend            |FlexiBlend.fx      |
 |Floating images        |FloatImage.fx      |

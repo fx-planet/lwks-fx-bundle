@@ -4,7 +4,7 @@
 // @Created 2016-02-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/MatteKey_640.png
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect mattekey.fx
+// Lightworks user effect MatteKey.fx
 //
 // This provides a means of matting a foreground image into a background using a white
 // on black or black on white matte shape.  The matte can be feathered, or it can be

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-06-23
 // @Author jwrl
 // @Created 2017-12-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlexiBlend_640.png
@@ -17,6 +17,10 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 23 June 2018 jwrl.
+// Amended the address range check section.  Previously the any() function was used, and
+// this has been found to be buggy in the way that it has been implemented in Cg.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -131,6 +135,19 @@ float Crop_B
 
 float _OutputAspectRatio;
 
+#define EMPTY  (0.0).xxxx
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_tex2D (sampler Vsample, float2 uv)
+{
+   if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
+
+   return tex2D (Vsample, uv);
+}
+
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
@@ -162,7 +179,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    xy /= scale;
    xy += 0.5.xx;
 
-   float4 Fgd = (any (xy < 0.0) || any (xy > 1.0)) ? 0.0.xxxx : tex2D (CropSampler, xy);
+   float4 Fgd = fn_tex2D (CropSampler, xy);
    float4 Bgd = tex2D (BgSampler, uv);
 
    float alpha = Fgd.a * Amount;

@@ -38,7 +38,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |EFFECT                 |FILE NAME          |
 |:--------------------- |:----------------- |
 |Adjustable blend       |AdjBlend.fx        |
-|Alpha adjust           |alphaAdjust.fx     |
+|Alpha adjust           |AlphaAdjust.fx     |
 |Alpha Feather          |AlphaFeather.fx    |
 |Border                 |Border.fx          |
 |Drop shadow and border |DropShadow.fx      |
@@ -48,10 +48,10 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Flexi-blend            |FlexiBlend.fx      |
 |Floating images        |FloatImage.fx      |
 |Glitter edge           |GlitterEdge.fx     |
-|Light ray keys         |light_ray_keys.fx  |
+|Light ray keys         |LightRayKeys.fx  |
 |Lumakey and matte      |LumaMatte.fx       |
 |Magic edges            |MagicEdges.fx      |
-|Matte key              |mattekey.fx        |
+|Matte key              |MatteKey.fx        |
 |Unpremultiply          |Unpremultiply.fx   |
 
 ## CATEGORY FOLDER: Alpha transitions¹

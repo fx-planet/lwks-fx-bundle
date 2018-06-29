@@ -33,6 +33,9 @@
 //
 // Modified 2018-06-16 jwrl.
 // Explicitly defined addressing modes to avoid a flicker on frame boundaries.
+//
+// Modified 2018-06-29 jwrl.
+// Changed PanPosition description to "Pan or tilt".  Cosmetic only.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -106,7 +109,7 @@ bool PanAndScan
 float PanPosition
 <
    string Group = "Anamorphic correction";
-   string Flags = "Pan";
+   string Description = "Pan or tilt";
    float MinVal = -1.0;
    float MaxVal = 1.0;
 > = 0.0;

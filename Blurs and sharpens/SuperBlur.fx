@@ -21,6 +21,10 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 30 June 2018.
+// Changed blur calculation to be based on a fixed percentage of frame size rather than
+// based on pixel size.  The problem was identified by schrauber, for which, thanks.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -99,16 +103,15 @@ float Amount
 #define LOOP     12
 #define DIVIDE   49
 
-#define RADIUS_1 4.0
-#define RADIUS_2 10.0
-#define RADIUS_3 20.0
-#define RADIUS_4 35.0
-#define RADIUS_5 56.0
+#define RADIUS_1 0.002
+#define RADIUS_2 0.005
+#define RADIUS_3 0.01
+#define RADIUS_4 0.0175
+#define RADIUS_5 0.028
 
 #define ANGLE    0.261799
 
 float _OutputAspectRatio;
-float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
@@ -121,7 +124,7 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform floa
    float4 retval = tex2D (blurSampler, uv);
 
    if ((Size > 0.0) && (Amount > 0.0)) {
-      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * blurRadius * Size / _OutputWidth;
+      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * blurRadius * Size;
 
       for (int i = 0; i < LOOP; i++) {
          sincos ((i * ANGLE), xy.x, xy.y);

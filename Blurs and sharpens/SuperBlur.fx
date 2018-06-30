@@ -113,8 +113,6 @@ float Amount
 
 float _OutputAspectRatio;
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
@@ -151,40 +149,22 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform floa
 
 technique SuperBlur
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = Blur_1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (FgdSampler, RADIUS_1);
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Blur_1;"; >
+   { PixelShader = compile PROFILE ps_main (FgdSampler, RADIUS_1); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = Blur_2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (b1_Sampler, RADIUS_2);
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = Blur_2;"; >
+   { PixelShader = compile PROFILE ps_main (b1_Sampler, RADIUS_2); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = Blur_1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (b2_Sampler, RADIUS_3);
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = Blur_1;"; >
+   { PixelShader = compile PROFILE ps_main (b2_Sampler, RADIUS_3); }
 
-   pass pass_four
-   <
-      string Script = "RenderColorTarget0 = Blur_2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (b1_Sampler, RADIUS_4);
-   }
+   pass P_4
+   < string Script = "RenderColorTarget0 = Blur_2;"; >
+   { PixelShader = compile PROFILE ps_main (b1_Sampler, RADIUS_4); }
 
-   pass pass_five
-   {
-      PixelShader = compile PROFILE ps_main (b2_Sampler, RADIUS_5);
-   }
+   pass P_5
+   { PixelShader = compile PROFILE ps_main (b2_Sampler, RADIUS_5); }
 }

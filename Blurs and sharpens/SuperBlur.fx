@@ -1,23 +1,21 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-07-01
 // @Author jwrl
 // @Created 2017-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/SuperBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SuperBlur.fx
 //
-// This is a spin-off from my radial blur as used in several of my other effects.  To
-// ensure ps_2_0 compliance for Windows users this is a five pass effect, however this
-// is achieved by taking five passes through the one shader.
-//
-// Modified for version 14 11 February 2017.
-// Added subcategory "Blurs and Sharpens"
+// This is a spin-off from my radial blur as used in several other effects.  To ensure
+// ps_2_b compliance for Windows users this is a three or five pass effect.  This is
+// achieved by taking two or five passes through the one shader, then in the case of the
+// standard blur, ending in a second shader.
 //
 // Modified 2 July 2016
 // This version modified at khaver's suggestion to reduce the number of render targets.
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Modified for version 14 11 February 2017.
+// Added subcategory "Blurs and Sharpens"
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
@@ -25,6 +23,11 @@
 // Modified by LW user jwrl 30 June 2018.
 // Changed blur calculation to be based on a fixed percentage of frame size rather than
 // based on pixel size.  The problem was identified by schrauber, for which, thanks.
+//
+// Modified by LW user jwrl 1 July 2018.
+// Doubled the values of the radii used to calculate the blur to allow maximum blur to
+// be stronger.  Also added a "standard blur" option which approximates the range that
+// the Lightworks blur effect covers.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -33,13 +36,14 @@ int _LwksEffectInfo
    string Description = "Super blur";
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
+   string Notes       = "This is an extremely smooth blur with two ranges, standard and super";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+texture Inp;
 
 texture Blur_1 : RenderColorTarget;
 texture Blur_2 : RenderColorTarget;
@@ -48,9 +52,9 @@ texture Blur_2 : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgdSampler = sampler_state
+sampler s_Input = sampler_state
 {
-   Texture   = <Input>;
+   Texture   = <Inp>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -58,7 +62,7 @@ sampler FgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler b1_Sampler = sampler_state
+sampler s_Blur_1 = sampler_state
 {
    Texture   = <Blur_1>;
    AddressU  = Mirror;
@@ -68,7 +72,7 @@ sampler b1_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler b2_Sampler = sampler_state
+sampler s_Blur_2 = sampler_state
 {
    Texture   = <Blur_2>;
    AddressU  = Mirror;
@@ -81,6 +85,12 @@ sampler b2_Sampler = sampler_state
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
+
+int SetTechnique
+<
+   string Description = "Blur strength";
+   string Enum = "Standard blur,Super blur";
+> = 1;
 
 float Size
 <
@@ -103,13 +113,13 @@ float Amount
 #define LOOP     12
 #define DIVIDE   49
 
-#define RADIUS_1 0.002
-#define RADIUS_2 0.005
-#define RADIUS_3 0.01
-#define RADIUS_4 0.0175
-#define RADIUS_5 0.028
+#define RADIUS_1 0.004
+#define RADIUS_2 0.01
+#define RADIUS_3 0.02
+#define RADIUS_4 0.035
+#define RADIUS_5 0.056
 
-#define ANGLE    0.261799
+#define ANGLE    0.2617993878
 
 float _OutputAspectRatio;
 
@@ -117,12 +127,38 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+float4 ps_std (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 retval = tex2D (s_Blur_2, uv);
+
+   if ((Size > 0.0) && (Amount > 0.0)) {
+      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * Size * RADIUS_3;
+
+      for (int i = 0; i < LOOP; i++) {
+         sincos ((i * ANGLE), xy.x, xy.y);
+         xy *= radius;
+         retval += tex2D (s_Blur_2, uv + xy);
+         retval += tex2D (s_Blur_2, uv - xy);
+         xy += xy;
+         retval += tex2D (s_Blur_2, uv + xy);
+         retval += tex2D (s_Blur_2, uv - xy);
+      }
+
+      retval /= DIVIDE;
+
+      if (Amount < 1.0)
+         return lerp (tex2D (s_Input, uv), retval, Amount);
+   }
+
+   return retval;
+}
+
 float4 ps_main (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform float blurRadius) : COLOR
 {
    float4 retval = tex2D (blurSampler, uv);
 
    if ((Size > 0.0) && (Amount > 0.0)) {
-      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * blurRadius * Size;
+      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * Size * blurRadius;
 
       for (int i = 0; i < LOOP; i++) {
          sincos ((i * ANGLE), xy.x, xy.y);
@@ -137,7 +173,7 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform floa
       retval /= DIVIDE;
 
       if ((blurRadius == RADIUS_5) && (Amount < 1.0))
-         return lerp (tex2D (FgdSampler, uv), retval, Amount);
+         return lerp (tex2D (s_Input, uv), retval, Amount);
    }
 
    return retval;
@@ -147,24 +183,38 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform floa
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique SuperBlur
+technique SuperBlur_0
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Blur_1;"; >
-   { PixelShader = compile PROFILE ps_main (FgdSampler, RADIUS_1); }
+   { PixelShader = compile PROFILE ps_main (s_Input, RADIUS_1); }
 
    pass P_2
    < string Script = "RenderColorTarget0 = Blur_2;"; >
-   { PixelShader = compile PROFILE ps_main (b1_Sampler, RADIUS_2); }
+   { PixelShader = compile PROFILE ps_main (s_Blur_1, RADIUS_2); }
+
+   pass P_3
+   { PixelShader = compile PROFILE ps_std (); }
+}
+
+technique SuperBlur_1
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Blur_1;"; >
+   { PixelShader = compile PROFILE ps_main (s_Input, RADIUS_1); }
+
+   pass P_2
+   < string Script = "RenderColorTarget0 = Blur_2;"; >
+   { PixelShader = compile PROFILE ps_main (s_Blur_1, RADIUS_2); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = Blur_1;"; >
-   { PixelShader = compile PROFILE ps_main (b2_Sampler, RADIUS_3); }
+   { PixelShader = compile PROFILE ps_main (s_Blur_2, RADIUS_3); }
 
    pass P_4
    < string Script = "RenderColorTarget0 = Blur_2;"; >
-   { PixelShader = compile PROFILE ps_main (b1_Sampler, RADIUS_4); }
+   { PixelShader = compile PROFILE ps_main (s_Blur_1, RADIUS_4); }
 
    pass P_5
-   { PixelShader = compile PROFILE ps_main (b2_Sampler, RADIUS_5); }
+   { PixelShader = compile PROFILE ps_main (s_Blur_2, RADIUS_5); }
 }

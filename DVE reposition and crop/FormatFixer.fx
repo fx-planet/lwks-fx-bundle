@@ -1,46 +1,47 @@
-// @Maintainer jwrl
-// @Released 2018-04-07
-// @Author jwrl
-// @Created 2017-05-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/FormatFixer_640.png
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Lightworks user effect FormatFixer.fx
 //
-// This effect is designed to be a very straightforward portrait to landscape rotator
-// or 180 degree rotator.  This it does very effectively over a mixture of backgrounds.
-// With all background mix settings set to zero a transparent black surround is produced,
-// and the resulting image may be blended with other effects.
+// Created by LW user jwrl 9 May 2017.
 //
-// The foreground image can be rotated through plus or minus 90 degrees, or given a full
-// 180 degree rotation to invert the image.  As it is rotated it's also corrected for size
-// so that no part of the image is lost.  The image can be independently scaled from one
-// quarter size to four times it's actual size.  The width can be trimmed from half size
+// This effect is designed to be a very straightforward
+// portrait to landscape rotator/180 degree rotator.  This it
+// does very effectively over a mixture of backgrounds.  With
+// all background mix settings set to zero a transparent
+// black surround is produced, and the resulting image may be
+// blended with other effects.
+//
+// The foreground image can be rotated through plus or minus
+// 90 degrees, or given a full 180 degree rotation to invert
+// the image.  As it is rotated it's also corrected for size
+// so that no part of the image is lost.  The image can be
+// independently scaled from one quarter size to four times
+// it's actual size.  The width can be trimmed from half size
 // to twice size to allow adjustment of the aspect ratio.
 //
-// A single symmetrical crop tool is provided to crop the left-right and top-bottom edges
-// of the foreground.  This is also provided with a coloured border and feathering.  The
-// vertical crop defaults to 110% of screen height to ensure that no colour bleed or
-// feathering will be visible unless it's absolutely required.  The crop width tracks the
-// rotation and scaling of the foreground automatically.
+// A single symmetrical crop tool is provided to crop the
+// left-right and top-bottom edges of the foreground.  This
+// is also provided with a coloured border and feathering.
+// The vertical crop defaults to 110% of screen height to
+// ensure that no colour bleed or feathering will be visible
+// unless it's absolutely required.  The crop width tracks
+// the rotation and scaling of the foreground automatically.
 //
-// The three mix faders have a bottom up priority.  That is, the colour fader has highest
-// priority and overrides all others.  The foreground fader has higher priority than the
-// background fader and overrides it.  The background fader simply fades from black to
-// 100% level.
+// The three mix faders have a bottom up priority.  That is,
+// the colour fader has highest priority and overrides all
+// others.  The foreground fader has higher priority than
+// the background fader and overrides it.  The background
+// fader simply fades from black to 100% level.
 //
-// Bug fix by LW user jwrl 13 July 2017
-// Corrected a syntax variation that meant that this effect may not work as expected on
-// Linux/Mac platforms.
+// Bug fix by LW user jwrl 13 July 2017 - this effect didn't
+// work as expected on Linux/Mac platforms.  It now does.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect should now function correctly when used with
-// all current and previous Lightworks versions.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//-----------------------------------------------------------------------------------------//
+// Legality checking has been added to correct for a bug
+// in XY sampler addressing on Linux and OS-X platforms.
+// This effect should now function correctly when used with
+// all current and previous Lightworks versions.
+//--------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
@@ -50,9 +51,9 @@ int _LwksEffectInfo
    string SubCategory = "User Effects";
 > = 0;
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Inputs
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 
 texture Fgd;
 texture Bgd;
@@ -61,9 +62,9 @@ texture Input  : RenderColorTarget;
 texture Blur_1 : RenderColorTarget;
 texture Blur_2 : RenderColorTarget;
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Samplers
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 
 sampler FgdSampler = sampler_state {
    Texture   = <Fgd>;
@@ -112,9 +113,9 @@ sampler b2_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Parameters
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 
 int fgRotate
 <
@@ -256,9 +257,9 @@ float4 bgColour
    string Description = "Colour";
 > = { 0.0, 0.0, 0.25, 0.0 };
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Definitions and declarations
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 
 #define DIVISOR  15
 
@@ -280,18 +281,18 @@ float _OutputWidth;
 
 #pragma warning ( disable : 3571 )
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Functions
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 
 bool fn_illegal (float2 uv)
 {
    return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
 }
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Shaders
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 
 float4 ps_foreground (float2 uv : TEXCOORD1) : COLOR
 {
@@ -419,9 +420,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 // Techniques
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------------------------------//
 
 technique formatFixer
 {

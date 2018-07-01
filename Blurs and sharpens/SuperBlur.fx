@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-07-01
 // @Author jwrl
-// @Created 2017-06-30
+// @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/SuperBlur_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SuperBlur.fx

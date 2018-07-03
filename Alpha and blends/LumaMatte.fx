@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-06-08
+// @Released 2018-07-03
 // @Author jwrl
 // @Created 2018-06-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumaMatte_640.png
@@ -16,6 +16,9 @@
 // A coloured border can also be generated from the key.  Border opacity, width and
 // colour are all adjustable.  A drop shadow with the same range of adjustments can also
 // be produced, and the position of that shadow can be adjusted.
+//
+// Modified 3 July 2018
+// Added ability to key in external video.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -24,30 +27,32 @@ int _LwksEffectInfo
    string Description = "Lumakey and matte";
    string Category    = "Key";
    string SubCategory = "User Effects";
-   string Notes       = "This will generate a lumakey from white on black video, fill it with a matte colour and generate a border and drop shadow for it.";
+   string Notes       = "This will generate a lumakey from white on black video, fill it with a matte colour or video and generate a border and drop shadow for it.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+texture Key;
+texture V_1;
+texture V_2;
 
-texture keyInp  : RenderColorTarget;
-texture brdrInp : RenderColorTarget;
-texture brdrOut : RenderColorTarget;
-texture shadow  : RenderColorTarget;
+texture KeyFgd : RenderColorTarget;
+texture Part_1 : RenderColorTarget;
+texture Part_2 : RenderColorTarget;
+texture Border : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+sampler s_Key_Vid = sampler_state { Texture = <Key>; };
+sampler s_Video_1 = sampler_state { Texture = <V_1>; };
+sampler s_Video_2 = sampler_state { Texture = <V_2>; };
 
-sampler s_KeyAlpha = sampler_state {
-   Texture   = <keyInp>;
+sampler s_Foreground = sampler_state {
+   Texture   = <KeyFgd>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -55,29 +60,29 @@ sampler s_KeyAlpha = sampler_state {
    MipFilter = Linear;
 };
 
-sampler s_BorderIn = sampler_state {
-   Texture = <brdrInp>;
+sampler s_Part_1 = sampler_state {
+   Texture   = <Part_1>;
    AddressU  = Mirror;
    AddressV  = Mirror;
-   MinFilter = Linear;
+   MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler s_BorderOut = sampler_state {
-   Texture = <brdrOut>;
+sampler s_Part_2 = sampler_state {
+   Texture   = <Part_2>;
    AddressU  = Mirror;
    AddressV  = Mirror;
-   MinFilter = Linear;
+   MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler s_Shadow = sampler_state {
-   Texture = <shadow>;
+sampler s_Border = sampler_state {
+   Texture   = <Border>;
    AddressU  = Mirror;
    AddressV  = Mirror;
-   MinFilter = Linear;
+   MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
 };
@@ -91,19 +96,19 @@ float Amount
    string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 1.00;
+> = 1.0;
 
-bool KeyAlpha
+bool K_alpha
 <
-   string Description = "Use foreground alpha channel";
+   string Description = "Use key alpha channel";
 > = false;
 
-bool KeyInvert
+bool K_invert
 <
    string Description = "Invert key";
 > = false;
 
-float KeyClip
+float K_clip
 <
    string Group = "Key";
    string Description = "Clip level";
@@ -111,7 +116,7 @@ float KeyClip
    float MaxVal = 1.0;
 > = 0.50;
 
-float KeySlope
+float K_slope
 <
    string Group = "Key";
    string Description = "Tolerance";
@@ -119,76 +124,76 @@ float KeySlope
    float MaxVal = 1.0;
 > = 0.50;
 
-int KeyFill
+int K_fill
 <
    string Group = "Key";
    string Description = "Fill key with:";
-   string Enum = "Foreground,Matte colour";
-> = 1;
+   string Enum = "Key video,Video 1,Matte colour";
+> = 2;
 
-float4 KeyMatte
+float4 K_matte
 <
    string Group = "Key";
    string Description = "Matte colour";
    bool SupportsAlpha = false;
 > = { 1.0, 1.0, 1.0, 1.0 };
 
-float BorderOpacity
+float B_amount
 <
    string Group = "Border";
    string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 1.00;
+> = 1.0;
 
-float BorderWidth
+float B_width
 <
    string Group = "Border";
    string Description = "Width";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.25;
+> = 0.05;
 
-float4 BorderColour
+float4 B_colour
 <
    string Group = "Border";
    string Description = "Colour";
    bool SupportsAlpha = false;
 > = { 0.0, 0.0, 0.0, 0.0 };
 
-float ShadowOpacity
+float S_amount
 <
    string Group = "Shadow";
    string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.50;
+> = 0.5;
 
-float ShadowFeather
+float S_feather
 <
    string Group = "Shadow";
    string Description = "Feather";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.3333;
+> = 0.33333333;
 
-float Shadow_X
+float S_offset_X
 <
    string Group = "Shadow";
    string Description = "X offset";
    float MinVal = -1.0;
    float MaxVal = 1.0;
-> = 0.20;
+> = 0.2;
 
-float Shadow_Y
+float S_offset_Y
 <
    string Group = "Shadow";
    string Description = "Y offset";
    float MinVal = -1.0;
    float MaxVal = 1.0;
-> = -0.20;
+> = -0.2;
 
-float4 ShadowColour
+float4 S_colour
 <
    string Group = "Shadow";
    string Description = "Colour";
@@ -199,187 +204,174 @@ float4 ShadowColour
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
+#define W_SCALE    4000.0
+#define X_SCALE    0.005
+#define Y_SCALE    0.0088888889
+
+#define F_SCALE    0.005
+#define OFFS_SCALE 0.04
+
 float _OutputAspectRatio;
-float _OutputWidth;
 
-float _OutputPixelWidth;
-float _OutputPixelHeight;
+float2 _rot_0 [] = { { 0.0, 1.0 }, { 0.2588190451, 0.9659258263 }, { 0.5, 0.8660254038 },
+                     { 0.7071067812, 0.7071067812 }, { 0.8660254038, 0.5 },
+                     { 0.9659258263, 0.2588190451 }, { 1.0, 0.0 } };
 
-float _sin0 [] = { 0.0, 0.2588, 0.5, 0.7071, 0.866, 0.9659, 1.0 };
-
-float _sin1 [] = { 0.1305, 0.3827, 0.6088, 0.7934, 0.9239, 0.9914 };
-
-float _pascal [] = { 0.0002441, 0.0029297, 0.0161133, 0.0537109, 0.1208496, 0.1933594, 0.2255859 };
+float2 _rot_1 [] = { { 0.1305261922, 0.9914448614 }, { 0.3826834324, 0.9238795325 },
+                     { 0.6087614290, 0.7933533403 }, { 0.7933533403, 0.6087614290 },
+                     { 0.9238795325, 0.3826834324 }, { 0.9914448614, 0.1305261922 } };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_matte_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_key_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = tex2D (s_Foreground, xy1);
-   float4 retval = (KeyFill == 1) ? KeyMatte : Fgnd;
+   float4 Fgnd   = tex2D (s_Key_Vid, xy1);
+   float4 retval = (K_fill == 2) ? K_matte
+                 : (K_fill == 1) ? tex2D (s_Video_1, xy2) : Fgnd;
 
-   float softRngBg = 1.0 - KeyClip;
-   float softRngFg = softRngBg + KeySlope;
-   float keyValue  = KeyAlpha ? Fgnd.a : max (Fgnd.r, max (Fgnd.g, Fgnd.b));
+   float softMin = 1.0 - K_clip;
+   float softMax = softMin + K_slope;
+   float alpha   = K_alpha ? Fgnd.a : max (Fgnd.r, max (Fgnd.g, Fgnd.b));
 
-   if (KeyInvert) keyValue = 1.0 - keyValue;
+   if (K_invert) alpha = 1.0 - alpha;
 
-   retval.a = (keyValue <= softRngBg) ? 0.0 :
-              ((keyValue > softRngFg) ? 1.0 : (keyValue - softRngBg) / KeySlope);
+   retval.a = (alpha <= softMin) ? 0.0 :
+              ((alpha > softMax) ? 1.0 : (alpha - softMin) / K_slope);
 
    return retval;
 }
 
 float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_KeyAlpha, uv);
+   if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
-   if (BorderOpacity == 0.0) return retval;
+   float2 offset, xy = uv;
+   float2 edge = float2 (1.0, _OutputAspectRatio) * B_width * X_SCALE;
 
-   float2 offset;
-   float2 xy = float2 (1.0, _OutputAspectRatio) * 10.0 * BorderWidth / _OutputWidth;
+   float alpha = tex2D (s_Foreground, xy).a;
 
    for (int i = 0; i < 7; i++) {
-      offset = xy * float2 (_sin0 [i], _sin0 [6 - i]);
+      offset = edge * _rot_0 [i];
 
-      retval += tex2D (s_KeyAlpha, uv + offset);
-      retval += tex2D (s_KeyAlpha, uv - offset);
+      alpha += tex2D (s_Foreground, xy + offset).a;
+      alpha += tex2D (s_Foreground, xy - offset).a;
 
       offset.y = -offset.y;
 
-      retval += tex2D (s_KeyAlpha, uv + offset);
-      retval += tex2D (s_KeyAlpha, uv - offset);
+      alpha += tex2D (s_Foreground, xy + offset).a;
+      alpha += tex2D (s_Foreground, xy - offset).a;
    }
 
-   return saturate (retval);
+   return saturate (alpha).xxxx;
 }
 
 float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd   = tex2D (s_KeyAlpha, uv);
+   if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
-   if (BorderOpacity == 0.0) return Fgnd;
+   float2 offset, xy = uv;
+   float2 edge = float2 (_OutputAspectRatio, 1.0) * B_width * X_SCALE;
 
-   float4 retval = tex2D (s_BorderIn, uv);
-
-   float2 offset;
-   float2 xy = float2 (1.0, _OutputAspectRatio) * 10.0 * BorderWidth / _OutputWidth;
+   float alpha = tex2D (s_Part_1, xy).a;
 
    for (int i = 0; i < 6; i++) {
-      offset = xy * float2 (_sin1 [i], _sin1 [5 - i]);
+      offset = edge * _rot_1 [i];
 
-      retval += tex2D (s_BorderIn, uv + offset);
-      retval += tex2D (s_BorderIn, uv - offset);
+      alpha += tex2D (s_Part_1, xy + offset).a;
+      alpha += tex2D (s_Part_1, xy - offset).a;
 
       offset.y = -offset.y;
 
-      retval += tex2D (s_BorderIn, uv + offset);
-      retval += tex2D (s_BorderIn, uv - offset);
+      alpha += tex2D (s_Part_1, xy + offset).a;
+      alpha += tex2D (s_Part_1, xy - offset).a;
    }
 
-   retval = saturate (retval);
+   return saturate (alpha).xxxx;
+}
 
-   float alpha = max (Fgnd.a, retval.a * BorderOpacity);
+float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Fgnd = tex2D (s_Foreground, uv);
 
-   retval = lerp (BorderColour, Fgnd, Fgnd.a);
+   if (B_amount <= 0.0) return Fgnd;
 
-   return float4 (retval.rgb, alpha);
+   float alpha = tex2D (s_Part_2, uv).a;
+   float2 xy = max (Y_SCALE * _OutputAspectRatio, X_SCALE).xx / W_SCALE;
+
+   alpha += tex2D (s_Part_2, uv + xy).a;
+   alpha += tex2D (s_Part_2, uv - xy).a;
+
+   xy.x = -xy.x;
+
+   alpha += tex2D (s_Part_2, uv + xy).a;
+   alpha += tex2D (s_Part_2, uv - xy).a;
+   alpha /= 5.0;
+
+   alpha = max (Fgnd.a, alpha * B_amount);
+   Fgnd  = lerp (B_colour, Fgnd, Fgnd.a);
+
+   return float4 (Fgnd.rgb, alpha);
 }
 
 float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 xy = uv - float2 (Shadow_X / _OutputAspectRatio, -Shadow_Y) * 0.04;
+   float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * F_SCALE;
+   float2 xy2, xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFS_SCALE;
 
-   float4 retval = tex2D (s_BorderOut, xy);
+   float alpha = tex2D (s_Border, xy1).a;
 
-   if ((ShadowOpacity != 0.0) && (ShadowFeather != 0.0)) {
-      float offset = ShadowFeather * 2.0 / _OutputWidth;
+   if ((S_amount > 0.0) && (S_feather > 0.0)) {
+      for (int i = 0; i < 7; i++) {
+         xy2 = scale * _rot_0 [i];
 
-      float pos_6 = xy.x  + offset;
-      float pos_5 = pos_6 + offset;
-      float pos_4 = pos_5 + offset;
-      float pos_3 = pos_4 + offset;
-      float pos_2 = pos_3 + offset;
-      float pos_1 = pos_2 + offset;
-      float pos_0 = pos_1 + offset;
+         alpha += tex2D (s_Border, xy1 + xy2).a;
+         alpha += tex2D (s_Border, xy1 - xy2).a;
 
-      float neg_6 = xy.x  - offset;
-      float neg_5 = neg_6 - offset;
-      float neg_4 = neg_5 - offset;
-      float neg_3 = neg_4 - offset;
-      float neg_2 = neg_3 - offset;
-      float neg_1 = neg_2 - offset;
-      float neg_0 = neg_1 - offset;
+         xy2.y = -xy2.y;
 
-      retval *= _pascal [6];
+         alpha += tex2D (s_Border, xy1 + xy2).a;
+         alpha += tex2D (s_Border, xy1 - xy2).a;
+      }
 
-      retval += tex2D (s_BorderOut, float2 (pos_5, xy.y)) * _pascal [5];
-      retval += tex2D (s_BorderOut, float2 (pos_4, xy.y)) * _pascal [4];
-      retval += tex2D (s_BorderOut, float2 (pos_3, xy.y)) * _pascal [3];
-      retval += tex2D (s_BorderOut, float2 (pos_2, xy.y)) * _pascal [2];
-      retval += tex2D (s_BorderOut, float2 (pos_1, xy.y)) * _pascal [1];
-      retval += tex2D (s_BorderOut, float2 (pos_0, xy.y)) * _pascal [0];
-
-      retval += tex2D (s_BorderOut, float2 (neg_5, xy.y)) * _pascal [5];
-      retval += tex2D (s_BorderOut, float2 (neg_4, xy.y)) * _pascal [4];
-      retval += tex2D (s_BorderOut, float2 (neg_3, xy.y)) * _pascal [3];
-      retval += tex2D (s_BorderOut, float2 (neg_2, xy.y)) * _pascal [2];
-      retval += tex2D (s_BorderOut, float2 (neg_1, xy.y)) * _pascal [1];
-      retval += tex2D (s_BorderOut, float2 (neg_0, xy.y)) * _pascal [0];
+   alpha /= 29.0;
    }
 
-   return retval;
+   return alpha.xxxx;
 }
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s_Shadow, xy1);
+   float4 retval = tex2D (s_Part_1, xy1);
 
-   if ((ShadowOpacity != 0.0) && (ShadowFeather != 0.0)) {
-      float offset = ShadowFeather * 2.0 * _OutputAspectRatio / _OutputWidth;
+   float2 xy, scale = float2 (1.0, _OutputAspectRatio) * S_feather * F_SCALE;
 
-      float pos_6 = xy1.y + offset;
-      float pos_5 = pos_6 + offset;
-      float pos_4 = pos_5 + offset;
-      float pos_3 = pos_4 + offset;
-      float pos_2 = pos_3 + offset;
-      float pos_1 = pos_2 + offset;
-      float pos_0 = pos_1 + offset;
+   float alpha = retval.a;
 
-      float neg_6 = xy1.y - offset;
-      float neg_5 = neg_6 - offset;
-      float neg_4 = neg_5 - offset;
-      float neg_3 = neg_4 - offset;
-      float neg_2 = neg_3 - offset;
-      float neg_1 = neg_2 - offset;
-      float neg_0 = neg_1 - offset;
+   if ((S_amount > 0.0) && (S_feather > 0.0)) {
+      for (int i = 0; i < 6; i++) {
+         xy = scale * _rot_1 [i];
 
-      retval *= _pascal [6];
+         alpha += tex2D (s_Part_1, xy1 + xy).a;
+         alpha += tex2D (s_Part_1, xy1 - xy).a;
 
-      retval += tex2D (s_Shadow, float2 (xy1.x, pos_5)) * _pascal [5];
-      retval += tex2D (s_Shadow, float2 (xy1.x, pos_4)) * _pascal [4];
-      retval += tex2D (s_Shadow, float2 (xy1.x, pos_3)) * _pascal [3];
-      retval += tex2D (s_Shadow, float2 (xy1.x, pos_2)) * _pascal [2];
-      retval += tex2D (s_Shadow, float2 (xy1.x, pos_1)) * _pascal [1];
-      retval += tex2D (s_Shadow, float2 (xy1.x, pos_0)) * _pascal [0];
+         xy.y = -xy.y;
 
-      retval += tex2D (s_Shadow, float2 (xy1.x, neg_5)) * _pascal [5];
-      retval += tex2D (s_Shadow, float2 (xy1.x, neg_4)) * _pascal [4];
-      retval += tex2D (s_Shadow, float2 (xy1.x, neg_3)) * _pascal [3];
-      retval += tex2D (s_Shadow, float2 (xy1.x, neg_2)) * _pascal [2];
-      retval += tex2D (s_Shadow, float2 (xy1.x, neg_1)) * _pascal [1];
-      retval += tex2D (s_Shadow, float2 (xy1.x, neg_0)) * _pascal [0];
+         alpha += tex2D (s_Part_1, xy1 + xy).a;
+         alpha += tex2D (s_Part_1, xy1 - xy).a;
+      }
+
+   alpha /= 25.0;
    }
 
-   float alpha = retval.a * ShadowOpacity;
+   alpha *= S_amount;
 
-   retval = tex2D (s_BorderOut, xy1);
+   retval = tex2D (s_Border, xy1);
    alpha  = max (alpha, retval.a);
-   retval = lerp (ShadowColour, retval, retval.a);
+   retval = lerp (S_colour, retval, retval.a);
 
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Bgnd = (K_fill == 1) ? tex2D (s_Video_2, xy2) : tex2D (s_Video_1, xy1);
 
    retval = lerp (Bgnd, retval, alpha * Amount);
 
@@ -393,22 +385,25 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 technique LumaMatte_1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = keyInp;"; >
-   { PixelShader = compile PROFILE ps_matte_gen (); }
+   < string Script = "RenderColorTarget0 = KeyFgd;"; >
+   { PixelShader = compile PROFILE ps_key_gen (); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = brdrInp;"; >
+   < string Script = "RenderColorTarget0 = Part_1;"; >
    { PixelShader = compile PROFILE ps_border_A (); }
 
    pass P_3
-   < string Script = "RenderColorTarget0 = brdrOut;"; >
+   < string Script = "RenderColorTarget0 = Part_2;"; >
    { PixelShader = compile PROFILE ps_border_B (); }
 
    pass P_4
-   < string Script = "RenderColorTarget0 = shadow;"; >
-   { PixelShader = compile PROFILE ps_shadow (); }
+   < string Script = "RenderColorTarget0 = Border;"; >
+   { PixelShader = compile PROFILE ps_border_C (); }
 
    pass P_5
+   < string Script = "RenderColorTarget0 = Part_1;"; >
+   { PixelShader = compile PROFILE ps_shadow (); }
+
+   pass P_6
    { PixelShader = compile PROFILE ps_main (); }
 }
-

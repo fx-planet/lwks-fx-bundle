@@ -2,7 +2,7 @@
 // @Released 2018-07-03
 // @Author jwrl
 // @Created 2018-06-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/LumaMatte_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Luma_Matte_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LumaMatte.fx
 //

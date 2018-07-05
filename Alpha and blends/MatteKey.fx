@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-07-04
 // @Author jwrl
 // @Created 2016-02-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/MatteKey_640.png
@@ -19,6 +19,10 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 4 July 2018
+// Improved key tolerance calculation.  It's now symmetrical around clip.
+// Removed three redundant samplers.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -30,74 +34,15 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float opacity
-<
-   string Description = "Opacity";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 1.00;
-
-bool matteAlpha
-<
-   string Description = "Use matte alpha channel";
-> = false;
-
-bool Invert
-<
-   string Description = "Invert matte";
-> = false;
-
-int SetTechnique
-<
-   string Description = "Matte feather range";
-   string Enum = "Standard (best for anti-aliasing),Extended (best for wipes and masks)";
-> = 0;
-
-float preBlur
-<
-   string Group = "Matte";
-   string Description = "Feather";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.10;
-
-float clipLevel
-<
-   string Group = "Matte";
-   string Description = "Clip level";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.50;
-
-float Slope
-<
-   string Group = "Matte";
-   string Description = "Tolerance";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.50;
-
-bool AlphaChan
-<
-   string Description = "Output foreground and alpha only";
-> = false;
-
-//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Matte;
+texture Mat;
 texture Fg;
 texture Bg;
 
 texture blurIn1 : RenderColorTarget;
 texture blurIn2 : RenderColorTarget;
-texture blurIn3 : RenderColorTarget;
-texture blurIn4 : RenderColorTarget;
-texture keyInp  : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -105,7 +50,7 @@ texture keyInp  : RenderColorTarget;
 
 sampler matteSampler = sampler_state
 {
-   Texture   = <Matte>;
+   Texture   = <Mat>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -153,35 +98,61 @@ sampler blur2Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler blur3Sampler = sampler_state
-{
-   Texture   = <blurIn3>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
-sampler blur4Sampler = sampler_state
-{
-   Texture   = <blurIn4>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+float opacity
+<
+   string Description = "Opacity";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
 
-sampler keySampler = sampler_state
-{
-   Texture   = <keyInp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+bool matteAlpha
+<
+   string Description = "Use matte alpha channel";
+> = false;
+
+bool Invert
+<
+   string Description = "Invert matte";
+> = false;
+
+int SetTechnique
+<
+   string Description = "Matte feather range";
+   string Enum = "Standard (best for anti-aliasing),Extended (best for wipes and masks)";
+> = 0;
+
+float preBlur
+<
+   string Group = "Matte";
+   string Description = "Feather";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+float clipLevel
+<
+   string Group = "Matte";
+   string Description = "Clip level";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float Slope
+<
+   string Group = "Matte";
+   string Description = "Tolerance";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+bool AlphaChan
+<
+   string Description = "Output foreground and alpha only";
+> = false;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -200,7 +171,7 @@ sampler keySampler = sampler_state
 #define BLUR_SCALE_1_2 0.0009765625
 #define BLUR_SCALE_3_4 0.00390625
 
-#define BLUR_ROTATE    0.70710678
+#define BLUR_ROTATE    0.7071067812
 
 float _OutputAspectRatio;
 
@@ -272,7 +243,7 @@ float4 boxBlur_2 (float2 xy : TEXCOORD1) : COLOR
 
 float4 blur_X (float2 xy : TEXCOORD1) : COLOR
 {
-   if (preBlur == 0.0) return tex2D (blur3Sampler, xy);
+   if (preBlur == 0.0) return tex2D (blur1Sampler, xy);
 
    float4 retval = 0.0.xxxx;
 
@@ -281,8 +252,8 @@ float4 blur_X (float2 xy : TEXCOORD1) : COLOR
 
    for (int i = 0; i < SAMPLE_3_4; i++) {
       xy1 = offset * i;
-      retval += tex2D (blur3Sampler, xy - xy1);
-      retval += tex2D (blur3Sampler, xy + xy1);
+      retval += tex2D (blur1Sampler, xy - xy1);
+      retval += tex2D (blur1Sampler, xy + xy1);
    }
 
    retval /= MAXSAMPLE_3_4;
@@ -292,7 +263,7 @@ float4 blur_X (float2 xy : TEXCOORD1) : COLOR
 
 float4 blur_Y (float2 xy : TEXCOORD1) : COLOR
 {
-   if (preBlur == 0.0) return tex2D (blur4Sampler, xy);
+   if (preBlur == 0.0) return tex2D (blur2Sampler, xy);
 
    float4 retval = 0.0.xxxx;
 
@@ -301,8 +272,8 @@ float4 blur_Y (float2 xy : TEXCOORD1) : COLOR
 
    for (int i = 0; i < SAMPLE_3_4; i++) {
       xy2 = offs_2 * i;
-      retval += tex2D (blur4Sampler, xy - xy2);
-      retval += tex2D (blur4Sampler, xy + xy2);
+      retval += tex2D (blur2Sampler, xy - xy2);
+      retval += tex2D (blur2Sampler, xy + xy2);
    }
 
    retval /= MAXSAMPLE_3_4;
@@ -314,19 +285,17 @@ float4 matte_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
 {
    float4 retval = tex2D (FgSampler, xy1);
    float4 bgImg  = tex2D (BgSampler, xy2);
-   float4 extKey = tex2D (keySampler, xy3);
 
-   float softRngBg = 1.0 - clipLevel;
-   float softRngFg = softRngBg + Slope;
-   float keyValue  = 1.0 - extKey.x;
+   float alpha  = tex2D (blur1Sampler, xy3).x;
+   float range  = Slope * 0.5;
+   float keyMin = max (0.0, clipLevel - range);
+   float keyMax = min (1.0, clipLevel + range);
 
-   float keyAlpha = (keyValue <= softRngBg) ? 0.0 :
-                    ((keyValue > softRngFg) ? 1.0 : (keyValue - softRngBg) / Slope);
+   retval.a = smoothstep (keyMin, keyMax, alpha);
 
-   if (AlphaChan) { retval.a = keyAlpha; }
-   else {
-      keyAlpha *= opacity;
-      retval = lerp (bgImg, retval, keyAlpha);
+   if (!AlphaChan) {
+      alpha *= opacity;
+      retval = lerp (bgImg, retval, retval.a);
       retval.a = 1.0;
    }
 
@@ -348,7 +317,7 @@ technique standardFeather
    { PixelShader = compile PROFILE boxBlur_1 (); }
 
    pass P_3
-   < string Script = "RenderColorTarget0 = keyInp;"; >
+   < string Script = "RenderColorTarget0 = blurIn1;"; >
    { PixelShader = compile PROFILE boxBlur_2 (); }
 
    pass P_4
@@ -366,15 +335,15 @@ technique extendFeather
    { PixelShader = compile PROFILE boxBlur_1 (); }
 
    pass P_3
-   < string Script = "RenderColorTarget0 = blurIn3;"; >
+   < string Script = "RenderColorTarget0 = blurIn1;"; >
    { PixelShader = compile PROFILE boxBlur_2 (); }
 
    pass P_4
-   < string Script = "RenderColorTarget0 = blurIn4;"; >
+   < string Script = "RenderColorTarget0 = blurIn2;"; >
    { PixelShader = compile PROFILE blur_X (); }
 
    pass P_5
-   < string Script = "RenderColorTarget0 = keyInp;"; >
+   < string Script = "RenderColorTarget0 = blurIn1;"; >
    { PixelShader = compile PROFILE blur_Y (); }
 
    pass P_6

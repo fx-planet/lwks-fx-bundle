@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-03
+// @Released 2018-07-04
 // @Author jwrl
 // @Created 2016-03-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
@@ -37,6 +37,10 @@
 // Improved the resolution of the blur/rotation lookup tables.  This is a UHD/8K fix, and
 // will have little noticeable effect at lower frame sizes.
 // Altered various parameter defaults to more closely match current practice.
+//
+// Modified 4 July 2018
+// Fixed a bug in border generation causing aspect ratio not to be correctly applied.
+// Improved border antialias routine.  It's now much smoother.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -223,16 +227,15 @@ int SetTechnique
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define W_SCALE    4000.0
-#define X_SCALE    0.005
-#define Y_SCALE    0.0088888889
+#define X_SCALE 0.005
+#define S_SCALE 0.015
 
-#define F_SCALE    0.005
-#define S_SCALE    0.015
+#define OFFSET  0.04
 
-#define OFFS_SCALE 0.04
+#define SQRT_2  0.7071067812
 
 float _OutputAspectRatio;
+float _OutputWidth;
 
 float2 _rot_0 [] = { { 0.0, 1.0 }, { 0.2588190451, 0.9659258263 }, { 0.5, 0.8660254038 },
                      { 0.7071067812, 0.7071067812 }, { 0.8660254038, 0.5 },
@@ -279,7 +282,7 @@ float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
    if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
    float2 offset;
-   float2 edge = (B_edge < 2) ? float2 (_OutputAspectRatio, 1.0) * X_SCALE
+   float2 edge = (B_edge < 2) ? float2 (1.0, _OutputAspectRatio) * X_SCALE
                               : float2 (0.0, S_SCALE * _OutputAspectRatio);
    float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5) * 2.0;
 
@@ -311,7 +314,14 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
    float alpha = tex2D (s_Part_2, uv).a;
 
    if ((B_edge == 0) || (B_edge == 2)) {
-      float2 xy = max (Y_SCALE * _OutputAspectRatio, X_SCALE).xx / W_SCALE;
+      float3 xyz = float3 (1.0, 0.0, _OutputAspectRatio) / _OutputWidth;
+
+      float2 xy = xyz.xz * SQRT_2;
+
+      alpha += tex2D (s_Part_2, uv + xyz.xy).a;
+      alpha += tex2D (s_Part_2, uv - xyz.xy).a;
+      alpha += tex2D (s_Part_2, uv + xyz.yz).a;
+      alpha += tex2D (s_Part_2, uv - xyz.yz).a;
 
       alpha += tex2D (s_Part_2, uv + xy).a;
       alpha += tex2D (s_Part_2, uv - xy).a;
@@ -320,7 +330,7 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
 
       alpha += tex2D (s_Part_2, uv + xy).a;
       alpha += tex2D (s_Part_2, uv - xy).a;
-      alpha /= 5.0;
+      alpha /= 9.0;
    }
 
    alpha = max (Fgnd.a, alpha * B_amount);
@@ -331,8 +341,8 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * F_SCALE;
-   float2 xy2, xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFS_SCALE;
+   float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
+   float2 xy2, xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFSET;
 
    float alpha = tex2D (s_Border, xy1).a;
 
@@ -359,7 +369,7 @@ float4 ps_feather (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Part_1, uv);
 
-   float2 xy, scale = float2 (1.0, _OutputAspectRatio) * S_feather * F_SCALE;
+   float2 xy, scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
 
    float alpha = retval.a;
 

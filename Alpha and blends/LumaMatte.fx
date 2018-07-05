@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-07-03
+// @Released 2018-07-04
 // @Author jwrl
 // @Created 2018-06-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/Luma_Matte_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/LumaMatte_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LumaMatte.fx
 //
@@ -19,6 +19,11 @@
 //
 // Modified 3 July 2018
 // Added ability to key in external video.
+//
+// Modified 4 July 2018
+// Improved key tolerance calculation.  It's now symmetrical around clip.
+// Fixed a bug in border generation causing aspect ratio not to be correctly applied.
+// Improved border antialias routine.  It's now much smoother.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -27,7 +32,7 @@ int _LwksEffectInfo
    string Description = "Lumakey and matte";
    string Category    = "Key";
    string SubCategory = "User Effects";
-   string Notes       = "This will generate a lumakey from white on black video, fill it with a matte colour or video and generate a border and drop shadow for it.";
+   string Notes       = "Generates a key from video, fills it with colour or other video and generates a border and/or drop shadow.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -116,7 +121,7 @@ float K_clip
    float MaxVal = 1.0;
 > = 0.50;
 
-float K_slope
+float K_range
 <
    string Group = "Key";
    string Description = "Tolerance";
@@ -204,14 +209,13 @@ float4 S_colour
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define W_SCALE    4000.0
-#define X_SCALE    0.005
-#define Y_SCALE    0.0088888889
+#define X_SCALE 0.005
+#define OFFSET  0.04
 
-#define F_SCALE    0.005
-#define OFFS_SCALE 0.04
+#define SQRT_2  0.7071067812
 
 float _OutputAspectRatio;
+float _OutputWidth;
 
 float2 _rot_0 [] = { { 0.0, 1.0 }, { 0.2588190451, 0.9659258263 }, { 0.5, 0.8660254038 },
                      { 0.7071067812, 0.7071067812 }, { 0.8660254038, 0.5 },
@@ -231,14 +235,12 @@ float4 ps_key_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float4 retval = (K_fill == 2) ? K_matte
                  : (K_fill == 1) ? tex2D (s_Video_1, xy2) : Fgnd;
 
-   float softMin = 1.0 - K_clip;
-   float softMax = softMin + K_slope;
-   float alpha   = K_alpha ? Fgnd.a : max (Fgnd.r, max (Fgnd.g, Fgnd.b));
+   float range  = K_range * 0.5;
+   float keyMin = max (0.0, K_clip - range);
+   float keyMax = min (1.0, K_clip + range);
+   float alpha  = K_alpha ? Fgnd.a : max (Fgnd.r, max (Fgnd.g, Fgnd.b));
 
-   if (K_invert) alpha = 1.0 - alpha;
-
-   retval.a = (alpha <= softMin) ? 0.0 :
-              ((alpha > softMax) ? 1.0 : (alpha - softMin) / K_slope);
+   retval.a = (K_invert) ? smoothstep (keyMax, keyMin, alpha) : smoothstep (keyMin, keyMax, alpha);
 
    return retval;
 }
@@ -272,7 +274,7 @@ float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
    if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
    float2 offset, xy = uv;
-   float2 edge = float2 (_OutputAspectRatio, 1.0) * B_width * X_SCALE;
+   float2 edge = float2 (1.0, _OutputAspectRatio) * B_width * X_SCALE;
 
    float alpha = tex2D (s_Part_1, xy).a;
 
@@ -297,8 +299,16 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
 
    if (B_amount <= 0.0) return Fgnd;
 
+   float3 xyz = float3 (1.0, 0.0, _OutputAspectRatio) / _OutputWidth;
+
+   float2 xy = xyz.xz * SQRT_2;
+
    float alpha = tex2D (s_Part_2, uv).a;
-   float2 xy = max (Y_SCALE * _OutputAspectRatio, X_SCALE).xx / W_SCALE;
+
+   alpha += tex2D (s_Part_2, uv + xyz.xy).a;
+   alpha += tex2D (s_Part_2, uv - xyz.xy).a;
+   alpha += tex2D (s_Part_2, uv + xyz.yz).a;
+   alpha += tex2D (s_Part_2, uv - xyz.yz).a;
 
    alpha += tex2D (s_Part_2, uv + xy).a;
    alpha += tex2D (s_Part_2, uv - xy).a;
@@ -307,7 +317,7 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
 
    alpha += tex2D (s_Part_2, uv + xy).a;
    alpha += tex2D (s_Part_2, uv - xy).a;
-   alpha /= 5.0;
+   alpha /= 9.0;
 
    alpha = max (Fgnd.a, alpha * B_amount);
    Fgnd  = lerp (B_colour, Fgnd, Fgnd.a);
@@ -317,8 +327,8 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * F_SCALE;
-   float2 xy2, xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFS_SCALE;
+   float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
+   float2 xy2, xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFSET;
 
    float alpha = tex2D (s_Border, xy1).a;
 
@@ -345,7 +355,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 retval = tex2D (s_Part_1, xy1);
 
-   float2 xy, scale = float2 (1.0, _OutputAspectRatio) * S_feather * F_SCALE;
+   float2 xy, scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
 
    float alpha = retval.a;
 

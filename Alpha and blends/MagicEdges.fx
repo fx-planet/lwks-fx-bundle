@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-07-05
 // @Author jwrl
+// @Author Robert Schütze
 // @Created 2016-05-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Magic_Edges_640.png
 //-----------------------------------------------------------------------------------------//
@@ -10,9 +11,10 @@
 // (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better suit the
 // needs of its use in this context.
 //
-// The star point component is based on khaver's Glint.fx, but modified to have no blur
-// component, no choice of star points, and to compile and run under the ps_2_b shader
-// profile in Windows.
+// The star point component is similar to khaver's Glint.fx, but modified to create four
+// star points in one loop, to have no blur component, no choice of number of points, and
+// to compile and run under the default Lightworks shader profile.  A different means of
+// setting and calculating rotation is also used.  Apart from that it's identical.
 //
 // LW 14+ version 11 January 2017
 // Category changed from "Mixes" to "Key", subcategory "Edge Effects" added.
@@ -28,6 +30,12 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 5 July 2018 jwrl.
+// Changed edge generation to be frame based rather than pixel based.
+// Reduced number of required passes from thirteen to seven.
+// As a result, reduced samplers required by 3.
+// Halved the rotation gamut from 360 to 180 degrees.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,6 +44,7 @@ int _LwksEffectInfo
    string Description = "Magic edges";
    string Category    = "Key";
    string SubCategory = "Edge Effects";
+   string Notes       = "Fractal edges with star-shaped radiating blurs";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -46,19 +55,16 @@ texture Fg;
 texture Bg;
 
 texture Fractals : RenderColorTarget;
-texture Borders  : RenderColorTarget;
-texture built    : RenderColorTarget;
+texture Border   : RenderColorTarget;
 
-texture Sample1 : RenderColorTarget;
-texture Sample2 : RenderColorTarget;
-texture Sample3 : RenderColorTarget;
-texture Sample4 : RenderColorTarget;
+texture Sample_1 : RenderColorTarget;
+texture Sample_2 : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
+sampler s_Foreground = sampler_state {
    Texture   = <Fg>;
    AddressU  = Clamp;
    AddressV  = Clamp;
@@ -67,7 +73,7 @@ sampler FgSampler = sampler_state {
    MipFilter = Linear;
 };
 
-sampler BgSampler = sampler_state {
+sampler s_Background = sampler_state {
    Texture   = <Bg>;
    AddressU  = Clamp;
    AddressV  = Clamp;
@@ -76,7 +82,7 @@ sampler BgSampler = sampler_state {
    MipFilter = Linear;
 };
 
-sampler Frac_Sampler = sampler_state {
+sampler s_Fractals = sampler_state {
    Texture   = <Fractals>;
    AddressU  = Clamp;
    AddressV  = Clamp;
@@ -85,8 +91,8 @@ sampler Frac_Sampler = sampler_state {
    MipFilter = Linear;
 };
 
-sampler bord_Sampler = sampler_state {
-   Texture   = <Borders>;
+sampler s_Border = sampler_state {
+   Texture   = <Border>;
    AddressU  = Clamp;
    AddressV  = Clamp;
    MinFilter = Linear;
@@ -94,8 +100,8 @@ sampler bord_Sampler = sampler_state {
    MipFilter = Linear;
 };
 
-sampler buildSampler = sampler_state {
-   Texture   = <built>;
+sampler s_Sample_1 = sampler_state {
+   Texture = <Sample_1>;
    AddressU  = Clamp;
    AddressV  = Clamp;
    MinFilter = Linear;
@@ -103,35 +109,8 @@ sampler buildSampler = sampler_state {
    MipFilter = Linear;
 };
 
-sampler Samp1 = sampler_state {
-   Texture   = <Sample1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp2 = sampler_state {
-   Texture = <Sample2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp3 = sampler_state {
-   Texture = <Sample3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp4 = sampler_state {
-   Texture = <Sample4>;
+sampler s_Sample_2 = sampler_state {
+   Texture   = <Sample_2>;
    AddressU  = Clamp;
    AddressV  = Clamp;
    MinFilter = Linear;
@@ -171,7 +150,7 @@ float StartPoint
    float MaxVal = 1.0;
 > = 0.0;
 
-float adjust
+float Threshold
 <
    string Group = "Stars";
    string Description = "Threshold";
@@ -179,7 +158,7 @@ float adjust
    float MaxVal = 1.0;
 > = 0.25;
 
-float bright
+float Brightness
 <
    string Group = "Stars";
    string Description = "Brightness";
@@ -200,8 +179,8 @@ float Rotation
    string Group = "Stars";
    string Description = "Rotation";
    float MinVal = 0.0;
-   float MaxVal = 360.0;
-> = 0.0;
+   float MaxVal = 180.0;
+> = 45.0;
 
 float Strength
 <
@@ -246,7 +225,7 @@ float4 Colour
 <
    string Description = "Modulation value";
    bool SupportsAlpha = false;
-> = (0.69, 0.26, 1.0, 1.0);
+> = { 0.69, 0.26, 1.0, 1.0 };
 
 bool ShowFractal
 <
@@ -257,29 +236,26 @@ bool ShowFractal
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define PI_2       6.28319
+#define PI_2        6.28318530718
 
-#define R_VAL      0.2989
-#define G_VAL      0.5866
-#define B_VAL      0.1145
+#define R_VAL       0.2989
+#define G_VAL       0.5866
+#define B_VAL       0.1145
 
-#define ROTATE_45  0.7854     // 45.0, 1.0
-#define ROTATE_135 2.35619    // 135.0, 1.0
-#define ROTATE_225 3.92699    // 45.0, -1.0
-#define ROTATE_315 5.49779    // 135.0, -1.0
+#define SCL_RATE    224
 
-#define SCL_RATE   224
+#define LOOP        60
 
-#define LOOP       60
+#define DELTANG     25
+#define ANGLE       0.1256637061
 
-#define DELTANG    25
-#define ALIASFIX   50         // DELTANG * 2
-#define ANGLE      0.125664
+#define A_SCALE     0.005
+#define B_SCALE     0.0005
+
+#define STAR_LENGTH 0.00025
 
 float _Progress;
-
 float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -294,7 +270,7 @@ float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
 
    float3 retval = float3 (xy / (Size + 0.01), seed.x);
 
-   float4 fg = tex2D (FgSampler, uv);
+   float4 fg = tex2D (s_Foreground, uv);
 
    for (int i = 0; i < LOOP; i++) {
       retval.rbg = float3 (1.2, 0.999, 0.9) * (abs ((abs (retval) / dot (retval, retval) - float3 (1.0, 1.0, seed.y * 0.4))));
@@ -313,39 +289,32 @@ float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
    return float4 (lerp (retval, buffer.rgb, ColourMix), fg.a);
 }
 
-float4 ps_border (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_1 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 fgImage = tex2D (FgSampler, uv);
-
-   float2 pixsize = float2 (1.0, _OutputAspectRatio) * (EdgeWidth + 0.1) * 10.0 / _OutputWidth;
+   float2 pixsize = float2 (1.0, _OutputAspectRatio) * (EdgeWidth + 0.1) * A_SCALE;
    float2 offset, scale;
 
    float angle  = 0.0;
    float border = 0.0;
 
-   float4 retval;
-
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      border += tex2D (FgSampler, uv + offset).a;
-      border += tex2D (FgSampler, uv - offset).a;
+      border += tex2D (s_Foreground, uv + offset).a;
+      border += tex2D (s_Foreground, uv - offset).a;
       angle += ANGLE;
    }
 
    border = (border / DELTANG) - 1.0;
    border = (border > 0.95) ? 0.0 : 1.0;
-   border = min (border, fgImage.a);
+   border = min (border, tex2D (s_Foreground, uv).a);
 
    return border.xxxx;
 }
 
-float4 ps_build (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_2 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 fractal = tex2D (Frac_Sampler, uv);
-   float4 retval;
-
-   float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+   float2 pixsize = float2 (1.0, _OutputAspectRatio) * B_SCALE;
    float2 offset, scale;
 
    float border = 0.0;
@@ -354,97 +323,101 @@ float4 ps_build (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      border += tex2D (bord_Sampler, uv + offset).a;
-      border += tex2D (bord_Sampler, uv - offset).a;
+      border += tex2D (s_Sample_1, uv + offset).a;
+      border += tex2D (s_Sample_1, uv - offset).a;
       angle += ANGLE;
    }
 
-   retval.a   = border / ALIASFIX;
-   retval.rgb = lerp (0.0.xxx, fractal.rgb, retval.a);
+   border = saturate (border / DELTANG);
 
-   return retval;
+   float3 retval = lerp (0.0.xxx, tex2D (s_Fractals, uv).rgb, border);
+
+   return float4 (retval, border);
 }
 
-float4 ps_adjust (float2 uv : TEXCOORD1) : COLOR
+float4 ps_threshold (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Color = tex2D (buildSampler, uv);
+   float4 retval = tex2D (s_Border, uv);
 
-   return !((Color.r + Color.g + Color.b) / 3.0 > 1.0 - adjust) ? 0.0.xxxx : Color;
+   return ((retval.r + retval.g + retval.b) / 3.0 > 1.0 - Threshold) ? retval : 0.0.xxxx;
 }
 
-float4 ps_stretch_1 (float2 uv : TEXCOORD1, uniform float rn_angle) : COLOR
+float4 ps_stretch_1 (float2 uv : TEXCOORD1) : COLOR
 {
-   float3 delt, ret = 0.0;
+   float3 delt, ret = 0.0.xxx;
 
-   float2 offset;
+   float2 xy1, xy2, xy3 = 0.0.xx, xy4 = 0.0.xx;
 
-   float pixel = 0.5 / _OutputWidth;
-   float lenStar = StarLen * pixel;
+   sincos (radians (Rotation), xy1.y, xy1.x);
+   sincos (radians (Rotation + 90), xy2.y, xy2.x);
 
-   float MapAngle = rn_angle + radians (Rotation);
+   xy1 *= StarLen * STAR_LENGTH;
+   xy2 *= StarLen * STAR_LENGTH;
 
-   sincos (MapAngle, offset.y, offset.x);
+   xy1.y *= _OutputAspectRatio;
+   xy2.y *= _OutputAspectRatio;
 
-   offset *= lenStar;
-   offset.y *= _OutputAspectRatio;
-
-   for (int count = 0; count < 16; count++) {
-      delt = tex2D (Samp1, uv - (offset * count));
-      delt *= 1.0 - (count / 36.0);
+   for (int i = 0; i < 18; i++) {
+      delt = tex2D (s_Sample_2, uv + xy3).rgb;
+      delt = max (delt, tex2D (s_Sample_2, uv - xy3).rgb);
+      delt = max (delt, tex2D (s_Sample_2, uv + xy4).rgb);
+      delt = max (delt, tex2D (s_Sample_2, uv - xy4).rgb);
+      delt *= 1.0 - (i / 36.0);
       ret += delt;
-   }
-
-   for (int count = 16; count < 22; count++) {
-      delt = tex2D (Samp1, uv - (offset * count));
-      delt *= 1.0 - (count / 36.0);
-      ret += delt;
+      xy3 += xy1;
+      xy4 += xy2;
    }
 
    return float4 (ret, 1.0);
 }
 
-float4 ps_stretch_2 (float2 uv : TEXCOORD1, uniform float rn_angle, uniform int samp) : COLOR
+float4 ps_stretch_2 (float2 uv : TEXCOORD1) : COLOR
 {
-   float3 delt, ret = 0.0;
+   float3 delt, ret = 0.0.xxx;
 
-   float2 offset;
+   float2 xy1, xy2, xy3, xy4;
 
-   float pixel = 0.5 / _OutputWidth;
-   float lenStar = StarLen * pixel;
+   sincos (radians (Rotation), xy1.y, xy1.x);
+   sincos (radians (Rotation + 90), xy2.y, xy2.x);
 
-   float MapAngle = rn_angle + radians (Rotation);
+   xy1 *= StarLen * STAR_LENGTH;
+   xy2 *= StarLen * STAR_LENGTH;
 
-   sincos (MapAngle, offset.y, offset.x);
+   xy1.y *= _OutputAspectRatio;
+   xy2.y *= _OutputAspectRatio;
 
-   offset *= lenStar;
-   offset.y *= _OutputAspectRatio;
+   xy3 = xy1 * 18.0;
+   xy4 = xy2 * 18.0;
 
-   float4 insamp = (samp == 0) ? tex2D (Samp3, uv) : (samp != -1) ? tex2D (Samp4, uv) : 0.0;
-
-   for (int count = 22; count < 36; count++) {
-      delt = tex2D (Samp1, uv - (offset * count));
-      delt *= 1.0 - (count / 36.0);
+   for (int i = 0; i < 18; i++) {
+      delt = tex2D (s_Sample_2, uv + xy3).rgb;
+      delt = max (delt, tex2D (s_Sample_2, uv - xy3).rgb);
+      delt = max (delt, tex2D (s_Sample_2, uv + xy4).rgb);
+      delt = max (delt, tex2D (s_Sample_2, uv - xy4).rgb);
+      delt *= 0.5 - (i / 36.0);
       ret += delt;
+      xy3 += xy1;
+      xy4 += xy2;
    }
 
-   ret = (ret + tex2D (Samp2, uv).rgb) / 36;
+   ret = (ret + tex2D (s_Sample_1, uv).rgb) / 3.6;
 
-   return saturate (max (float4 (ret * bright, 1.0), insamp));
+   return float4 (ret, 1.0);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd    = tex2D (FgSampler, uv);
-   float4 Bgd    = tex2D (BgSampler, uv);
+   float4 Fgd = tex2D (s_Foreground, xy1);
+   float4 Bgd = tex2D (s_Background, xy2);
    float4 retval = lerp (Bgd, Fgd, Fgd.a * Amount);
 
-   float4 border = tex2D (buildSampler, uv);
+   float4 border = tex2D (s_Border, xy1);
 
-   if (ShowFractal) return lerp (tex2D (Frac_Sampler, uv), border, (border.a + 1.0) / 2);
+   if (ShowFractal) return lerp (tex2D (s_Fractals, xy1), border, (border.a + 1.0) / 2);
 
-   retval = lerp (border, retval, 1.0 - border.a);
+   retval = lerp (retval, border, Brightness * border.a);
 
-   float4 glint = tex2D (Samp4, uv);
+   float4 glint = tex2D (s_Sample_2, xy1);
    float4 comb  = retval + (glint * (1.0 - retval));
 
    return lerp (retval, comb, Strength);
@@ -456,104 +429,30 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique doMatte
 {
-   pass Pass_zero
-   <
-      string Script = "RenderColorTarget0 = Fractals;";
-   >
-   {
-      PixelShader = compile PROFILE ps_fractals ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Fractals;"; >
+   { PixelShader = compile PROFILE ps_fractals (); }
 
-   pass Pass_one
-   <
-      string Script = "RenderColorTarget0 = Borders;";
-   >
-   {
-      PixelShader = compile PROFILE ps_border ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = Sample_1;"; >
+   { PixelShader = compile PROFILE ps_border_1 (); }
 
-   pass Pass_two
-   <
-      string Script = "RenderColorTarget0 = built;";
-   >
-   {
-      PixelShader = compile PROFILE ps_build ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = Border;"; >
+   { PixelShader = compile PROFILE ps_border_2 (); }
 
-   pass Pass_three
-   <
-      string Script = "RenderColorTarget0 = Sample1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_adjust ();
-   }
+   pass P_4
+   < string Script = "RenderColorTarget0 = Sample_2;"; >
+   { PixelShader = compile PROFILE ps_threshold (); }
 
-   pass Pass_four
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_45);
-   }
+   pass P_5
+   < string Script = "RenderColorTarget0 = Sample_1;"; >
+   { PixelShader = compile PROFILE ps_stretch_1 (); }
 
-   pass Pass_five
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_45, -1);
-   }
+   pass P_6
+   < string Script = "RenderColorTarget0 = Sample_2;"; >
+   { PixelShader = compile PROFILE ps_stretch_2 (); }
 
-   pass Pass_six
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_135);
-   }
-
-   pass Pass_seven
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_135, 0);
-   }
-
-   pass Pass_eight
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_225);
-   }
-
-   pass Pass_nine
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_225, 1);
-   }
-
-   pass Pass_ten
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_315);
-   }
-
-   pass Pass_eleven
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_315, 0);
-   }
-
-   pass Pass_twelve
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_7
+   { PixelShader = compile PROFILE ps_main (); }
 }

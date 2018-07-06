@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-29
+// @Released 2018-07-06
 // @Author jwrl
 // @Created 2018-04-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_640.png
@@ -40,6 +40,9 @@
 // Discovered a bug that affects Linux and Mac versions when setting colour temperature.
 // Highlights would invert when setting higher colour temperatures.  While correcting
 // that the way the function performed subjectively was also improved.
+//
+// Modified 2018-07-06 jwrl.
+// Calculates halation based on frame size not pixel size.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,6 +51,7 @@ int _LwksEffectInfo
    string Description = "Filmic look 2018";
    string Category    = "Colour";
    string SubCategory = "Preset Looks";
+   string Notes       = "Simulates a filmic curve with exposure adjustment, halation and vibrance."
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -164,10 +168,9 @@ float Vibrance
 #define COOLTEMP float3(1.68861871, 0.844309355, 0.0)
 #define WARMTEMP float3(0.0, 0.95712098, 3.82848392)
 
-float _OutputWidth;
-float _OutputAspectRatio;
+#define PIXEL    0.0005
 
-#pragma warning ( disable : 3571 )
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -250,7 +253,7 @@ float4 ps_part_blur (float2 uv : TEXCOORD1) : COLOR
    float h_amt  = Halation * 4.0;
 
    float2 xy = uv;
-   float2 offset = float2 (1.0 / _OutputWidth, 0.0);
+   float2 offset = float2 (PIXEL, 0.0);
 
    xy += offset; retval += tex2D (s_Clip, xy);
    xy += offset; retval += tex2D (s_Clip, xy);
@@ -289,7 +292,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    amount *= log10 ((Halation * 4.0) + 1.0);
 
    float2 xy = uv;
-   float2 offset = float2 (0.0, _OutputAspectRatio / _OutputWidth);
+   float2 offset = float2 (0.0, _OutputAspectRatio * PIXEL);
 
    float4 gloVal = tex2D (s_Halo, xy);
 

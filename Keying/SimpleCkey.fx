@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-01
+// @Released 2018-07-06
 // @Author jwrl
 // @Created 2016-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCkey_640.png
@@ -26,6 +26,9 @@
 // Added feathering to the key, which operates entirely within the key boundaries.  Also
 // picked up on the fact that I had failed to credit baopao, on who's KeyDespill.fx I
 // based my defringing routines.  The rest of the work is very definitely all my own.
+//
+// Modified 2018-07-06:
+// Made feathering resolution-independent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -140,11 +143,10 @@ float DeFringe
 #define LOOP   12
 #define DIVIDE 24
 
-#define RADIUS 4.0
-#define ANGLE  0.261799
+#define RADIUS 0.002
+#define ANGLE  0.2617993878
 
 float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -167,7 +169,7 @@ float4 ps_feather (float2 uv : TEXCOORD) : COLOR
 
    float alpha = retval.r;
 
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * RADIUS * Size / _OutputWidth;
+   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * Size * RADIUS;
 
    for (int i = 0; i < LOOP; i++) {
       sincos ((i * ANGLE), xy.x, xy.y);

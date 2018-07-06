@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-07-05
 // @Author jwrl
 // @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_640.png
@@ -24,15 +24,13 @@
 // differing blend modes.
 // Halved the samplers used by the glow for the same reason.
 //
-// Version 14.5 update 5 December 2017 by jwrl.
-// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
-// those platforms.  It will now function correctly when used with Lightworks versions
-// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
-// with transitions on those platforms. The bug still exists when using older versions
-// of Lightworks.
-//
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 5 July 2018.
+// Made blur calculations frame based rather than pixel based.
+// Changed clamp addressing to mirror addressing for glow calculations.  This also solves
+// a potential cross-platform bug before it arises.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -49,56 +47,47 @@ int _LwksEffectInfo
 
 texture Input;
 
-texture Edge : RenderColorTarget;
-
-texture Glow_1   : RenderColorTarget;
-texture Glow_2   : RenderColorTarget;
+texture Edge   : RenderColorTarget;
+texture Glow_1 : RenderColorTarget;
+texture Glow_2 : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-#ifdef LINUX
-#define Clamp ClampToEdge
-#endif
-
-#ifdef OSX
-#define Clamp ClampToEdge
-#endif
-
-sampler FgdSampler = sampler_state {
+sampler s_Foreground = sampler_state {
    Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler EdgSampler = sampler_state {
+sampler s_Edge = sampler_state {
    Texture   = <Edge>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler g1_Sampler = sampler_state
+sampler s_Glow_1 = sampler_state
 {
    Texture   = <Glow_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler g2_Sampler = sampler_state
+sampler s_Glow_2 = sampler_state
 {
    Texture   = <Glow_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -172,14 +161,14 @@ float4 Colour_1
 <
    string Group = "Glow colour";
    string Description = "Colour 1";
-   bool SupportsAlpha = true;
+   bool SupportsAlpha = false;
 > = { 1.0, 0.75, 0.0, 1.0 };
 
 float4 Colour_2
 <
    string Group = "Glow colour";
    string Description = "Colour 2";
-   bool SupportsAlpha = true;
+   bool SupportsAlpha = false;
 > = { 1.0, 1.0, 0.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
@@ -187,27 +176,29 @@ float4 Colour_2
 //-----------------------------------------------------------------------------------------//
 
 #define LOOP     12
-#define DIVIDE   49        // (LOOP * 4) + 1
+#define DIVIDE   49
 
 #define RADIUS_1 4.0
 #define RADIUS_2 10.0
 #define RADIUS_3 20.0
 #define RADIUS_4 35.0
 
-#define ANGLE    0.261799
+#define ANGLE    0.2617993878
 
-#define R_VALUE    0.3
-#define G_VALUE    0.59
-#define B_VALUE    0.11
+#define R_VALUE  0.3
+#define G_VALUE  0.59
+#define B_VALUE  0.11
 
-#define HALF_PI    1.570796
+#define L_RATE   0.002
+#define G_SIZE   0.0005
 
-#define BLACK  (0.0).xxxx
+#define HALF_PI  1.5707963268
+
+#define EMPTY    (0.0).xxxx
 
 float _Progress;
 
 float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -215,7 +206,7 @@ float _OutputWidth;
 
 float fn_get_edge (float2 uv)
 {
-   float4 Fgd = tex2D (FgdSampler, uv);
+   float4 Fgd = tex2D (s_Foreground, uv);
 
    return (Fgd.r + Fgd.g + Fgd.b) / 3.0;
 }
@@ -226,28 +217,28 @@ float fn_get_edge (float2 uv)
 
 float4 ps_edges (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (FgdSampler, uv);
+   float4 Fgd = tex2D (s_Foreground, uv);
    float edges, pattern;
 
    if (lCycle == 1) {
       float nVal = 0.0;
-      float xVal = 4.0 * lRate / _OutputWidth;
+      float xVal = L_RATE * lRate;
       float yVal = xVal * _OutputAspectRatio;
 
       float p2 = -1.0 * fn_get_edge (uv + float2 (xVal, yVal));
       float p1 = p2;
 
-      p1 += -2.0 * fn_get_edge (uv + float2 (xVal, nVal));
-      p1 += -1.0 * fn_get_edge (uv + float2 (xVal, -yVal));
-      p1 +=  1.0 * fn_get_edge (uv + float2 (-xVal, yVal));
-      p1 +=  2.0 * fn_get_edge (uv + float2 (-xVal, nVal));
-      p1 +=  1.0 * fn_get_edge (uv + float2 (-xVal, -yVal));
+      p1 += fn_get_edge (uv - float2 (xVal, yVal));
+      p1 += fn_get_edge (uv - float2 (xVal, -yVal));
+      p1 -= fn_get_edge (uv + float2 (xVal, -yVal));
+      p1 -= fn_get_edge (uv + float2 (xVal, nVal)) * 2.0;
+      p1 += fn_get_edge (uv - float2 (xVal, nVal)) * 2.0;
 
-      p2 += -2.0 * fn_get_edge (uv + float2 (nVal, yVal));
-      p2 += -1.0 * fn_get_edge (uv + float2 (-xVal, yVal));
-      p2 +=  1.0 * fn_get_edge (uv + float2 (xVal, -yVal));
-      p2 +=  2.0 * fn_get_edge (uv + float2 (nVal, -yVal));
-      p2 +=  1.0 * fn_get_edge (uv + float2 (-xVal, -yVal));
+      p2 += fn_get_edge (uv - float2 (xVal, yVal));
+      p2 -= fn_get_edge (uv - float2 (xVal, -yVal));
+      p2 += fn_get_edge (uv + float2 (xVal, -yVal));
+      p2 -= fn_get_edge (uv + float2 (nVal, yVal)) * 2.0;
+      p2 += fn_get_edge (uv - float2 (nVal, yVal)) * 2.0;
 
       edges = saturate (p1 * p1 + p2 * p2);
    }
@@ -259,7 +250,7 @@ float4 ps_edges (float2 uv : TEXCOORD1) : COLOR
 
    pattern = _Progress * (1.0 + (cRate * 20.0)) * 5.0;
 
-   if (cCycle == 0) return lerp (BLACK, Fgd, edges);
+   if (cCycle == 0) return lerp (EMPTY, Fgd, edges);
 
    float4 part_1 = edges * Colour_1;
    float4 part_2 = edges * Colour_2;
@@ -275,7 +266,7 @@ float4 ps_glow (float2 uv : TEXCOORD1, uniform sampler gloSampler, uniform float
 
    if (Size <= 0.0) return retval;
 
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * base * Size / _OutputWidth;
+   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * base * Size * G_SIZE;
 
    for (int i = 0; i < LOOP; i++) {
       sincos ((i * ANGLE), xy.x, xy.y);
@@ -292,32 +283,32 @@ float4 ps_glow (float2 uv : TEXCOORD1, uniform sampler gloSampler, uniform float
 
 float4 ps_build_glow (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (g2_Sampler, uv);
+   float4 retval = tex2D (s_Glow_2, uv);
 
    float sizeComp = saturate (Size * 4.0);
 
    sizeComp = sin (sizeComp * HALF_PI);
-   retval = lerp (BLACK, retval, sizeComp);
+   retval = lerp (EMPTY, retval, sizeComp);
 
    if (lCycle != 1) return retval;
 
-   float4 Glow = max (retval, tex2D (EdgSampler, uv));
+   float4 Glow = max (retval, tex2D (s_Edge, uv));
 
    return lerp (retval, Glow, EdgeMix);
 }
 
 float4 ps_add_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd  = tex2D (FgdSampler, uv);
-   float4 Glow = saturate (Fgd + tex2D (g1_Sampler, uv));
+   float4 Fgd  = tex2D (s_Foreground, uv);
+   float4 Glow = saturate (Fgd + tex2D (s_Glow_1, uv));
 
    return lerp (Fgd, Glow, Amount);
 }
 
 float4 ps_screen_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd    = tex2D (FgdSampler, uv);
-   float4 Glow   = tex2D (g1_Sampler, uv);
+   float4 Fgd    = tex2D (s_Foreground, uv);
+   float4 Glow   = tex2D (s_Glow_1, uv);
    float4 retval = saturate (Fgd + Glow - (Fgd * Glow));
 
    return lerp (Fgd, retval, Amount);
@@ -325,16 +316,16 @@ float4 ps_screen_main (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_lighten_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd  = tex2D (FgdSampler, uv);
-   float4 Glow = max (Fgd, tex2D (g1_Sampler, uv));
+   float4 Fgd  = tex2D (s_Foreground, uv);
+   float4 Glow = max (Fgd, tex2D (s_Glow_1, uv));
 
    return lerp (Fgd, Glow, Amount);
 }
 
 float4 ps_soft_glow_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd    = tex2D (FgdSampler, uv);
-   float4 Glow   = Fgd * tex2D (g1_Sampler, uv);
+   float4 Fgd    = tex2D (s_Foreground, uv);
+   float4 Glow   = Fgd * tex2D (s_Glow_1, uv);
    float4 retval = saturate (Fgd + Glow - (Fgd * Glow));
 
    return lerp (Fgd, retval, Amount);
@@ -342,8 +333,8 @@ float4 ps_soft_glow_main (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_vivid_light_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd  = tex2D (FgdSampler, uv);
-   float4 Glow = saturate ((tex2D (g1_Sampler, uv) * 2.0) + Fgd - 1.0.xxxx);
+   float4 Fgd  = tex2D (s_Foreground, uv);
+   float4 Glow = saturate ((tex2D (s_Glow_1, uv) * 2.0) + Fgd - 1.0.xxxx);
 
    return lerp (Fgd, Glow, Amount);
 }
@@ -360,19 +351,19 @@ technique addEdge
 
    pass P_2
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (EdgSampler, RADIUS_1); }
+   { PixelShader = compile PROFILE ps_glow (s_Edge, RADIUS_1); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_2); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_2); }
 
    pass P_4
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (g2_Sampler, RADIUS_3); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_2, RADIUS_3); }
 
    pass P_5
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_4); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_4); }
 
    pass P_6
    < string Script = "RenderColorTarget0 = Glow_1;"; >
@@ -390,19 +381,19 @@ technique screenEdge
 
    pass P_2
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (EdgSampler, RADIUS_1); }
+   { PixelShader = compile PROFILE ps_glow (s_Edge, RADIUS_1); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_2); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_2); }
 
    pass P_4
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (g2_Sampler, RADIUS_3); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_2, RADIUS_3); }
 
    pass P_5
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_4); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_4); }
 
    pass P_6
    < string Script = "RenderColorTarget0 = Glow_1;"; >
@@ -420,19 +411,19 @@ technique lightenEdge
 
    pass P_2
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (EdgSampler, RADIUS_1); }
+   { PixelShader = compile PROFILE ps_glow (s_Edge, RADIUS_1); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_2); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_2); }
 
    pass P_4
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (g2_Sampler, RADIUS_3); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_2, RADIUS_3); }
 
    pass P_5
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_4); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_4); }
 
    pass P_6
    < string Script = "RenderColorTarget0 = Glow_1;"; >
@@ -450,19 +441,19 @@ technique softGlowEdge
 
    pass P_2
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (EdgSampler, RADIUS_1); }
+   { PixelShader = compile PROFILE ps_glow (s_Edge, RADIUS_1); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_2); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_2); }
 
    pass P_4
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (g2_Sampler, RADIUS_3); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_2, RADIUS_3); }
 
    pass P_5
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_4); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_4); }
 
    pass P_6
    < string Script = "RenderColorTarget0 = Glow_1;"; >
@@ -480,19 +471,19 @@ technique vividLightEdge
 
    pass P_2
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (EdgSampler, RADIUS_1); }
+   { PixelShader = compile PROFILE ps_glow (s_Edge, RADIUS_1); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_2); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_2); }
 
    pass P_4
    < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_glow (g2_Sampler, RADIUS_3); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_2, RADIUS_3); }
 
    pass P_5
    < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_glow (g1_Sampler, RADIUS_4); }
+   { PixelShader = compile PROFILE ps_glow (s_Glow_1, RADIUS_4); }
 
    pass P_6
    < string Script = "RenderColorTarget0 = Glow_1;"; >

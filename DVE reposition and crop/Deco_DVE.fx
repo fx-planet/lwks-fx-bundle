@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-07-06
 // @Author jwrl
 // @Created 2017-04-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Deco_DVE_640.png
@@ -33,6 +33,11 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 6 July 2018 jwrl.
+// Added a note to describe the function of the effect.
+// Cleaned up border generation code so that it's much clearer what's going on.
+// Reformatted the sampler definitions to be consistent with my other effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,6 +46,7 @@ int _LwksEffectInfo
    string Description = "Deco DVE";
    string Category    = "DVE";
    string SubCategory = "Crop Presets";
+   string Notes       = "Art Deco flash lines are overlaid over a DVE effect, which uses a second DVE to resize the result.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -58,9 +64,9 @@ texture Multiple : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler InSampler = sampler_state
+sampler s_Input = sampler_state
 {
-   Texture = <Fgd>;
+   Texture   = <Fgd>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -68,17 +74,9 @@ sampler InSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler BgSampler = sampler_state
-{
-   Texture = <Bgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Background = sampler_state { Texture = <Bgd>; };
 
-sampler FgSampler = sampler_state
+sampler s_Foreground = sampler_state
 {
    Texture   = <FgdAdj>;
    AddressU  = Mirror;
@@ -88,7 +86,7 @@ sampler FgSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler FcSampler = sampler_state
+sampler s_CroppedFgd = sampler_state
 {
    Texture   = <FgdCrop>;
    AddressU  = Mirror;
@@ -98,7 +96,7 @@ sampler FcSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler FmSampler = sampler_state
+sampler s_MultipleFgd = sampler_state
 {
    Texture   = <Multiple>;
    AddressU  = Wrap;
@@ -310,8 +308,6 @@ float OverlayY
 
 float _OutputAspectRatio;
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
@@ -319,11 +315,6 @@ float _OutputAspectRatio;
 bool fn_inRange (float2 uv, float2 r1, float2 r2)
 {
    return (uv.x >= r1.x) && (uv.y >= r1.y) && (uv.x <= r2.x) && (uv.y <= r2.y);
-}
-
-bool fn_outRange (float2 uv, float2 r1, float2 r2)
-{
-   return (uv.x < r1.x) || (uv.y < r1.y) || (uv.x > r2.x) || (uv.y > r2.y);
 }
 
 bool fn_illegal (float2 uv)
@@ -340,12 +331,12 @@ float4 ps_scale_fgd (float2 uv : TEXCOORD1) : COLOR
    float  scale = max (FgdZ, 0.0001);
    float2 xy = ((uv - 0.5.xx) / scale) + float2 (1.0 - FgdX, FgdY);
 
-   return fn_illegal (xy) ? BLACK : tex2D (InSampler, xy);
+   return fn_illegal (xy) ? BLACK : tex2D (s_Input, xy);
 }
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd = tex2D (FgSampler, uv);
+   float4 Fgnd = tex2D (s_Foreground, uv);
 
    float2 brdrEdge = (0.05 * Border_1).xx;
    float2 gap_Edge = brdrEdge + (0.05 * BorderGap).xx;
@@ -383,38 +374,38 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_flash (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd = tex2D (FcSampler, uv);
-   float4 innerEdge, outerEdge;
+   float4 Fgnd = tex2D (s_CroppedFgd, uv);
 
-   outerEdge.xy  = saturate (CENTRE - (float2 (CropX, CropY) / 2.0)) - CENTRE;
-   outerEdge.xy *= CropZ;
+   float2 outerEdgeTL = saturate (CENTRE - (float2 (CropX, CropY) / 2.0)) - CENTRE;
 
-   outerEdge.xy += float2 (1.0, _OutputAspectRatio) * InnerSpace * 0.05;
-   innerEdge.xy  = outerEdge.xy + (float2 (1.0, _OutputAspectRatio) * InnerWidth * 0.05);
+   outerEdgeTL *= CropZ;
+   outerEdgeTL += float2 (1.0, _OutputAspectRatio) * InnerSpace * 0.05;
 
-   outerEdge.zw = abs (outerEdge.xy);
-   innerEdge.zw = abs (innerEdge.xy);
+   float2 cropMidPnt  = float2 (CropPosX, 1.0 - CropPosY);
+   float2 innerEdgeTL = outerEdgeTL + (float2 (1.0, _OutputAspectRatio) * InnerWidth * 0.05);
+   float2 outerEdgeBR = abs (outerEdgeTL) + cropMidPnt;
+   float2 innerEdgeBR = abs (innerEdgeTL) + cropMidPnt;
 
-   outerEdge += float2 (CropPosX, 1.0 - CropPosY).xyxy;
-   innerEdge += float2 (CropPosX, 1.0 - CropPosY).xyxy;
+   outerEdgeTL += cropMidPnt;
+   innerEdgeTL += cropMidPnt;
 
-   if (fn_outRange (uv, outerEdge.xy, outerEdge.zw) ||
-       fn_inRange (uv, innerEdge.xy, innerEdge.zw)) return Fgnd;
+   if (!fn_inRange (uv, outerEdgeTL, outerEdgeBR) ||
+        fn_inRange (uv, innerEdgeTL, innerEdgeBR)) return Fgnd;
 
    float4 retval = Colour_1;
 
    float2 xy  = uv;
-   float2 xy1 = float2 (outerEdge.z - outerEdge.x, outerEdge.w - outerEdge.y);
-   float2 xy2 = outerEdge.zw - (xy1 * Inner_BR);
+   float2 xy1 = outerEdgeBR - outerEdgeTL;
+   float2 xy2 = outerEdgeBR - (xy1 * Inner_BR);
 
    if (InnerPos == 1) { xy.x = 1.0 - uv.x; }
 
    xy1 *= Inner_TL;
-   xy1 += outerEdge.xy;
+   xy1 += outerEdgeTL;
 
    if ((((xy.x > xy1.x) || (xy.y > xy1.y)) &&
-        ((xy.x < innerEdge.x) || (xy.y < innerEdge.y))) ||
-       (((xy.x > innerEdge.z) || (xy.y > innerEdge.w)) &&
+        ((xy.x < innerEdgeTL.x) || (xy.y < innerEdgeTL.y))) ||
+       (((xy.x > innerEdgeBR.x) || (xy.y > innerEdgeBR.y)) &&
         ((xy.x < xy2.x) || (xy.y < xy2.y)))) return Fgnd;
 
    return retval;
@@ -426,10 +417,9 @@ float4 ps_main_multiple (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = ((uv - CENTRE) / scale) + float2 (1.0 - OverlayX, OverlayY);
 
-   float4 Fgnd = tex2D (FmSampler, xy);
-   float4 Bgnd = tex2D (BgSampler, uv);
+   float4 Fgnd = tex2D (s_MultipleFgd, xy);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * OverlayOpacity);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * OverlayOpacity);
 }
 
 float4 ps_main_single (float2 uv : TEXCOORD1) : COLOR
@@ -438,10 +428,9 @@ float4 ps_main_single (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = ((uv - CENTRE) / scale) + float2 (1.0 - OverlayX, OverlayY);
 
-   float4 Fgnd = fn_illegal (xy) ? EMPTY : tex2D (FgSampler, xy);
-   float4 Bgnd = tex2D (BgSampler, uv);
+   float4 Fgnd = fn_illegal (xy) ? EMPTY : tex2D (s_Foreground, xy);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * OverlayOpacity);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * OverlayOpacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -450,64 +439,36 @@ float4 ps_main_single (float2 uv : TEXCOORD1) : COLOR
 
 technique crop_multiple
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = FgdAdj;";
-   >
-   {
-      PixelShader = compile PROFILE ps_scale_fgd ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = FgdAdj;"; >
+   { PixelShader = compile PROFILE ps_scale_fgd (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = FgdCrop;";
-   >
-   {
-      PixelShader = compile PROFILE ps_crop ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = FgdCrop;"; >
+   { PixelShader = compile PROFILE ps_crop (); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = Multiple;";
-   >
-   {
-      PixelShader = compile PROFILE ps_flash ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = Multiple;"; >
+   { PixelShader = compile PROFILE ps_flash (); }
 
-   pass pass_four
-   {
-      PixelShader = compile PROFILE ps_main_multiple ();
-   }
+   pass P_4
+   { PixelShader = compile PROFILE ps_main_multiple (); }
 }
 
 technique crop
 {
-   pass pass_one
-   <
-      string Script = "RenderColorTarget0 = FgdAdj;";
-   >
-   {
-      PixelShader = compile PROFILE ps_scale_fgd ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = FgdAdj;"; >
+   { PixelShader = compile PROFILE ps_scale_fgd (); }
 
-   pass pass_two
-   <
-      string Script = "RenderColorTarget0 = FgdCrop;";
-   >
-   {
-      PixelShader = compile PROFILE ps_crop ();
-   }
+   pass P_2
+   < string Script = "RenderColorTarget0 = FgdCrop;"; >
+   { PixelShader = compile PROFILE ps_crop (); }
 
-   pass pass_three
-   <
-      string Script = "RenderColorTarget0 = FgdAdj;";
-   >
-   {
-      PixelShader = compile PROFILE ps_flash ();
-   }
+   pass P_3
+   < string Script = "RenderColorTarget0 = FgdAdj;"; >
+   { PixelShader = compile PROFILE ps_flash (); }
 
-   pass pass_four
-   {
-      PixelShader = compile PROFILE ps_main_single ();
-   }
+   pass P_4
+   { PixelShader = compile PROFILE ps_main_single (); }
 }

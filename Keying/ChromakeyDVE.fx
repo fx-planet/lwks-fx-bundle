@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-07-06
 // @Author jwrl
 // @Created 2018-03-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyDVE_640.png
@@ -12,6 +12,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 6 July 2018 jwrl.
+// Made blur component resolution-independent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -20,6 +23,7 @@ int _LwksEffectInfo
    string Description = "Chromakey with DVE";
    string Category    = "Key";
    string SubCategory = "Custom";
+   string Notes       = "A customised version of Editshare's Chromakey effect with cropping and a simple DVE";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -240,17 +244,18 @@ float CropBottom
 #define SAT_IDX 1
 #define VAL_IDX 2
 
-#define R_LUMA 0.2989
-#define G_LUMA 0.5866
-#define B_LUMA 0.1145
+#define R_LUMA  0.2989
+#define G_LUMA  0.5866
+#define B_LUMA  0.1145
 
-#define EMPTY  (0.0).xxxx
+#define W_SCALE 0.0005
+
+#define EMPTY   (0.0).xxxx
 
 float _FallOff = 0.12;
 float _oneSixth = 1.0 / 6.0;
 float _minTolerance = 1.0 / 256.0;
-float _OutputWidth  = 1.0;
-float _OutputHeight = 1.0;
+float _OutputAspectRatio;
 
 float blur [] = { 20.0 / 64.0, 15.0 / 64.0, 6.0 / 64.0, 1.0 / 64.0 };  // See Pascals Triangle
 
@@ -388,7 +393,7 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_blur1 (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 onePixAcross   = float2 (KeySoftAmount / _OutputWidth, 0.0);
+   float2 onePixAcross   = float2 (KeySoftAmount * W_SCALE, 0.0);
    float2 twoPixAcross   = onePixAcross * 2.0;
    float2 threePixAcross = onePixAcross * 3.0;
 
@@ -413,7 +418,7 @@ float4 ps_blur1 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_blur2 (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 onePixDown   = float2 (0.0, KeySoftAmount / _OutputHeight);
+   float2 onePixDown   = float2 (0.0, KeySoftAmount * _OutputAspectRatio * W_SCALE);
    float2 twoPixDown   = onePixDown * 2.0;
    float2 threePixDown = onePixDown * 3.0;
 

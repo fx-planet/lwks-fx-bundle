@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-07-06
 // @Author jwrl
 // @Created 2017-02-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/TheDarkSide_640.png
@@ -8,8 +8,9 @@
 //
 // This effect gives a dark "glow" (don't know what else to call it) to an image.  Sort
 // of based on the Lightworks "Glow" effect, I started work on it then decided to check
-// their code.  Accordingly, the user interface is now exactly the same as theirs.  The
-// code under the hood varies more than somewhat in places.
+// their code.  Accordingly, the user interface is now exactly the same as theirs, with
+// the exception of the "Size" parameter.  The code under the hood varies more than
+// somewhat, and "Size" scales from 0% to 100%, not from 1 to 10.
 //
 // The main difference is that they used different techniques for their four options:
 // I had already built just a luma version and opted to use conditional execution to
@@ -43,6 +44,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 6 July 2018 jwrl.
+// Calculate glow related to frame size not pixel size.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,6 +55,7 @@ int _LwksEffectInfo
    string Description = "The dark side";
    string Category    = "Stylize";
    string SubCategory = "Preset Looks";
+   string Notes       = "Creates a shadow enhancing soft darkness spread.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -66,31 +71,23 @@ texture Glow_2 : RenderColorTarget;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-sampler InpSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Input = sampler_state { Texture = <Input>; };
 
-sampler G1_Sampler = sampler_state
+sampler s_Glow_1 = sampler_state
 {
    Texture   = <Glow_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler G2_Sampler = sampler_state
+sampler s_Glow_2 = sampler_state
 {
    Texture   = <Glow_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -109,8 +106,8 @@ int SetTechnique
 float glowKnee
 <
    string Description = "Tolerance";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float glowFeather
@@ -123,9 +120,9 @@ float glowFeather
 float glowSpread
 <
    string Description = "Size";
-   float MinVal = 1.00;
-   float MaxVal = 10.00;
-> = 4.0;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
 
 float glowAmount
 <
@@ -143,17 +140,17 @@ float4 Colour
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define RED        1
-#define GREEN      2
-#define BLUE       3
+#define RED     1
+#define GREEN   2
+#define BLUE    3
 
-#define R_LUMA     0.2989
-#define G_LUMA     0.5866
-#define B_LUMA     0.1145
+#define R_LUMA  0.2989
+#define G_LUMA  0.5866
+#define B_LUMA  0.1145
 
-#define FTHR_SCALE 0.5
+#define F_SCALE 0.5
+#define P_SCALE 0.0015
 
-float _OutputWidth  = 1.0;
 float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
@@ -162,9 +159,9 @@ float _OutputAspectRatio;
 
 float4 ps_extract_Y (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (InpSampler, uv);
+   float4 retval = tex2D (s_Input, uv);
 
-   float feather = max (glowFeather, 0.0) * FTHR_SCALE;
+   float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
    float vid = (dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA))) * retval.a;
 
@@ -177,9 +174,9 @@ float4 ps_extract_Y (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_extract_R (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (InpSampler, uv);
+   float4 retval = tex2D (s_Input, uv);
 
-   float feather = max (glowFeather, 0.0) * FTHR_SCALE;
+   float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
    float vid = retval.r * retval.a;
 
@@ -192,9 +189,9 @@ float4 ps_extract_R (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_extract_G (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (InpSampler, uv);
+   float4 retval = tex2D (s_Input, uv);
 
-   float feather = max (glowFeather, 0.0) * FTHR_SCALE;
+   float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
    float vid = retval.g * retval.a;
 
@@ -207,9 +204,9 @@ float4 ps_extract_G (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_extract_B (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (InpSampler, uv);
+   float4 retval = tex2D (s_Input, uv);
 
-   float feather = max (glowFeather, 0.0) * FTHR_SCALE;
+   float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
    float vid = retval.b * retval.a;
 
@@ -223,27 +220,27 @@ float4 ps_extract_B (float2 uv : TEXCOORD1) : COLOR
 float4 ps_part_blur (float2 uv : TEXCOORD1) : COLOR
 {
    float2 xy = uv;
-   float2 offset = float2 (max (glowSpread, 1.0) / _OutputWidth, 0.0);
+   float2 offset = float2 (max (glowSpread, P_SCALE) * P_SCALE, 0.0);
 
-   float4 retval = tex2D (G1_Sampler, xy);
+   float4 retval = tex2D (s_Glow_1, xy);
 
-   xy += offset; retval += tex2D (G1_Sampler, xy);
-   xy += offset; retval += tex2D (G1_Sampler, xy);
-   xy += offset; retval += tex2D (G1_Sampler, xy);
-   xy += offset; retval += tex2D (G1_Sampler, xy);
-   xy += offset; retval += tex2D (G1_Sampler, xy);
-   xy += offset; retval += tex2D (G1_Sampler, xy);
-   xy += offset; retval += tex2D (G1_Sampler, xy);
+   xy += offset; retval += tex2D (s_Glow_1, xy);
+   xy += offset; retval += tex2D (s_Glow_1, xy);
+   xy += offset; retval += tex2D (s_Glow_1, xy);
+   xy += offset; retval += tex2D (s_Glow_1, xy);
+   xy += offset; retval += tex2D (s_Glow_1, xy);
+   xy += offset; retval += tex2D (s_Glow_1, xy);
+   xy += offset; retval += tex2D (s_Glow_1, xy);
 
    xy = uv - offset;
-   retval += tex2D (G1_Sampler, xy);
+   retval += tex2D (s_Glow_1, xy);
 
-   xy -= offset; retval += tex2D (G1_Sampler, xy);
-   xy -= offset; retval += tex2D (G1_Sampler, xy);
-   xy -= offset; retval += tex2D (G1_Sampler, xy);
-   xy -= offset; retval += tex2D (G1_Sampler, xy);
-   xy -= offset; retval += tex2D (G1_Sampler, xy);
-   xy -= offset; retval += tex2D (G1_Sampler, xy);
+   xy -= offset; retval += tex2D (s_Glow_1, xy);
+   xy -= offset; retval += tex2D (s_Glow_1, xy);
+   xy -= offset; retval += tex2D (s_Glow_1, xy);
+   xy -= offset; retval += tex2D (s_Glow_1, xy);
+   xy -= offset; retval += tex2D (s_Glow_1, xy);
+   xy -= offset; retval += tex2D (s_Glow_1, xy);
 
    return retval / 15.0;
 }
@@ -253,28 +250,28 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float amount = max (glowAmount, 0.0);
 
    float2 xy = uv;
-   float2 offset = float2 (0.0, max (glowSpread, 1.0) * _OutputAspectRatio / _OutputWidth);
+   float2 offset = float2 (0.0, max (glowSpread, P_SCALE) * _OutputAspectRatio * P_SCALE);
 
-   float4 retval = tex2D (InpSampler, xy);
-   float4 gloVal = tex2D (G2_Sampler, xy);
+   float4 retval = tex2D (s_Input, xy);
+   float4 gloVal = tex2D (s_Glow_2, xy);
 
-   xy += offset; gloVal += tex2D (G2_Sampler, xy);
-   xy += offset; gloVal += tex2D (G2_Sampler, xy);
-   xy += offset; gloVal += tex2D (G2_Sampler, xy);
-   xy += offset; gloVal += tex2D (G2_Sampler, xy);
-   xy += offset; gloVal += tex2D (G2_Sampler, xy);
-   xy += offset; gloVal += tex2D (G2_Sampler, xy);
-   xy += offset; gloVal += tex2D (G2_Sampler, xy);
+   xy += offset; gloVal += tex2D (s_Glow_2, xy);
+   xy += offset; gloVal += tex2D (s_Glow_2, xy);
+   xy += offset; gloVal += tex2D (s_Glow_2, xy);
+   xy += offset; gloVal += tex2D (s_Glow_2, xy);
+   xy += offset; gloVal += tex2D (s_Glow_2, xy);
+   xy += offset; gloVal += tex2D (s_Glow_2, xy);
+   xy += offset; gloVal += tex2D (s_Glow_2, xy);
 
    xy = uv - offset;
-   gloVal += tex2D (G2_Sampler, xy);
+   gloVal += tex2D (s_Glow_2, xy);
 
-   xy -= offset; gloVal += tex2D (G2_Sampler, xy);
-   xy -= offset; gloVal += tex2D (G2_Sampler, xy);
-   xy -= offset; gloVal += tex2D (G2_Sampler, xy);
-   xy -= offset; gloVal += tex2D (G2_Sampler, xy);
-   xy -= offset; gloVal += tex2D (G2_Sampler, xy);
-   xy -= offset; gloVal += tex2D (G2_Sampler, xy);
+   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
+   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
+   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
+   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
+   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
+   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
 
    gloVal = saturate (retval - (gloVal / 15.0));
 

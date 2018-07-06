@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-07-06
 // @Author jwrl
 // @Created 2017-02-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColourFilmAge_640.png
@@ -44,6 +44,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 6 July 2018 jwrl.
+// Made blurring and noise generation independent of pixel size.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -70,7 +73,7 @@ texture Weave : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state
+sampler s_Input = sampler_state
 {
    Texture   = <Inp>;
    AddressU  = Clamp;
@@ -80,7 +83,7 @@ sampler InputSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler Dmge_Sampler = sampler_state
+sampler s_Damage = sampler_state
 {
    Texture   = <Dmg>;
    AddressU  = Clamp;
@@ -90,7 +93,7 @@ sampler Dmge_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler Dirt_Sampler = sampler_state
+sampler s_Dirt = sampler_state
 {
    Texture   = <Drt>;
    AddressU  = Clamp;
@@ -100,7 +103,7 @@ sampler Dirt_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler NoiseSampler = sampler_state
+sampler s_Noise = sampler_state
 {
    Texture   = <Noise>;
    AddressU  = Clamp;
@@ -110,7 +113,7 @@ sampler NoiseSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler Chem_Sampler = sampler_state
+sampler s_Chemical = sampler_state
 {
    Texture   = <Chem>;
    AddressU  = Clamp;
@@ -120,7 +123,7 @@ sampler Chem_Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler WeaveSampler = sampler_state
+sampler s_Weave = sampler_state
 {
    Texture = <Weave>;
    AddressU  = Clamp;
@@ -290,7 +293,7 @@ bool DamageTrack
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define PI      3.1415927
+#define PI      3.1415926536
 
 #define POS     0
 #define NEG     1
@@ -298,15 +301,13 @@ bool DamageTrack
 #define MAGENTA 1
 
 #define F_SCALE 0.2
+#define S_SCALE 2000.0
+#define W_SCALE 0.0005
 
 #define LUMA    float3(0.25,0.65,0.11)
 
 float _Progress;
-
-float _OutputWidth;
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -320,9 +321,9 @@ float4 ps_noise (float2 uv : TEXCOORD0) : COLOR
 
    float scale = 43758.5453;
 
-   retval.xy = uv * float2 (1.0, 1.0 / _OutputAspectRatio) * _OutputWidth;
+   retval.xy = uv * float2 (1.0, 1.0 / _OutputAspectRatio) * S_SCALE;
    retval.xy = 3.0 * floor (retval.xy / 3.0);
-   retval.xy = float2 (retval.x, retval.y * _OutputAspectRatio) * (_Progress + 0.5) / _OutputWidth;
+   retval.xy = float2 (retval.x, retval.y * _OutputAspectRatio) * (_Progress + 0.5) * W_SCALE;
 
    retval.x = frac (sin (dot (retval.xy, dotProd)) * scale);
    retval.y = frac (sin (dot (retval.xy, dotProd)) * scale);
@@ -333,8 +334,8 @@ float4 ps_noise (float2 uv : TEXCOORD0) : COLOR
 
 float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (InputSampler, uv);
-   float4 grain = tex2D (NoiseSampler, uv);
+   float4 Fgd = tex2D (s_Input, uv);
+   float4 grain = tex2D (s_Noise, uv);
    float4 ret_1, ret_2;
 
    float lum;
@@ -370,7 +371,7 @@ float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
    }
 
    if ((DirtPhase == 1) && (DirtAmount > 0.0)) {
-      ret_1 = tex2D (Dirt_Sampler, uv);
+      ret_1 = tex2D (s_Dirt, uv);
       ret_2 = (DirtSense == 0) ? 1.0.xxxx - ret_1 : ret_1;
       ret_1 = max (Fgd, ret_2);
       Fgd.rgb = lerp (Fgd.rgb, ret_1.rgb, DirtAmount);
@@ -380,8 +381,8 @@ float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
 
    scratchSeed.x = frac (uv.x + scratchSeed.x);
 
-   float scratch = UseSource ? tex2D (InputSampler, scratchSeed.yx).g
-                             : tex2D (Dmge_Sampler, scratchSeed.yx).g;
+   float scratch = UseSource ? tex2D (s_Input, scratchSeed.yx).g
+                             : tex2D (s_Damage, scratchSeed.yx).g;
 
    scratch = (2.0 * scratch) + NegDamage - 1.5;
    scratch = ((scratch > 0.0) && (scratch < 0.005)) ? 1.0 : 0.0;
@@ -390,7 +391,7 @@ float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
    if (DamageTrack) {
       if (UseSource) return (min (0.5 + scratch, 1.0)).xxxx;
 
-      return min (tex2D (Dmge_Sampler, uv) + scratch.xxxx, 1.0.xxxx);
+      return min (tex2D (s_Damage, uv) + scratch.xxxx, 1.0.xxxx);
    }
 
    Fgd.rgb = lerp (Fgd.rgb, min (Fgd.rgb + scratch.xxx, 1.0.xxx), NegDamageAmount);
@@ -405,18 +406,18 @@ float4 ps_weave (float2 uv : TEXCOORD1) : COLOR
 
    float scale = 45437.5853;
 
-   xy.x = (frac (sin (dot (xy, dotProd)) * scale) - 0.5) / _OutputWidth;
-   xy.y = (frac (sin (dot (xy, dotProd)) * scale) - 0.5) * _OutputAspectRatio / _OutputWidth;
+   xy.x = (frac (sin (dot (xy, dotProd)) * scale) - 0.5) * W_SCALE;
+   xy.y = (frac (sin (dot (xy, dotProd)) * scale) - 0.5) * _OutputAspectRatio * W_SCALE;
 
    float flkr = 1.0 - (frac ((xy.x + xy.y)  * 5.0) * max ( 0.0, Flicker) * F_SCALE);
 
    xy *= float2 (WeaveHoriz, WeaveVert) * 10.0;
    xy += uv;
 
-   float4 Fgd = tex2D (Chem_Sampler, xy);
+   float4 Fgd = tex2D (s_Chemical, xy);
 
    scale = frac ((_Progress + 0.5) * 12345.6789);
-   Fgd = lerp (Fgd, tex2D (InputSampler, xy), scale);
+   Fgd = lerp (Fgd, tex2D (s_Input, xy), scale);
 
    if ((fadeDyes <= 0.0) && (Flicker <= 0.0)) return Fgd;
 
@@ -439,15 +440,15 @@ float4 ps_weave (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (WeaveSampler, uv);
+   float4 retval = tex2D (s_Weave, uv);
 
-   float2 scratchTex = tex2D (NoiseSampler, uv).rb;
+   float2 scratchTex = tex2D (s_Noise, uv).rb;
    float2 scratchSeed  = lerp (float2 (0.1, 0.1), float2 (0.9, 0.9), _Progress) * float2 (0.001, 0.4);
 
    scratchSeed.x = frac (uv.x + scratchSeed.x);
 
-   float scratch = UseSource ? tex2D (InputSampler, scratchSeed).g
-                             : tex2D (Dmge_Sampler, scratchSeed).g;
+   float scratch = UseSource ? tex2D (s_Input, scratchSeed).g
+                             : tex2D (s_Damage, scratchSeed).g;
 
    scratch = (2.0 * scratch) + PosDamage - 1.5;
    scratch = ((scratch > 0.0) && (scratch < 0.005)) ? 1.0 : 0.0;
@@ -458,7 +459,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    retval.rgb = lerp (retval.rgb, max (retval.rgb - scratch.xxx, 0.0.xxx), PosDamageAmount);
 
    if ((DirtPhase == 0) && (DirtAmount > 0.0)) {
-      float4 Fgd = tex2D (Dirt_Sampler, uv);
+      float4 Fgd = tex2D (s_Dirt, uv);
 
       if (DirtSense == 1) { Fgd = 1.0.xxxx - Fgd; }
 

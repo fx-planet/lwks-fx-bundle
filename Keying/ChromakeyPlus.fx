@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-07-06
 // @Author jwrl
 // @Created 2016-09-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyPlus_640.png
@@ -43,6 +43,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 7 July 2018 jwrl.
+// Made blur routines resolution independent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,6 +54,7 @@ int _LwksEffectInfo
    string Description = "Chromakey plus";
    string Category    = "Key";
    string SubCategory = "User Effects";
+   string Notes       = "Chromakey with a comprehensive range of key fine tuning adjustments, masks and cropping.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -73,77 +77,46 @@ texture Buff_2 : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
+sampler s_Foreground = sampler_state {
    Texture = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler BgSampler = sampler_state {
-   Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler M1Sampler = sampler_state {
-   Texture   = <M1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Mask_1  = sampler_state { Texture = <M1>; };
+sampler s_Mask_2  = sampler_state { Texture = <M2>; };
+sampler s_Cropped = sampler_state { Texture = <Crops>; };
 
-sampler M2Sampler = sampler_state {
-   Texture   = <M2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler rKeySampler = sampler_state
+sampler s_RawKey = sampler_state
 {
-   Texture = <RawKey>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   Texture   = <RawKey>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler CropSampler = sampler_state
-{
-   Texture = <Crops>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Buf1Sampler = sampler_state
+sampler s_Buffer_1 = sampler_state
 {
    Texture   = <Buff_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler Buf2Sampler = sampler_state
+sampler s_Buffer_2 = sampler_state
 {
    Texture   = <Buff_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -359,7 +332,7 @@ int maskOut
 
 #define LOOP_1    16
 #define END_1     65
-#define RADIUS_1  4.5
+#define RADIUS_1  0.00225
 #define ANGLE_1   0.19634954
 
 #define LOOP_2    12
@@ -422,13 +395,13 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    float4 retval = ((crop_T < 0.0) || (crop_B > 0.0) || (crop_L < 0.0) || (crop_R > 0.0)) ? GREEN : BLACK;
 
    if (MaskInState != MASK_OFF) {
-      float4 inMask = tex2D (M1Sampler, uv);
+      float4 inMask = tex2D (s_Mask_1, uv);
 
       retval.r = (maskIn == LUMA) ? max (inMask.r, max (inMask.g, inMask.b)) : inMask [maskIn];
    }
 
    if (MaskOutState != MASK_OFF) {
-      float4 outMask = tex2D (M2Sampler, uv);
+      float4 outMask = tex2D (s_Mask_2, uv);
 
       retval.b = (maskOut == LUMA) ? max (outMask.r, max (outMask.g, outMask.b)) : outMask [maskOut];
    }
@@ -446,7 +419,7 @@ float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform floa
    if (feather <= 0.0) return retval;
 
    float4 ret_1 = retval;
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * RADIUS_1 * feather / _OutputWidth;
+   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * feather * RADIUS_1;
 
    for (int i = 0; i < LOOP_1; i++) {
       sincos ((i * ANGLE_1), xy.x, xy.y);
@@ -475,7 +448,7 @@ float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform floa
 
 float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 rgba = tex2D (Buf1Sampler, uv);
+   float4 rgba = tex2D (s_Buffer_1, uv);
 
    if (showData == PREBLUR) return rgba;
 
@@ -516,12 +489,12 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_erode (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (Buf2Sampler, uv);
+   float4 retval = tex2D (s_Buffer_2, uv);
 
    if (Erode == 0.0) return retval;
 
    float  ret_1 = retval.g;
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * RADIUS_1 * abs (Erode) / _OutputWidth;
+   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * abs (Erode) * RADIUS_1;
 
    radius *= RADIUS_2;
 
@@ -529,16 +502,16 @@ float4 ps_erode (float2 uv : TEXCOORD1) : COLOR
       for (int i = 0; i < LOOP_2; i++) {
          sincos ((i * ANGLE_2), xy.x, xy.y);
          xy *= radius;
-         ret_1 = max (ret_1, tex2D (Buf2Sampler, uv + xy).r);
-         ret_1 = max (ret_1, tex2D (Buf2Sampler, uv - xy).r);
+         ret_1 = max (ret_1, tex2D (s_Buffer_2, uv + xy).r);
+         ret_1 = max (ret_1, tex2D (s_Buffer_2, uv - xy).r);
       }
    }
    else {
       for (int i = 0; i < LOOP_2; i++) {
          sincos ((i * ANGLE_2), xy.x, xy.y);
          xy *= radius;
-         ret_1 = min (ret_1, tex2D (Buf2Sampler, uv + xy).r);
-         ret_1 = min (ret_1, tex2D (Buf2Sampler, uv - xy).r);
+         ret_1 = min (ret_1, tex2D (s_Buffer_2, uv + xy).r);
+         ret_1 = min (ret_1, tex2D (s_Buffer_2, uv - xy).r);
       }
    }
 
@@ -547,19 +520,19 @@ float4 ps_erode (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_composite (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd  = tex2D (FgSampler, xy1);
-   float4 Bgd  = tex2D (BgSampler, xy2);
-   float4 key  = tex2D (rKeySampler, xy1);
-   float4 crop = tex2D (CropSampler, xy1);
+   float4 Fgd  = tex2D (s_Foreground, xy1);
+   float4 Bgd  = tex2D (s_Background, xy2);
+   float4 key  = tex2D (s_RawKey, xy1);
+   float4 crop = tex2D (s_Cropped, xy1);
 
-   if (showData == PREBLUR) return tex2D (Buf2Sampler, xy1);
-   else if (showData == MASK_IN) return tex2D (M1Sampler, xy1);
-   else if (showData == MASK_OUT) return tex2D (M2Sampler, xy1);
+   if (showData == PREBLUR) return tex2D (s_Buffer_2, xy1);
+   else if (showData == MASK_IN) return tex2D (s_Mask_1, xy1);
+   else if (showData == MASK_OUT) return tex2D (s_Mask_2, xy1);
    else if (showData == FGND) return Fgd;
    else if (showData == BGND) return Bgd;
    else if (showData == RAW_KEY) return float2 (1.0 - key.b, 1.0).xxxy;
 
-   key.r = tex2D (Buf1Sampler, xy1).r;
+   key.r = tex2D (s_Buffer_1, xy1).r;
    key.r = saturate ((((1.0 - min (key.r, key.g) * Fgd.a) * 2.0) * (1.0 + alphaWhites)) + alphaBlacks);
 
    float gamma = (alphaGamma <= 0.1) ? MAX_GAMMA : 1.0 / alphaGamma;
@@ -593,25 +566,25 @@ float4 ps_composite (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Comp = tex2D (Buf2Sampler, uv);
+   float4 Comp = tex2D (s_Buffer_2, uv);
 
    if (showOverlay == NO_MASKS) return Comp;
 
    float2 pixDiag = float2 (2.0, 2.0 * _OutputAspectRatio) / _OutputWidth;
-   float4 crop = tex2D (CropSampler, uv);
+   float4 crop = tex2D (s_Cropped, uv);
 
-   crop = tex2D (CropSampler, uv - pixDiag);
+   crop = tex2D (s_Cropped, uv - pixDiag);
 
-   float4 cropmax = tex2D (CropSampler, uv + pixDiag);
+   float4 cropmax = tex2D (s_Cropped, uv + pixDiag);
    float4 retval = min (crop, cropmax);
 
    pixDiag.y = -pixDiag.y;
 
-   float4 cropmin = tex2D (CropSampler, uv + pixDiag);
+   float4 cropmin = tex2D (s_Cropped, uv + pixDiag);
 
    retval  = min (retval, cropmin);
    cropmax = max (cropmax, max (crop, cropmin));
-   cropmin = tex2D (CropSampler, uv - pixDiag);
+   cropmin = tex2D (s_Cropped, uv - pixDiag);
    cropmax = max (cropmax, cropmin);
 
    retval = saturate (cropmax - min (retval, cropmin));
@@ -643,7 +616,7 @@ technique cKeyPlus
 
    pass P_2
    < string Script = "RenderColorTarget0 = Buff_1;"; >
-   { PixelShader = compile PROFILE ps_blur (FgSampler, Preblur); }
+   { PixelShader = compile PROFILE ps_blur (s_Foreground, Preblur); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = Buff_2;"; >
@@ -655,7 +628,7 @@ technique cKeyPlus
 
    pass P_5
    < string Script = "RenderColorTarget0 = Buff_1;"; >
-   { PixelShader = compile PROFILE ps_blur (rKeySampler, Feather); }
+   { PixelShader = compile PROFILE ps_blur (s_RawKey, Feather); }
 
    pass P_6
    < string Script = "RenderColorTarget0 = Buff_2;"; >

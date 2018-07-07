@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 4 April 2018
+// @Released 2018-07-07
 // @Author jwrl
-// @Created 28 May 2017
+// @Created 2017-05-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_vignette_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DVE_vignette.fx
@@ -46,6 +46,9 @@
 //
 // Modified by LW user jwrl 4 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified 2018-07-07 jwrl:
+// Drop shadow feathering now resolution independent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,6 +57,7 @@ int _LwksEffectInfo
    string Description = "DVE with vignette";
    string Category    = "DVE";
    string SubCategory = "Crop Presets";
+   string Notes       = "A simple DVE with circular, diamond or square shaped masking";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -69,7 +73,7 @@ texture Inp : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgdSampler = sampler_state
+sampler s_Foreground = sampler_state
 {
    Texture   = <Fgd>;
    AddressU  = Mirror;
@@ -79,17 +83,9 @@ sampler FgdSampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler BgdSampler = sampler_state
-{
-   Texture   = <Bgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Background = sampler_state { Texture = <Bgd>; };
 
-sampler InpSampler = sampler_state
+sampler s_Input = sampler_state
 {
    Texture   = <Inp>;
    AddressU  = Border;
@@ -276,21 +272,22 @@ float BgPosY
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define RADIUS_SCALE  1.6666667
+#define RADIUS_SCALE  1.6666666667
 #define SQUARE_SCALE  2.0
 #define FEATHER_SCALE 0.05
 #define FEATHER_DMND  0.0375
+#define FEATHER_SOFT  0.0005
 #define BORDER_SCALE  0.1
 #define BORDER_DMND   0.075
 
-#define CIRCLE        2.0327956
+#define CIRCLE        2.0327959639
 #define SQUARE        2.0
-#define DIAMOND       1.4142136
+#define DIAMOND       1.4142135624
 
 #define MIN_SIZE      0.9
 #define MAX_SIZE      9.0
 #define MAX_ASPECT    5.0
-#define MIN_ASPECT    0.9999999
+#define MIN_ASPECT    0.9999999999
 
 #define FLIP          1
 #define FLOP          2
@@ -300,12 +297,9 @@ float BgPosY
 #define BLACK         float2(0.0,1.0).xxxy
 #define EMPTY         0.0.xxxx
 
-#define HALF_PI       1.5707963
+#define HALF_PI       1.5707963268
 
-float _OutputWidth;
 float _OutputAspectRatio; 
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -355,7 +349,7 @@ float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((radius - offset) / mix) : 0.0;
 
-   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (FgdSampler, xy2);
+   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (s_Foreground, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (radius > border + fthr) return EMPTY;
@@ -404,7 +398,7 @@ float4 ps_square (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((square - offset) / mix) : 0.0;
 
-   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (FgdSampler, xy2);
+   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (s_Foreground, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (square > border + fthr) return EMPTY;
@@ -450,7 +444,7 @@ float4 ps_diamond (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((diamond - offset) / mix) : 0.0;
 
-   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (FgdSampler, xy2);
+   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (s_Foreground, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (diamond > border + fthr) return EMPTY;
@@ -467,13 +461,13 @@ float4 ps_diamond (float2 uv : TEXCOORD1) : COLOR
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float2 xy1 = uv - float2 (ShadowX, -ShadowY * _OutputAspectRatio) * 0.04;
-   float2 xy2 = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+   float2 xy2 = float2 (1.0, _OutputAspectRatio) * FEATHER_SOFT;
    float2 xy3 = (uv - FRAME_CENTRE) * (1.0 - (max (BgSize, 0.0) * MIN_SIZE) - (min (BgSize, 0.0) * MAX_SIZE));
 
    xy3.x = (BgFlipFlop == FLIP) || (BgFlipFlop == FLIP_FLOP) ? 0.5 + BgPosX - xy3.x : 0.5 + xy3.x - BgPosX;
    xy3.y = BgFlipFlop >= FLOP ? 0.5 - xy3.y - BgPosY : 0.5 + xy3.y + BgPosY;
 
-   float alpha    = fn_illegal (xy1) ? 0.0 : tex2D (InpSampler, xy1).a * 0.03125;
+   float alpha    = fn_illegal (xy1) ? 0.0 : tex2D (s_Input, xy1).a * 0.03125;
    float softness = ShadowSoft * 4.0;
    float amount   = 0.125;
    float feather  = 0.0;
@@ -482,23 +476,23 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       feather += softness;
       amount  /= 2.0;
 
-      alpha += tex2D (InpSampler, xy1 + float2 (xy2.x, 0.0) * feather).a * amount;
-      alpha += tex2D (InpSampler, xy1 - float2 (xy2.x, 0.0) * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 + float2 (xy2.x, 0.0) * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 - float2 (xy2.x, 0.0) * feather).a * amount;
 
-      alpha += tex2D (InpSampler, xy1 + float2 (0.0, xy2.y) * feather).a * amount;
-      alpha += tex2D (InpSampler, xy1 - float2 (0.0, xy2.y) * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 + float2 (0.0, xy2.y) * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 - float2 (0.0, xy2.y) * feather).a * amount;
 
-      alpha += tex2D (InpSampler, xy1 + xy2 * feather).a * amount;
-      alpha += tex2D (InpSampler, xy1 - xy2 * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 + xy2 * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 - xy2 * feather).a * amount;
 
-      alpha += tex2D (InpSampler, xy1 + float2 (xy2.x, -xy2.y) * feather).a * amount;
-      alpha += tex2D (InpSampler, xy1 - float2 (xy2.x, -xy2.y) * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 + float2 (xy2.x, -xy2.y) * feather).a * amount;
+      alpha += tex2D (s_Input, xy1 - float2 (xy2.x, -xy2.y) * feather).a * amount;
    }
 
    alpha = saturate (alpha * Shadow * 0.5);
 
-   float4 Fgnd   = tex2D (InpSampler, uv);
-   float4 Bgnd   = fn_illegal (xy3) ? EMPTY : tex2D (BgdSampler, xy3);
+   float4 Fgnd   = tex2D (s_Input, uv);
+   float4 Bgnd   = fn_illegal (xy3) ? EMPTY : tex2D (s_Background, xy3);
    float4 retval = float4 (lerp (Bgnd.rgb, 0.0.xxx, alpha), Bgnd.a);
 
    return lerp (retval, Fgnd, Fgnd.a);

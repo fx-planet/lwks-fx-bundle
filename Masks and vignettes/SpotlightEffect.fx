@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-29
+// @Released 2018-07-07
 // @Author jwrl
 // @Created 2017-12-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/SpotlightEffect_640.png
@@ -16,10 +16,13 @@
 // The background can also be slightly blurred to give a soft focus effect, and the
 // foreground and background can be individually tinted.
 //
-// Modified 2018-04-29
+// Bug fix and modification 2018-04-29 jwrl:
 // Corrected a bug which caused the angular adjustment to be always centred on the frame
 // centre, regardless of the spot position.  In the process the subcategory was changed
 // to "Matte" and the filename from SpotEffect.fx to SpotlightEffect.fx.
+//
+// Modified 2018-07-07 jwrl:
+// Blur is now resolution independent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -28,6 +31,7 @@ int _LwksEffectInfo
    string Description = "Spotlight effect";
    string Category    = "Stylize";
    string SubCategory = "Matte";
+   string Notes       = "Creates a spotlight highlight over a slightly blurred darkened background";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -216,16 +220,16 @@ float4 BgdColour
 
 #define ASPECT_RATIO  0.2
 #define FEATHER_SCALE 0.05
-#define RADIUS_SCALE  1.6666667
+#define RADIUS_SCALE  1.6666666667
+#define FOCUS_SCALE   0.002
 
 #define PI            3.1415926536
-#define ROTATE        PI/180.0
+#define ROTATE        0.0174532925
 
-float Pascal [] = { 0.3125, 0.234375, 0.09375, 0.015625 };
-
-float _OutputWidth;
-float _OutputHeight;
 float _OutputAspectRatio;
+
+float _Pascal [] = { 3432.0 / 16384.0, 3003.0 / 16384.0, 2002.0 / 16384.0, 1001.0 / 16384.0,
+                     364.0 / 16384.0, 91.0 / 16384.0, 14.0 / 16384.0, 1.0 / 16384.0 };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -303,46 +307,36 @@ float4 ps_bgd_blur (float2 uv : TEXCOORD1) : COLOR
 {
    // This is a simple box blur using Pascal's triangle to calculate the blur
 
-   float4 retval = tex2D (s_BgdProc, uv);
+   float4 retval = tex2D (s_BgdProc, uv) * _Pascal [0];
 
-   float2 xy1 = float2 ((2.0 - 2.0 * BgdFocus) / _OutputWidth, 0.0);
-   float2 xy2 = xy1 + xy1;
-   float2 xy3 = xy1 + xy2;
-
-   float alpha = retval.a;
+   float2 xy1 = float2 ((1.0 - BgdFocus) * FOCUS_SCALE, 0.0);
+   float2 xy2 = xy1;
 
    // Blur the background component horizontally
 
-   retval *= Pascal [0];
-   retval += tex2D (s_BgdProc, uv + xy1) * Pascal [1];
-   retval += tex2D (s_BgdProc, uv - xy1) * Pascal [1];
-   retval += tex2D (s_BgdProc, uv + xy2) * Pascal [2];
-   retval += tex2D (s_BgdProc, uv - xy2) * Pascal [2];
-   retval += tex2D (s_BgdProc, uv + xy3) * Pascal [3];
-   retval += tex2D (s_BgdProc, uv - xy3) * Pascal [3];
-
-   retval.a = alpha;
+   for (int i = 1; i < 8; i++) {
+      retval += tex2D (s_BgdProc, uv + xy1) * _Pascal [i];
+      retval += tex2D (s_BgdProc, uv - xy1) * _Pascal [i];
+      xy1 += xy2;
+   }
 
    return retval;
 }
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_BgdBlur, uv);
+   float4 retval = tex2D (s_BgdBlur, uv) * _Pascal [0];
 
-   float2 xy1 = float2 (0.0, (2.0 - 2.0 * BgdFocus) / _OutputHeight);
-   float2 xy2 = xy1 + xy1;
-   float2 xy3 = xy1 + xy2;
+   float2 xy1 = float2 (0.0, (1.0 - BgdFocus) * FOCUS_SCALE * _OutputAspectRatio);
+   float2 xy3, xy2 = xy1;
 
-   // Blur the background component vertically
+   // Blur the background component vertically - looks familiar!
 
-   retval *= Pascal [0];
-   retval += tex2D (s_BgdBlur, uv + xy1) * Pascal [1];
-   retval += tex2D (s_BgdBlur, uv - xy1) * Pascal [1];
-   retval += tex2D (s_BgdBlur, uv + xy2) * Pascal [2];
-   retval += tex2D (s_BgdBlur, uv - xy2) * Pascal [2];
-   retval += tex2D (s_BgdBlur, uv + xy3) * Pascal [3];
-   retval += tex2D (s_BgdBlur, uv - xy3) * Pascal [3];
+   for (int i = 1; i < 8; i++) {
+      retval += tex2D (s_BgdProc, uv + xy1) * _Pascal [i];
+      retval += tex2D (s_BgdProc, uv - xy1) * _Pascal [i];
+      xy1 += xy2;
+   }
 
    // Now calculate the spotlight size, aspect ratio and angle.  We must
    // first set up the size, aspect ratio and edge feathering parameters

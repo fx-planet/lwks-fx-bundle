@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @Released 2018-05-23
+// @Released 2018-07-07
 // @Author jwrl
 // @Created 2018-05-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/NightVision_640.png
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect NightVision_20180523.fx
+// Lightworks user effect NightVision.fx
 //
 // This effect is a rewrite of my NightVision.fx from 2016.
 //
@@ -13,41 +13,19 @@
 // passes required, so they have been retained.  In fact apart from some general code
 // cleanup the major changes to the original are a revised profile 1 shader and the use
 // of SetTechnique instead of using in-shader conditionals.
+//
+// Modified 2018-07-07 jwrl:
+// Made glow resolution independent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Night vision 2018";
+   string Description = "Night vision";
    string Category    = "Stylize";
    string SubCategory = "Simulation";
+   string Notes       = "Simulates infra-red night time photography";
 > = 0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define LUMA     float3(0.2989, 0.5866, 0.1145)
-#define GB_LUMA  float2(0.81356, 0.18644)
-
-#define P1_SCALE 3.0
-#define P2_SCALE 1.54576
-#define P3_SCALE 0.5
-
-#define KNEE     0.85
-#define KNEE_FIX 5.666666667
-
-#define LOOP     9
-#define DIVIDE   73
-
-#define RADIUS_1 4.0
-#define RADIUS_2 2.5
-
-#define ANGLE    0.34907
-
-float _OutputAspectRatio;
-float _OutputWidth;
-float _Progress;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -132,6 +110,31 @@ float Saturation
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define LUMA     float3(0.2989, 0.5866, 0.1145)
+#define GB_LUMA  float2(0.81356, 0.18644)
+
+#define P1_SCALE 3.0
+#define P2_SCALE 1.54576
+#define P3_SCALE 0.5
+
+#define KNEE     0.85
+#define KNEE_FIX 5.6666666667
+
+#define LOOP     9
+#define DIVIDE   73
+
+#define RADIUS_1 0.002
+#define RADIUS_2 2.5
+
+#define ANGLE    0.3490658504
+
+float _OutputAspectRatio;
+float _Progress;
+
+//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
@@ -140,11 +143,11 @@ float4 ps_noise (float2 xy : TEXCOORD1) : COLOR
    float4 Fgnd = tex2D (s_Foreground, xy);
 
    float2 uv = saturate (xy + float2 (0.00013, 0.00123));
-   float rand = frac ((dot (uv, float2 (uv.x + 123, uv.y + 13)) * ((Fgnd.g + 1.0) * uv.x)) + _Progress);
+   float rand = frac ((dot (uv, float2 (uv.x + 123.0, uv.y + 13.0)) * ((Fgnd.g + 1.0) * uv.x)) + _Progress);
 
-   rand = (rand * 1000) + sin (uv.x) + cos (uv.y);
+   rand = (rand * 1000.0) + sin (uv.x) + cos (uv.y);
 
-   return saturate (frac (fmod (rand, 13) * fmod (rand, 123))).xxxx;
+   return saturate (frac (fmod (rand, 13.0) * fmod (rand, 123.0))).xxxx;
 }
 
 float4 ps_luma_0 (float2 uv : TEXCOORD1) : COLOR
@@ -194,7 +197,7 @@ float4 ps_glow (float2 uv : TEXCOORD1) : COLOR
    float4 Fgnd = tex2D (s_Glow_1, uv);
    float4 retval = Fgnd;
 
-   float2 radius = float2 (1.0, _OutputAspectRatio) * RADIUS_1 / _OutputWidth;
+   float2 radius = float2 (1.0, _OutputAspectRatio) * RADIUS_1;
    float2 xy1, xy2;
 
    for (int i = 0; i < LOOP; i++) {
@@ -225,7 +228,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float4 retval = tex2D (s_Glow_2, uv);
 
    if (Blur > 0.0) {
-      float2 radius = float2 (1.0, _OutputAspectRatio) * RADIUS_1 * Blur / _OutputWidth;
+      float2 radius = float2 (1.0, _OutputAspectRatio) * Blur * RADIUS_1;
       float2 blur = retval.ga;
       float2 xy1, xy2;
 

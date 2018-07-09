@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-07-09
 // @Author jwrl
 // @Created 2016-05-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/70s_psych_640.png
@@ -18,6 +18,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 2018-07-09 jwrl:
+// Removed dependency on pixel size.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,7 +44,7 @@ texture Contours  : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
+sampler s_Input = sampler_state {
         Texture   = <Input>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
@@ -50,7 +53,7 @@ sampler FgSampler = sampler_state {
 	MipFilter = Linear;
 };
 
-sampler Process_S = sampler_state {
+sampler s_Processed = sampler_state {
         Texture   = <Processed>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
@@ -59,7 +62,7 @@ sampler Process_S = sampler_state {
 	MipFilter = Linear;
 };
 
-sampler Contour_S = sampler_state {
+sampler s_Contours = sampler_state {
         Texture   = <Contours>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
@@ -154,32 +157,31 @@ float Monochrome
 #define LUMA_GREEN 0.59
 #define LUMA_BLUE  0.11
 
+#define W_SCALE    0.000545
+
 #define EMPTY      0.0.xxxx
 
 float _OutputAspectRatio;
-float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_gene (float2 xy : TEXCOORD1) : COLOR
+float4 ps_gene (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = EMPTY;
 
-   float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
-   float2 offset, scale;
+   float2 xy1, xy2;
+   float2 xy3 = float2 (1.0, _OutputAspectRatio) * W_SCALE;
 
    float angle = 0.0;
 
    for (int i = 0; i < DELTANG_1; i++) {
-      sincos (angle, scale.x, scale.y);
-      offset = pixsize * scale;
+      sincos (angle, xy2.x, xy2.y);
+      xy1 = xy2 * xy3;
 
-      retval += tex2D (FgSampler, xy + offset);
-      retval += tex2D (FgSampler, xy - offset);
+      retval += tex2D (s_Input, uv + xy1);
+      retval += tex2D (s_Input, uv - xy1);
 
       angle += ANGLE_1;
    }
@@ -197,10 +199,10 @@ float4 ps_gene (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_hueSat (float2 xy : TEXCOORD1) : COLOR
+float4 ps_hueSat (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (FgSampler, xy);
-   float4 rgb    = tex2D (Process_S, xy);
+   float4 retval = tex2D (s_Input, uv);
+   float4 rgb    = tex2D (s_Processed, uv);
 
    float luma  = rgb.a;
 
@@ -252,23 +254,23 @@ float4 ps_hueSat (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd  = tex2D (FgSampler, xy);
+   float4 Fgnd  = tex2D (s_Input, uv);
    float4 pattern = EMPTY;
 
    float blur  = 1.0 + (Smudge * 5.0);
    float angle = 0.0;
 
-   float2 pixsize = float2 (1.0, _OutputAspectRatio) * blur / _OutputWidth;
-   float2 offset, scale;
+   float2 xy1, xy2;
+   float2 xy3 = float2 (1.0, _OutputAspectRatio) * blur * W_SCALE;
 
    for (int j = 0; j < DELTANG_2; j++) {
-      sincos (angle, scale.x, scale.y);
-      offset = pixsize * scale;
+      sincos (angle, xy2.x, xy2.y);
+      xy1 = xy2 * xy3;
 
-      pattern += tex2D (Contour_S, xy + offset);
-      pattern += tex2D (Contour_S, xy - offset);
+      pattern += tex2D (s_Contours, uv + xy1);
+      pattern += tex2D (s_Contours, uv - xy1);
 
       angle += ANGLE_2;
    }

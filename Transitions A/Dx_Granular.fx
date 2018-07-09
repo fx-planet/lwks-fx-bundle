@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-09
+// @Released 2018-07-09
 // @Author jwrl
 // @Created 2016-02-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Granular_640.png
@@ -27,6 +27,10 @@
 // Modified 9 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 2018-07-09 jwrl.
+// Removed dependence on pixel size.  It makes the bug fix of 2017-02-18 redundant, so
+// that has been removed also.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -53,27 +57,10 @@ texture Buffer_3 : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler Outgo_S = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler Incom_S = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Buffer_0_S = sampler_state
+sampler s_Buffer_0 = sampler_state
 {
    Texture   = <Buffer_0>;
    AddressU  = Clamp;
@@ -83,35 +70,27 @@ sampler Buffer_0_S = sampler_state
    MipFilter = Linear;
 };
 
-sampler Buffer_1_S = sampler_state
+sampler s_Buffer_1 = sampler_state
 {
    Texture   = <Buffer_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler Buffer_2_S = sampler_state
+sampler s_Buffer_2 = sampler_state
 {
    Texture   = <Buffer_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler Buffer_3_S = sampler_state
-{
-   Texture   = <Buffer_3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Buffer_3 = sampler_state { Texture = <Buffer_3>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -191,14 +170,10 @@ float4 starColour
 #define BLUR_2  0.09375
 #define BLUR_3  0.01563
 
+#define B_SCALE 0.000545
+
 float _Progress;
-
 float _OutputAspectRatio;
-float _OutputWidth;
-
-#define OutputHeight (_OutputWidth/_OutputAspectRatio)
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -225,7 +200,7 @@ float4 ps_horiz_grad (float2 xy : TEXCOORD1) : COLOR
 float4 ps_radial_grad (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float progress = abs (distance (xy1, float2 (0.5, 0.5))) * 1.414;
-   float4 pixel = tex2D (Outgo_S, xy2);
+   float4 pixel = tex2D (s_Foreground, xy2);
 
    float colOneAmt = 1.0 - progress;
    float colTwoAmt = progress;
@@ -256,49 +231,49 @@ float4 ps_noise (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_soft_1 (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 retval   = tex2D (Buffer_1_S, xy);
+   float4 retval   = tex2D (s_Buffer_1, xy);
 
-   float2 offset_X1 = float2 (pSoftness / _OutputWidth, 0.0);
+   float2 offset_X1 = float2 (pSoftness * B_SCALE, 0.0);
    float2 offset_X2 = offset_X1 * 2.0;
    float2 offset_X3 = offset_X1 * 3.0;
 
    retval *= BLUR_0;
-   retval += tex2D (Buffer_1_S, xy + offset_X1) * BLUR_1;
-   retval += tex2D (Buffer_1_S, xy - offset_X1) * BLUR_1;
-   retval += tex2D (Buffer_1_S, xy + offset_X2) * BLUR_2;
-   retval += tex2D (Buffer_1_S, xy - offset_X2) * BLUR_2;
-   retval += tex2D (Buffer_1_S, xy + offset_X3) * BLUR_3;
-   retval += tex2D (Buffer_1_S, xy - offset_X3) * BLUR_3;
+   retval += tex2D (s_Buffer_1, xy + offset_X1) * BLUR_1;
+   retval += tex2D (s_Buffer_1, xy - offset_X1) * BLUR_1;
+   retval += tex2D (s_Buffer_1, xy + offset_X2) * BLUR_2;
+   retval += tex2D (s_Buffer_1, xy - offset_X2) * BLUR_2;
+   retval += tex2D (s_Buffer_1, xy + offset_X3) * BLUR_3;
+   retval += tex2D (s_Buffer_1, xy - offset_X3) * BLUR_3;
 
    return retval;
 }
 
 float4 ps_soft_2 (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 retval   = tex2D (Buffer_2_S, xy);
+   float4 retval   = tex2D (s_Buffer_2, xy);
 
-   float2 offset_Y1 = float2 (0.0, pSoftness * _OutputAspectRatio / _OutputWidth);
+   float2 offset_Y1 = float2 (0.0, pSoftness * _OutputAspectRatio * B_SCALE);
    float2 offset_Y2 = offset_Y1 * 2.0;
    float2 offset_Y3 = offset_Y1 * 3.0;
 
    retval *= BLUR_0;
-   retval += tex2D (Buffer_2_S, xy + offset_Y1) * BLUR_1;
-   retval += tex2D (Buffer_2_S, xy - offset_Y1) * BLUR_1;
-   retval += tex2D (Buffer_2_S, xy + offset_Y2) * BLUR_2;
-   retval += tex2D (Buffer_2_S, xy - offset_Y2) * BLUR_2;
-   retval += tex2D (Buffer_2_S, xy + offset_Y3) * BLUR_3;
-   retval += tex2D (Buffer_2_S, xy - offset_Y3) * BLUR_3;
+   retval += tex2D (s_Buffer_2, xy + offset_Y1) * BLUR_1;
+   retval += tex2D (s_Buffer_2, xy - offset_Y1) * BLUR_1;
+   retval += tex2D (s_Buffer_2, xy + offset_Y2) * BLUR_2;
+   retval += tex2D (s_Buffer_2, xy - offset_Y2) * BLUR_2;
+   retval += tex2D (s_Buffer_2, xy + offset_Y3) * BLUR_3;
+   retval += tex2D (s_Buffer_2, xy - offset_Y3) * BLUR_3;
 
    return retval;
 }
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd  = tex2D (Outgo_S, xy1);
-   float4 Bgnd  = tex2D (Incom_S, xy2);
+   float4 Fgnd  = tex2D (s_Foreground, xy1);
+   float4 Bgnd  = tex2D (s_Background, xy2);
 
-   float4 grad  = tex2D (Buffer_0_S, xy1);
-   float4 noise = tex2D (Buffer_3_S, ((xy1 - 0.5) / pSize) + 0.5);
+   float4 grad  = tex2D (s_Buffer_0, xy1);
+   float4 noise = tex2D (s_Buffer_3, ((xy1 - 0.5) / pSize) + 0.5);
 
    float level  = saturate (((0.5 - grad.x) * 2) + noise);
 
@@ -315,10 +290,10 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_flat (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd  = tex2D (Outgo_S, xy1);
-   float4 Bgnd  = tex2D (Incom_S, xy2);
+   float4 Fgnd  = tex2D (s_Foreground, xy1);
+   float4 Bgnd  = tex2D (s_Background, xy2);
 
-   float4 noise = tex2D (Buffer_3_S, ((xy1 - 0.5) / pSize) + 0.5);
+   float4 noise = tex2D (s_Buffer_3, ((xy1 - 0.5) / pSize) + 0.5);
 
    float level  = saturate (((Amount - 0.5) * 2) + noise);
 

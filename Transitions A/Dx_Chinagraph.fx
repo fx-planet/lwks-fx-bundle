@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-09
+// @Released 2018-07-09
 // @Author jwrl
 // @Created 2017-03-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Chinagraph_640.png
@@ -22,6 +22,9 @@
 // Modified 9 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 2018-07-09 jwrl:
+// Removed reliance on pixel size.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,35 +42,18 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture chinatex : RenderColorTarget;
+texture Chinagraph : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgdSampler = sampler_state
-{ 
-   Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler BgdSampler = sampler_state
+sampler s_Chinagraph = sampler_state
 {
-   Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler texSampler = sampler_state
-{
-   Texture   = <chinatex>;
+   Texture   = <Chinagraph>;
    AddressU  = Clamp;
    AddressV  = Clamp;
    MinFilter = Linear;
@@ -129,14 +115,14 @@ float Radius
 // Definitions and constants
 //-----------------------------------------------------------------------------------------//
 
-#define SIZE    8.0
+#define SIZE    0.00436
 #define RAND_1  12.9898
 #define RAND_2  78.233
 #define RAND_3  43758.5453
 
 #define TEX     0.5
-#define WIDTH   20.0
-#define DISP    4.0
+#define WIDTH   0.0109
+#define DISP    0.00218
 #define TILT    0.1
 
 #define L_R     0
@@ -149,12 +135,8 @@ float Radius
 
 #define OFFSET  0.002
 
-float _OutputWidth;
 float _OutputAspectRatio;
-
 float _Progress;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -162,7 +144,7 @@ float _Progress;
 
 float4 ps_markup (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 grain = float2 (1.0, _OutputAspectRatio) * SIZE / _OutputWidth;
+   float2 grain = float2 (1.0, _OutputAspectRatio) * SIZE;
    float2 xy1 = round ((uv - 0.5) / grain) * grain;
    float2 xy2 = frac (sin (dot (xy1, float2 (RAND_1, RAND_2)) + _Progress) * RAND_3);
 
@@ -170,41 +152,41 @@ float4 ps_markup (float2 uv : TEXCOORD1) : COLOR
    float4 offset, retval = 0.0.xxxx;
 
    china = lerp (retval, china, Texture * TEX);
-   china = min (china + Depth, 1.0);
+   china = min (china + Depth, 1.0.xxxx);
 
    xy1 = ((uv - 0.5) / 4.0) + 0.5; xy2 = 1.0 - xy1;
 
-   float line_width = WIDTH / _OutputWidth;
+   float line_width = WIDTH;
    float prog_2, prog_1, prog_0 = uv.x;
 
    xy1.x  = uv.x + uv.y + line_width;
    xy2.x  = uv.x + uv.y - line_width;
 
    if (Amount < 0.5) {
-      offset = tex2D (BgdSampler, xy1);
+      offset = tex2D (s_Background, xy1);
 
       prog_1 = offset.r + offset.g + offset.b;
-      offset = tex2D (FgdSampler, 1.0 - xy1);
-      prog_1 = DISP * (prog_1 + offset.r + offset.g + offset.b) / _OutputWidth;
+      offset = tex2D (s_Foreground, 1.0 - xy1);
+      prog_1 = (prog_1 + offset.r + offset.g + offset.b) * DISP;
 
-      offset = tex2D (BgdSampler, xy2);
+      offset = tex2D (s_Background, xy2);
       prog_2 = offset.r + offset.g + offset.b;
-      offset = tex2D (FgdSampler, 1.0 - xy2);
+      offset = tex2D (s_Foreground, 1.0 - xy2);
    }
    else {
-      offset = tex2D (FgdSampler, xy1);
+      offset = tex2D (s_Foreground, xy1);
 
       prog_1 = offset.r + offset.g + offset.b;
-      offset = tex2D (BgdSampler, 1.0 - xy1);
-      prog_1 = DISP * (prog_1 + offset.r + offset.g + offset.b) / _OutputWidth;
+      offset = tex2D (s_Background, 1.0 - xy1);
+      prog_1 = (prog_1 + offset.r + offset.g + offset.b) * DISP;
 
-      offset = tex2D (FgdSampler, xy2);
+      offset = tex2D (s_Foreground, xy2);
       prog_2 = offset.r + offset.g + offset.b;
-      offset = tex2D (BgdSampler, 1.0 - xy2);
+      offset = tex2D (s_Background, 1.0 - xy2);
    }
 
    prog_1 = max (Amount - line_width - prog_1 + (uv.y * Tilt * TILT), 0.0);
-   prog_2 = DISP * (prog_2 + offset.r + offset.g + offset.b) / _OutputWidth;
+   prog_2 = (prog_2 + offset.r + offset.g + offset.b) * DISP;
    prog_2 = min (Amount + line_width + prog_2 + (uv.y * Tilt * TILT), 1.0);
 
    if ((MarkType != R_L) && (prog_0 > prog_1) && (prog_0 < prog_2)) retval = float4 (china.rgb, 1.0);
@@ -218,8 +200,8 @@ float4 ps_markup (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 china  = tex2D (texSampler, uv);
-   float4 retval = (Amount < 0.5) ? tex2D (FgdSampler, uv) : tex2D (BgdSampler, uv);
+   float4 china  = tex2D (s_Chinagraph, uv);
+   float4 retval = (Amount < 0.5) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
 
    if ((Amount != 0.0) && (Radius != 0.0)) {
 
@@ -228,8 +210,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       for (int i = 0; i < LOOP; i++) {
          sincos ((i * ANGLE), xy.x, xy.y);
          xy *= radius;
-         china += tex2D (texSampler, uv + xy);
-         china += tex2D (texSampler, uv - xy);
+         china += tex2D (s_Chinagraph, uv + xy);
+         china += tex2D (s_Chinagraph, uv - xy);
       }
 
       china /= DIVISOR;
@@ -245,7 +227,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique chinagraph
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = chinatex;"; >
+   < string Script = "RenderColorTarget0 = Chinagraph;"; >
    { PixelShader = compile PROFILE ps_markup (); }
 
    pass P_2

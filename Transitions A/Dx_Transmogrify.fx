@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-09
+// @Released 2018-07-09
 // @Author jwrl
 // @Created 2016-05-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Transmogrify_640.png
@@ -24,6 +24,9 @@
 // Modified 9 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 2018-07-09 jwrl:
+// Removed dependence on pixel size.  The bug fix of 2017-02-26 is now redundant.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,23 +48,25 @@ texture Bg;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
-        Texture   = <Fg>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-        };
+sampler s_Foreground = sampler_state
+{
+   Texture   = <Fg>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
-sampler BgSampler = sampler_state {
-        Texture   = <Bg>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-        };
+sampler s_Background = sampler_state
+{
+   Texture   = <Bg>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -80,12 +85,10 @@ float Amount
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
+#define SCALE 0.000545
+
 float _OutputAspectRatio;
-float _OutputWidth;
-
 float _Progress;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -93,7 +96,7 @@ float _Progress;
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 pixSize = (uv / float2 (_OutputWidth, _OutputWidth / _OutputAspectRatio));
+   float2 pixSize = uv * float2 (1.0, _OutputAspectRatio) * SCALE ;
 
    float  rand = frac (sin (dot (pixSize, float2 (18.5475, 89.3723))) * 54853.3754);
 
@@ -101,8 +104,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float2 xy  = saturate (pixSize + (sqrt (1.0 - _Progress) - 0.5).xx + (uv * rand));
    float2 xy2 = lerp (float2 (xy.x, 1.0 - xy.y), uv, Amount);
 
-   float4 Fgd = tex2D (FgSampler, xy1);
-   float4 Bgd = tex2D (BgSampler, xy2);
+   float4 Fgd = tex2D (s_Foreground, xy1);
+   float4 Bgd = tex2D (s_Background, xy2);
 
    return lerp (Fgd, Bgd, Amount);
 }

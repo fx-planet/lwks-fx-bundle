@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-06-22
+// @Released 2018-07-09
 // @Author jwrl
 // @Created 2018-06-13
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Transmogrify_640.png
@@ -16,6 +16,9 @@
 // This is a revision of an earlier effect, Adx_Transmogrify.fx, which added the ability
 // to wipe between two titles.  That added needless complexity, when the same result can
 // be obtained by overlaying two effects.
+//
+// Modified 2018-07-09 jwrl:
+// Removed dependence on pixel size.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -79,12 +82,12 @@ int SetTechnique
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float _OutputWidth;
-float _OutputHeight;
-
-float _Progress;
+#define SCALE 0.000545
 
 #define EMPTY (0.0).xxxx
+
+float _OutputAspectRatio;
+float _Progress;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -110,7 +113,7 @@ float4 fn_tex2D (sampler Vsample, float2 uv)
 
 float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 pixSize = (uv / float2 (_OutputWidth, _OutputHeight));
+   float2 pixSize = uv * float2 (1.0, _OutputAspectRatio) * SCALE;
 
    float rand = (uv * frac (sin (dot (pixSize, float2 (18.5475, 89.3723))) * 54853.3754)) - 0.5;
 
@@ -125,7 +128,7 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 pixSize = (uv / float2 (_OutputWidth, _OutputHeight));
+   float2 pixSize = uv * float2 (1.0, _OutputAspectRatio) * SCALE;
 
    float rand = (uv * frac (sin (dot (pixSize, float2 (18.5475, 89.3723))) * 54853.3754)) - 0.5;
 
@@ -151,4 +154,3 @@ technique Ax_Transmogrify_out
    pass P_1
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

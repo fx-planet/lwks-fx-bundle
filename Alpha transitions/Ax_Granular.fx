@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-06-22
+// @Released 2018-07-09
 // @Author jwrl
 // @Created 2018-06-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Granular_640.png
@@ -14,6 +14,9 @@
 // This is a revision of an earlier effect, Adx_Granular.fx, which also had the ability
 // to wipe between two titles.  That added needless complexity, when the same result
 // can be obtained by overlaying two effects.
+//
+// Modified 2018-07-09 jwrl:
+// Removed dependence on pixel size.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -163,10 +166,9 @@ float4 starColour
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float _OutputAspectRatio;
-float _OutputWidth;
-
 #define FX_OUT  1
+
+#define B_SCALE 0.000545
 
 // Pascal's triangle magic numbers for blur
 
@@ -174,6 +176,8 @@ float _OutputWidth;
 #define BLUR_1  0.2344
 #define BLUR_2  0.09375
 #define BLUR_3  0.01563
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -238,7 +242,7 @@ float4 Soften_1 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Buffer_1, uv);
 
-   float2 offset_X1 = float2 (pSoftness / _OutputWidth, 0.0);
+   float2 offset_X1 = float2 (pSoftness * B_SCALE, 0.0);
    float2 offset_X2 = offset_X1 * 2.0;
    float2 offset_X3 = offset_X1 * 3.0;
 
@@ -257,7 +261,7 @@ float4 Soften_2 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Buffer_2, uv);
 
-   float2 offset_Y1 = float2 (0.0, pSoftness * _OutputAspectRatio / _OutputWidth);
+   float2 offset_Y1 = float2 (0.0, pSoftness * _OutputAspectRatio * B_SCALE);
    float2 offset_Y2 = offset_Y1 * 2.0;
    float2 offset_Y3 = offset_Y1 * 3.0;
 

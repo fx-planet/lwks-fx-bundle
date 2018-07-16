@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, June 23, 2018.
+# Lightworks user Fx archive, July 16, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -17,10 +17,13 @@ In this library where alternative versions of the effects exist they are separat
 Use of these effects is simple.
 
 1. Copy the FX file(s) that you need to your computer. Anywhere will do as long as you know where to find them.
-2. Launch Lightworks, open a project, then open the Effects panel.
-3. In the top left of the window that appears click on "Places" and navigate to the folder in which you stored the FX file.
-4. Select the FX file and then click OK.
-5. The effect will be copied, compiled and a further window will appear giving details.
+2. Launch Lightworks, open a project, then open the Effects panel.  In "Flexible" mode there's a button in your timeline, in "Fixed" mode you must select the VFX tab.
+3. Select the orange "+" symbol, and right click on the word "Category".
+4. From the drop down menu that appears choose "Create template from .FX file..".
+5. In the top left of the window that appears click on "Places" and navigate to the folder in which you stored the FX file.
+6. Select the FX file and then click OK.
+
+The effect will be copied, compiled and a further window will appear giving details.
 
 **NOTE:** Every attempt has been made to ensure that these effects will compile and run on any version of Lightworks on any supported operating system. If you have trouble installing them, please make a note of any error message that Lightworks gives you. Post the complete details [here](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=9259&Itemid=81). It will be followed up.
 
@@ -37,8 +40,6 @@ Alpha transitions are a special kind of effect, and require slightly different s
 ## CATEGORY FOLDER: Alpha and blends
 |EFFECT                 |FILE NAME          |
 |:--------------------- |:----------------- |
-|Adjustable blend       |AdjBlend.fx        |
-|Alpha adjust           |AlphaAdjust.fx     |
 |Alpha Feather          |AlphaFeather.fx    |
 |Border                 |Border.fx          |
 |Drop shadow and border |DropShadow.fx      |
@@ -48,7 +49,8 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Flexi-blend            |FlexiBlend.fx      |
 |Floating images        |FloatImage.fx      |
 |Glitter edge           |GlitterEdge.fx     |
-|Light ray keys         |LightRayKeys.fx  |
+|Key tools              |KeyTools.fx        |
+|Light ray keys         |LightRayKeys.fx    |
 |Lumakey and matte      |LumaMatte.fx       |
 |Magic edges            |MagicEdges.fx      |
 |Matte key              |MatteKey.fx        |
@@ -320,17 +322,18 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |CRT TV screen      |CRTscreen.fx             |
 |JH Old Monitor     |jh_stylize_oldmonitor.fx |
 |Low-res camera     |Low_res_cam.fx           |
-|Night vision 2018  |NightVision_20180523.fx  |
+|Night vision       |NightVision.fx           |
 |VHS v2             |VHSv2.fx                 |
 |Water              |Water.fx                 |
 
 ## CATEGORY FOLDER: Special Fx
-|EFFECT        |FILE NAME      |
-|:------------ |:------------- |
-|Lens Flare #1 |LensFlare_1.fx |
-|Lens Flare #2 |LensFlare_2.fx |
-|Sea Scape     |SeaScape.fx    |
-|Transporter   |Transporter.fx |
+|EFFECT         |FILE NAME         |
+|:------------- |:---------------- |
+|Lens Flare #1  |LensFlare_1.fx    |
+|Lens Flare #2  |LensFlare_2.fx    |
+|Sea Scape      |SeaScape.fx       |
+|Transporter I  |Transporter_I.fx  |
+|Transporter II |Transporter_II.fx |
 
 ## CATEGORY FOLDER: Textures
 |EFFECT            |FILE NAME           |
@@ -382,6 +385,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Subtractive dissolve    |Dx_Subtract.fx            |
 |Swirl mix               |Swirl_mix_20171113.fx     |
 |Transmogrify            |Dx_Transmogrify.fx        |
+|Transporter transition  |Dx_Transporter.fx         |
 |Warp dissolve           |Dx_Warp.fx                |
 |Zoom dissolve           |Dx_Zoom.fx                |
 
@@ -407,7 +411,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |The twister               |Wx_Twister.fx      |
 |X-pinch                   |Wx_xPinch.fx       |
 
-## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
+## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RCÂ³
 |EFFECT                       |FILE NAME                    |
 |:--------------------------- |:--------------------------- |
 |RC 1, Five channel remote    |RC1_Remote_control.fx        |

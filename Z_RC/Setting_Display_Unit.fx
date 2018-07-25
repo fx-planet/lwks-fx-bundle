@@ -1,4 +1,4 @@
-// @Released 2018-04-28
+// @Released 2018-07-26
 // @Author schrauber
 // @Created 2017-02-19
 // @see https://www.lwks.com/media/kunena/attachments/348533/Settings_Display_Unit.png
@@ -11,10 +11,12 @@
 // It's a very handy diagnostic tool for this class of effect.
 //
 //
-// Limitations and Known Problems:
-//    Incompatible with GPU Precision Settings "16-bit Floating Point" (Lightworks 14.5)
+// Update 26 July 2018 by LW user schrauber:
+//    This effect is now compatible with all GPU precision settings.
+//    Option for the future: Measurement option extended (more channels, such as channel 100)
+//    Note: The effect file of the previous version can simply be replaced by this file.
 //
-// Update 3. May 2018 by LW user schrauber:
+// Update 3 May 2018 by LW user schrauber:
 //    Unnecessary sampler settings removed.
 //    Subcategory defined, effect description
 //    and other data relevant to the user repository added.
@@ -32,7 +34,7 @@
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Settings Display Unit";
+   string Description = "Settings Display Unit20180725";
    string Category    = "User";
    string SubCategory = "Remote Control";
 > = 0;
@@ -278,27 +280,34 @@ float _Progress;
 
 // These values are compared with the measured values of the blue color channels.:
 #define STATUS_OFF        0.0													// Status, Channel OFF  
-#define STATUS_DATA_ON    0.2 													// Status, Channel  ON ,   Content:  Data,                      Data for the "Settings Display Unit" 
-#define STATUS_RC_ON      0.4 													// Status, Channel  ON ,   Content:  Remote control,
-#define STATUS_RC_CLAMP   1.0  													// Status, Channel  ON ,   Content:  limited remote control,    The value of the remote control signal was limited by a remote controls.
+#define STATUS_DATA_ON1    0.19 												// Lower tolerance limit for Status, Channel  ON,    Content:  Data,    Data for the "Settings Display Unit" 
+#define STATUS_DATA_ON2    0.21 												// Upper tolerance limit for Status, Channel  ON ,   Content:  Data,    Data for the "Settings Display Unit" 
+#define STATUS_RC_ON1      0.39 												// Lower tolerance limit for Status, Channel  ON ,   Content:  Remote control,
+#define STATUS_RC_ON2      0.41													// Upper tolerance limit for Status, Channel  ON ,   Content:  Remote control,
+#define STATUS_RC_CLAMP   1.0 													// Status, Channel  ON ,   Content:  limited remote control,    The value of the remote control signal was limited by a remote controls.
 
 
 // Receiving from the remote control input:
 
  
 	
-      #define MULTIBAR(ch)  (    (   tex2D(remoteImput, POSCHANNEL(floor(ch))).r						/* Receiving  Red = bit 1 to bit 8 of 16Bit     ,   The value of  "ch" is the receiving channel (only passed to sub macros)  */\
-                                 + ((tex2D(remoteImput, POSCHANNEL(floor(ch))).g) / 255)					/* Green = bit 9 to bit 16   */\
+      #define MULTIBAR(ch)  (    (   tex2D(remoteImput, POSCHANNEL(CH(ch))).r						/* Receiving  Red = bit 1 to bit 8 of 16Bit     ,   The value of  "ch" is the receiving channel (only passed to sub macros)  */\
+                                 + ((tex2D(remoteImput, POSCHANNEL(CH(ch))).g) / 255.0)					/* Green = bit 9 to bit 16   */\
                                  )  - 0.5   )											/* adjustment of the numeral system from  ( 0 ... 1) to (-0.5 ... +0.5)     */
 
-     #define STATUS(ch)     ((tex2D(remoteImput, POSCHANNEL(floor(ch)))).b)							// Status, transmitter,  (The status is sent on the blue color.)
+     #define CH(ch)  (floor(ch) - 1.0)                                                                                         // Receiving channel - 1
+
+     #define STATUS(ch)     ((tex2D(remoteImput, POSCHANNEL(CH(ch)))).b)							// Status, transmitter,  (The status is sent on the blue color.)
 
 
       // Position of the Channel
-         #define POSCHANNEL(ch)       float2 ( frac(ch / 100.0) - 0.005  ,  POSyCHANNEL(ch) + 0.01 )				// Used by MULTIBAR  ,   Receiver:  Position of the pixel to be converted.  (  - 0.005 and  + 0.01 ar the center of the respective position)    ,   "ch" is the receiving channel. 
+         #define POSCHANNEL(ch)       float2 ( frac(ch / 100.0) + 0.005  ,  POSyCHANNEL(ch) + 0.01 )				// Used by MULTIBAR  ,   Receiver:  Position of the pixel to be converted.  (  + 0.005 and  + 0.01 ar the center of the respective position)    ,   "ch" is the receiving channel - 1. 
             #define POSyCHANNEL(ch)        ( (floor( ch/100.0) )/ 50.0 )						  	// Used by POSCHANNEL   ,  Receiver:  y - position of the the color signal.    50 channel groups    ,     "ch" is the receiving channel. 
 
-   
+
+
+
+  //---------------------------------------------------------------------------------------------- 
 
 
 
@@ -315,7 +324,8 @@ float _Progress;
 
 
    // Status of the receiving channel
-      #define STATUS_CYCLIC_CHANNEL  ( (tex2D(remoteImput,POS_CHANNEL(2)).b) == STATUS_DATA_ON)
+      #define STATUS_CYCLIC_CHANNEL  ( (tex2D(remoteImput,POS_CHANNEL(2)).b) > STATUS_DATA_ON1        \
+                                    && (tex2D(remoteImput,POS_CHANNEL(2)).b) < STATUS_DATA_ON2)
 
   
    //Receiving and assigning 
@@ -356,9 +366,6 @@ float _Progress;
 #define YSTEP                (1 / _OutputHeight)						// Step width (distance) between two vertically adjacent pixels.
 #define XYDIST_AR(xPos,Ypos) (float2(( ((xPos)-XY.x) * _OutputAspectRatio), (Ypos) - XY.y))	// Float2 distance to the currently processed pixels (defined as float2 distance in X direction and in Y direktion. With a correction which is dependent on the aspect ratio.)  	
 
-#define MAX_FRAME_TOTAL     62400								// Allowed maximum effect length specified in frames. In the first frame progress can remain on the first frame too long. In tests, the critical limits ranged between 62488 and 62503 frames total.  (Side note: "_Progress" generates errors when using export function "use marked section",  and is therefore used only as a cross-check)
-#define START_NEXT          tmp									// Start time of the next ramp within a cycle, Temporary recycling of the "tmp" variable for multi-line macros "HALF_WAVE...
-#define AREA                (200-Area*201)
 
 
 #define COLOR_BLACK             float4 (0.0, 0.0,0.0,1.0)
@@ -890,7 +897,7 @@ float4 MultiChannelBarGraphStep2  (float2 xy : TEXCOORD2) : COLOR
 
  if (xy.x <= 0.2) 										// Position and width of the corresponding column.
  {
-    if (     STATUS(CHANNEL1BAR)              <  STATUS_RC_ON					// Status channel,     if  Status < STATUS_RC_ON    Then:  No remote control signal found on the channel, The corresponding bar is not displayed (gray column background).
+    if (  STATUS(CHANNEL1BAR) <  STATUS_RC_ON1                                                  // Status channel,     if  so then:  No remote control signal found on the channel, The corresponding bar is not displayed (gray column background).
        ||  CHANNEL1BAR - floor(CHANNEL1BAR)   >   CH_SET_TOL					// Channel setting tolerance (from 0.0 to +0.4).   No negative tolerance (apart from offset).    If the fractional part is larger than the channel setting tolerance + offset, the corresponding bar is not displayed (gray column background).
        ) 
           {
@@ -909,7 +916,7 @@ float4 MultiChannelBarGraphStep2  (float2 xy : TEXCOORD2) : COLOR
 
  if (xy.x == clamp(xy.x , 0.2 , 0.4 ))
  {
-    if (     STATUS(CHANNEL2BAR)              <  STATUS_RC_ON
+    if (   STATUS(CHANNEL2BAR) <  STATUS_RC_ON1
        ||  CHANNEL2BAR - floor(CHANNEL2BAR)   >   CH_SET_TOL					
        ) 
           {
@@ -923,7 +930,7 @@ float4 MultiChannelBarGraphStep2  (float2 xy : TEXCOORD2) : COLOR
 
  if (xy.x == clamp(xy.x , 0.4 , 0.6 ))
  {
-    if (     STATUS(CHANNEL3BAR)              <  STATUS_RC_ON
+    if (  STATUS(CHANNEL3BAR) <  STATUS_RC_ON1
        ||  CHANNEL3BAR - floor(CHANNEL3BAR)   >   CH_SET_TOL	
        ) 
           {
@@ -966,7 +973,7 @@ float4 MultiChannelBarGraphStep3  (float2 xy : TEXCOORD2) : COLOR
 
   if (xy.x == clamp(xy.x , 0.6 , 0.8 ))
  {
-    if (     STATUS(CHANNEL4BAR)              <  STATUS_RC_ON
+    if (   STATUS(CHANNEL4BAR) <  STATUS_RC_ON1
        ||  CHANNEL4BAR - floor(CHANNEL4BAR)   >   CH_SET_TOL					
        ) 
           {
@@ -981,7 +988,7 @@ float4 MultiChannelBarGraphStep3  (float2 xy : TEXCOORD2) : COLOR
 
   if (xy.x == clamp(xy.x , 0.8 , 1.0 ))
  {
-    if (     STATUS(CHANNEL5BAR)              <  STATUS_RC_ON
+    if (  STATUS(CHANNEL5BAR) <  STATUS_RC_ON1
        ||  CHANNEL5BAR - floor(CHANNEL5BAR)   >   CH_SET_TOL					
        ) 
           {

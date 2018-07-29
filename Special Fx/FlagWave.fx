@@ -16,8 +16,12 @@
 //
 // Note that the depth setting interacts with the scaling.  This is a side effect of the
 // way the waveform tracks the DVE settings.  An accident originally, it was found to be
-// useful since it shows that effect is working.  For that reason it has been retained,
+// useful since it shows the effect is working.  For that reason it has been retained,
 // but it can easily be trimmed out by adjusting the image scaling if necessary.
+//
+// Modified 2018-07-29 jwrl:
+// Yes, modified the day of release.  I cleaned up the code used to generate the waves.
+// Functionally it's the same, but it's now easier for others to understand.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -229,24 +233,22 @@ float4 fn_tex2D (sampler Vsample, float2 uv, float ret)
 
 float4 ps_waves (float2 uv : TEXCOORD0) : COLOR
 {
-   float4 retval;
+   float2 xy1, xy2, xy3;
 
-   float baseFreq = (Ripples + 0.5) * uv.x * 6.0 * PI;
+   float baseFreq = (Ripples + 0.5) * uv.x * 20.0;
 
    baseFreq -= floor ((_LengthFrames * _Progress) + 0.5) * max (Speed, 0.01);
 
-   sincos (baseFreq, retval.w, retval.x);
-   sincos (baseFreq * OFFS_1, retval.y, retval.z);
+   sincos (baseFreq, xy1.x, xy1.y);
+   sincos (baseFreq * OFFS_1, xy2.x, xy2.y);
+   sincos (baseFreq * OFFS_2, xy3.x, xy3.y);
 
-   retval.wx += retval.yz;
+   xy1 = (xy1 + xy2 + xy3) / 6.0;
+   xy1.x *= 0.5;
+   xy1 *= uv.x;
+   xy1 += 0.5.xx;
 
-   sincos (baseFreq * OFFS_2, retval.y, retval.z);
-
-   retval.yz += retval.wx;
-   retval.wx  = retval.yz * 0.5;
-   retval    /= 3.0;
-
-   return ((retval * uv.x) + 1.0.xxxx) * 0.5;
+   return xy1.xyxy;
 }
 
 float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
@@ -331,4 +333,3 @@ technique FlagWave
 
    pass P_2 { PixelShader = compile PROFILE ps_main (); }
 }
-

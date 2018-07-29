@@ -329,6 +329,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 ## CATEGORY FOLDER: Special Fx
 |EFFECT         |FILE NAME         |
 |:------------- |:---------------- |
+|Flag wave      |FlagWave.fx       |
 |Lens Flare #1  |LensFlare_1.fx    |
 |Lens Flare #2  |LensFlare_2.fx    |
 |Sea Scape      |SeaScape.fx       |

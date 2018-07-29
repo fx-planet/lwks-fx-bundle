@@ -1,83 +1,68 @@
 // @Maintainer jwrl
-// @Released 2018-07-09
+// @Released 2018-07-29
 // @Author jwrl
-// @Created 2018-06-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Granular_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Granular.mp4
+// @Created 2018-07-27
+// @see https://www.lwks.com/media/kunena/attachments/6375/FlagWave_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Flag_Wave.mp4
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Ax_Granular.fx
 //
-// This effect uses a granular noise driven dissolve to transition into or out of a
-// title.  It also composites the result over a background layer.  Alpha levels are
-// boosted to support Lightworks titles, which is the default setting.
+//   ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
 //
-// This is a revision of an earlier effect, Adx_Granular.fx, which also had the ability
-// to wipe between two titles.  That added needless complexity, when the same result
-// can be obtained by overlaying two effects.
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect FlagWave.fx
 //
-// Modified 2018-07-09 jwrl:
-// Removed dependence on pixel size.
+// This effect simulates a flag waving.  It incorporates a 3D DVE to allow the flag to
+// be scaled, rotated and positioned.
+//
+// Note that the depth setting interacts with the scaling.  This is a side effect of the
+// way the waveform tracks the DVE settings.  An accident originally, it was found to be
+// useful since it shows the effect is working.  For that reason it has been retained,
+// but it can easily be trimmed out by adjusting the image scaling if necessary.
+//
+// Modified 2018-07-29 jwrl:
+// Yes, modified the day of release.  I cleaned up the code used to generate the waves.
+// Functionally it's the same, but it's now easier for others to understand.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Alpha granular dissolve";
-   string Category    = "Mix";
-   string SubCategory = "Alpha transitions";
-   string Notes       = "Uses a granular noise driven pattern to transition into or out of a title";
+   string Description = "Flag wave";
+   string Category    = "Stylize";
+   string SubCategory = "Special Fx";
+   string Notes       = "Simulates a waving flag in the foreground image.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Sup;
-texture Vid;
+texture Fg;
+texture Bg;
 
-texture Buffer_0 : RenderColorTarget;
-texture Buffer_1 : RenderColorTarget;
-texture Buffer_2 : RenderColorTarget;
-texture Buffer_3 : RenderColorTarget;
+texture Waveforms : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Super = sampler_state { Texture = <Sup>; };
-sampler s_Video = sampler_state { Texture = <Vid>; };
-
-sampler s_Buffer_0  = sampler_state {
-   Texture   = <Buffer_0>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+sampler s_Foreground = sampler_state
+{
+   Texture   = <Fg>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
 
-sampler s_Buffer_1  = sampler_state {
-   Texture   = <Buffer_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Buffer_2  = sampler_state {
-   Texture   = <Buffer_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Buffer_3  = sampler_state {
-   Texture   = <Buffer_3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+sampler s_Waveforms = sampler_state
+{
+   Texture   = <Waveforms>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -87,313 +72,264 @@ sampler s_Buffer_3  = sampler_state {
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int Boost
+float Opacity
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
-> = 0;
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
-
-int Ttype
-<
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
-> = 0;
-
-int SetTechnique
-<
-   string Description = "Transition type";
-   string Enum = "Top to bottom,Left to right,Radial,No gradient";
-> = 1;
-
-bool TransDir
-<
-   string Description = "Invert transition direction";
-> = false;
-
-float gWidth
-<
-   string Group = "Granules";
-   string Description = "Spread";
+   string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
-bool TransVar
+float Ripples
 <
-   string Group = "Granules";
-   string Description = "Static pattern";
-> = false;
-
-bool Sparkling
-<
-   string Group       = "Sparkles";
-   string Description = "Enable sparkle edge";
-> = true;
-
-float pSize
-<
-   string Group       = "Sparkles";
-   string Description = "Size";
-   float MinVal = 1.00;
-   float MaxVal = 10.0;
-> = 5.5;
-
-float pSoftness
-<
-   string Group       = "Sparkles";
-   string Description = "Softness";
+   string Group = "Flag settings";
+   string Description = "Ripples";
    float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float Speed
+<
+   string Group = "Flag settings";
+   string Description = "Speed";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.25;
+
+float Depth
+<
+   string Group = "Flag settings";
+   string Description = "Depth";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float Shading
+<
+   string Group = "Flag settings";
+   string Description = "Shading";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float PivotX
+<
+   string Description = "Pivot point";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float PivotY
+<
+   string Description = "Pivot point";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float RotateX
+<
+   string Description = "Rotation";
+   string Flags = "SpecifiesPointX";
+   float MinVal = -1.0;
    float MaxVal = 1.0;
 > = 0.0;
 
-float4 starColour
+float RotateY
 <
-   string Group       = "Sparkles";
-   string Description = "Colour";
-   bool SupportsAlpha = true;
-> = { 1.0, 1.0, 0.0, 1.0 };
+   string Description = "Rotation";
+   string Flags = "SpecifiesPointY";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float RotateZ
+<
+   string Description = "Rotation";
+   string Flags = "SpecifiesPointZ";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float Scale
+<
+   string Group = "Scale";
+   string Description = "Master";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float ScaleX
+<
+   string Group = "Scale";
+   string Description = "X";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float ScaleY
+<
+   string Group = "Scale";
+   string Description = "Y";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float PositionX
+<
+   string Description = "Position";
+   string Flags = "SpecifiesPointX";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float PositionY
+<
+   string Description = "Position";
+   string Flags = "SpecifiesPointY";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define FX_OUT  1
-
-#define B_SCALE 0.000545
-
-// Pascal's triangle magic numbers for blur
-
-#define BLUR_0  0.3125
-#define BLUR_1  0.2344
-#define BLUR_2  0.09375
-#define BLUR_3  0.01563
-
+float _OutputWidth;
+float _OutputHeight;
 float _OutputAspectRatio;
+
+float _Progress;
+float _LengthFrames;
+
+#define FRAME   float2(_OutputWidth, _OutputHeight)
+
+#define SCALE_F  9.999805263
+#define SCALE_P  3.3219
+
+#define LIMIT_Z 0.0000000001
+
+#define PI      3.1415926536
+
+#define OFFS_1  1.8571428571
+#define OFFS_2  1.3076923077
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_tex2D (sampler Vsample, float2 uv, float ret)
+{
+   float2 xy = abs (uv - 0.5.xx);
+
+   if ((xy.x > 0.5) || (xy.y > 0.5)) return ret.xxxx;
+
+   return tex2D (Vsample, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 vertical_grad (float2 uv : TEXCOORD0) : COLOR
+float4 ps_waves (float2 uv : TEXCOORD0) : COLOR
 {
-   float retval = lerp (0.0, 1.0, uv.y);
+   float2 xy1, xy2, xy3;
 
-   if (TransDir) retval = 1.0 - retval;
+   float baseFreq = (Ripples + 0.5) * uv.x * 20.0;
 
-   retval = saturate ((5 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0));
+   baseFreq -= floor ((_LengthFrames * _Progress) + 0.5) * max (Speed, 0.01);
 
-   return retval.xxxx;
+   sincos (baseFreq, xy1.x, xy1.y);
+   sincos (baseFreq * OFFS_1, xy2.x, xy2.y);
+   sincos (baseFreq * OFFS_2, xy3.x, xy3.y);
+
+   xy1 = (xy1 + xy2 + xy3) / 6.0;
+   xy1.x *= 0.5;
+   xy1 *= uv.x;
+   xy1 += 0.5.xx;
+
+   return xy1.xyxy;
 }
 
-float4 horizontal_grad (float2 uv : TEXCOORD0) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float retval = lerp (0.0, 1.0, uv.x);
+   //  This first section is a standard 3D DVE.  This is the bulk of the effect
 
-   if (TransDir) retval = 1.0 - retval;
+   float rotation = (RotateX < 0.0 ? RotateX + 0.5 : RotateX - 0.5) * 2.0;
+   float scale, rotate;
 
-   retval = saturate ((5 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0));
+   sincos (rotation * PI, rotate, scale);
+   rotate = abs (rotate);
 
-   return retval.xxxx;
-}
+   float2 pivot = float2 (PivotX, 1.0 - PivotY);
+   float2 xy = uv1 - pivot;
 
-float4 radial_grad (float2 uv : TEXCOORD1) : COLOR
-{
-   float progress = abs (distance (uv, float2 (0.5, 0.5))) * 1.414;
-   float4 pixel = tex2D (s_Super, uv);
+   if (scale > 0.0) { xy.y = -xy.y; }
 
-   float colOneAmt = 1.0 - progress;
-   float colTwoAmt = progress;
+   scale = xy.y / max (abs (scale), LIMIT_Z);
 
-   float retval = (lerp (pixel, 0.0, 1.0) * colOneAmt) +
-                  (lerp (pixel, 1.0, 1.0) * colTwoAmt) +
-                  (pixel * (1.0 - (colOneAmt + colTwoAmt)));
+   float2 xy1 = float2 (xy.x * (1.0 - scale), scale);
+   float2 xy2 = float2 (xy.x * (1.0 + scale), scale);
 
-   if (TransDir) retval = 1.0 - retval;
+   xy = rotation >= 0.0 ? lerp (xy, xy1, rotate) : lerp (xy, xy2, rotate);
 
-   retval = saturate ((5 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0));
+   rotation = (RotateY < 0.0 ? RotateY + 0.5 : RotateY - 0.5) * 2.0;
+   sincos (rotation * PI, rotate, scale);
+   rotate = abs (rotate);
 
-   return retval.xxxx;
-}
+   if (scale > 0.0) { xy.x = -xy.x; }
 
-float4 noise_gen (float2 uv : TEXCOORD0) : COLOR
-{
-   float2 xy = saturate (uv + float2 (0.00013, 0.00123));
+   scale = xy.x / max (abs (scale), LIMIT_Z);
 
-   float seed = (TransVar) ? 0.0 : Amount;
-   float rndval = frac (sin (dot (xy, float2 (12.9898, 78.233)) + xy.x + xy.y + seed) * (43758.5453));
+   xy1 = float2 (scale, xy.y * (1.0 + scale));
+   xy2 = float2 (scale, xy.y * (1.0 - scale));
+   xy  = rotation >= 0.0 ? lerp (xy, xy1, rotate) : lerp (xy, xy2, rotate);
 
-   rndval = sin (xy.x) + cos (xy.y) + rndval * 1000;
+   rotation = (RotateZ < 0.0 ? RotateZ + 0.5 : RotateZ - 0.5) * 2.0;
+   sincos (rotation * PI, rotate, scale);
 
-   float retval = saturate (frac (fmod (rndval, 17) * fmod (rndval, 94)) * 3);
+   xy1 = xy.yx * rotate;
 
-   return retval.xxxx;
-}
+   xy1.x /= _OutputAspectRatio;
+   xy1.y *= -_OutputAspectRatio;
 
-float4 Soften_1 (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 retval = tex2D (s_Buffer_1, uv);
+   xy1 -= xy * scale;
 
-   float2 offset_X1 = float2 (pSoftness * B_SCALE, 0.0);
-   float2 offset_X2 = offset_X1 * 2.0;
-   float2 offset_X3 = offset_X1 * 3.0;
+   float2 scale_XY = (Scale + 1.0.xx) * (float2 (ScaleX, ScaleY) + 1.0.xx) * 0.5;
 
-   retval *= BLUR_0;
-   retval += tex2D (s_Buffer_1, uv + offset_X1) * BLUR_1;
-   retval += tex2D (s_Buffer_1, uv - offset_X1) * BLUR_1;
-   retval += tex2D (s_Buffer_1, uv + offset_X2) * BLUR_2;
-   retval += tex2D (s_Buffer_1, uv - offset_X2) * BLUR_2;
-   retval += tex2D (s_Buffer_1, uv + offset_X3) * BLUR_3;
-   retval += tex2D (s_Buffer_1, uv - offset_X3) * BLUR_3;
+   scale_XY = max (pow (scale_XY, SCALE_P) * SCALE_F, LIMIT_Z);
 
-   return retval;
-}
+   xy1 /= scale_XY;
+   xy1 += (float2 (-PositionX, PositionY) / scale_XY) + pivot;
 
-float4 Soften_2 (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 retval = tex2D (s_Buffer_2, uv);
+   // From here on is the flag creation.  Note that the waveform generation is
+   // recovered first, then used to modify the foreground XY parameters.  This
+   // ensures that the flag scaling tracks correctly with the image scaling.
 
-   float2 offset_Y1 = float2 (0.0, pSoftness * _OutputAspectRatio * B_SCALE);
-   float2 offset_Y2 = offset_Y1 * 2.0;
-   float2 offset_Y3 = offset_Y1 * 3.0;
+   scale = Depth * 0.2;
+   xy2 = (fn_tex2D (s_Waveforms, xy1, 0.5).xy - 0.5.xx) * scale;
+   scale++;
+   xy = xy1 + xy2 - 0.5.xx;
+   xy *= scale;
+   xy.y *= 1.0 + (xy2.y * 0.5);
+   xy += 0.5.xx;
 
-   retval *= BLUR_0;
-   retval += tex2D (s_Buffer_2, uv + offset_Y1) * BLUR_1;
-   retval += tex2D (s_Buffer_2, uv - offset_Y1) * BLUR_1;
-   retval += tex2D (s_Buffer_2, uv + offset_Y2) * BLUR_2;
-   retval += tex2D (s_Buffer_2, uv - offset_Y2) * BLUR_2;
-   retval += tex2D (s_Buffer_2, uv + offset_Y3) * BLUR_3;
-   retval += tex2D (s_Buffer_2, uv - offset_Y3) * BLUR_3;
+   float4 Fgnd = fn_tex2D (s_Foreground, xy, 0.0);
 
-   return retval;
-}
+   Fgnd.rgb = saturate (pow (Fgnd.rgb + xy2.xxx, 1.0 - (xy2.x * Shading * 15.0)));
 
-float4 Combine (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 Fgnd = tex2D (s_Super, uv);
-   float4 Bgnd = tex2D (s_Video, uv);
-
-   if (Boost == 0) {
-      Fgnd.a    = pow (Fgnd.a, 0.5);
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   float noise = tex2D (s_Buffer_3, ((uv - 0.5) / pSize) + 0.5).x;
-   float grad  = tex2D (s_Buffer_0, uv).x;
-   float level = saturate (((0.5 - grad) * 2) + noise);
-
-   float4 retval = (Ttype == FX_OUT) ? lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - level))
-                                     : lerp (Bgnd, Fgnd, Fgnd.a * level);
-   if (!Sparkling) return retval;
-
-   level = 0.5 - abs (level - 0.5);
-
-   float stars = saturate ((pow (level, 3.0) * 4.0) + level);
-
-   return lerp (retval, starColour, stars * Fgnd.a);
-}
-
-float4 Combine_flat (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 Fgnd = tex2D (s_Super, uv);
-   float4 Bgnd = tex2D (s_Video, uv);
-
-   if (Boost == 0) {
-      Fgnd.a    = pow (Fgnd.a, 0.5);
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   float noise = tex2D (s_Buffer_3, ((uv - 0.5) / pSize) + 0.5).x;
-   float level = saturate (((Amount - 0.5) * 2.0) + noise);
-
-   float4 retval = (Ttype == FX_OUT) ? lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - level))
-                                     : lerp (Bgnd, Fgnd, Fgnd.a * level);
-   if (!Sparkling) return retval;
-
-   level = 0.5 - abs (level - 0.5);
-
-   float stars = saturate ((pow (level, 3.0) * 4.0) + level);
-
-   return lerp (retval, starColour, stars * Fgnd.a);
+   return lerp (tex2D (s_Background, uv2), Fgnd, Fgnd.a * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
-// Techniques
+// Technique
 //-----------------------------------------------------------------------------------------//
 
-technique TopToBottom
+technique FlagWave
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Buffer_0;"; >
-   { PixelShader = compile PROFILE vertical_grad (); }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Waveforms;"; > 
+   { PixelShader = compile PROFILE ps_waves (); }
 
-   pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; >
-   { PixelShader = compile PROFILE noise_gen (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = Buffer_2;"; >
-   { PixelShader = compile PROFILE Soften_1 (); }
-
-   pass P_4 < string Script = "RenderColorTarget0 = Buffer_3;"; >
-   { PixelShader = compile PROFILE Soften_2 (); }
-
-   pass P_5
-   { PixelShader = compile PROFILE Combine (); }
-}
-
-technique LeftToRight
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Buffer_0;"; >
-   { PixelShader = compile PROFILE horizontal_grad (); }
-
-   pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; >
-   { PixelShader = compile PROFILE noise_gen (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = Buffer_2;"; >
-   { PixelShader = compile PROFILE Soften_1 (); }
-
-   pass P_4 < string Script = "RenderColorTarget0 = Buffer_3;"; >
-   { PixelShader = compile PROFILE Soften_2 (); }
-
-   pass P_5
-   { PixelShader = compile PROFILE Combine (); }
-}
-
-technique Radial
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Buffer_0;"; >
-   { PixelShader = compile PROFILE radial_grad (); }
-
-   pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; >
-   { PixelShader = compile PROFILE noise_gen (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = Buffer_2;"; >
-   { PixelShader = compile PROFILE Soften_1 (); }
-
-   pass P_4 < string Script = "RenderColorTarget0 = Buffer_3;"; >
-   { PixelShader = compile PROFILE Soften_2 (); }
-
-   pass P_5
-   { PixelShader = compile PROFILE Combine (); }
-}
-
-technique Flat
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Buffer_1;"; >
-   { PixelShader = compile PROFILE noise_gen (); }
-
-   pass P_2 < string Script = "RenderColorTarget0 = Buffer_2;"; >
-   { PixelShader = compile PROFILE Soften_1 (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = Buffer_3;"; >
-   { PixelShader = compile PROFILE Soften_2 (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE Combine_flat (); }
+   pass P_2 { PixelShader = compile PROFILE ps_main (); }
 }

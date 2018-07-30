@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-06-23
+// @Released 2018-07-30
 // @Author jwrl
 // @Created 2017-12-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlexiBlend_640.png
@@ -21,6 +21,10 @@
 // Modified 23 June 2018 jwrl.
 // Amended the address range check section.  Previously the any() function was used, and
 // this has been found to be buggy in the way that it has been implemented in Cg.
+//
+// Modified 30 July 2018 jwrl.
+// Added alpha channel boost for Lightworks titles and a descriptive note.
+// Added X and Y rotation and pivot points.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,6 +33,7 @@ int _LwksEffectInfo
    string Description = "Flexi-blend";
    string Category    = "Mix";
    string SubCategory = "User Effects";
+   string Notes       = "A blend utility which can adjust position, size, rotation and cropping";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -38,20 +43,34 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture _Crop : RenderColorTarget;
+texture Sup : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state { Texture = <Fg>; };
-sampler BgSampler = sampler_state { Texture = <Bg>; };
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler CropSampler = sampler_state { Texture = <_Crop>; };
+sampler s_Super = sampler_state
+{
+   Texture   = <Sup>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
+
+int Boost
+<
+   string Description = "If using a Lightworks text effect disconnect its input and set this first";
+   string Enum = "Crawl/Roll/Titles,Video/External image";
+> = 0;
 
 float Amount
 <
@@ -65,20 +84,52 @@ bool InvertAlpha
    string Description = "Invert alpha";
 > = false;
 
-float Rotation
-<
-   string Group = "Geometry";
-   string Description = "Rotation";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 0.0;
-
 float Scale
 <
    string Group = "Geometry";
    string Description = "Scale";
    float MinVal = -1.0;
    float MaxVal = 1.00;
+> = 0.0;
+
+float RotateX
+<
+   string Group = "Geometry";
+   string Description = "X rotation";
+   float MinVal = -180.0;
+   float MaxVal = 180.0;
+> = 0.0;
+
+float PivotX
+<
+   string Group = "Geometry";
+   string Description = "X axis";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float RotateY
+<
+   string Group = "Geometry";
+   string Description = "Y rotation";
+   float MinVal = -180.0;
+   float MaxVal = 180.0;
+> = 0.0;
+
+float PivotY
+<
+   string Group = "Geometry";
+   string Description = "Y axis";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float RotateZ
+<
+   string Group = "Geometry";
+   string Description = "Z rotation";
+   float MinVal = -180.0;
+   float MaxVal = 180.0;
 > = 0.0;
 
 float CentreX
@@ -145,7 +196,14 @@ float4 fn_tex2D (sampler Vsample, float2 uv)
 {
    if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
 
-   return tex2D (Vsample, uv);
+   float4 retval = tex2D (Vsample, uv);
+
+   if (Boost == 0) {
+      retval.a    = pow (retval.a, 0.5);
+      retval.rgb /= retval.a;
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -154,7 +212,7 @@ float4 fn_tex2D (sampler Vsample, float2 uv)
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (FgSampler, uv);
+   float4 Fgd = tex2D (s_Foreground, uv);
 
    float alpha = InvertAlpha ? 1.0 - Fgd.a : Fgd.a;
 
@@ -165,22 +223,29 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 xy = uv - float2 (CentreX, 1.0 - CentreY);
+   float2 Pxy = float2 (PivotX, 1.0 - PivotY);
+   float2 Rxy = cos (radians (float2 (RotateX, RotateY)));
+   float2 xy  = uv - float2 (CentreX, 1.0 - CentreY);
 
-   float cosR, sinR, scale = 1.0 + (Scale * 0.5);
+   float cos_Z, sin_Z, scale = 1.0 + (Scale * 0.5);
 
-   sincos (radians (Rotation), sinR, cosR);
+   sincos (radians (RotateZ), sin_Z, cos_Z);
    scale = pow (scale, 8.0);
 
-   float2 xy1 = float2 (xy.y / _OutputAspectRatio, -xy.x * _OutputAspectRatio) * sinR;
+   if (Rxy.x == 0.0) Rxy.x = 0.0000000001;
+   if (Rxy.y == 0.0) Rxy.y = 0.0000000001;
 
-   xy *= cosR;
+   float2 xy1 = float2 (xy.y / _OutputAspectRatio, -xy.x * _OutputAspectRatio) * sin_Z;
+
+   xy *= cos_Z;
    xy += xy1;
    xy /= scale;
-   xy += 0.5.xx;
+   xy += 0.5.xx - Pxy;
+   xy /= Rxy;
+   xy += Pxy;
 
-   float4 Fgd = fn_tex2D (CropSampler, xy);
-   float4 Bgd = tex2D (BgSampler, uv);
+   float4 Fgd = fn_tex2D (s_Super, xy);
+   float4 Bgd = tex2D (s_Background, uv);
 
    float alpha = Fgd.a * Amount;
 
@@ -194,7 +259,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique FlexiBlend
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = _Crop;"; > 
+   < string Script = "RenderColorTarget0 = Sup;"; > 
    { PixelShader = compile PROFILE ps_crop (); }
 
    pass P_2 { PixelShader = compile PROFILE ps_main (); }

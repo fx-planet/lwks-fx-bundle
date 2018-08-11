@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-29
+// @Released 2018-08-11
 // @Author jwrl
 // @Created 2018-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlagWave_640.png
@@ -19,9 +19,10 @@
 // useful since it shows the effect is working.  For that reason it has been retained,
 // but it can easily be trimmed out by adjusting the image scaling if necessary.
 //
-// Modified 2018-07-29 jwrl:
-// Yes, modified the day of release.  I cleaned up the code used to generate the waves.
-// Functionally it's the same, but it's now easier for others to understand.
+// Modified 2018-08-11 jwrl:
+// Added a slight vertical ripple to the wave generation to improve realism somewhat.
+// Added a new parameter, "Orientation", to allow either edge to flutter.
+// Modified the wave generation component to support right or left edge fluttering.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -30,7 +31,7 @@ int _LwksEffectInfo
    string Description = "Flag wave";
    string Category    = "Stylize";
    string SubCategory = "Special Fx";
-   string Notes       = "Simulates a waving flag in the foreground image.";
+   string Notes       = "Simulates a waving flag.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -78,6 +79,12 @@ float Opacity
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
+
+int Orientation
+<
+   string Description = "Orientation";
+   string Enum = "Right edge flutter,Left edge flutter";
+> = 0;
 
 float Ripples
 <
@@ -133,7 +140,7 @@ float RotateX
    string Flags = "SpecifiesPointX";
    float MinVal = -1.0;
    float MaxVal = 1.0;
-> = 0.0;
+> = -0.035;
 
 float RotateY
 <
@@ -141,7 +148,7 @@ float RotateY
    string Flags = "SpecifiesPointY";
    float MinVal = -1.0;
    float MaxVal = 1.0;
-> = 0.0;
+> = -0.035;
 
 float RotateZ
 <
@@ -149,7 +156,7 @@ float RotateZ
    string Flags = "SpecifiesPointZ";
    float MinVal = -1.0;
    float MaxVal = 1.0;
-> = 0.0;
+> = 0.025;
 
 float Scale
 <
@@ -157,7 +164,7 @@ float Scale
    string Description = "Master";
    float MinVal = -1.0;
    float MaxVal = 1.0;
-> = 0.0;
+> = -0.06;
 
 float ScaleX
 <
@@ -189,20 +196,16 @@ float PositionY
    string Flags = "SpecifiesPointY";
    float MinVal = -1.0;
    float MaxVal = 1.0;
-> = 0.0;
+> = 0.035;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float _OutputWidth;
-float _OutputHeight;
 float _OutputAspectRatio;
 
 float _Progress;
 float _LengthFrames;
-
-#define FRAME   float2(_OutputWidth, _OutputHeight)
 
 #define SCALE_F  9.999805263
 #define SCALE_P  3.3219
@@ -211,8 +214,10 @@ float _LengthFrames;
 
 #define PI      3.1415926536
 
-#define OFFS_1  1.8571428571
-#define OFFS_2  1.3076923077
+#define OFFS_1  1.4827586207     // 43/29
+#define OFFS_2  1.3529411765     // 23/17
+#define OFFS_3  1.9473684211     // 37/19
+#define OFFS_4  1.5714285714     // 11/7
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -235,17 +240,27 @@ float4 ps_waves (float2 uv : TEXCOORD0) : COLOR
 {
    float2 xy1, xy2, xy3;
 
-   float baseFreq = (Ripples + 0.5) * uv.x * 20.0;
+   float x1 = Orientation == 0 ? uv.x : 1.0 - uv.x;
+   float baseFreq = (Ripples + 0.5) * x1 * 19.0;
+   float baseTime = floor ((_LengthFrames * _Progress) + 0.5) * max (Speed, 0.01);
+   float x2, freq = baseFreq - baseTime;
 
-   baseFreq -= floor ((_LengthFrames * _Progress) + 0.5) * max (Speed, 0.01);
-
-   sincos (baseFreq, xy1.x, xy1.y);
-   sincos (baseFreq * OFFS_1, xy2.x, xy2.y);
-   sincos (baseFreq * OFFS_2, xy3.x, xy3.y);
+   sincos (freq, xy1.x, xy1.y);
+   sincos (freq * OFFS_1, xy2.x, xy2.y);
+   sincos (freq * OFFS_2, xy3.x, xy3.y);
 
    xy1 = (xy1 + xy2 + xy3) / 6.0;
-   xy1.x *= 0.5;
-   xy1 *= uv.x;
+
+   baseFreq = (Ripples + 0.5) * uv.y * 13.0;
+   freq = baseFreq - baseTime;
+
+   x2  = sin (freq) + sin (freq * OFFS_3) + sin (freq * OFFS_4);
+   x2 /= 20.0;
+
+   xy1.x += x2;
+   xy1.x /= _OutputAspectRatio;
+
+   xy1 *= x1;
    xy1 += 0.5.xx;
 
    return xy1.xyxy;
@@ -306,12 +321,11 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    // recovered first, then used to modify the foreground XY parameters.  This
    // ensures that the flag scaling tracks correctly with the image scaling.
 
-   scale = Depth * 0.2;
+   scale = Depth * 0.1;
    xy2 = (fn_tex2D (s_Waveforms, xy1, 0.5).xy - 0.5.xx) * scale;
-   scale++;
    xy = xy1 + xy2 - 0.5.xx;
-   xy *= scale;
-   xy.y *= 1.0 + (xy2.y * 0.5);
+   xy *= scale + 1.0;
+   xy.y *= 1.0 + xy2.y;
    xy += 0.5.xx;
 
    float4 Fgnd = fn_tex2D (s_Foreground, xy, 0.0);

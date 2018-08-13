@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-09
+// @Released 2018-08-13
 // @Author jwrl
 // @Created 2017-03-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Scurve_640.png
@@ -20,6 +20,11 @@
 // Modified 9 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 13 August 2018 jwrl.
+// Added quadratic (power) curve option to the trigonometric one.
+// Changed the linearity adjustment to a curve amount adjustment.
+// Added support for inverse curves by allowing negative values of curve amount.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -28,38 +33,22 @@ int _LwksEffectInfo
    string Description = "S dissolve";
    string Category    = "Mix";
    string SubCategory = "User Effects";
+   string Notes       = "Dissolve using either a trigonometric or a quadratic curve";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fgd;            // Outgoing
-texture Bgd;            // Incoming
+texture Fg;             // Outgoing
+texture Bg;             // Incoming
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgdSampler = sampler_state
-{
-   Texture   = <Fgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgdSampler = sampler_state
-{
-   Texture   = <Bgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -74,10 +63,16 @@ float Amount
    float KF1    = 1.0;
 > = 0.5;
 
-float Linearity
+int SetTechnique
 <
-   string Description = "Linearity";
-   float MinVal = 0.0;
+   string Description = "Curve type";
+   string Enum = "Trigonometric,Quadratic";
+> = 0;
+
+float Curve
+<
+   string Description = "Curve amount";
+   float MinVal = -1.0;
    float MaxVal = 1.0;
 > = 0.5;
 
@@ -85,33 +80,51 @@ float Linearity
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define PI      3.1415927
-
-#define HALF_PI 1.5707963
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
 
 //-----------------------------------------------------------------------------------------//
 // Pixel Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_trig_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float amount = (1.0 - sin ((cos (Amount * PI)) * HALF_PI)) / 2.0;
-   float curve  = Amount - amount;
+   float amount = (1.0 + sin ((cos (Amount * PI)) * HALF_PI)) / 2.0;
+   float curve  = Curve < 0.0 ? Curve * 0.6666666667 : Curve;
 
-   float4 Fg = tex2D (FgdSampler, uv);
-   float4 Bg = tex2D (BgdSampler, uv);
+   float4 Bgnd = tex2D (s_Background, xy2);
 
-   amount = saturate (amount + (curve * Linearity));
+   amount = lerp (Amount, 1.0 - amount, curve);
 
-   return lerp (Fg, Bg, amount);
+   return lerp (tex2D (s_Foreground, xy1), Bgnd, amount);
+}
+
+float4 ps_power_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+{
+   float amount = 1.0 - abs ((Amount * 2.0) - 1.0);
+   float curve  = abs (Curve);
+
+   float4 Bgnd = tex2D (s_Background, xy2);
+
+   amount = Curve < 0.0 ? pow (amount, 0.5) : pow (amount, 3.0);
+   amount = Amount < 0.5 ? amount : 2.0 - amount;
+   amount = lerp (Amount, amount * 0.5, curve);
+
+   return lerp (tex2D (s_Foreground, xy1), Bgnd, amount);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Sdissolve
+technique Sdissolve_trig
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   { PixelShader = compile PROFILE ps_trig_main (); }
+}
+
+technique Sdissolve_power
+{
+   pass P_1
+   { PixelShader = compile PROFILE ps_power_main (); }
 }

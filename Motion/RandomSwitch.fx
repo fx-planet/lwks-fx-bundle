@@ -8,6 +8,9 @@
 //
 // This effect is a pseudo random switch of two inputs.  It can compile and run under LW
 // version 14.0, and with slightly different and more stable control under version 14.5.
+//
+// Modified jwrl 2018-08-24
+// Corrected the fact that opacity did nothing.  Thanks schrauber for picking that up.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -109,7 +112,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    bool strobe = max (sin (freq) + sin (frq1) + sin (frq2), 0.0) == 0.0;
 
-   return strobe ? tex2D (s_Input_1, xy1) : tex2D (s_Input_2, xy2);
+   float4 Bgnd = tex2D (s_Input_2, xy2);
+
+   return strobe ? lerp (Bgnd, tex2D (s_Input_1, xy1), Opacity) : Bgnd;
 }
 
 //-----------------------------------------------------------------------------------------//

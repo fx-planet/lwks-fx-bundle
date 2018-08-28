@@ -44,7 +44,7 @@ int _LwksEffectInfo
    string Description = "Anamorphic tools";
    string Category    = "DVE";
    string SubCategory = "Custom";
-   string Note        = "A general purpose toolkit for dealing with anamorphic footage";
+   string Notes       = "A general purpose toolkit for dealing with anamorphic footage";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

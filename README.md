@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, July 29, 2018.
+# Lightworks user Fx archive, August 29, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -289,6 +289,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |:----------------- |:-------------------- |
 |Camera Shake       |CameraShake.fx        |
 |New Strobe         |NewStrobe_20180523.fx |
+|Random switch      |RandomSwitch.fx       |
 |Strobe             |Strobe.fx             |
 
 ## CATEGORY FOLDER: Noise and grain
@@ -333,6 +334,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Lens Flare #1  |LensFlare_1.fx    |
 |Lens Flare #2  |LensFlare_2.fx    |
 |Sea Scape      |SeaScape.fx       |
+|String Theory  |StringTheory.fx   |
 |Transporter I  |Transporter_I.fx  |
 |Transporter II |Transporter_II.fx |
 
@@ -412,19 +414,19 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |The twister               |Wx_Twister.fx      |
 |X-pinch                   |Wx_xPinch.fx       |
 
-## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RCÂ³
+## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
 |EFFECT                       |FILE NAME                    |
 |:--------------------------- |:--------------------------- |
 |RC 1, Five channel remote    |RC1_Remote_control.fx        |
 |RC 3001, cyclic User control |RC3001_Cyclic_Remote.fx      |
 |Settings Display Unit        |Setting_Display_Unit.fx      |
+|RC-all zoom                  |RC-all_Zoom.fx               |
 |RC Gain                      |RC_Gain.fx                   |
 |RC RGB-Gain                  |RC_Gain_RGB.fx               |
 |RC Gamma                     |RC_Gamma.fx                  |
 |RC RGB-Gamma                 |RC_Gamma_RGB.fx              |
 |RC Lift                      |RC_Lift_20180418.fx          |
 |RC RGB-Lift                  |RC_Lift_RGB_20180421.fx      |
-|RC regional zoom             |RC_Zoom_Regional.fx          |
 |RC regional zoom plus        |RC_Zoom_Regional_20180506.fx |
 |Spin Zoom, RC                |Spin_Zoom_RC_180516.fx       |
 

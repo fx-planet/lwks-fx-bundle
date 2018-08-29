@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-08-29
 // @Author jwrl
 // @Created 2018-01-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleMatte_640.png
@@ -12,6 +12,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 29 August 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -20,6 +23,7 @@ int _LwksEffectInfo
    string Description = "Simple matte";
    string Category    = "DVE";
    string SubCategory = "Crop Presets";
+   string Notes       = "A simple crop tool with flat colour matte background.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

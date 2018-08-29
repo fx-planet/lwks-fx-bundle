@@ -1,4 +1,4 @@
-// @Released 2018-05-16
+// @Released 2018-08-30
 // @Author schrauber
 // @Created 2017-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/Spin_Zoom_640.png
@@ -12,17 +12,19 @@
 // With automatic centring if a zoom out is performed the centre of the effect will be around the centre of input image,
 // otherwise it's centred on the full frame of the output video.
 //
-// Limitations and Known Problems :
-// GPU Precision Settings "16-bit Floating Point": Not recommended for remote control (jumping angles)
-//
-// Compatibility of GPU Precision Settings:
-// 8-bit: Ok
-// "16-bit" and "32-bit Floating Point": Perfect for precise angles and smooth rotation.
+// Compatibility of GPU Precision (Project settings):
+// A higher precision than 8-bit is recommended to make angle changes precise and fluent.
 //
 // Updates:
+// 30 August 2018 by LW user schrauber:
+//   - Increased precision of remote control (GPU precision setting: "16-bit floating point")
+//   - Note: Unchanged file name. For an update of the previous version 
+//           the replacement of the file with LWKS restart is sufficient.
+//
 // 16 May 2018 by LW user schrauber:
 //   - Remote control of the position of the effect center: The setting range now corresponds to the manual setting range.
 //   - Subcategory defined, renamed file name and data relevant to the homepage.
+//
 // 20 December 2017 by LW user schrauber: 
 //    - Fixed missing brackets added to the revolution calculation
 //    - Fixed unclear parameter setting (rotation center)
@@ -242,7 +244,27 @@ int SetTechnique
 > = 0;
 
 
+//--------------------------------------------------------------//
+// Functions
+//--------------------------------------------------------------//
+// The code of this function is documented in the developer repository.
+// The link to this repository can be found in the forum:
+// https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=143678&Itemid=81#ftop
 
+float fn_receiving05 (float Ch)
+{
+   float  ch    = floor(Ch) - 1.0;
+   float  posY  = floor(ch/100.0) / 50.0;
+   float2 pos   = float2 ( frac(ch / 100.0) + 0.005  ,  posY + 0.01 );
+  
+   float4 sample = tex2D (RcSampler, pos );
+   float status = sample.b;
+   float ret = round (sample.r * 255.0) / 255.0
+             + sample.g / 255.0;
+   ret = status > 0.001 ? ret * 2.0 -1.0 : 0.0;
+
+   return ret;
+}
 
 
 
@@ -252,28 +274,9 @@ int SetTechnique
 
 float _OutputAspectRatio;
 
-#define ZOOM ((Zoom + RECEIVING(3.0)) * 10 + ZoomFine / 10)
+#define ZOOM ((Zoom + fn_receiving05(3.0)) * 10.0 + ZoomFine / 10.0)
 #define FRAMECENTER 0.5
      
-
-// ---- Receiving from the remote control input -------
-
-      #define RECEIVING(Ch)    (    (   tex2D(RcSampler, POSCHANNEL(floor(Ch))).r				/* Receiving  Red = bit 1 to bit 8 of 16Bit     ,   The value of  "Ch" (receiving channel) is only passed to sub macros  */\
-                                 + ((tex2D(RcSampler, POSCHANNEL(floor(Ch))).g) / 255)				/* Green = bit 9 to bit 16   */\
-                                ) * 2 - step( 0.001 , STATUS_CH_IN(Ch))  )					// Adjustment of the numeral system from  ( 0 ... 1) to (-1 ... +1)   ,  "Step" prevents a change in the received value 0.0 if the channel can not be received.  If Status Channel > 0.001  (then the adjustemnd *2-1)  ,  If the Status = 0.0 then the adjustment *2-0 
-
-      #define STATUS_CH_IN(Ch)     ((tex2D(RcSampler, POSCHANNEL(floor(Ch)))).b)				// Status of the receiving channel ,   blue 0.0  = OFF   ,    0.2 = only Data  ,   0.4   = ON  ,   1.0 = ON and the value of the remote control signal was limited by the sending effect.   ,    The value of ChannelInput is only passed to sub macros 
-
-         // Position of the Channel
-         #define POSCHANNEL(ch)       float2 ( frac(ch / 100.0) - 0.005  ,  POSyCHANNEL(ch) + 0.01 )		// Sub macro,   Position of the pixel to be converted.  (  - 0.005 and  + 0.01 ar the center of the respective position)    ,   "ch" is the receiving channel. 
-            #define POSyCHANNEL(ch)        ( (floor( ch/100.0) )/ 50.0 )					// Sub macro,   y - position of the the color signal.    50 channel groups    ,     "ch" is the receiving channel. 
- 
-
-
-
-
-
-
 
 
 //--------------------------------------------------------------//
@@ -302,7 +305,7 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler FgSampler) : COLOR
    // ------ negative ZOOM -------
    // Used only for negative zoom settings
 
-   vCzT = (centreZoom + float2( RECEIVING(4.0), RECEIVING(5.0))) - uv;
+   vCzT = (centreZoom + float2( fn_receiving05(4.0), fn_receiving05(5.0))) - uv;
    posZoom = ( (1- (exp2( (ZOOM) * -1))) * vCzT ) + uv;              // The set value Zoom has been replaced by the formula  (1- (exp2( Zoom * -1)))   to get the setting characteristic described in the header.
 
 
@@ -311,8 +314,8 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler FgSampler) : COLOR
 
    if(SpinCenterMode == 0) centreSpin = float2 (Xpos, 1.0 - Ypos);  
    angle = radians((
-                    ((Spin + (20.0 *  RECEIVING(1.0))) * 360 )  
-                  + Angle + (RECEIVING(2.0) * 360) 
+                    ((Spin + (20.0 *  fn_receiving05(1.0))) * 360 )  
+                  + Angle + (fn_receiving05(2.0) * 360) 
                   + AngleFine ) 
                   * -1.0);
    vCrT = uv - centreSpin;
@@ -328,7 +331,7 @@ float4 ps_main (float2 uv : TEXCOORD1, uniform sampler FgSampler) : COLOR
    // ------ positive ZOOM -------
    // Used only for positive zoom settings.
 
-   vCzT = (centreZoom + float2( RECEIVING(4.0)/2.0, RECEIVING(5.0)/2.0 )) - posSpin;
+   vCzT = (centreZoom + float2( fn_receiving05(4.0)/2.0, fn_receiving05(5.0)/2.0 )) - posSpin;
    posOut = ( (1- (exp2( ZOOM * -1))) * vCzT ) + posSpin;            // The set value Zoom has been replaced by the formula  (1- (exp2( Zoom * -1)))   to get the setting characteristic described in the header. 
 
 

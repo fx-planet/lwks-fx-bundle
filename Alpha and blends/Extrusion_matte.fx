@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-08-30
 // @Author jwrl
 // @Created 2016-04-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/ExtrusionMatte_640.png
@@ -33,6 +33,9 @@
 // Modified 5 April 2018
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 30 August 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,6 +44,7 @@ int _LwksEffectInfo
    string Description = "Extrusion matte";
    string Category    = "Key";
    string SubCategory = "Edge Effects";
+   string Notes       = "Extrudes a foreground image either linearly or radially towards a centre point";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

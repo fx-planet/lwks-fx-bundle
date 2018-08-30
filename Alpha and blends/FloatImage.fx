@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-06-23
+// @Released 2018-08-30
 // @Author jwrl
 // @Created 2016-11-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FloatImages_640.png
@@ -29,6 +29,9 @@
 // Modified 23 June 2018 jwrl.
 // Added unpremultiply to the alpha channel procesing for Lightworks titles.  Moved the
 // alpha test into its own function, which simplifies ps_main() considerably.
+//
+// Modified 30 August 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,6 +40,7 @@ int _LwksEffectInfo
    string Description = "Floating images";
    string Category    = "Mix";
    string SubCategory = "User Effects";
+   string Notes       = "Generates up to four coloured outlines from a foreground graphic";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

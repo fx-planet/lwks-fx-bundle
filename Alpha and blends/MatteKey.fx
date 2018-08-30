@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-04
+// @Released 2018-08-30
 // @Author jwrl
 // @Created 2016-02-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/MatteKey_640.png
@@ -23,6 +23,9 @@
 // Modified 4 July 2018
 // Improved key tolerance calculation.  It's now symmetrical around clip.
 // Removed three redundant samplers.
+//
+// Modified 30 August 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -31,6 +34,7 @@ int _LwksEffectInfo
    string Description = "Matte key";
    string Category    = "Key";
    string SubCategory = "User Effects";
+   string Notes       = "Mattes a foreground image into a background using a white on black or black on white matte shape";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

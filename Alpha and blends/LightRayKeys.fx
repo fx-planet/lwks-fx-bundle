@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-08-30
 // @Author jwrl
 // @Created 2016-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
@@ -8,7 +8,7 @@
 //
 // This effect adds directional blurs to a key or any image with an alpha channel.  The
 // default is to apply a radial blur away from the effect centre.  That centre can be
-// put/ up to one frame height and/or frame width outside the frame.  Optionally it can
+// put up to one frame height and/or frame width outside the frame.  Optionally it can
 // produce a blur that points to the centre, or a linear directional blur.
 //
 // The angle of the linear (directional) blur is set by dragging the effect centre away
@@ -44,6 +44,9 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 30 August 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -52,6 +55,7 @@ int _LwksEffectInfo
    string Description = "Light ray keys";
    string Category    = "Key";
    string SubCategory = "Edge Effects";
+   string Notes       = "Adds directional blurs to a key or any image with an alpha channel";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

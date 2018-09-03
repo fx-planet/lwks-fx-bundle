@@ -328,15 +328,16 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Water              |Water.fx                 |
 
 ## CATEGORY FOLDER: Special Fx
-|EFFECT         |FILE NAME         |
-|:------------- |:---------------- |
-|Flag wave      |FlagWave.fx       |
-|Lens Flare #1  |LensFlare_1.fx    |
-|Lens Flare #2  |LensFlare_2.fx    |
-|Sea Scape      |SeaScape.fx       |
-|String Theory  |StringTheory.fx   |
-|Transporter I  |Transporter_I.fx  |
-|Transporter II |Transporter_II.fx |
+|EFFECT             |FILE NAME            |
+|:----------------- |:------------------- |
+|Flag wave          |FlagWave.fx          |
+|Lens Flare #1      |LensFlare_1.fx       |
+|Lens Flare #2      |LensFlare_2.fx       |
+|Sea Scape          |SeaScape.fx          |
+|Rainbow connection |RainbowConnection.fx |
+|String Theory      |StringTheory.fx      |
+|Transporter I      |Transporter_I.fx     |
+|Transporter II     |Transporter_II.fx    |
 
 ## CATEGORY FOLDER: Textures
 |EFFECT            |FILE NAME           |

@@ -16,7 +16,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Rainbow connection";
    string Category    = "Stylize";
-   string SubCategory = "Special effects";
+   string SubCategory = "Special Fx";
    string Notes       = "Changes colours through rainbow patterns according to levels";
 > = 0;
 

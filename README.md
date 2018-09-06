@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, September 4, 2018.
+# Lightworks user Fx archive, September 6, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -321,6 +321,7 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |EFFECT             |FILE NAME                |
 |:----------------- |:----------------------- |
 |Camera distortions |CameraDistortions.fx     |
+|Chroma smear       |ChromaSmear.fx           |
 |CRT TV screen      |CRTscreen.fx             |
 |JH Old Monitor     |jh_stylize_oldmonitor.fx |
 |Low-res camera     |Low_res_cam.fx           |

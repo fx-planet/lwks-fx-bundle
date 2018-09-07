@@ -16,7 +16,7 @@ int _LwksEffectInfo
    string Description = "Quad VTR simulator";
    string Category    = "Stylize";
    string SubCategory = "Simulation";
-   string Notes       = "Emulates the faults that could occur with Quad video tape playback";
+   string Notes       = "Emulates the faults that could occur with Quadruplex videotape playback";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

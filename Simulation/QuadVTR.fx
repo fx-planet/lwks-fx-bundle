@@ -1,5 +1,4 @@
-// @Maintainer jwrl
-// @Released 2018-09-08
+// @Released 2018-09-09
 // @Author jwrl
 // @Created 2018-09-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR_640.png
@@ -15,6 +14,9 @@
 // Added PAL Hanover bars setting.
 // Used SetTechnique to select modes, bypassing the conditionals previously used.
 // Added monochrome mode.
+//
+// Modified jwrl 2018-09-09:
+// Rearranged techniques to allow support for PAL-M and other rarer formats.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,17 +44,17 @@ sampler s_Input = sampler_state { Texture = <Inp>; };
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Television standard";
-   string Enum = "NTSC,PAL,PAL with Hanover bars";
-> = 1;
-
 int Mode
 <
-   string Description = "Recording mode";
-   string Enum = "Black and white,Colour";
+   string Description = "Television standard";
+   string Enum = "525 line,625 line";
 > = 1;
+
+int SetTechnique
+<
+   string Description = "Colour format";
+   string Enum = "Black and white,NTSC colour,PAL colour,PAL with Hanover bars";
+> = 2;
 
 float Tip
 <
@@ -85,7 +87,7 @@ float Phase
 #define G_LUMA    0.5866
 #define B_LUMA    0.1145
 
-#define MONO      0
+#define TV_525    0
 
 #define PAL       13.824
 #define PAL_OFFS  1.072
@@ -99,35 +101,9 @@ float Phase
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_ntsc (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_mono (float2 uv : TEXCOORD1) : COLOR
 {
-   float tip   = NTSC * (NTSC_OFFS - uv.y);
-   float phase = (tip - floor (tip));
-   float guide = 1.0 - cos (phase * HALF_PI);
-
-   tip = (Tip * phase * 0.005) + (Guide * guide * 0.01);
-
-   float2 xy1 = uv - float2 (tip, 0.0);
-   float2 xy2 = abs (xy1 - 0.5.xx);
-
-   float4 retval = max (xy2.x, xy2.y) > 0.5 ? BLACK : tex2D (s_Input, xy1);
-
-   if (Mode == MONO) {
-      float luma = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
-
-      return float4 (luma.xxx, retval.a);
-   }
-
-   phase = Phase * ((phase * 35.0) + uv.x) / 36.0;
-   retval.rgb = phase < 0.0 ? lerp (retval.rgb, retval.gbr, abs (phase))
-                            : lerp (retval.rgb, retval.brg, phase);
-
-   return retval;
-}
-
-float4 ps_main_pal (float2 uv : TEXCOORD1) : COLOR
-{
-   float tip   = PAL * (PAL_OFFS - uv.y);
+   float tip = (Mode == TV_525) ? NTSC * (NTSC_OFFS - uv.y) : PAL * (PAL_OFFS - uv.y);
    float phase = (tip - floor (tip));
    float guide = 1.0 - cos (phase * HALF_PI);
 
@@ -140,7 +116,55 @@ float4 ps_main_pal (float2 uv : TEXCOORD1) : COLOR
 
    float luma = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
 
-   if (Mode == MONO) { return float4 (luma.xxx, retval.a); }
+   return float4 (luma.xxx, retval.a);
+}
+
+float4 ps_main_ntsc (float2 uv : TEXCOORD1) : COLOR
+{
+   float tip, ph1, ph2;
+
+   if (Mode == TV_525) {
+      ph1 = 35.0;
+      ph2 = 36.0;
+      tip = NTSC * (NTSC_OFFS - uv.y);
+   }
+   else {
+      ph1 = 41.0;
+      ph2 = 42.0;
+      tip = PAL * (PAL_OFFS - uv.y);
+   }
+
+   float phase = (tip - floor (tip));
+   float guide = 1.0 - cos (phase * HALF_PI);
+
+   tip = (Tip * phase * 0.005) + (Guide * guide * 0.01);
+
+   float2 xy1 = uv - float2 (tip, 0.0);
+   float2 xy2 = abs (xy1 - 0.5.xx);
+
+   float4 retval = max (xy2.x, xy2.y) > 0.5 ? BLACK : tex2D (s_Input, xy1);
+
+   phase = Phase * ((phase * ph1) + uv.x) / ph2;
+   retval.rgb = phase < 0.0 ? lerp (retval.rgb, retval.gbr, abs (phase))
+                            : lerp (retval.rgb, retval.brg, phase);
+
+   return retval;
+}
+
+float4 ps_main_pal (float2 uv : TEXCOORD1) : COLOR
+{
+   float tip = (Mode == TV_525) ? NTSC * (NTSC_OFFS - uv.y) : PAL * (PAL_OFFS - uv.y);
+   float phase = (tip - floor (tip));
+   float guide = 1.0 - cos (phase * HALF_PI);
+
+   tip = (Tip * phase * 0.005) + (Guide * guide * 0.01);
+
+   float2 xy1 = uv - float2 (tip, 0.0);
+   float2 xy2 = abs (xy1 - 0.5.xx);
+
+   float4 retval = max (xy2.x, xy2.y) > 0.5 ? BLACK : tex2D (s_Input, xy1);
+
+   float luma = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
 
    retval.rgb = lerp (retval.rgb, luma.xxx, abs (Phase * phase));
 
@@ -149,7 +173,19 @@ float4 ps_main_pal (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_bars (float2 uv : TEXCOORD1) : COLOR
 {
-   float tip = PAL * (PAL_OFFS - uv.y);
+   float tip, ph1, ph2;
+
+   if (Mode == TV_525) {
+      ph1 = 35.0;
+      ph2 = 36.0;
+      tip = NTSC * (NTSC_OFFS - uv.y);
+   }
+   else {
+      ph1 = 41.0;
+      ph2 = 42.0;
+      tip = PAL * (PAL_OFFS - uv.y);
+   }
+
    float hanover = frac (288.0 * uv.y);
    float phase = (tip - floor (tip));
    float guide = 1.0 - cos (phase * HALF_PI);
@@ -161,13 +197,7 @@ float4 ps_main_bars (float2 uv : TEXCOORD1) : COLOR
 
    float4 retval = max (xy2.x, xy2.y) > 0.5 ? BLACK : tex2D (s_Input, xy1);
 
-   if (Mode == MONO) {
-      float luma = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
-
-      return float4 (luma.xxx, retval.a);
-   }
-
-   phase = Phase * ((phase * 41.0) + uv.x) / 42.0;
+   phase = Phase * ((phase * ph1) + uv.x) / ph2;
 
    if (hanover >= 0.5) phase = -phase;
 
@@ -180,6 +210,12 @@ float4 ps_main_bars (float2 uv : TEXCOORD1) : COLOR
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
+
+technique QuadVTR_Mono
+{
+   pass P_1
+   { PixelShader = compile PROFILE ps_main_mono (); }
+}
 
 technique QuadVTR_NTSC
 {

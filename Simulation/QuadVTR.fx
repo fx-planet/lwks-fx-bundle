@@ -1,4 +1,5 @@
-// @Released 2018-09-09
+// @Maintainer jwrl
+// @Released 2018-09-10
 // @Author jwrl
 // @Created 2018-09-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR_640.png
@@ -17,6 +18,9 @@
 //
 // Modified jwrl 2018-09-09:
 // Rearranged techniques to allow support for PAL-M and other rarer formats.
+//
+// Modified jwrl 2018-09-10:
+// Corrected guide height adjustment to be closer to actual effect.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -87,13 +91,18 @@ float Phase
 #define G_LUMA    0.5866
 #define B_LUMA    0.1145
 
+#define SQRT_2    0.7071067812
+
 #define TV_525    0
 
-#define PAL       13.824
-#define PAL_OFFS  1.072
+#define PAL       14.6944
+#define PAL_OFFS  1.0768
 
-#define NTSC      13.8
-#define NTSC_OFFS 1.0857142857
+#define NTSC      14.72
+#define NTSC_OFFS 1.0914285714
+
+#define TIP       0.02
+#define GUIDE     0.02125
 
 #define HALF_PI   1.5707963268
 
@@ -105,9 +114,9 @@ float4 ps_main_mono (float2 uv : TEXCOORD1) : COLOR
 {
    float tip = (Mode == TV_525) ? NTSC * (NTSC_OFFS - uv.y) : PAL * (PAL_OFFS - uv.y);
    float phase = (tip - floor (tip));
-   float guide = 1.0 - cos (phase * HALF_PI);
+   float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * 0.005) + (Guide * guide * 0.01);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
 
    float2 xy1 = uv - float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
@@ -135,9 +144,9 @@ float4 ps_main_ntsc (float2 uv : TEXCOORD1) : COLOR
    }
 
    float phase = (tip - floor (tip));
-   float guide = 1.0 - cos (phase * HALF_PI);
+   float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * 0.005) + (Guide * guide * 0.01);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
 
    float2 xy1 = uv - float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
@@ -155,9 +164,9 @@ float4 ps_main_pal (float2 uv : TEXCOORD1) : COLOR
 {
    float tip = (Mode == TV_525) ? NTSC * (NTSC_OFFS - uv.y) : PAL * (PAL_OFFS - uv.y);
    float phase = (tip - floor (tip));
-   float guide = 1.0 - cos (phase * HALF_PI);
+   float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * 0.005) + (Guide * guide * 0.01);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
 
    float2 xy1 = uv - float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
@@ -188,9 +197,9 @@ float4 ps_main_bars (float2 uv : TEXCOORD1) : COLOR
 
    float hanover = frac (288.0 * uv.y);
    float phase = (tip - floor (tip));
-   float guide = 1.0 - cos (phase * HALF_PI);
+   float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * 0.005) + (Guide * guide * 0.01);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
 
    float2 xy1 = uv - float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);

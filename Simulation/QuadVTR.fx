@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-09-11
+// @Released 2018-09-12
 // @Author jwrl
 // @Created 2018-09-07
-// @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Quad_VTR_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuadVTR.fx
 //
@@ -26,10 +26,15 @@
 // Modified jwrl 2018-09-11:
 // Added oxide build up effect.  That meant a further slight reworking of the maths.
 //
+// Modified jwrl 2018-09-12:
+// Added sparkle caused by the brushes in early Ampex heads.
+// Added head switching dots visible in the Ampex VR-1000 series.
+// Added crop to 4:3 aspect ratio.  The alpha channel is set to one inside the crop zone
+// and zero outside it.  The crop is reasonably dumb and assumes that the image isn't in
+// portrait format.
+//
 // Possible future projects:
 // Add noise displacement when build up occurs.
-// Display the head switching dots that were visible in the Ampex VR-1000 series.
-// Show sparkle caused by the brushes in early Ampex heads.
 // Work out a convincing way to make the image lose lock as it would with severe build up.
 // Create tracking errors.  That might just be one for the "too hard" basket.
 //-----------------------------------------------------------------------------------------//
@@ -75,6 +80,11 @@ int SetTechnique
    string Enum = "Black and white,NTSC colour,PAL colour,PAL with Hanover bars";
 > = 2;
 
+bool Crop
+<
+   string Description = "Crop frame to 4x3 aspect ratio";
+> = true;
+
 float Tip
 <
    string Description = "Tip penetration";
@@ -94,6 +104,13 @@ float Phase
    string Description = "Chroma errors";
    float MinVal = -1.00;
    float MaxVal = 1.00;
+> = 0.0;
+
+float Brush
+<
+   string Description = "Brush noise";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Head_1
@@ -127,6 +144,11 @@ float Head_4
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.0;
+
+bool HeadSwitch
+<
+   string Description = "Show head switching dots";
+> = false;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -162,6 +184,7 @@ float Head_4
 #define S_2       53846.153
 
 float _Progress;
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -177,6 +200,8 @@ float4 ps_mono (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy1 = uv + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
+
+   if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
    float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
 
@@ -198,17 +223,20 @@ float4 ps_ntsc (float2 uv : TEXCOORD1) : COLOR
       tip = PAL * (uv.y + PAL_OFFS);
    }
 
-   float phase = (tip + floor (tip));
+   float phase = (tip - floor (tip));
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
    tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
 
-   float2 xy1 = uv - float2 (tip, 0.0);
+   float2 xy1 = uv + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
+
+   if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
    float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
 
    phase = Phase * ((phase * ph1) + uv.x) / ph2;
+
    retval = phase < 0.0 ? lerp (retval, retval.gbr, abs (phase))
                         : lerp (retval, retval.brg, phase);
    return retval.rgbg;
@@ -224,6 +252,8 @@ float4 ps_pal (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy1 = uv + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
+
+   if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
    float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
 
@@ -257,6 +287,8 @@ float4 ps_hanover_bars (float2 uv : TEXCOORD1) : COLOR
    float2 xy1 = uv + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
 
+   if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
+
    float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
 
    phase = Phase * ((phase * ph1) + uv.x) / ph2;
@@ -272,30 +304,45 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_QuadVTR, uv);
 
-   float2 xy;
+   float head, x = abs (uv.x - 0.5);
 
-   float head;
-   float head_idx [] = { Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4, Head_1,
-                         Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4 };
+   if (Crop) x *= _OutputAspectRatio * 0.75;
 
-   if (Mode == TV_525) {
-      head = head_idx [floor (NTSC * (uv.y + NTSC_OFFS))] * 2.0;
-      xy = floor (uv * 483.0) / 483.0;
-   }
+   if (x > 0.5) { retval = EMPTY; }
    else {
-      head = head_idx [floor (PAL * (uv.y + PAL_OFFS))] * 2.0;
-      xy = floor (uv * 574.0) / 574.0;
+      bool head_sw;
+
+      float head_idx [] = { Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4,
+                    Head_1, Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4 };
+      float2 xy;
+
+      if (Mode == TV_525) {
+         head_sw = (modf (NTSC * (uv.y + NTSC_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
+         xy = floor (uv * 483.0) / 483.0;
+      }
+      else {
+         head_sw = (modf (PAL * (uv.y + PAL_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
+         xy = floor (uv * 574.0) / 574.0;
+      }
+
+      head = head_idx [head] * 2.0;
+      head_sw = (x > 0.4935) && (x < 0.496) && head_sw;
+
+      float buildup = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
+      float noise = frac (sin (dot (xy, float2 (N_1, N_3)) + _Progress) * (S_1));
+      float sparkle = min (noise * 20.0, 1.0) - (Brush * 0.5);
+
+      noise = frac (sin (dot (xy, float2 (N_2, N_4)) + noise) * (S_2));
+      buildup = (noise < 0.5) ? saturate (2.0 * buildup * noise)
+                              : saturate (1.0 - 2.0 * (1.0 - buildup) * (1.0 - noise));
+      if (head_sw) retval = saturate (noise * 3.0).xxxx;
+
+      if (sparkle < 0.0) retval = 1.0.xxxx;
+
+      retval = lerp (retval, buildup.xxxx, min (head, 1.0));
+      retval = lerp (retval, noise.xxxx, max (head - 1.0, 0.0));
+      retval.a = 1.0;
    }
-
-   float buildup = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
-   float noise = frac (sin (dot (xy, float2 (N_1, N_3)) + _Progress) * (S_1));
-
-   noise = frac (sin (dot (xy, float2 (N_2, N_4)) + noise) * (S_2)).xxx;
-   buildup = (noise < 0.5) ? saturate (2.0 * buildup * noise)
-                           : saturate (1.0 - 2.0 * (1.0 - buildup) * (1.0 - noise));
-   retval = lerp (retval, buildup.xxxx, min (head, 1.0));
-   retval = lerp (retval, noise.xxxx, max (head - 1.0, 0.0));
-   retval.a = 1.0;
 
    return retval;
 }

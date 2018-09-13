@@ -1,8 +1,9 @@
 // @Maintainer jwrl
-// @Released 2018-09-12
+// @Released 2018-09-13
 // @Author jwrl
 // @Created 2018-09-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Quad_VTR_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuadVTR.fx
 //
@@ -27,11 +28,20 @@
 // Added oxide build up effect.  That meant a further slight reworking of the maths.
 //
 // Modified jwrl 2018-09-12:
-// Added sparkle caused by the brushes in early Ampex heads.
+// Added sparkle caused by the brushes in early Ampex heads.  It sort of works, but it's
+// not exactly great.
 // Added head switching dots visible in the Ampex VR-1000 series.
 // Added crop to 4:3 aspect ratio.  The alpha channel is set to one inside the crop zone
 // and zero outside it.  The crop is reasonably dumb and assumes that the image isn't in
 // portrait format.
+//
+// Modified jwrl 2018-09-13:
+// Added Hi-band/lo-band selection.  Two low band modes are provided, because the type
+// of modulator used differed between valve and solid state signal systems, resulting
+// in differing noise levels and edge artefacts.
+// Improved head switch simulation so that unmodified video follows switch pulse.  This
+// also improves the buildup simulation.
+// Some code cleanup performed.
 //
 // Possible future projects:
 // Add noise displacement when build up occurs.
@@ -54,14 +64,24 @@ int _LwksEffectInfo
 
 texture Inp;
 
+texture Shp : RenderColorTarget;
 texture VTR : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state { Texture = <Inp>; };
+sampler s_Input = sampler_state
+{
+   Texture   = <Inp>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
+sampler s_Sharpen = sampler_state { Texture = <Shp>; };
 sampler s_QuadVTR = sampler_state { Texture = <VTR>; };
 
 //-----------------------------------------------------------------------------------------//
@@ -73,6 +93,12 @@ int Mode
    string Description = "Television standard";
    string Enum = "525 line,625 line";
 > = 1;
+
+int VTRmode
+<
+   string Description = "VTR mode";
+   string Enum = "Low band (valve),Low band (solid state),High band";
+> = 0;
 
 int SetTechnique
 <
@@ -154,11 +180,11 @@ bool HeadSwitch
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
+#define BLACK     float4((0.0).xxx, 1.0)
+#define WHITE     (1.0).xxxx
 #define EMPTY     (0.0).xxxx
 
-#define R_LUMA    0.2989
-#define G_LUMA    0.5866
-#define B_LUMA    0.1145
+#define B_W       float3(0.2989, 0.5866, 0.1145)
 
 #define SQRT_2    0.7071067812
 
@@ -190,6 +216,32 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+float4 ps_sharpen (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 retval = tex2D (s_Input, uv);
+
+   float2 xy1 = (Mode == TV_525) ? float2 (1.0 / _OutputAspectRatio, 1.0) / (483.0 * max (1, VTRmode))
+                                 : float2 (1.0 / _OutputAspectRatio, 1.0) / (576.0 * max (1, VTRmode));
+   float2 xy2 = float2 (0.0, xy1.y);
+   float2 xy3 = float2 (xy1.x, -xy1.y);
+   float2 xy4 = float2 (xy1.x, 0.0);
+
+   float setband = (VTRmode == 0) ? 0.0 : 0.5;
+   float sharpen = 0.25 - (setband * 0.125);
+
+   retval *= 3.0 - setband;
+   retval -= tex2D (s_Input, uv - xy1) * sharpen;
+   retval -= tex2D (s_Input, uv - xy2) * sharpen;
+   retval -= tex2D (s_Input, uv + xy3) * sharpen;
+   retval -= tex2D (s_Input, uv - xy4) * sharpen;
+   retval -= tex2D (s_Input, uv + xy4) * sharpen;
+   retval -= tex2D (s_Input, uv - xy3) * sharpen;
+   retval -= tex2D (s_Input, uv + xy2) * sharpen;
+   retval -= tex2D (s_Input, uv + xy1) * sharpen;
+
+   return retval;
+}
+
 float4 ps_mono (float2 uv : TEXCOORD1) : COLOR
 {
    float tip = (Mode == TV_525) ? NTSC * (uv.y + NTSC_OFFS) : PAL * (uv.y + PAL_OFFS);
@@ -203,9 +255,9 @@ float4 ps_mono (float2 uv : TEXCOORD1) : COLOR
 
    if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
-   float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
+   if (max (xy2.x, xy2.y) > 0.5) return EMPTY;
 
-   return dot (retval, float3 (R_LUMA, G_LUMA, B_LUMA)).xxxx;
+   return float4 (dot (tex2D (s_Sharpen, xy1).rgb, B_W).xxx, 0.0);
 }
 
 float4 ps_ntsc (float2 uv : TEXCOORD1) : COLOR
@@ -227,19 +279,19 @@ float4 ps_ntsc (float2 uv : TEXCOORD1) : COLOR
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
    tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+   phase = Phase * ((phase * ph1) + uv.x) / ph2;
 
    float2 xy1 = uv + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
 
    if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
-   float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
+   if (max (xy2.x, xy2.y) > 0.5) return BLACK;
 
-   phase = Phase * ((phase * ph1) + uv.x) / ph2;
+   float4 retval = float4 (tex2D (s_Sharpen, xy1).rgb, 1.0);
 
-   retval = phase < 0.0 ? lerp (retval, retval.gbr, abs (phase))
-                        : lerp (retval, retval.brg, phase);
-   return retval.rgbg;
+   return (phase < 0.0) ? lerp (retval, retval.gbra, abs (phase))
+                        : lerp (retval, retval.brga, phase);
 }
 
 float4 ps_pal (float2 uv : TEXCOORD1) : COLOR
@@ -255,11 +307,13 @@ float4 ps_pal (float2 uv : TEXCOORD1) : COLOR
 
    if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
-   float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
+   if (max (xy2.x, xy2.y) > 0.5) return BLACK;
 
-   float luma = dot (retval, float3 (R_LUMA, G_LUMA, B_LUMA));
+   float3 retval = tex2D (s_Sharpen, xy1).rgb;
 
-   return lerp (retval, luma.xxx, abs (Phase * phase)).rgbg;
+   float luma = dot (retval, B_W);
+
+   return float4 (lerp (retval, luma.xxx, abs (Phase * phase)).rgb, 1.0);
 }
 
 float4 ps_hanover_bars (float2 uv : TEXCOORD1) : COLOR
@@ -283,21 +337,21 @@ float4 ps_hanover_bars (float2 uv : TEXCOORD1) : COLOR
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
    tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+   phase = Phase * ((phase * ph1) + uv.x) / ph2;
+
+   if (hanover >= 0.5) phase = -phase;
 
    float2 xy1 = uv + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
 
    if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
-   float3 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1).rgb;
+   if (max (xy2.x, xy2.y) > 0.5) return BLACK;
 
-   phase = Phase * ((phase * ph1) + uv.x) / ph2;
+   float4 retval = float4 (tex2D (s_Sharpen, xy1).rgb, 1.0);
 
-   if (hanover >= 0.5) phase = -phase;
-
-   retval = phase < 0.0 ? lerp (retval, retval.gbr, abs (phase))
-                        : lerp (retval, retval.brg, phase);
-   return retval.rgbg;
+   return (phase < 0.0) ? lerp (retval, retval.gbra, abs (phase))
+                        : lerp (retval, retval.brga, phase);
 }
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
@@ -308,41 +362,50 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    if (Crop) x *= _OutputAspectRatio * 0.75;
 
-   if (x > 0.5) { retval = EMPTY; }
-   else {
-      bool head_sw;
+   if (x > 0.5) { return EMPTY; }
 
-      float head_idx [] = { Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4,
-                    Head_1, Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4 };
-      float2 xy;
+   bool head_sw;
 
-      if (Mode == TV_525) {
-         head_sw = (modf (NTSC * (uv.y + NTSC_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
-         xy = floor (uv * 483.0) / 483.0;
-      }
-      else {
-         head_sw = (modf (PAL * (uv.y + PAL_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
-         xy = floor (uv * 574.0) / 574.0;
-      }
+   float head_idx [] = { Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4,
+                 Head_1, Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4 };
+   float2 xy;
 
-      head = head_idx [head] * 2.0;
-      head_sw = (x > 0.4935) && (x < 0.496) && head_sw;
-
-      float buildup = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
-      float noise = frac (sin (dot (xy, float2 (N_1, N_3)) + _Progress) * (S_1));
-      float sparkle = min (noise * 20.0, 1.0) - (Brush * 0.5);
-
-      noise = frac (sin (dot (xy, float2 (N_2, N_4)) + noise) * (S_2));
-      buildup = (noise < 0.5) ? saturate (2.0 * buildup * noise)
-                              : saturate (1.0 - 2.0 * (1.0 - buildup) * (1.0 - noise));
-      if (head_sw) retval = saturate (noise * 3.0).xxxx;
-
-      if (sparkle < 0.0) retval = 1.0.xxxx;
-
-      retval = lerp (retval, buildup.xxxx, min (head, 1.0));
-      retval = lerp (retval, noise.xxxx, max (head - 1.0, 0.0));
-      retval.a = 1.0;
+   if (Mode == TV_525) {
+      head_sw = (modf (NTSC * (uv.y + NTSC_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
+      xy = floor (uv * 483.0) / 483.0;
    }
+   else {
+      head_sw = (modf (PAL * (uv.y + PAL_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
+      xy = floor (uv * 574.0) / 574.0;
+   }
+
+   if ((x > 0.496) && head_sw) {
+      head++;
+      retval.rgb = tex2D (s_Sharpen, uv).rgb;
+
+      if (retval.a == 0.0) retval = dot (retval.rgb, B_W).xxxx;
+   }
+
+   head = head_idx [head] * 2.0;
+   head_sw = (x > 0.4935) && (x < 0.496) && head_sw;
+
+   float buildup = dot (retval.rgb, B_W);
+   float noise = frac (sin (dot (xy, float2 (N_1, N_3)) + _Progress) * (S_1));
+
+   retval = (VTRmode == 0) ? lerp (retval, noise.xxxx, 0.1)
+          : (VTRmode == 1) ? lerp (retval, noise.xxxx, 0.05)
+                           : lerp (retval, noise.xxxx, 0.0125);
+
+   if ((min (noise * 50.0, 1.0) - (Brush * 0.5)) < 0.0) return WHITE;
+
+   noise   = frac (sin (dot (xy, float2 (N_2, N_4)) + noise) * (S_2));
+   buildup = (noise < 0.5) ? saturate (2.0 * buildup * noise)
+                           : saturate (1.0 - 2.0 * (1.0 - buildup) * (1.0 - noise));
+   if (head_sw) retval = saturate (noise * 3.0).xxxx;
+
+   retval = lerp (retval, buildup.xxxx, min (head, 1.0));
+   retval = lerp (retval, noise.xxxx, max (head - 1.0, 0.0));
+   retval.a = 1.0;
 
    return retval;
 }
@@ -354,39 +417,55 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique QuadVTR_Mono
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Shp;"; > 
+   { PixelShader = compile PROFILE ps_sharpen (); }
+
+   pass P_2
    < string Script = "RenderColorTarget0 = VTR;"; > 
    { PixelShader = compile PROFILE ps_mono (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique QuadVTR_NTSC
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Shp;"; > 
+   { PixelShader = compile PROFILE ps_sharpen (); }
+
+   pass P_2
    < string Script = "RenderColorTarget0 = VTR;"; > 
    { PixelShader = compile PROFILE ps_ntsc (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique QuadVTR_PAL
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Shp;"; > 
+   { PixelShader = compile PROFILE ps_sharpen (); }
+
+   pass P_2
    < string Script = "RenderColorTarget0 = VTR;"; > 
    { PixelShader = compile PROFILE ps_pal (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique QuadVTR_Hanover
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Shp;"; > 
+   { PixelShader = compile PROFILE ps_sharpen (); }
+
+   pass P_2
    < string Script = "RenderColorTarget0 = VTR;"; > 
    { PixelShader = compile PROFILE ps_hanover_bars (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }

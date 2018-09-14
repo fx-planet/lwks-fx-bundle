@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-09-13
+// @Released 2018-09-14
 // @Author jwrl
 // @Created 2018-09-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Quad_VTR_640.png
@@ -42,6 +42,10 @@
 // Improved head switch simulation so that unmodified video follows switch pulse.  This
 // also improves the buildup simulation.
 // Some code cleanup performed.
+//
+// Modified jwrl 2018-09-14:
+// Corrected Hi-band/lo-band edge sharpening.
+// Improved brush noise sparkle generation.
 //
 // Possible future projects:
 // Add noise displacement when build up occurs.
@@ -180,7 +184,7 @@ bool HeadSwitch
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define BLACK     float4((0.0).xxx, 1.0)
+#define BLACK     float2(0.0, 1.0).xxxy
 #define WHITE     (1.0).xxxx
 #define EMPTY     (0.0).xxxx
 
@@ -220,13 +224,17 @@ float4 ps_sharpen (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Input, uv);
 
-   float2 xy1 = (Mode == TV_525) ? float2 (1.0 / _OutputAspectRatio, 1.0) / (483.0 * max (1, VTRmode))
-                                 : float2 (1.0 / _OutputAspectRatio, 1.0) / (576.0 * max (1, VTRmode));
+   float setband = (Mode == TV_525) ? 483.0 : 576.0;
+
+   setband *= (VTRmode * 0.5) + 1.0;
+
+   float2 xy1 = float2 (1.0 / _OutputAspectRatio, 1.0) / setband;
    float2 xy2 = float2 (0.0, xy1.y);
    float2 xy3 = float2 (xy1.x, -xy1.y);
    float2 xy4 = float2 (xy1.x, 0.0);
 
-   float setband = (VTRmode == 0) ? 0.0 : 0.5;
+   setband = max (VTRmode - 1.5, 0.0);
+
    float sharpen = 0.25 - (setband * 0.125);
 
    retval *= 3.0 - setband;
@@ -393,10 +401,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float noise = frac (sin (dot (xy, float2 (N_1, N_3)) + _Progress) * (S_1));
 
    retval = (VTRmode == 0) ? lerp (retval, noise.xxxx, 0.1)
-          : (VTRmode == 1) ? lerp (retval, noise.xxxx, 0.05)
-                           : lerp (retval, noise.xxxx, 0.0125);
+                           : lerp (retval, noise.xxxx, 0.05 / (VTRmode * VTRmode));
 
-   if ((min (noise * 50.0, 1.0) - (Brush * 0.5)) < 0.0) return WHITE;
+   if ((Brush * 0.00625) > noise) return WHITE;
 
    noise   = frac (sin (dot (xy, float2 (N_2, N_4)) + noise) * (S_2));
    buildup = (noise < 0.5) ? saturate (2.0 * buildup * noise)

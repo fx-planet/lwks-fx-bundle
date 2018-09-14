@@ -1,8 +1,8 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author quality
-// 
-// @see https://www.lwks.com/media/kunena/attachments/6375/MotionBlur_640.png
+// @Created -undefined-
+// @see https://www.lwks.com/media/kunena/attachments/6375/MotionBlur.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect motionblur.fx
 //
@@ -18,6 +18,9 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 15 September 2018.
+// Corrected a bug which could cause this effect to fail to compile.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

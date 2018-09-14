@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author quality
-// @Created -undefined-
+// @Created 2013-02-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/MotionBlur.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect motionblur.fx

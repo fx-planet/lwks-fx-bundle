@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-09-14
+// @Released 2018-09-20
 // @Author jwrl
 // @Created 2018-09-07
-// @see https://www.lwks.com/media/kunena/attachments/6375/Quad_VTR_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR.mp4
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuadVTR.fx
@@ -46,6 +46,9 @@
 // Modified jwrl 2018-09-14:
 // Corrected Hi-band/lo-band edge sharpening.
 // Improved brush noise sparkle generation.
+//
+// Modified jwrl 2018-09-20:
+// Added RCA-style chroma displacement error.
 //
 // Possible future projects:
 // Add noise displacement when build up occurs.
@@ -104,12 +107,6 @@ int VTRmode
    string Enum = "Low band (valve),Low band (solid state),High band";
 > = 0;
 
-int SetTechnique
-<
-   string Description = "Colour format";
-   string Enum = "Black and white,NTSC colour,PAL colour,PAL with Hanover bars";
-> = 2;
-
 bool Crop
 <
    string Description = "Crop frame to 4x3 aspect ratio";
@@ -118,22 +115,28 @@ bool Crop
 float Tip
 <
    string Description = "Tip penetration";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Guide
 <
    string Description = "Guide height";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
+
+int SetTechnique
+<
+   string Description = "Colour format";
+   string Enum = "Black and white,NTSC colour (Ampex),PAL colour (Ampex),PAL with Hanover bars (Ampex),Colour offset (RCA)";
+> = 2;
 
 float Phase
 <
    string Description = "Chroma errors";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Brush
@@ -177,14 +180,14 @@ float Head_4
 
 bool HeadSwitch
 <
-   string Description = "Show head switching dots";
+   string Description = "Show head switching dots (Ampex VR-1000)";
 > = false;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define BLACK     float2(0.0, 1.0).xxxy
+#define BLACK     float4((0.0).xxx, 1.0)
 #define WHITE     (1.0).xxxx
 #define EMPTY     (0.0).xxxx
 
@@ -362,6 +365,34 @@ float4 ps_hanover_bars (float2 uv : TEXCOORD1) : COLOR
                         : lerp (retval, retval.brga, phase);
 }
 
+float4 ps_rca (float2 uv : TEXCOORD1) : COLOR
+{
+   float tip = (Mode == TV_525) ? NTSC * (uv.y + NTSC_OFFS) : PAL * (uv.y + PAL_OFFS);
+   float phase = (tip - floor (tip));
+   float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
+
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+
+   float2 xy1 = uv + float2 (tip, 0.0);
+   float2 xy2 = abs (xy1 - 0.5.xx);
+
+   if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
+
+   if (max (xy2.x, xy2.y) > 0.5) return BLACK;
+
+   xy2 = xy1 - float2 (Phase * 0.005, 0.0);
+
+   float4 retval = ((xy2.x < 0.0) || (xy2.x > 1.0)) ? EMPTY : tex2D (s_Input, xy2);
+
+   float luma = dot (retval.rgb, B_W);
+
+   retval -= luma.xxxx;
+   luma = dot (tex2D (s_Sharpen, xy1).rgb, B_W);
+   retval += luma.xxxx;
+
+   return float4 (retval.rgb, 1.0);
+}
+
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_QuadVTR, uv);
@@ -472,6 +503,20 @@ technique QuadVTR_Hanover
    pass P_2
    < string Script = "RenderColorTarget0 = VTR;"; > 
    { PixelShader = compile PROFILE ps_hanover_bars (); }
+
+   pass P_3
+   { PixelShader = compile PROFILE ps_main (); }
+}
+
+technique QuadVTR_RCA
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Shp;"; > 
+   { PixelShader = compile PROFILE ps_sharpen (); }
+
+   pass P_2
+   < string Script = "RenderColorTarget0 = VTR;"; > 
+   { PixelShader = compile PROFILE ps_rca (); }
 
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }

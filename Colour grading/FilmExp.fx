@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
-// @OriginalAuthor abelmilanes
+// @Released 2018-09-26
 // @Author jwrl
+// @Author abelmilanes
 // @Created 2017-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmExp_640.png
 //-----------------------------------------------------------------------------------------//
@@ -34,6 +34,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,6 +45,7 @@ int _LwksEffectInfo
    string Description = "Film exposure";
    string Category    = "Colour";
    string SubCategory = "User Effects";
+   string Notes       = "Simulates exposure adjustment using a Cineon profile";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

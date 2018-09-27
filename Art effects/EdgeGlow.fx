@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-05
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_640.png
@@ -31,6 +31,9 @@
 // Made blur calculations frame based rather than pixel based.
 // Changed clamp addressing to mirror addressing for glow calculations.  This also solves
 // a potential cross-platform bug before it arises.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,6 +42,7 @@ int _LwksEffectInfo
    string Description = "Edge glow";
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
+   string Notes       = "Adds a level-based or edge-based glow to an image";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

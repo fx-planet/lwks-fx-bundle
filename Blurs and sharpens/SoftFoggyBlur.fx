@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SoftFoggyBlur_640.png
@@ -12,6 +12,9 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -20,6 +23,7 @@ int _LwksEffectInfo
    string Description = "Soft foggy blur";
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
+   string Notes       = "This blur effect mimics the classic 'petroleum jelly on the lens' look";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

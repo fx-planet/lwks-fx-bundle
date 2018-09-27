@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, September 9, 2018.
+# Lightworks user Fx archive, September 27, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -356,46 +356,47 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |Texturizer        |Texturizer.fx       |
 
 ## CATEGORY FOLDER: Transitions A
-|EFFECT                  |FILE NAME                 |
-|:---------------------- |:------------------------ |
-|Abstraction #1          |Dx_Abstraction1.fx        |
-|Abstraction #2          |Dx_Abstraction2.fx        |
-|Abstraction #3          |Dx_Abstraction3.fx        |
-|Block dissolve          |Dx_Blocks.fx              |
-|Blur dissolve           |Dx_Blurs.fx               |
-|Chinagraph pencil       |Dx_Chinagraph.fx          |
-|Colour sizzler          |Dx_Sizzler.fx             |
-|Coloured tiles          |Dx_ColourTile.fx          |
-|Dissolve through colour |Dx_Colour.fx              |
-|DissolveX               |dissolveX.fx              |
-|Dream sequence          |Dx_Dreams.fx              |
-|Dry brush mix           |Dx_DryBrush.fx            |
-|Erosion                 |Dx_Erosion.fx             |
-|Fade to or from black   |Dx_FadeOutIn.fx           |
-|FlareTran               |FlareTran.fx              |
-|Fly away                |Fly away.fx               |
-|Folded neg dissolve     |Dx_FoldNeg.fx             |
-|Folded pos dissolve     |Dx_FoldPos.fx             |
-|Fractal dissolve        |Dx_Fractals.fx            |
-|Granular dissolve       |Dx_Granular.fx            |
-|Kaleido turbine mixer   |Kaleido turbine mixer.fx  |
-|Mosaic transfer         |Dx_Mosaic.fx              |
-|Non-add dissolve ultra  |Dx_NonAddUltra.fx         |
-|Non-additive mixer      |Dx_NonAdd.fx              |
-|Optical dissolve        |Dx_Optical.fx             |
-|Page Roll               |PageRoll.fx               |
-|RGB drifter             |Dx_RGBdrift.fx            |
-|S dissolve              |Dx_Scurve.fx              |
-|Sinusoidal mix          |Dx_Sine.fx                |
-|Slice transition        |Dx_Slice.fx               |
-|Spin dissolve           |Dx_Spin.fx                |
-|Stretch dissolve        |Dx_Stretch.fx             |
-|Subtractive dissolve    |Dx_Subtract.fx            |
-|Swirl mix               |Swirl_mix_20171113.fx     |
-|Transmogrify            |Dx_Transmogrify.fx        |
-|Transporter transition  |Dx_Transporter.fx         |
-|Warp dissolve           |Dx_Warp.fx                |
-|Zoom dissolve           |Dx_Zoom.fx                |
+|EFFECT                       |FILE NAME                 |
+|:--------------------------- |:------------------------ |
+|Abstraction #1               |Dx_Abstraction1.fx        |
+|Abstraction #2               |Dx_Abstraction2.fx        |
+|Abstraction #3               |Dx_Abstraction3.fx        |
+|Block dissolve               |Dx_Blocks.fx              |
+|Blur dissolve                |Dx_Blurs.fx               |
+|Chinagraph pencil            |Dx_Chinagraph.fx          |
+|Colour sizzler               |Dx_Sizzler.fx             |
+|Coloured tiles               |Dx_ColourTile.fx          |
+|Dissolve through colour      |Dx_Colour.fx              |
+|Dissolve through flat colour |Dx_ColourFlat.fx          |
+|DissolveX                    |dissolveX.fx              |
+|Dream sequence               |Dx_Dreams.fx              |
+|Dry brush mix                |Dx_DryBrush.fx            |
+|Erosion                      |Dx_Erosion.fx             |
+|Fade to or from black        |Dx_FadeOutIn.fx           |
+|FlareTran                    |FlareTran.fx              |
+|Fly away                     |Fly away.fx               |
+|Folded neg dissolve          |Dx_FoldNeg.fx             |
+|Folded pos dissolve          |Dx_FoldPos.fx             |
+|Fractal dissolve             |Dx_Fractals.fx            |
+|Granular dissolve            |Dx_Granular.fx            |
+|Kaleido turbine mixer        |Kaleido turbine mixer.fx  |
+|Mosaic transfer              |Dx_Mosaic.fx              |
+|Non-add dissolve ultra       |Dx_NonAddUltra.fx         |
+|Non-additive mixer           |Dx_NonAdd.fx              |
+|Optical dissolve             |Dx_Optical.fx             |
+|Page Roll                    |PageRoll.fx               |
+|RGB drifter                  |Dx_RGBdrift.fx            |
+|S dissolve                   |Dx_Scurve.fx              |
+|Sinusoidal mix               |Dx_Sine.fx                |
+|Slice transition             |Dx_Slice.fx               |
+|Spin dissolve                |Dx_Spin.fx                |
+|Stretch dissolve             |Dx_Stretch.fx             |
+|Subtractive dissolve         |Dx_Subtract.fx            |
+|Swirl mix                    |Swirl_mix_20171113.fx     |
+|Transmogrify                 |Dx_Transmogrify.fx        |
+|Transporter transition       |Dx_Transporter.fx         |
+|Warp dissolve                |Dx_Warp.fx                |
+|Zoom dissolve                |Dx_Zoom.fx                |
 
 ## CATEGORY FOLDER: Transitions B²
 |EFFECT                    |FILE NAME          |

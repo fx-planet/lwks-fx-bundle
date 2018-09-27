@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-06
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2016-04-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Zebra_640.png
@@ -13,6 +13,9 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -21,6 +24,7 @@ int _LwksEffectInfo
    string Description = "Zebra pattern";
    string Category    = "User";
    string SubCategory = "Broadcast";
+   string Notes       = "Displays zebra patterning in over white and under black areas of the frame";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

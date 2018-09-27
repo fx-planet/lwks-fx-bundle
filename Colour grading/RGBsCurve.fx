@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2017-01-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/RGBsCurve_640.png
@@ -28,6 +28,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,6 +39,7 @@ int _LwksEffectInfo
    string Description = "S curve adjustment";
    string Category    = "Colour";
    string SubCategory = "Technical";
+   string Notes       = "Allows master luminance and individual RGB S curve adjustment using a choice of curve types";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

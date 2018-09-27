@@ -1,14 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/UnsharpMask_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect UnsharpMask.fx
 //
-// History of this effect:
+// *********************************** ORIGINAL HEADER **************************************
 //
-// ORIGINAL HEADER:
 // Unsharp Mask by Jerker (Sound and Vision Unit) - was based on Big Blur by khaver,
 // see below - borrowed the main blur algorithm but simplified it by taking away the
 // individual color settings.  http://software.soundandvision.se
@@ -18,14 +17,15 @@
 // Smooth blur using a 12 tap circular kernel that rotates 5 degrees for each of 6
 // passes.  There's a checkbox for a 10 fold increase in the blur amount.  (This was
 // actually reduced to 5 in Jerker's effect - jwrl)
-// END OF ORIGINAL HEADER
+//
+// ******************************** END OF ORIGINAL HEADER **********************************
 //
 // Totally rewritten 19 July 2017 by jwrl.
-// I didn't understand how the original code could ever have worked correctly and in
-// fact it didn't work in Linux, and therefore was unlikely to do so in OS/X.  The
-// main issue was with the actual unsharp shader, which made assumptions about the
-// way that shaders functioned in Lightworks which at best could only be described
-// as coincidental if it was at all true.
+// I didn't understand how the original effect could ever have worked correctly and didn't
+// work at all in Linux, and therefore was unlikely to do so in OS/X.  The main issue was
+// with the actual unsharp shader, which made assumptions about the way that shaders
+// functioned in Lightworks which at best could only be described as coincidental if it
+// was at all true.
 //
 // The original also did five passes through the blur code, but only ever used three
 // of them.  This meant that the blur could never have been smooth, and in the version
@@ -52,15 +52,19 @@
 // run from a mask gamma value of 3.67 (EdgeGamma 0.0) to a value of 0.007 (EdgeGamma
 // 1.0).  The default EdgeGamma setting of 0.5 will give a unity mask gamma value.
 //
-// I've also included a mask gain parameter called, as you might have expected,
-// "Edge gain"  Again, 0.5 corresponds to a unity setting.
+// I've also included a mask gain parameter called, as you might have expected, "Edge
+// gain"  Again, 0.5 corresponds to a unity setting.
 //
-// The finished effect functions cross-platform and has been tested to confirm
-// compatibility.  As a result the old effect has been retired.  It really was too
-// broken to repair - jwrl.
+// The finished effect functions cross-platform and has been tested to confirm that.
+// As a result the old effect has been retired.  It really was too broken to repair.
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+// Renamed "Edge gamma" to "Edge contrast".  While strictly speaking incorrect, it feels
+// more like what's happening with that control to an uneducated user.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -69,6 +73,7 @@ int _LwksEffectInfo
    string Description = "Unsharp Mask";
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
+   string Notes       = "Try the Lightworks sharpen effects first and use this only if those don't have enough range";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

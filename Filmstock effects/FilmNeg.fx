@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-09-27
 // @Author jwrl
 // @Created 2016-05-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmNeg_640.png
@@ -13,6 +13,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -21,6 +24,7 @@ int _LwksEffectInfo
    string Description = "Film negative";
    string Category    = "Colour";
    string SubCategory = "Preset Looks";
+   string Notes       = "Simulates the look of 35 mm masked film negative";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

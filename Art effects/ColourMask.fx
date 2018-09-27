@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2017-09-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColourMask_640.png
@@ -26,6 +26,9 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,6 +37,7 @@ int _LwksEffectInfo
    string Description = "Colour mask";
    string Category    = "Colour";
    string SubCategory = "User Effects";
+   string Notes       = "This effect emulates the so-called 'Pleasantville' effect";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

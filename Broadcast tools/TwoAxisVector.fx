@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-21
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2016-06-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/Two_Axis_Vector_640.png
@@ -40,6 +40,9 @@
 //
 // Modified 21 May 2018 jwrl.
 // Corrected spurious display of _Crgb and _C_uv arrays as user parameters.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,6 +51,7 @@ int _LwksEffectInfo
    string Description = "Two-axis vector balance";
    string Category    = "User";
    string SubCategory = "Broadcast";
+   string Notes       = "Designed for fast efficient two-axis colour cast removal";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

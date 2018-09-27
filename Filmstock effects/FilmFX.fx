@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-09-27
 // @Author jwrl
 // @OriginalAuthor "Avery Lee"
 // @Created 2017-05-08
@@ -31,6 +31,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,6 +42,7 @@ int _LwksEffectInfo
    string Description = "FilmFX";
    string Category    = "Colour";
    string SubCategory = "Preset Looks";
+   string Notes       = "Simulates a range of colour film processing lab operations";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

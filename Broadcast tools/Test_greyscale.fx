@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @Released 2018-04-06
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2017-04-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/TestGreyscale_640.png
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect GreyscaleTest.fx
+// Lightworks user effect Test_greyscale.fx
 //
 // Inspired by an earlier version, this is a complete rewrite from the ground up.  There
 // are a total of ten unique patterns which can be generated.  They are three versions
@@ -28,6 +28,9 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,6 +39,7 @@ int _LwksEffectInfo
    string Description = "Test greyscale";
    string Category    = "User";
    string SubCategory = "Broadcast";
+   string Notes       = "Generates a total of ten unique greyscale test patterns in either full gamut or broadcast limited ranges";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

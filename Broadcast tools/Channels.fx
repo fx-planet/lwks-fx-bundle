@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-06
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2015-12-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640.png
@@ -20,6 +20,9 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -28,6 +31,7 @@ int _LwksEffectInfo
    string Description = "Channels";
    string Category    = "User";
    string SubCategory = "Broadcast";
+   string Notes       = "Can be used to display individual RGB channels, luminance, summed RGB, U, V and alpha channels";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

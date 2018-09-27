@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-06
+// @Released 2018-09-27
 // @Author jwrl
 // @Created 2018-04-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_640.png
@@ -43,6 +43,9 @@
 //
 // Modified 2018-07-06 jwrl.
 // Calculates halation based on frame size not pixel size.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,7 +54,7 @@ int _LwksEffectInfo
    string Description = "Filmic look 2018";
    string Category    = "Colour";
    string SubCategory = "Preset Looks";
-   string Notes       = "Simulates a filmic curve with exposure adjustment, halation and vibrance."
+   string Notes       = "Simulates a filmic curve with exposure adjustment, halation and vibrance.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

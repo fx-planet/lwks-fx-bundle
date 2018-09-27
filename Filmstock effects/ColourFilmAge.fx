@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-06
+// @Released 2018-09-27
 // @Author jwrl
 // @Created 2017-02-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColourFilmAge_640.png
@@ -47,6 +47,9 @@
 //
 // Modified 6 July 2018 jwrl.
 // Made blurring and noise generation independent of pixel size.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,6 +58,7 @@ int _LwksEffectInfo
    string Description = "Colour film aging";
    string Category    = "Colour";
    string SubCategory = "Preset Looks";
+   string Notes       = "This effect comprehensively mimics the aging of colour film stock";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

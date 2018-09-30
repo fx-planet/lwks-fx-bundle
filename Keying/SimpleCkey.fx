@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-06
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2016-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCkey_640.png
@@ -29,6 +29,9 @@
 //
 // Modified 2018-07-06:
 // Made feathering resolution-independent.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,6 +40,7 @@ int _LwksEffectInfo
    string Description = "Simple chromakey";
    string Category    = "Key";
    string SubCategory = "User Effects";
+   string Notes       = "An extremely simple chromakeyer with feathering and spill reduction";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

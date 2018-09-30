@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-07-09
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2016-05-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/70s_psych_640.png
@@ -21,6 +21,9 @@
 //
 // Modified 2018-07-09 jwrl:
 // Removed dependency on pixel size.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,6 +32,7 @@ int _LwksEffectInfo
    string Description = "70s Psychedelia";
    string Category    = "Stylize";
    string SubCategory = "Textures";
+   string Notes       = "An extreme highly adjustable posterization effect";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

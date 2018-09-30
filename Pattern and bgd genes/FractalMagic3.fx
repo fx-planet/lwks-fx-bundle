@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-09-29
 // @Author jwrl
-// @OriginalAuthor "Robert Schütze"
+// @Author trirop
 // @Created 2016-05-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/Fractal3_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMagic3.fx
 //
-// The fractal generation component was created by Robert Schütze (trirop - 07.12.2015)
-// in GLSL sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified
-// to better suit the needs of its use in this context.
+// The fractal generation component was first created by Robert Schütze (trirop) in GLSL
+// sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better
+// suit its use in this effect.
 //
 // LW 14+ version by jwrl 12 February 2017
 // SubCategory "Patterns" added.
@@ -17,6 +17,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -25,6 +28,7 @@ int _LwksEffectInfo
    string Description = "Fractal magic 3";
    string Category    = "Mattes";
    string SubCategory = "Patterns";
+   string Notes       = "Produces fractal patterns for background generation";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

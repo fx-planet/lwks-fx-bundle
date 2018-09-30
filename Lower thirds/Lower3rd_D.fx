@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-31
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdD_640.png
@@ -9,7 +9,7 @@
 // Lightworks user effect Lower3rd_D.fx
 //
 // This effect pushes a text block on from the edge of frame to reveal the lower third
-// text.  The block has a coloured edge which can be adjusted in widthe, and which
+// text.  The block has a coloured edge which can be adjusted in width, and which
 // vanishes as the block reaches its final position.
 //
 // Modified by LW user jwrl 16 March 2018
@@ -22,6 +22,9 @@
 //
 // Bugfix 31 May 2018 jwrl.
 // Corrected X direction sense of TxtPosX.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -30,6 +33,7 @@ int _LwksEffectInfo
    string Description = "Lower third D";
    string Category    = "Text";
    string SubCategory = "Lower Third Tools";
+   string Notes       = "Pushes a text block on from the edge of frame to reveal the lower third text";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

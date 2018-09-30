@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-23
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2018-03-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_640.png
@@ -28,6 +28,9 @@
 // Updated 2018-05-23:
 // Added a means of turning the background off and replacing it with black.  This
 // should help the drag and drop multitrack editors.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,6 +39,7 @@ int _LwksEffectInfo
    string Description = "New strobe";
    string Category    = "Stylize";
    string SubCategory = "User Effects";
+   string Notes       = "This strobe effect when compiled and run in version 14.5 or higher is frame accurate";
 > = 0;
 
 //-------------------------------------------------------------------------------------//

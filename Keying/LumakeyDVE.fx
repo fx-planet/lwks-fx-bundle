@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-22
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2018-03-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_640.png
@@ -53,7 +53,7 @@
 // No longer explicitly define addressing/filtering of Fg and Bg.  Defaults are OK here.
 // Changed the exit implementation - logically the same, cosmetically different.
 // Range limited the crop settings.  It's no longer possible to exceed frame boundaries.
-// Restored comments to the code to assist anyone trying to work out what the hell I did.
+// Restored comments to the code to assist anyone trying to work out what on earth I did.
 //
 // IMPORTANT ATTRIBUTION INFORMATION:
 // The code in this effect is original work by Lightworks user jwrl, and developed for
@@ -62,6 +62,9 @@
 // editor this attribution in its entirety must be included.  Negotiations to modify or
 // suspend this requirement can be undertaken by contacting jwrl at www.lwks.com, where
 // the original effect and the software on which it was designed to run may also be found.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -70,6 +73,7 @@ int _LwksEffectInfo
    string Description = "Lumakey with DVE";
    string Category    = "Key";
    string SubCategory = "Custom";
+   string Notes       = "A keyer which respects any existing foreground alpha and can pass the generated alpha to external effects";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -243,7 +247,8 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    bool addAlpha = (KeyMode - (BgMode * 2)) == ADD_ALPHA;
 
-   // Set up range limited DVE scaling.  Values of zero or below can't be manually input.
+   // Set up range limited DVE scaling.  Values of zero or below will be ignored if
+   // input manually.  The minimum value will be limited to 0.0001.
 
    float scale = pow (max ((CentreZ + 2.0) * 0.5, 0.0001), 4.0);
 
@@ -251,7 +256,8 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    float2 xy3 = ((xy1 - 0.5.xx) / scale) + float2 (-CentreX, CentreY) + 0.5.xx;
 
-   // Recover background and foreground, limiting the foreground to legal addresses
+   // Recover background and foreground, limiting the foreground to legal addresses.  This
+   // is done to ensure that the differences in cross platform edge clamping are bypassed.
 
    float4 Bgd = (BgMode == KEEP_BGD) ? tex2D (s_Background, xy2) : EMPTY;
    float4 Fgd = (xy3.x >= 0.0) && (xy3.x <= 1.0) && (xy3.y >= 0.0) && (xy3.y <= 1.0)

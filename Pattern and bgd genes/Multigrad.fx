@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2016-07-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/Multigrad_640.png
@@ -19,6 +19,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -27,6 +30,7 @@ int _LwksEffectInfo
    string Description = "Multigradient";
    string Category    = "Matte";
    string SubCategory = "Patterns";
+   string Notes       = "Creates a colour field with a wide range of possible gradients";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

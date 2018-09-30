@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-31
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdA_640.png
@@ -28,6 +28,9 @@
 // Bugfixes 31 May 2018 jwrl.
 // Corrected text legality check to prevent mirroring.
 // Corrected X direction sense of TxtPosX.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,6 +39,7 @@ int _LwksEffectInfo
    string Description = "Lower third A";
    string Category    = "Text";
    string SubCategory = "Lower Third Tools";
+   string Notes       = "Moves a coloured bar from the edge of screen and lowers or raises it to reveal text";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

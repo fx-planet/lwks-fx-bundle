@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdE_640.png
@@ -18,6 +18,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -26,6 +29,7 @@ int _LwksEffectInfo
    string Description = "Lower third E";
    string Category    = "Text";
    string SubCategory = "Lower Third Tools";
+   string Notes       = "Page turns a text overlay over a ribbon background";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

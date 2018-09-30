@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-05-31
+// @Released 2018-09-29
 // @Author jwrl
-// @OriginalAuthor baopao
+// @Author baopao
 // @Created 2016-05-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou_640.png
 //-----------------------------------------------------------------------------------------//
@@ -34,6 +34,9 @@
 // Reversed direction of action of CentreX parameter.
 // Fixed default colours not displaying.
 // Performed general code cleanup to improve efficiency.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,6 +45,7 @@ int _LwksEffectInfo
    string Description = "Lissajou stars";
    string Category    = "Mattes";
    string SubCategory = "Patterns";
+   string Notes       = "A pattern generator that creates coloured stars in Lissajou curves over a coloured background";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

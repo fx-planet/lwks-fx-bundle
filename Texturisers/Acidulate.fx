@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2016-05-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Acidulate_640.png
@@ -16,6 +16,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -24,6 +27,7 @@ int _LwksEffectInfo
    string Description = "Acidulate";
    string Category    = "Stylize";
    string SubCategory = "Textures";
+   string Notes       = "I was going to call this LSD, but this name will do";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

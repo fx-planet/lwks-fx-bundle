@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-31
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2018-03-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdG_640.png
@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Lower3rd_G.fx
 //
-// This uses a clock wipe to wipe on a box around text.  The/ box can wipe on CW or
+// This uses a clock wipe to wipe on a box around text.  The box can wipe on CW or
 // ACW, and start from the top or the bottom.  Once the box is almost complete a fill
 // colour dissolves in, along with the text.
 //
@@ -17,6 +17,9 @@
 //
 // Bugfix 31 May 2018 jwrl.
 // Corrected X direction sense of ArtPosX.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -25,6 +28,7 @@ int _LwksEffectInfo
    string Description = "Lower third G";
    string Category    = "Text";
    string SubCategory = "Lower Third Tools";
+   string Notes       = "This uses a clock wipe to wipe on a box which then reveals the text";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -280,7 +284,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Experiment_1
+technique Lower3rd_G
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Wipe;"; > 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-05-31
+// @Released 2018-09-29
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdC_640.png
@@ -20,6 +20,9 @@
 //
 // Bugfix 31 May 2018 jwrl.
 // Corrected X direction sense of ArtPosX.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -28,6 +31,7 @@ int _LwksEffectInfo
    string Description = "Lower third C";
    string Category    = "Text";
    string SubCategory = "Lower Third Tools";
+   string Notes       = "Opens a text ribbon to reveal the lower third text";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

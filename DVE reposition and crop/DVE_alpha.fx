@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-10-14
+// @Released 2018-10-16
 // @Author jwrl
 // @Author Editshare
 // @Created 2018-10-07
@@ -43,6 +43,10 @@
 // this, and it's been through too many modifications for me to track it.  That date
 // is when I cleaned the code up and commented the source.  The release date is when
 // I fully debugged the cleanup.
+//
+// Modified jwrl 2018-10-14:
+// Added code to scale the drop shadow offsets so that the same values in the X and
+// Y parameters give the same visual displacement.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -192,6 +196,8 @@ float Opacity
 #define EMPTY        0.0.xxxx    // Transparent black
 #define SHADOW_SCALE 0.2         // Carry over from Editshare original to match unity scaling
 
+float _OutputAspectRatio;
+
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
@@ -227,7 +233,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    // Now recover the scaled foreground alpha, offset by the shadow amount.  This
    // allows us to add the foreground drop shadow only where Fg alpha is present.
 
-   uv -= float2 (ShadowXOffset, ShadowYOffset) * SHADOW_SCALE;
+   uv -= float2 (ShadowXOffset, ShadowYOffset * _OutputAspectRatio) * SHADOW_SCALE;
 
    float alpha = ((uv.x < 0.0) || (uv.x > 1.0) || (uv.y < 0.0) || (uv.y > 1.0))
                  ? 0.0 : tex2D (s_Input, uv).a;

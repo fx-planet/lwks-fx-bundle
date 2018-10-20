@@ -240,17 +240,17 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |The dark side            |TheDarkSide.fx       |
 
 ## CATEGORY FOLDER: Keying
-|EFFECT              |FILE NAME        |
-|:------------------ |:--------------- |
-|Ale_ChromaKey       |ALE_ChromaKey.fx |
-|Chromakey with DVE  |ChromakeyDVE.fx  |
-|Chromakey plus      |ChromakeyPlus.fx |
-|Deltakey with blend |DeltaKeyBlend.fx |
-|DeltaMask           |DeltaMask.fx     |
-|INK                 |INK.fx           |
-|KeyDespill          |KeyDespill.fx    |
-|Lumakey with DVE    |LumakeyDVE.fx    |
-|Simple chromakey    |SimpleCkey.fx    |
+|EFFECT               |FILE NAME        |
+|:------------------- |:--------------- |
+|Ale_ChromaKey        |ALE_ChromaKey.fx |
+|Chromakey with DVE   |ChromakeyDVE.fx  |
+|Chromakey plus       |ChromakeyPlus.fx |
+|Delta key with blend |DeltaKeyBlend.fx |
+|DeltaMask            |DeltaMask.fx     |
+|INK                  |INK.fx           |
+|KeyDespill           |KeyDespill.fx    |
+|Lumakey with DVE     |LumakeyDVE.fx    |
+|Simple chromakey     |SimpleCkey.fx    |
 
 ## CATEGORY FOLDER: Lower thirds
 |EFFECT              |FILE NAME     |

@@ -1,4 +1,4 @@
-# Lightworks user Fx archive, October 14, 2018.
+# Lightworks user Fx archive, October 20, 2018.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off. Previous users of the library will of course have noticed that this library is no longer sorted by simple alphabetical order. Details of the library contents can be found at the following on-line locations. The first is sorted by order of posting and the second thread is sorted by category as is this library, and is rather more detailed.
@@ -240,16 +240,17 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |The dark side            |TheDarkSide.fx       |
 
 ## CATEGORY FOLDER: Keying
-|EFFECT             |FILE NAME        |
-|:----------------- |:--------------- |
-|Ale_ChromaKey      |ALE_ChromaKey.fx |
-|Chromakey with DVE |ChromakeyDVE.fx  |
-|Chromakey plus     |ChromakeyPlus.fx |
-|DeltaMask          |DeltaMask.fx     |
-|INK                |INK.fx           |
-|KeyDespill         |KeyDespill.fx    |
-|Lumakey with DVE   |LumakeyDVE.fx    |
-|Simple chromakey   |SimpleCkey.fx    |
+|EFFECT              |FILE NAME        |
+|:------------------ |:--------------- |
+|Ale_ChromaKey       |ALE_ChromaKey.fx |
+|Chromakey with DVE  |ChromakeyDVE.fx  |
+|Chromakey plus      |ChromakeyPlus.fx |
+|Deltakey with blend |DeltaKeyBlend.fx |
+|DeltaMask           |DeltaMask.fx     |
+|INK                 |INK.fx           |
+|KeyDespill          |KeyDespill.fx    |
+|Lumakey with DVE    |LumakeyDVE.fx    |
+|Simple chromakey    |SimpleCkey.fx    |
 
 ## CATEGORY FOLDER: Lower thirds
 |EFFECT              |FILE NAME     |

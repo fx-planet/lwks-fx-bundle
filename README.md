@@ -14,7 +14,7 @@ The effects in this ZIP file were created by Lightworks users - thank you to all
 
 In this library where alternative versions of the effects exist they are separately listed and the entry includes the path that they are in. Where necessary a Read Me file may also be included in the folder with those versions.
 
-Use of these effects is simple.
+Use of these effects is simple:
 
 1. Copy the FX file(s) that you need to your computer. Anywhere will do as long as you know where to find them.
 2. Launch Lightworks, open a project, then open the Effects panel.  In "Flexible" mode there's a button in your timeline, in "Fixed" mode you must select the VFX tab.

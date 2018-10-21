@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-07-04
+// @Released 2018-10-21
 // @Author jwrl
-// @Created 2016-03-31
+// @Created 2018-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks effect DropShadow.fx
@@ -13,34 +13,18 @@
 //
 // The effect can also output the foreground, border and drop shadow alone, with the
 // appropriate alpha channel.  When doing so any background input to the effect will not
-// be displayed.  This allows it to be used with downstream alpha processing effects.
+// be displayed.  This allows it to be used with downstream alpha handling effects.
 //
-// LW 14+ version by jwrl 11 January 2017.
-// Category changed from "Keying" to "Key", subcategory "Edge Effects" added.
+// Rewritten 21 October 2018 jwrl.
+// In the previous version of this effect there had been quite a lot of bug fixes and so
+// it had grown considerably over its lifetime.  This rewrite aims to reduce that bloat.
+// The six passes of the earlier version are now four and the maths has also been somewhat
+// simplified.  An extremely minor cross-platform bug was also found and fixed and a small
+// variation in border depth between fully sampled and square edged borders has also been
+// corrected.
 //
-// Bug fix 21 July 2017 by jwrl:
-// This addresses a cross platform issue which could cause the effect to not behave as
-// expected on Linux and Mac systems.
-//
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 3 July 2018 jwrl.
-// Simplified border generation as much as possible while correcting a mismatch between
-// sampled and square-edged defaults.
-// Changed border generation and drop shadow blur to be frame dependent rather than pixel
-// dependent.  Those settings now have the same effect regardless of frame size.
-// Reduced the number of samplers required.
-// The blur used for the drop shadow now uses the same algorithm as the border generation
-// component instead of as previously, Pascal's triangle blur.
-// Improved the resolution of the blur/rotation lookup tables.  This is a UHD/8K fix, and
-// will have little noticeable effect at lower frame sizes.
-// Altered various parameter defaults to more closely match current practice.
-//
-// Modified 4 July 2018
-// Fixed a bug in border generation causing aspect ratio not to be correctly applied.
-// Improved border antialias routine.  It's now much smoother.
+// This version is functionally identical to the version of 4 July 2018.  That was the
+// last release of the original effect.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,9 +43,9 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Part_1 : RenderColorTarget;
-texture Part_2 : RenderColorTarget;
+texture RawBdr : RenderColorTarget;
 texture Border : RenderColorTarget;
+texture Shadow : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -78,17 +62,8 @@ sampler s_Foreground = sampler_state {
 
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Part_1 = sampler_state {
-   Texture = <Part_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Part_2 = sampler_state {
-   Texture   = <Part_2>;
+sampler s_RawBorder = sampler_state {
+   Texture   = <RawBdr>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Point;
@@ -98,6 +73,15 @@ sampler s_Part_2 = sampler_state {
 
 sampler s_Border = sampler_state {
    Texture   = <Border>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Point;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler s_Shadow = sampler_state {
+   Texture = <Shadow>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Point;
@@ -116,7 +100,7 @@ float Amount
    float MaxVal = 1.0;
 > = 1.0;
 
-int B_edge
+int SetTechnique
 <
    string Group = "Border";
    string Description = "Border mode";
@@ -217,7 +201,7 @@ float4 S_colour
    bool SupportsAlpha = false;
 > = { 0.0, 0.0, 0.0, 0.0 };
 
-int SetTechnique
+int AlphaMode
 <
    string Description = "Output mode";
    string Enum = "Normal (no alpha),Foreground with alpha";
@@ -227,8 +211,7 @@ int SetTechnique
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define X_SCALE 0.005
-#define S_SCALE 0.015
+#define X_SCALE 0.5
 
 #define OFFSET  0.04
 
@@ -237,13 +220,16 @@ int SetTechnique
 float _OutputAspectRatio;
 float _OutputWidth;
 
-float2 _rot_0 [] = { { 0.0, 1.0 }, { 0.2588190451, 0.9659258263 }, { 0.5, 0.8660254038 },
-                     { 0.7071067812, 0.7071067812 }, { 0.8660254038, 0.5 },
-                     { 0.9659258263, 0.2588190451 }, { 1.0, 0.0 } };
+float _square [] = { { 0.0 }, { 0.003233578364 }, { 0.006467156728 }, { 0.009700735092 } };
 
-float2 _rot_1 [] = { { 0.1305261922, 0.9914448614 }, { 0.3826834324, 0.9238795325 },
-                     { 0.6087614290, 0.7933533403 }, { 0.7933533403, 0.6087614290 },
-                     { 0.9238795325, 0.3826834324 }, { 0.9914448614, 0.1305261922 } };
+float2 _rot_0 [] = { { 0.0, 0.01 },
+                     { 0.002588190451, 0.009659258263 }, { 0.005, 0.008660254038 },
+                     { 0.007071067812, 0.007071067812 }, { 0.008660254038, 0.005 },
+                     { 0.009659258263, 0.002588190451 }, { 0.01, 0.0 } };
+
+float2 _rot_1 [] = { { 0.001305261922, 0.009914448614 }, { 0.003826834324, 0.009238795325 },
+                     { 0.006087614290, 0.007933533403 }, { 0.007933533403, 0.006087614290 },
+                     { 0.009238795325, 0.003826834324 }, { 0.009914448614, 0.001305261922 } };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -253,85 +239,95 @@ float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
 {
    if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
-   float2 offset;
-   float2 edge = (B_edge < 2) ? float2 (1.0, _OutputAspectRatio) * X_SCALE
-                              : float2 (S_SCALE, 0.0);
+   float2 offset, edge = float2 (1.0, _OutputAspectRatio);
    float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5) * 2.0;
 
    float alpha = tex2D (s_Foreground, xy).a;
 
-   edge *= B_lock ? B_width : float2 (B_width, B_height);
+   edge *= B_lock ? B_width.xx : float2 (B_width, B_height);
 
    for (int i = 0; i < 7; i++) {
       offset = edge * _rot_0 [i];
 
-      alpha += tex2D (s_Foreground, xy + offset).a;
-      alpha += tex2D (s_Foreground, xy - offset).a;
+      alpha = max (alpha, tex2D (s_Foreground, xy + offset).a);
+      alpha = max (alpha, tex2D (s_Foreground, xy - offset).a);
 
       offset.y = -offset.y;
 
-      alpha += tex2D (s_Foreground, xy + offset).a;
-      alpha += tex2D (s_Foreground, xy - offset).a;
+      alpha = max (alpha, tex2D (s_Foreground, xy + offset).a);
+      alpha = max (alpha, tex2D (s_Foreground, xy - offset).a);
    }
 
-   return saturate (alpha).xxxx;
+   for (int i = 0; i < 6; i++) {
+      offset = edge * _rot_1 [i];
+
+      alpha = max (alpha, tex2D (s_Foreground, xy + offset).a);
+      alpha = max (alpha, tex2D (s_Foreground, xy - offset).a);
+
+      offset.y = -offset.y;
+
+      alpha = max (alpha, tex2D (s_Foreground, xy + offset).a);
+      alpha = max (alpha, tex2D (s_Foreground, xy - offset).a);
+   }
+
+   return alpha.xxxx;
 }
 
 float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
 {
    if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
-   float2 offset;
-   float2 edge = (B_edge < 2) ? float2 (1.0, _OutputAspectRatio) * X_SCALE
-                              : float2 (0.0, S_SCALE * _OutputAspectRatio);
-   float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5) * 2.0;
+   float2 offset, edge = float2 (1.0, _OutputAspectRatio);
+   float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5);
 
-   float alpha = tex2D (s_Part_1, xy).a;
+   float alpha = tex2D (s_Foreground, xy).a;
 
-   edge *= B_lock ? B_width : float2 (B_width, B_height);
+   edge *= B_lock ? B_width.xx : float2 (B_width, B_height);
 
-   for (int i = 0; i < 6; i++) {
-      offset = edge * _rot_1 [i];
+   for (int i = 0; i < 4; i++) {
+      offset.x = edge.x * _square [i];
 
-      alpha += tex2D (s_Part_1, xy + offset).a;
-      alpha += tex2D (s_Part_1, xy - offset).a;
+      for (int j = 0; j < 4; j++) {
+         offset.y = edge.y * _square [j];
 
-      offset.y = -offset.y;
+         alpha = max (alpha, tex2D (s_Foreground, xy + offset).a);
+         alpha = max (alpha, tex2D (s_Foreground, xy - offset).a);
 
-      alpha += tex2D (s_Part_1, xy + offset).a;
-      alpha += tex2D (s_Part_1, xy - offset).a;
+         offset.y = -offset.y;
+
+         alpha = max (alpha, tex2D (s_Foreground, xy + offset).a);
+         alpha = max (alpha, tex2D (s_Foreground, xy - offset).a);
+      }
    }
 
-   return saturate (alpha).xxxx;
+   return alpha.xxxx;
 }
 
-float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
+float4 ps_antialias (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Fgnd = tex2D (s_Foreground, uv);
 
    if (B_amount <= 0.0) return Fgnd;
 
-   float alpha = tex2D (s_Part_2, uv).a;
+   float alpha = tex2D (s_RawBorder, uv).a;
 
-   if ((B_edge == 0) || (B_edge == 2)) {
-      float3 xyz = float3 (1.0, 0.0, _OutputAspectRatio) / _OutputWidth;
+   float3 xyz = float3 (1.0, 0.0, _OutputAspectRatio) / _OutputWidth;
 
-      float2 xy = xyz.xz * SQRT_2;
+   float2 xy = xyz.xz * SQRT_2;
 
-      alpha += tex2D (s_Part_2, uv + xyz.xy).a;
-      alpha += tex2D (s_Part_2, uv - xyz.xy).a;
-      alpha += tex2D (s_Part_2, uv + xyz.yz).a;
-      alpha += tex2D (s_Part_2, uv - xyz.yz).a;
+   alpha += tex2D (s_RawBorder, uv + xyz.xy).a;
+   alpha += tex2D (s_RawBorder, uv - xyz.xy).a;
+   alpha += tex2D (s_RawBorder, uv + xyz.yz).a;
+   alpha += tex2D (s_RawBorder, uv - xyz.yz).a;
 
-      alpha += tex2D (s_Part_2, uv + xy).a;
-      alpha += tex2D (s_Part_2, uv - xy).a;
+   alpha += tex2D (s_RawBorder, uv + xy).a;
+   alpha += tex2D (s_RawBorder, uv - xy).a;
 
-      xy.x = -xy.x;
+   xy.x = -xy.x;
 
-      alpha += tex2D (s_Part_2, uv + xy).a;
-      alpha += tex2D (s_Part_2, uv - xy).a;
-      alpha /= 9.0;
-   }
+   alpha += tex2D (s_RawBorder, uv + xy).a;
+   alpha += tex2D (s_RawBorder, uv - xy).a;
+   alpha /= 9.0;
 
    alpha = max (Fgnd.a, alpha * B_amount);
    Fgnd  = lerp (B_colour, Fgnd, Fgnd.a);
@@ -339,14 +335,29 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
    return float4 (Fgnd.rgb, alpha);
 }
 
+float4 ps_direct (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Fgnd = tex2D (s_Foreground, uv);
+
+   if (B_amount <= 0.0) return Fgnd;
+
+   float alpha = max (Fgnd.a, tex2D (s_RawBorder, uv).a * B_amount);
+
+   Fgnd  = lerp (B_colour, Fgnd, Fgnd.a);
+
+   return float4 (Fgnd.rgb, alpha);
+}
+
 float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
-   float2 xy2, xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFSET;
+   float2 xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFSET;
 
    float alpha = tex2D (s_Border, xy1).a;
 
    if ((S_amount > 0.0) && (S_feather > 0.0)) {
+      float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
+      float2 xy2;
+
       for (int i = 0; i < 7; i++) {
          xy2 = scale * _rot_0 [i];
 
@@ -365,25 +376,24 @@ float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
    return alpha.xxxx;
 }
 
-float4 ps_feather (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s_Part_1, uv);
-
-   float2 xy, scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
-
-   float alpha = retval.a;
+   float alpha = tex2D (s_Shadow, xy1).a;
 
    if ((S_amount > 0.0) && (S_feather > 0.0)) {
+      float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
+      float2 uv;
+
       for (int i = 0; i < 6; i++) {
-         xy = scale * _rot_1 [i];
+         uv = scale * _rot_1 [i];
 
-         alpha += tex2D (s_Part_1, uv + xy).a;
-         alpha += tex2D (s_Part_1, uv - xy).a;
+         alpha += tex2D (s_Shadow, xy1 + uv).a;
+         alpha += tex2D (s_Shadow, xy1 - uv).a;
 
-         xy.y = -xy.y;
+         uv.y = -uv.y;
 
-         alpha += tex2D (s_Part_1, uv + xy).a;
-         alpha += tex2D (s_Part_1, uv - xy).a;
+         alpha += tex2D (s_Shadow, xy1 + uv).a;
+         alpha += tex2D (s_Shadow, xy1 - uv).a;
       }
 
    alpha /= 25.0;
@@ -391,82 +401,90 @@ float4 ps_feather (float2 uv : TEXCOORD1) : COLOR
 
    alpha *= S_amount;
 
-   retval = tex2D (s_Border, uv);
+   float4 retval = tex2D (s_Border, xy1);
+
    alpha  = max (alpha, retval.a);
    retval = lerp (S_colour, retval, retval.a);
+   retval.a = alpha;
+   alpha *= Amount;
 
-   return float4 (retval.rgb, alpha);
-}
+   if (AlphaMode == 1) return float4 (retval.rgb, alpha);
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
-{
-   float4 Fgd = tex2D (s_Part_2, xy1);
-   float4 Bgd = tex2D (s_Background, xy2);
-
-   float4 retval = lerp (Bgd, Fgd, Fgd.a * Amount);
-
-   return float4 (retval.rgb, 1.0);
-}
-
-float4 ps_alpha (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 retval = tex2D (s_Part_2, uv);
-
-   return float4 (retval.rgb, retval.a * Amount);
+   return lerp (tex2D (s_Background, xy2), retval, alpha);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique normal
+technique DropShadow_0
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Part_1;"; >
+   < string Script = "RenderColorTarget0 = RawBdr;"; >
    { PixelShader = compile PROFILE ps_border_A (); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Part_2;"; >
-   { PixelShader = compile PROFILE ps_border_B (); }
+   < string Script = "RenderColorTarget0 = Border;"; >
+   { PixelShader = compile PROFILE ps_antialias (); }
 
    pass P_3
-   < string Script = "RenderColorTarget0 = Border;"; >
-   { PixelShader = compile PROFILE ps_border_C (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Part_1;"; >
+   < string Script = "RenderColorTarget0 = Shadow;"; >
    { PixelShader = compile PROFILE ps_shadow (); }
 
-   pass P_5
-   < string Script = "RenderColorTarget0 = Part_2;"; >
-   { PixelShader = compile PROFILE ps_feather (); }
-
-   pass P_6
+   pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
 
-technique alpha
+technique DropShadow_1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Part_1;"; >
+   < string Script = "RenderColorTarget0 = RawBdr;"; >
    { PixelShader = compile PROFILE ps_border_A (); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Part_2;"; >
-   { PixelShader = compile PROFILE ps_border_B (); }
+   < string Script = "RenderColorTarget0 = Border;"; >
+   { PixelShader = compile PROFILE ps_direct (); }
 
    pass P_3
-   < string Script = "RenderColorTarget0 = Border;"; >
-   { PixelShader = compile PROFILE ps_border_C (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Part_1;"; >
+   < string Script = "RenderColorTarget0 = Shadow;"; >
    { PixelShader = compile PROFILE ps_shadow (); }
 
-   pass P_5
-   < string Script = "RenderColorTarget0 = Part_2;"; >
-   { PixelShader = compile PROFILE ps_feather (); }
+   pass P_4
+   { PixelShader = compile PROFILE ps_main (); }
+}
 
-   pass P_6
-   { PixelShader = compile PROFILE ps_alpha (); }
+technique DropShadow_2
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = RawBdr;"; >
+   { PixelShader = compile PROFILE ps_border_B (); }
+
+   pass P_2
+   < string Script = "RenderColorTarget0 = Border;"; >
+   { PixelShader = compile PROFILE ps_antialias (); }
+
+   pass P_3
+   < string Script = "RenderColorTarget0 = Shadow;"; >
+   { PixelShader = compile PROFILE ps_shadow (); }
+
+   pass P_4
+   { PixelShader = compile PROFILE ps_main (); }
+}
+
+technique DropShadow_3
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = RawBdr;"; >
+   { PixelShader = compile PROFILE ps_border_B (); }
+
+   pass P_2
+   < string Script = "RenderColorTarget0 = Border;"; >
+   { PixelShader = compile PROFILE ps_direct (); }
+
+   pass P_2
+   < string Script = "RenderColorTarget0 = Shadow;"; >
+   { PixelShader = compile PROFILE ps_shadow (); }
+
+   pass P_4
+   { PixelShader = compile PROFILE ps_main (); }
 }

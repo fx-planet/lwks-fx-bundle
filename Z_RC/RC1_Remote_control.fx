@@ -1,4 +1,5 @@
 // @Released 2018-06-24
+// Insignificant Released 2018-10-22 (effect Description)
 // @Author schrauber
 // @Created 2017-01-31
 // @see https://www.lwks.com/media/kunena/attachments/348533/RC_1_Five_channel_remote.png
@@ -17,9 +18,6 @@
 // The "Multiply", parameter allows the master signal to amplify, 
 // attenuate or invert the individual control channels.
 // Each channel can be set directly, and the remote control signal may also be limited.
-//
-// Limitations and Known Problems:
-// The optional effect inputs are incompatible with GPU Precision Settings "16-bit Floating Point" (Lightworks 14.5)
 //
 // Update:
 // 24 June 2018  by LW user schrauber: Compatibility with LWKS 14.5 GPU precision settings

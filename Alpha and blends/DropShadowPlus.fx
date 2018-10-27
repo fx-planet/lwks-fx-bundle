@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-10-24
+// @Released 2018-10-27
 // @Author jwrl
 // @Created 2018-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowPlus_640.png
@@ -32,6 +32,8 @@
 // "Darker colour" now works as it should.  Previously it was similar to "Linear dodge".
 // The entire "Overlay/light" category has been reworked to match Photoshop versions.
 // "Exclusion" has been fixed.  Previously it was functionally identical to "Normal".
+// "Add" has been retained as a selection for backward compatibility reasons, although
+// it is now (correctly) identical to "Linear Dodge" and uses the same code.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,6 +56,7 @@ texture Border : RenderColorTarget;
 texture Shadow : RenderColorTarget;
 
 texture Composite : RenderColorTarget;
+texture Blended   : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -90,6 +93,15 @@ sampler s_Shadow = sampler_state {
 
 sampler s_Composite = sampler_state {
    Texture   = <Composite>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Point;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler s_Blended = sampler_state {
+   Texture   = <Blended>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Point;
@@ -237,19 +249,20 @@ bool alphaMode
 #define PROFILE ps_3_0
 #endif
 
-#define BORDER_SHADOW  1
-#define FGD_BDR_SHADOW 2
-#define FGD_SHADOW     3
-#define FOREGROUND     5
-#define BORDER         6
+#define SHADOW        0
+#define BORDER_SHADOW 1
+#define FGD_SHADOW    3
+#define FGD_BORDER    4
+#define FOREGROUND    5
+#define BORDER        6
 
-#define LUMA_VAL       float3(0.299, 0.587, 0.114)
+#define LUMA_VAL      float3(0.299, 0.587, 0.114)
 
-#define X_SCALE 0.5
+#define X_SCALE       0.5
 
-#define OFFSET  0.04
+#define OFFSET        0.04
 
-#define SQRT_2  0.7071067812
+#define SQRT_2        0.7071067812
 
 float _OutputAspectRatio;
 float _OutputWidth;
@@ -503,28 +516,15 @@ float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = min (Fgd.g, Bgd.g);
    Fgd.b = min (Fgd.b, Bgd.b);
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 float4 ps_multiply (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgd = tex2D (s_Composite, xy1);
    float4 Bgd = tex2D (s_Background, xy2);
-   float4 ret = lerp (Bgd, Bgd * Fgd, Fgd.a);
 
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Bgd * Fgd, Fgd.a);
 }
 
 float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -536,14 +536,7 @@ float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    if (Fgd.g > 0.0) Fgd.g = 1.0 - ((1.0 - Bgd.g) / Fgd.g);
    if (Fgd.b > 0.0) Fgd.b = 1.0 - ((1.0 - Bgd.b) / Fgd.b);
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -553,14 +546,7 @@ float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    Fgd.rgb = saturate (Bgd.rgb + Fgd.rgb - 1.0.xxx);
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -572,14 +558,7 @@ float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    if (dot (Fgd.rgb, LUMA_VAL) > luma) Fgd.rgb = Bgd.rgb;
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 //--------------------------------------- GROUP 2 -----------------------------------------//
@@ -588,14 +567,8 @@ float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgd = tex2D (s_Composite, xy1);
    float4 Bgd = tex2D (s_Background, xy2);
-   float4 ret = lerp (Bgd, max (Fgd, Bgd), Fgd.a);
 
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, max (Fgd, Bgd), Fgd.a);
 }
 
 float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -607,14 +580,7 @@ float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Fgd.g == 1.0) ? 1.0 : Fgd.g + Bgd.g * (1.0 - Fgd.g);
    Fgd.b = (Fgd.b == 1.0) ? 1.0 : Fgd.b + Bgd.b * (1.0 - Fgd.b);
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -626,28 +592,15 @@ float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Fgd.g == 1.0) ? 1.0 : Bgd.g / (1.0 - Fgd.g);
    Fgd.b = (Fgd.b == 1.0) ? 1.0 : Bgd.b / (1.0 - Fgd.b);
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_linearDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgd = tex2D (s_Composite, xy1);
    float4 Bgd = tex2D (s_Background, xy2);
-   float4 ret = lerp (Bgd, saturate (Fgd + Bgd), Fgd.a);
 
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd + Bgd), Fgd.a);
 }
 
 float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -659,14 +612,7 @@ float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    float4 ret = (luma > dot (LUMA_VAL, Bgd.rgb)) ? Fgd : Bgd;
 
-   ret = lerp (Bgd, ret, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, ret, Fgd.a);
 }
 
 //--------------------------------------- GROUP 3 -----------------------------------------//
@@ -683,14 +629,7 @@ float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Bgd.g <= 0.5) ? retMin.g : retMax.g;
    Fgd.b = (Bgd.b <= 0.5) ? retMin.b : retMax.b;
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -708,14 +647,7 @@ float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Fgd.g <= 0.5) ? retMin.g : retMax.g;
    Fgd.b = (Fgd.b <= 0.5) ? retMin.b : retMax.b;
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -730,14 +662,7 @@ float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Fgd.g <= 0.5) ? retMin.g : retMax.g;
    Fgd.b = (Fgd.b <= 0.5) ? retMin.b : retMax.b;
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -752,14 +677,7 @@ float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Fgd.g <= 0.5) ? retMin.g : retMax.g;
    Fgd.b = (Fgd.b <= 0.5) ? retMin.b : retMax.b;
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -767,18 +685,9 @@ float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float4 Fgd = tex2D (s_Composite, xy1);
    float4 Bgd = tex2D (s_Background, xy2);
 
-   Fgd.r = Bgd.r + (2.0 * Fgd.r) - 1.0;
-   Fgd.g = Bgd.g + (2.0 * Fgd.g) - 1.0;
-   Fgd.b = Bgd.b + (2.0 * Fgd.b) - 1.0;
+   Fgd.rgb = Bgd.rgb + (2.0 * Fgd.rgb) - 1.0.xxx;
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -789,21 +698,11 @@ float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 retMax = 2.0 * Fgd.rgb;
    float3 retMin = retMax - 1.0.xxx;
 
-   if (Bgd.r > retMax.r) { Fgd.r = retMax.r; }
-   else { Fgd.r = (Bgd.r < retMin.r) ? retMin.r : Bgd.r; }
-   if (Bgd.g > retMax.g) { Fgd.g = retMax.g; }
-   else { Fgd.g = (Bgd.g < retMin.g) ? retMin.g : Bgd.g; }
-   if (Bgd.b > retMax.b) { Fgd.b = retMax.b; }
-   else { Fgd.b = (Bgd.b < retMin.b) ? retMin.b : Bgd.b; }
+   Fgd.r = (Bgd.r > retMax.r) ? retMax.r : (Bgd.r < retMin.r) ? retMin.r : Bgd.r;
+   Fgd.g = (Bgd.g > retMax.g) ? retMax.g : (Bgd.g < retMin.g) ? retMin.g : Bgd.g;
+   Fgd.b = (Bgd.b > retMax.b) ? retMax.b : (Bgd.b < retMin.b) ? retMin.b : Bgd.b;
 
-   float4 ret = lerp (Bgd, saturate (Fgd), Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -816,14 +715,7 @@ float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Fgd.g < ret.g) ? 0.0 : 1.0;
    Fgd.b = (Fgd.b < ret.b) ? 0.0 : 1.0;
 
-   ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 //--------------------------------------- GROUP 4 -----------------------------------------//
@@ -835,14 +727,7 @@ float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    Fgd.rgb = abs (Fgd.rgb - Bgd.rgb);
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 float4 ps_exclude (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -852,14 +737,7 @@ float4 ps_exclude (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    Fgd.rgb= saturate (Fgd.rgb + Bgd.rgb * (1.0.xxx - (2.0 * Fgd.rgb)));
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -869,14 +747,7 @@ float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    Fgd.rgb = saturate (Bgd.rgb - Fgd.rgb);
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -888,14 +759,7 @@ float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgd.g = (Fgd.g == 0.0) ? 1.0 : Bgd.g / Fgd.g;
    Fgd.b = (Fgd.b == 0.0) ? 1.0 : Bgd.b / Fgd.b;
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, saturate (Fgd), Fgd.a);
 }
 
 //--------------------------------------- GROUP 5 -----------------------------------------//
@@ -907,14 +771,8 @@ float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float4 ret = fn_rgb2hsv (Bgd);
 
    ret.xw = fn_rgb2hsv (Fgd).xw;
-   ret = lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 }
 
 float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -924,14 +782,8 @@ float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float4 ret = fn_rgb2hsv (Bgd);
 
    ret.yw = fn_rgb2hsv (Fgd).yw;
-   ret = lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 }
 
 float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -941,14 +793,8 @@ float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float4 ret = fn_rgb2hsv (Fgd);
 
    ret.x = fn_rgb2hsv (Bgd).x;
-   ret = lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 }
 
 float4 ps_luminance (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -958,34 +804,11 @@ float4 ps_luminance (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float4 ret = fn_rgb2hsv (Bgd);
 
    ret.zw = fn_rgb2hsv (Fgd).zw;
-   ret = lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, fn_hsv2rgb (ret), Fgd.a);
 }
 
 //------------------------------------- NON_PHOTOSHOP -------------------------------------//
-
-float4 ps_add (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
-{
-   float4 Fgd = tex2D (s_Composite, xy1);
-   float4 Bgd = tex2D (s_Background, xy2);
-
-   Fgd.rgb = saturate (Fgd.rgb + Bgd.rgb);
-
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
-}
 
 float4 ps_negate (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
@@ -994,14 +817,7 @@ float4 ps_negate (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    Fgd.rgb = 1.0.xxx - abs (1.0.xxx - Fgd.rgb - Bgd.rgb);
 
-   float4 ret = lerp (Bgd, Fgd, Fgd.a);
-
-   if (blendMode < FGD_BDR_SHADOW) {
-      Fgd = (blendMode == BORDER_SHADOW) ? tex2D (s_Foreground, xy1) : tex2D (s_Border, xy1);
-      ret = lerp (ret, Fgd, Fgd.a);
-   }
-
-   return lerp (Bgd, ret, Amount);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 //---------------------------------- End of blend modes -----------------------------------//
@@ -1013,36 +829,20 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    float4 border = tex2D (s_Border, xy1);
    float4 shadow = tex2D (s_Composite, xy1);
-   float4 blends = tex2D (s_Shadow, xy1);
+   float4 blends = tex2D (s_Blended, xy1);
+   float4 retval = (blendMode < FGD_BORDER)
+                 ? lerp (Bgd, blends, shadow.a) : lerp (Bgd, shadow, shadow.a);
 
-   if (alphaMode) {
-      blends.a = shadow.a;
-      Bgd.a = shadow.a;
-   }
+   retval = ((blendMode != SHADOW) && (blendMode != FGD_SHADOW) && (blendMode != FOREGROUND))
+          ? lerp (retval, blends, border.a) : lerp (retval, border, border.a);
 
-   if (blendMode <= FGD_BDR_SHADOW) return blends;
+   retval = ((blendMode > BORDER_SHADOW) && (blendMode < BORDER))
+          ? lerp (retval, blends, Fgd.a) : lerp (retval, Fgd, Fgd.a);
 
-   float4 ret;
+   retval   = lerp (Bgd, retval, Amount);
+   retval.a = alphaMode ? shadow.a : Bgd.a;
 
-   if (blendMode == FGD_SHADOW) {
-      ret = lerp (blends, Bgd, border.a);
-      ret = lerp (ret, border, border.a * Amount);
-      ret = lerp (ret, blends, Fgd.a);
-   }
-   else {
-      ret = lerp (Bgd, shadow, shadow.a * Amount);
-
-      if (blendMode == FOREGROUND) {
-         ret = lerp (ret, blends, Fgd.a);
-      }
-      else {
-         ret = lerp (ret, blends, border.a);
-
-         if (blendMode == BORDER) ret = lerp (ret, Fgd, Fgd.a * Amount);
-      }
-   }
-
-   return float4 (ret.rgb, Bgd.a);
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -1064,7 +864,7 @@ technique darken
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_darken (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_darken (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1074,7 +874,7 @@ technique multiply
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_multiply (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_multiply (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1084,7 +884,7 @@ technique colourBurn
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_colourBurn (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_colourBurn (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1094,7 +894,7 @@ technique linearBurn
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_linearBurn (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_linearBurn (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1104,7 +904,7 @@ technique darkerColour
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_darkerColour (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_darkerColour (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1114,7 +914,7 @@ technique lighten
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_lighten (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_lighten (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1124,7 +924,7 @@ technique screen
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_screen (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_screen (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1134,7 +934,7 @@ technique add
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_add (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_linearDodge (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1144,7 +944,7 @@ technique colourDodge
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_colourDodge (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_colourDodge (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1154,7 +954,7 @@ technique linearDodge
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_linearDodge (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_linearDodge (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1164,7 +964,7 @@ technique lighterColour
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_lighterColour (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_lighterColour (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1174,7 +974,7 @@ technique overlay
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_overlay (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_overlay (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1184,7 +984,7 @@ technique softLight
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_softLight (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_softLight (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1194,7 +994,7 @@ technique hardlight
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_hardLight (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_hardLight (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1204,7 +1004,7 @@ technique vividLight
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_vividLight (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_vividLight (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1214,7 +1014,7 @@ technique linearLight
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_linearLight (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_linearLight (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1224,7 +1024,7 @@ technique pinLight
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_pinLight (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_pinLight (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1234,7 +1034,7 @@ technique hardMix
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_hardMix (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_hardMix (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1244,7 +1044,7 @@ technique difference
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_difference (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_difference (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1254,7 +1054,7 @@ technique exclude
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_exclude (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_exclude (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1264,7 +1064,7 @@ technique subtract
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_subtract (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_subtract (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1274,7 +1074,7 @@ technique divide
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_divide (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_divide (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1284,7 +1084,7 @@ technique hue
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_hue (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_hue (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1294,7 +1094,7 @@ technique saturation
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_saturation (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_saturation (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1304,7 +1104,7 @@ technique colour
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_colour (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_colour (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1314,7 +1114,7 @@ technique luminance
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_luminance (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_luminance (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
 
@@ -1324,6 +1124,6 @@ technique negate
    pass P_2 < string Script = "RenderColorTarget0 = Border;"; > { PixelShader = compile PROFILE ps_antialias (); }
    pass P_3 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_shadow (); }
    pass P_4 < string Script = "RenderColorTarget0 = Composite;"; > { PixelShader = compile PROFILE ps_feather (); }
-   pass P_5 < string Script = "RenderColorTarget0 = Shadow;"; > { PixelShader = compile PROFILE ps_negate (); }
+   pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_negate (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }

@@ -46,8 +46,8 @@ sampler s_Background = sampler_state { Texture = <bg>; };
 int Boost
 <
    string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
-> = 0;
+   string Enum = "Crawl/Roll/Titles,Video/Stills/Image effects";
+> = 1;
 
 float Amount
 <

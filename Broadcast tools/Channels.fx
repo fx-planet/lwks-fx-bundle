@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-09-26
+// @Released 2018-11-05
 // @Author jwrl
 // @Created 2015-12-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640a.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Channels.fx
 //
@@ -23,6 +23,9 @@
 //
 // Modified by LW user jwrl 26 September 2018.
 // Added notes to header.
+//
+// Rewrite by LW user jwrl 5 November 2018.
+// Rewritten to add 2020 support and clean up code.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,16 +41,17 @@ int _LwksEffectInfo
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+texture Inp;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+sampler s_Input = sampler_state
+{
+   Texture   = <Inp>;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -57,10 +61,16 @@ sampler FgSampler = sampler_state {
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
+int SetTechnique
+<
+   string Description = "Colour space";
+   string Enum = "Rec-601 (Standard definition),Rec-709 (High definition),Rec-2020 (Ultra high definition)";
+> = 1;
+
 int Channel
 <
    string Description = "Display channel";
-   string Enum = "Bypass,Luminance 709,RGB sum,Red,Green,Blue,Alpha,Luminance (Y),B-Y (U/Pb/Cb),R-Y (V/Pr/Cr)";
+   string Enum = "Bypass,Luminance (Y),RGB sum,Red,Green,Blue,Alpha,B-Y (U/Pb/Cb),R-Y (V/Pr/Cr)";
 > = 0;
 
 bool Negative
@@ -72,43 +82,91 @@ bool Negative
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define R_MATRIX 0.2989
-#define G_MATRIX 0.5866
-#define B_MATRIX 0.1145
+#define MATRIX601  float3(0.2989, 0.5866, 0.1145)
+#define MATRIX709  float3(0.2126, 0.7152, 0.0722)
+#define MATRIX2020 float3(0.2627, 0.678,  0.0593)
 
-#define R_MAT709 0.2126
-#define G_MAT709 0.7152
-#define B_MAT709 0.0722
+#define U_601      0.564
+#define V_601      0.713
 
-#define U_SCALE  0.564
-#define V_SCALE  0.713
+#define U_709      0.635
+#define V_709      0.539
+
+#define U_2020     0.5315
+#define V_2020     0.6782
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main_601 (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 RGBval = tex2D (FgSampler, xy);
+   float4 RGBval = tex2D (s_Input, xy);
 
-   if (Channel == 1) RGBval.rgb = float ((RGBval.r * R_MAT709) + (RGBval.g * G_MAT709) + (RGBval.b * B_MAT709)).xxx;
+   if ((Channel == 1) || (Channel > 6)) {
+      float luma = dot (RGBval.rgb, MATRIX601);
+
+      if (Channel == 7) luma = saturate (((luma - RGBval.b) * U_601) + 0.5);
+      if (Channel == 8) luma = saturate (((luma - RGBval.r) * V_601) + 0.5);
+
+      RGBval.rgb = luma.xxx;
+   }
+
    if (Channel == 2) RGBval.rgb = float ((RGBval.r + RGBval.g + RGBval.b) / 3.0).xxx;
-
    if (Channel == 3) RGBval.rgb = RGBval.rrr;
    if (Channel == 4) RGBval.rgb = RGBval.ggg;
    if (Channel == 5) RGBval.rgb = RGBval.bbb;
    if (Channel == 6) RGBval.rgb = RGBval.aaa;
 
-   if (Channel >= 7) {
-      float luma = dot (RGBval.rgb, float3 (R_MATRIX, G_MATRIX, B_MATRIX));
+   if (Negative) RGBval.rgb = 1.0.xxx - RGBval.rgb;
 
-      if (Channel == 8) luma = saturate (((luma - RGBval.b) * U_SCALE) + 0.5);
-      if (Channel == 9) luma = saturate (((luma - RGBval.r) * V_SCALE) + 0.5);
+   return RGBval;
+}
+
+float4 ps_main_709 (float2 xy : TEXCOORD1) : COLOR
+{
+   float4 RGBval = tex2D (s_Input, xy);
+
+   if ((Channel == 1) || (Channel > 6)) {
+      float luma = dot (RGBval.rgb, MATRIX709);
+
+      if (Channel == 7) luma = saturate (((luma - RGBval.b) * U_709) + 0.5);
+      if (Channel == 8) luma = saturate (((luma - RGBval.r) * V_709) + 0.5);
 
       RGBval.rgb = luma.xxx;
    }
 
-   if (Negative) RGBval.rgb = 1.0 - RGBval.rgb;
+   if (Channel == 2) RGBval.rgb = float ((RGBval.r + RGBval.g + RGBval.b) / 3.0).xxx;
+   if (Channel == 3) RGBval.rgb = RGBval.rrr;
+   if (Channel == 4) RGBval.rgb = RGBval.ggg;
+   if (Channel == 5) RGBval.rgb = RGBval.bbb;
+   if (Channel == 6) RGBval.rgb = RGBval.aaa;
+
+   if (Negative) RGBval.rgb = 1.0.xxx - RGBval.rgb;
+
+   return RGBval;
+}
+
+float4 ps_main_2020 (float2 xy : TEXCOORD1) : COLOR
+{
+   float4 RGBval = tex2D (s_Input, xy);
+
+   if ((Channel == 1) || (Channel > 6)) {
+      float luma = dot (RGBval.rgb, MATRIX2020);
+
+      if (Channel == 7) luma = saturate (((luma - RGBval.b) * U_2020) + 0.5);
+      if (Channel == 8) luma = saturate (((luma - RGBval.r) * V_2020) + 0.5);
+
+      RGBval.rgb = luma.xxx;
+   }
+
+   if (Channel == 2) RGBval.rgb = float ((RGBval.r + RGBval.g + RGBval.b) / 3.0).xxx;
+   if (Channel == 3) RGBval.rgb = RGBval.rrr;
+   if (Channel == 4) RGBval.rgb = RGBval.ggg;
+   if (Channel == 5) RGBval.rgb = RGBval.bbb;
+   if (Channel == 6) RGBval.rgb = RGBval.aaa;
+
+   if (Negative) RGBval.rgb = 1.0.xxx - RGBval.rgb;
 
    return RGBval;
 }
@@ -117,8 +175,19 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique showChannels
+technique Channels_601
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   { PixelShader = compile PROFILE ps_main_601 (); }
+}
+
+technique Channels_709
+{
+   pass P_1
+   { PixelShader = compile PROFILE ps_main_709 (); }
+}
+technique Channels_2020
+{
+   pass P_1
+   { PixelShader = compile PROFILE ps_main_2020 (); }
 }

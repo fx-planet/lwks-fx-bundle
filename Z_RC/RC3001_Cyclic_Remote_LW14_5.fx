@@ -45,11 +45,9 @@
 // That also works with more remote controls.
 // If you do not need this feature, you can leave this input open.
 //
-// Note 3: 
-// For some parameters, Lightworks keyframing should not be used; other parameters should be aware of unusual behaviors:
-// E.g. A sliding change of the frames per cycle always shifts the position in the cycle, 
-// which can counteract the internally calculated positional change, 
-// which in the interplay will give a different cycle time than the Keyframe value.
+// Note 3 keyframing:
+// A sliding change of the "interval" will lead to unexpected interval times.
+// The same applies to "Start delay", for which, however, only a static value makes sense anyway.
 //
 // Note 4 : 
 // For cycle frames with decimal places, 

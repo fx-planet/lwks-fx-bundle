@@ -46,7 +46,7 @@
 // If you do not need this feature, you can leave this input open.
 //
 // Note 3 keyframing:
-// A sliding change of the "interval" will lead to unexpected interval times.
+// A sliding change of the "Interval" will lead to unexpected interval times.
 // The same applies to "Start delay", for which, however, only a static value makes sense anyway.
 //
 // Note 4 : 

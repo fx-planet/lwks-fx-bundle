@@ -3,15 +3,10 @@
 // @Created 2017-02-13
 // @see https://raw.githubusercontent.com/FxSchrauber/Images_for_effects_repository/master/RC/RC_3001_cyclic_control_Nov2018.png
 //-----------------------------------------------------------------------------------------//
-
 //
-
-//   ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
-
-//
-
-//-----------------------------------------------------------------------------------------//
 // Lightworks user effect RC3001_Cyclic_Remote_LW14_5.fx
+//
+//   ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
 //
 // This is a version of the master controller for the remote control user effects subsystem
 // adds the ability to cycle the values of the effects channels.
@@ -33,11 +28,12 @@
 //
 // 18 Feb 2017 by LW user schrauber:  Status level of the blue transmission channel updated
 //                                    (standardization with the other remote control effects)
-// Note 1: 
+//
+// Note 1, Assaying effect for correct adjustment: 
 // In particular, if a different cyclic waveform is to be set, 
 // then it is recommended to add the effect "Setting Display Unit" at the end of the routing.
 //
-// Note 2:
+// Note 2, Remote control input:
 // What is connected to the input of the effect has no effect on the effect itself. 
 // However, the input can be used to pass the remote control signal from another remote control, 
 // which is transmitting on another channel, to the output. 
@@ -45,13 +41,20 @@
 // That also works with more remote controls.
 // If you do not need this feature, you can leave this input open.
 //
-// Note 3 keyframing:
+// Note 3, Keyframing:
 // A sliding change of the "Interval" will lead to unexpected interval times.
 // The same applies to "Start delay", for which, however, only a static value makes sense anyway.
 //
-// Note 4 : 
-// For cycle frames with decimal places, 
-// the cycle progress will occasionally pause for 1 frames
+// Note 4, Export: 
+//    If the "Setting Display Unit" was used for the effect setting, then deactivate it for the final export.
+// Note 4b, when using the export option "Marked section": 
+//   * In this case, let "Start Delay" be set to 0 to avoid unexpected behavior.
+//   * The export always starts at the beginning of the interval curve. 
+//     This may differ from the playback if the starting point of the "Marked section" 
+//     is not the beginning of the segment (interval phase shift between playback and export). 
+//
+// Note 5, Cycle frames with decimal places : 
+// The cycle progress will occasionally pause for 1 frames
 // at a position to remain synchronized with the set value.
 //
 //--------------------------------------------------------------//

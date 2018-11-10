@@ -423,20 +423,20 @@ Alpha transitions are a special kind of effect, and require slightly different s
 |X-pinch                   |Wx_xPinch.fx       |
 
 ## SPECIAL REMOTE CONTROL CATEGORY FOLDER: Z_RC³
-|EFFECT                       |FILE NAME                    |
-|:--------------------------- |:--------------------------- |
-|RC 1, Five channel remote    |RC1_Remote_control.fx        |
-|RC 3001, cyclic User control |RC3001_Cyclic_Remote.fx      |
-|Settings Display Unit        |Setting_Display_Unit.fx      |
-|RC-all zoom                  |RC-all_Zoom.fx               |
-|RC Gain                      |RC_Gain.fx                   |
-|RC RGB-Gain                  |RC_Gain_RGB.fx               |
-|RC Gamma                     |RC_Gamma.fx                  |
-|RC RGB-Gamma                 |RC_Gamma_RGB.fx              |
-|RC Lift                      |RC_Lift_20180418.fx          |
-|RC RGB-Lift                  |RC_Lift_RGB_20180421.fx      |
-|RC regional zoom plus        |RC_Zoom_Regional_20180506.fx |
-|Spin Zoom, RC                |Spin_Zoom_RC_180516.fx       |
+|EFFECT                       |FILE NAME                        |
+|:--------------------------- |:------------------------------- |
+|RC 1, Five channel remote    |RC1_Remote_control.fx            |
+|RC 3001, cyclic control      |RC3001_Cyclic_Remote_LW14_5.fx   |
+|Settings Display Unit        |Setting_Display_Unit.fx          |
+|RC-all zoom                  |RC-all_Zoom.fx                   |
+|RC Gain                      |RC_Gain.fx                       |
+|RC RGB-Gain                  |RC_Gain_RGB.fx                   |
+|RC Gamma                     |RC_Gamma.fx                      |
+|RC RGB-Gamma                 |RC_Gamma_RGB.fx                  |
+|RC Lift                      |RC_Lift_20180418.fx              |
+|RC RGB-Lift                  |RC_Lift_RGB_20180421.fx          |
+|RC regional zoom plus        |RC_Zoom_Regional_20180506.fx     |
+|Spin Zoom, RC                |Spin_Zoom_RC_180516.fx           |
 
 (1) [Install and use alpha dissolves and transitions](https://www.lwks.com/index.php?option=com_kunena&func=view&catid=7&id=135923&Itemid=81#135925)
 

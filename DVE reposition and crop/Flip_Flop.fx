@@ -20,6 +20,9 @@
 //
 // Modified 29 August 2018 jwrl.
 // Added notes to header.
+//
+// Modified 13 November 2018 jwrl.
+// Edited header notes, changed "Input" to "Inp" to improve routing display.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -28,20 +31,20 @@ int _LwksEffectInfo
    string Description = "Flip/flop";
    string Category    = "DVE";
    string SubCategory = "User Effects";
-   string Notes       = "A combined flip and flop effect.";
+   string Notes       = "A reference combined flip and flop effect.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+texture Inp;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state { Texture = <Input>; };
+sampler s_Input = sampler_state { Texture = <Inp>; };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -49,7 +52,7 @@ sampler InputSampler = sampler_state { Texture = <Input>; };
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (InputSampler, (1.0).xx - uv);
+   return tex2D (s_Input, 1.0.xx - uv);
 }
 
 //-----------------------------------------------------------------------------------------//

@@ -9,9 +9,9 @@
 // This is a combination of two 2D DVEs designed to provide a drop shadow and vignette
 // effect while matching Editshare's 2D DVE parameters.  Because of the way that the
 // DVEs are created and applied they have exactly the same quality impact on the final
-// result as a single DVE would.  DVE adjusts the foreground, crop, frame and drop shadow.
-// When the foreground is cropped it can be given a textured border to create a picture
-// frame.  The border can be feathered, as can the drop shadow.  The second (hidden) DVE
+// result as a single DVE would.  The main DVE adjusts the foreground, crop, frame and
+// drop shadow.  When the foreground is cropped it can be given a bevelled textured
+// border.  The border's bevel can be feathered, as can the drop shadow.  The second DVE
 // adjusts the size and position of the foreground inside the frame.
 //
 // There is actually a third DVE of sorts that adjusts the size and position of the frame

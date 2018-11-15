@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-11-15
+// @Released 2018-11-16
 // @Author jwrl
-// @Created 2018-11-04
+// @Created 2018-11-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Framed_DVE_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Framed_DVE.fx
@@ -11,11 +11,14 @@
 // DVEs are created and applied they have exactly the same quality impact on the final
 // result as a single DVE would.  The main DVE adjusts the foreground, crop, frame and
 // drop shadow.  When the foreground is cropped it can be given a bevelled textured
-// border.  The border's bevel can be feathered, as can the drop shadow.  The second DVE
-// adjusts the size and position of the foreground inside the frame.
+// border.  The bevel can be feathered, as can the drop shadow.  The second DVE adjusts
+// the size and position of the foreground inside the frame.
 //
 // There is actually a third DVE of sorts that adjusts the size and offset of the border
 // texture.  This is extremely rudimentary though.
+//
+// Modified jwrl: 2018-11-16
+// Added antialiassing to the crop edges to reduce artefacts visible during rotation.
 //
 // TO DO LIST:
 // Given that currently X and Y rotation kills the frame depth illusion they have been
@@ -352,6 +355,7 @@ float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
    float cropY = TLcropY > BRcropY ? TLcropY : BRcropY;
 
    float2 aspect = float2 (1.0, _OutputAspectRatio);
+   float2 offset = aspect / _OutputWidth;
    float2 xyCrop = float2 (cropX, 1.0 - cropY);
    float2 ccCrop = (xyCrop + float2 (BRcropX, 1.0 - BRcropY)) * 0.5;
    float2 uvCrop = abs (uv - ccCrop);
@@ -359,20 +363,22 @@ float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
    xyCrop = abs (xyCrop - ccCrop);
 
    float2 border = max (0.0.xx, xyCrop - (aspect * BorderWidth * BORDER_SCALE));
-   float2 shadow = max (0.0.xx, xyCrop - (aspect * ShadowSoft * SHADOW_SOFT));
    float2 edge_0 = aspect * BorderWidth * BorderBevel * BEVEL_SCALE;
    float2 edge_1 = max (0.0.xx, border + edge_0);
-
-   float4 crop = ((uvCrop.x >= xyCrop.x) || (uvCrop.y >= xyCrop.y)) ? 0.0.xxxx : 1.0.xxxx;
-
-   if ((uvCrop.x >= border.x) || (uvCrop.y >= border.y)) crop.x = 0.0;
 
    edge_0 = max (0.0.xx, xyCrop - edge_0);
    edge_0 = (smoothstep (edge_0, xyCrop, uvCrop) + smoothstep (border, edge_1, uvCrop)) - 1.0.xx;
    edge_0 = (clamp (edge_0 * (1.0 + (BorderSharpness * 9.0)), -1.0.xx, 1.0.xx) * 0.5) + 0.5.xx;
-   shadow = smoothstep (shadow, xyCrop, uvCrop);
+   edge_1 = max (0.0.xx, xyCrop - (aspect * ShadowSoft * SHADOW_SOFT));
+   edge_1 = smoothstep (edge_1, xyCrop, uvCrop);
+
+   float4 crop = smoothstep (xyCrop - offset, xyCrop + offset, uvCrop).xyxy;
+
+   crop.xy = smoothstep (border - offset, border + offset, uvCrop);
+   crop.w = 1.0 - max (crop.w, crop.z);
+   crop.x = 1.0 - max (crop.x, crop.y);
    crop.y = max (edge_0.x, edge_0.y);
-   crop.z = (1.0 - shadow.x) * (1.0 - shadow.y);
+   crop.z = (1.0 - edge_1.x) * (1.0 - edge_1.y);
 
    return crop;
 }

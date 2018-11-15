@@ -14,7 +14,7 @@
 // border.  The border's bevel can be feathered, as can the drop shadow.  The second DVE
 // adjusts the size and position of the foreground inside the frame.
 //
-// There is actually a third DVE of sorts that adjusts the size and position of the frame
+// There is actually a third DVE of sorts that adjusts the size and offset of the border
 // texture.  This is extremely rudimentary though.
 //
 // TO DO LIST:

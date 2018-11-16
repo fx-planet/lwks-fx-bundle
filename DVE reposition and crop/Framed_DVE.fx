@@ -19,6 +19,7 @@
 //
 // Modified jwrl: 2018-11-16
 // Added antialiassing to the crop edges to reduce artefacts visible during rotation.
+// Added drop shadow scaling to compensate for varying shadow softness.
 //
 // TO DO LIST:
 // Given that currently X and Y rotation kills the frame depth illusion they have been
@@ -385,7 +386,7 @@ float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float tmp, ShadowX, ShadowY, scale = DVE_Scale < 0.0001 ? 10000.0 : 1.0 / DVE_Scale;
+   float temp, ShadowX, ShadowY, scale = DVE_Scale < 0.0001 ? 10000.0 : 1.0 / DVE_Scale;
 
    sincos (radians (ShadowAngle), ShadowY, ShadowX);
 
@@ -393,17 +394,17 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float2 xy2 = float2 (ShadowX, ShadowY * _OutputAspectRatio) * ShadowOffset * SHADOW_DEPTH;
 
    sincos (radians (DVE_Z_angle), xy0.x, xy0.y);
-   tmp  = (xy0.x * xy1.x * _OutputAspectRatio) - (xy0.y * xy1.y);
-   xy1  = float2 ((xy0.x * xy1.y / _OutputAspectRatio) + (xy0.y * xy1.x), -tmp);
+   temp = (xy0.y * xy1.y) - (xy0.x * xy1.x * _OutputAspectRatio);
+   xy1  = float2 ((xy0.x * xy1.y / _OutputAspectRatio) + (xy0.y * xy1.x), temp);
 
    xy1 += CENTRE - (float2 (DVE_PosX, -DVE_PosY) * 2.0);
 
    float shadow = ShadowDistance * 0.3333333333;
 
    xy2 += float2 (1.0, 1.0 / _OutputAspectRatio) * shadow * xy2 / max (xy2.x, xy2.y);
-   tmp  = (xy0.x * xy2.x * _OutputAspectRatio) - (xy0.y * xy2.y);
-   xy2  = float2 ((xy0.x * xy2.y / _OutputAspectRatio) + (xy0.y * xy2.x), -tmp);
-   xy2  = ((xy1 - xy2 - CENTRE) * (1.0 + shadow)) + CENTRE;
+   temp = (xy0.y * xy2.y) - (xy0.x * xy2.x * _OutputAspectRatio);
+   xy2  = float2 ((xy0.x * xy2.y / _OutputAspectRatio) + (xy0.y * xy2.x), temp);
+   xy2  = ((xy1 - xy2 - CENTRE) * (shadow + 1.0) / ((ShadowSoft * 0.05) + 1.0)) + CENTRE;
 
    float2 xy3 = ((xy1 - float2 (TexPosX, -TexPosY) - CENTRE) / TexScale) + CENTRE;
 

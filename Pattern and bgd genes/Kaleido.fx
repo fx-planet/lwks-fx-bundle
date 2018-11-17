@@ -1,9 +1,13 @@
 // @Maintainer jwrl
 // @Released 2018-04-08
 // @Author baopao
+// @Author nouanda
+// @Created 2013-06-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Kaleido.fx
+//
+// !!! DO NOT USE THIS VERSION !!!  Use Kaleido_B.fx instead
 //
 // Kaleido baopao (http://www.alessandrodallafontana.com) is based on the pixel shader
 // of: http://pixelshaders.com/ corrected for HLSL by Lightworks user nouanda.

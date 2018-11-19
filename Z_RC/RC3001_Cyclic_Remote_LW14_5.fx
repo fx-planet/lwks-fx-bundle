@@ -64,7 +64,7 @@
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "RC 3001, cyclic control";
+   string Description = "RC 3001, cyclic control, B";
    string Category    = "User";
    string SubCategory = "Remote Control";
    string Notes       = "Version Nov. 2018 / THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER";
@@ -74,7 +74,7 @@ int _LwksEffectInfo
 
 
 //--------------------------------------------------------------//
-// Compatibility check, and build a meaningful compiler warning
+//- Compatibility check, and build a meaningful compiler warning
 //--------------------------------------------------------------//
 
 #ifndef _LENGTH
@@ -86,7 +86,7 @@ int _LwksEffectInfo
 
 
 //--------------------------------------------------------------//
-// Inputs   &    Samplers
+//--// Inputs   &    Samplers
 //--------------------------------------------------------------//
 
 texture remote;
@@ -101,7 +101,7 @@ sampler remoteImput = sampler_state
 
 
 //-----------------------------------------------------------------------------------------//
-// Parameters
+//-- Parameters
 //-----------------------------------------------------------------------------------------//
 
 float start_time

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-11-20
 // @Author baopao
 // @Author nouanda
 // @Created 2013-06-10
@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Kaleido.fx
 //
-// !!! DO NOT USE THIS VERSION !!!  Use Kaleido_B.fx instead
+// !!! DO NOT USE !!! Use Kaleido B instead.
 //
 // Kaleido baopao (http://www.alessandrodallafontana.com) is based on the pixel shader
 // of: http://pixelshaders.com/ corrected for HLSL by Lightworks user nouanda.
@@ -18,11 +18,15 @@
 // User interface slightly altered.
 //
 // LW 14+ version by jwrl 12 February 2017
-// SubCategory "Patterns" added.
+// SubCategory "User Effects" added.
 //
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 20 November 2018 jwrl.
+// Addressed several bugs that were introduced during compatibility fixing and other
+// adjustments.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,7 +47,7 @@ texture Input;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state
+sampler s_Input = sampler_state
 {
    Texture = <Input>;
    AddressU  = Mirror;
@@ -98,10 +102,9 @@ float PosY
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define PI      3.141593
-#define TWO_PI  6.283185
+#define TWO_PI  6.2831853072
 
-#pragma warning ( disable : 3571 )
+#define MINIMUM 0.0000000001
 
 //-----------------------------------------------------------------------------------------//
 // Shader
@@ -109,24 +112,27 @@ float PosY
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float Scale = (scaleAmt < 1.0) ? (scaleAmt * 0.999) + 0.001 : scaleAmt;
-   float Zoom  = (zoomFactor < 1.0) ? (zoomFactor * 0.999) + 0.001 : zoomFactor;
+   float2 PosXY = float2 (PosX, 1.0 - PosY);
+   float2 xy = uv - PosXY;
 
-   float2 PosXY = float2 (PosX, PosY);
-   float2 xy = float2 (1.0 - uv.x, uv.y);
+   float sides = max (MINIMUM, Sides);
+   float scale = max (MINIMUM, scaleAmt);
+   float zoom  = max (MINIMUM, zoomFactor);
+   float radius = length (xy);
+   float tmp = max (MINIMUM, abs (xy.x));
 
-   xy -= PosXY;
+   xy.x = xy.x < 0.0 ? -tmp : tmp;
 
-   float radius = length (xy) / Zoom;
-   float angle  = atan2 (xy.y, xy.x);
+   float angle = atan (xy.y / xy.x);
 
-   angle = fmod (angle, TWO_PI / Sides);
-   angle = abs (angle - (PI / Sides));
+   tmp = TWO_PI / sides;
+   angle -= tmp * floor (angle / tmp);
+   angle = abs (angle - (tmp * 0.5));
 
    sincos (angle, xy.y, xy.x);
-   xy = ((xy * radius) + PosXY) / Scale;
+   xy = ((xy * radius / zoom) + PosXY) / scale;
 
-   return tex2D (FgSampler, xy);
+   return tex2D (s_Input, xy);
 }
 
 //-----------------------------------------------------------------------------------------//

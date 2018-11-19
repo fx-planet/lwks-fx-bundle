@@ -36,7 +36,7 @@
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "RC 3001, cyclic control";        
+   string Description = "OLD, RC 3001, cyclic control";        
    string Category    = "User"; 
    string SubCategory = "Remote Control"; 
 > = 0;

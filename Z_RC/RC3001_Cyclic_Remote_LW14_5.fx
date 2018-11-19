@@ -15,8 +15,9 @@
 // In particular, if there are problems with the effect, I ask for feedback.
 // The effect should theoretically work across platforms, but until 10.11.2018 only a test on Windows was possible.
 //
+//
 // Details: 
-// Note 1, Assaying effect for correct adjustment: 
+// Note 1, Assistent effect for correct adjustment: 
 // In particular, if a different cyclic waveform is to be set, 
 // then it is recommended to add the effect "Setting Display Unit" at the end of the routing.
 //
@@ -52,8 +53,7 @@
 // Simplification of the effect settings
 // Interval setting is now switchable between frames and seconds.
 // Reduction of GPU load.
-// The quality of the signal transmission should now be independent of the GPU/OS.
-//                                    
+// The quality of the signal transmission should now be independent of the GPU/OS.                                   
 //                                  
 // 3. May 2018 by LW user schrauber:
 // Unnecessary sampler settings removed.
@@ -61,6 +61,8 @@
 //
 // 18 Feb 2017 by LW user schrauber: 
 // Status level of the blue transmission channel updated (standardization with the other remote control effects)
+//
+//
 //
 //
 //--------------------------------------------------------------//
@@ -80,7 +82,7 @@ int _LwksEffectInfo
 
 
 //--------------------------------------------------------------//
-// Compatibility check, and build a meaningful compiler warning //
+// Compatibility check, and build a meaningful compiler warning
 //--------------------------------------------------------------//
 
 #ifndef _LENGTH
@@ -92,7 +94,7 @@ int _LwksEffectInfo
 
 
 //--------------------------------------------------------------//
-// Inputs   &    Samplers  //
+// Inputs   &    Samplers
 //--------------------------------------------------------------//
 
 texture remote;
@@ -107,7 +109,7 @@ sampler remoteImput = sampler_state
 
 
 //-----------------------------------------------------------------------------------------//
-// Parameters  //
+// Parameters
 //-----------------------------------------------------------------------------------------//
 
 float start_time

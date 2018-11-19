@@ -1,4 +1,4 @@
-// @Released 2018-11-10
+// @Released 2018-11-19
 // @Author schrauber
 // @Created 2017-02-13
 // @see https://raw.githubusercontent.com/FxSchrauber/Images_for_effects_repository/master/RC/RC_3001_cyclic_control_Nov2018.png
@@ -15,20 +15,7 @@
 // In particular, if there are problems with the effect, I ask for feedback.
 // The effect should theoretically work across platforms, but until 10.11.2018 only a test on Windows was possible.
 //
-// Update:
-// 10. Nov, 2018 by LW user schrauber: Simplification of the effect settings
-//                                     Interval setting is now switchable between frames and seconds.
-//                                     Reduction of GPU load.
-//                                     The quality of the signal transmission should now be independent of the GPU/OS.
-//                                    
-//                                  
-// 3. May 2018 by LW user schrauber:  Unnecessary sampler settings removed.
-//                                    Subcategory defined, effect description
-//                                    and other data relevant to the user repository added.
-//
-// 18 Feb 2017 by LW user schrauber:  Status level of the blue transmission channel updated
-//                                    (standardization with the other remote control effects)
-//
+// Details: 
 // Note 1, Assaying effect for correct adjustment: 
 // In particular, if a different cyclic waveform is to be set, 
 // then it is recommended to add the effect "Setting Display Unit" at the end of the routing.
@@ -57,6 +44,25 @@
 // The cycle progress will occasionally pause for 1 frames
 // at a position to remain synchronized with the set value.
 //
+// 
+// Update:
+// 19. Nov, 2018 by LW user schrauber: Changed effect name 
+//
+// 10. Nov, 2018 by LW user schrauber: 
+// Simplification of the effect settings
+// Interval setting is now switchable between frames and seconds.
+// Reduction of GPU load.
+// The quality of the signal transmission should now be independent of the GPU/OS.
+//                                    
+//                                  
+// 3. May 2018 by LW user schrauber:
+// Unnecessary sampler settings removed.
+// Subcategory defined, effect description and other data relevant to the user repository added.
+//
+// 18 Feb 2017 by LW user schrauber: 
+// Status level of the blue transmission channel updated (standardization with the other remote control effects)
+//
+//
 //--------------------------------------------------------------//
 // END of effect description
 //--------------------------------------------------------------//
@@ -74,7 +80,7 @@ int _LwksEffectInfo
 
 
 //--------------------------------------------------------------//
-//- Compatibility check, and build a meaningful compiler warning
+// Compatibility check, and build a meaningful compiler warning //
 //--------------------------------------------------------------//
 
 #ifndef _LENGTH
@@ -86,7 +92,7 @@ int _LwksEffectInfo
 
 
 //--------------------------------------------------------------//
-//--// Inputs   &    Samplers
+// Inputs   &    Samplers  //
 //--------------------------------------------------------------//
 
 texture remote;
@@ -101,7 +107,7 @@ sampler remoteImput = sampler_state
 
 
 //-----------------------------------------------------------------------------------------//
-//-- Parameters
+// Parameters  //
 //-----------------------------------------------------------------------------------------//
 
 float start_time

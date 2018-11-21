@@ -18,7 +18,8 @@
 // code to be consistent with other Lightworks user effects.
 //
 // Modified 22 November 2018 jwrl.
-// Fixed a bug that meant that the border was always transparent.
+// Fixed a bug that meant that the border was always transparent.  Transparency can now
+// be set by adjusting the alpha value of "Color".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,7 +52,8 @@ sampler2D TextureSampler = sampler_state {
 float4 BorderC
 <
    string Description = "Color";
-> = { 1.0, 1.0, 1.0, 0.0 };
+   bool SupportsAlpha = true;
+> = { 1.0, 1.0, 1.0, 1.0 };
 
 float BorderM
 <
@@ -109,7 +111,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1) : COLOR
    
    if ((xy1.y <= Border_T) || (xy1.x >= Border_R) || (xy1.y >=  Border_B) || (xy1.x <= Border_L))
    {
-      return float4 (BorderC.rgb, 1.0);
+      return BorderC;
    }
    
    return ret;

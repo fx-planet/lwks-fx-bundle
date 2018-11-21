@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-11-22
 // @Author rhinox202
 // @Created 2012-11-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Border_640.png
@@ -16,6 +16,9 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 22 November 2018 jwrl.
+// Fixed a bug that meant that the border was always transparent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -106,7 +109,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1) : COLOR
    
    if ((xy1.y <= Border_T) || (xy1.x >= Border_R) || (xy1.y >=  Border_B) || (xy1.x <= Border_L))
    {
-      return float4 (BorderC.rgb, 0.0);
+      return float4 (BorderC.rgb, 1.0);
    }
    
    return ret;

@@ -21,6 +21,10 @@
 // Added antialiassing to the crop edges to reduce artefacts visible during rotation.
 // Added drop shadow scaling to compensate for varying shadow softness.
 //
+// Modified jwrl: 2018-11-16
+// GitHub version only - added missing "_OutputWidth" declaration.  It was already
+// present in the forum versions.
+//
 // TO DO LIST:
 // Given that currently X and Y rotation kills the frame depth illusion they have been
 // left out.  If a true depth component could be included though, immediately several
@@ -305,12 +309,6 @@ float ShadowDistance
 #define SHADOW_DEPTH 0.1
 #define SHADOW_SOFT  0.05
 
-#define MINIMUM      0.0001.xx
-#define MINSPIN      0.0000305176
-
-#define SCALE        0.1725
-#define OFFSET       1.15
-
 #define CENTRE       0.5.xx
 
 #define BLACK        float2(0.0, 1.0).xxxy
@@ -318,6 +316,7 @@ float ShadowDistance
 #define EMPTY        0.0.xxxx
 
 float _OutputAspectRatio;
+float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Functions

@@ -2,8 +2,9 @@
 // @Released 2018-09-26
 // @Author jwrl
 // @Created 2016-06-30
+// @Licence GPLv3
 // @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_640.png
-//-----------------------------------------------------------------------------------------//
+//=========================================================================================//
 // Lightworks user effect EdgeGlow.fx
 //
 // This is an effect that can use image levels or the edges of the image to produce a
@@ -12,6 +13,10 @@
 //
 // The glow can use the native image colours, a preset colour, or two colours which cycle.
 // Cycle rate can be adjusted, and the detected edges can be mixed back over the effect.
+//=========================================================================================//
+
+//-----------------------------------------------------------------------------------------//
+// For full GPLv3 licence details see https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Version 14 update 18 Feb 2017 jwrl.
 // Added subcategory to effect header.

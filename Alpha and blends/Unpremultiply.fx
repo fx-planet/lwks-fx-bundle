@@ -1,6 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-05
 // @Author baopao
+// @Created 2015-11-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Unpremultiply_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Unpremultiply.fx
@@ -17,6 +18,9 @@
 // Modified 5 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 4 December 2018 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

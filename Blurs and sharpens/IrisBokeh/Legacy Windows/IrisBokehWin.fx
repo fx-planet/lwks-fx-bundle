@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-05-20
+// @Released 2018-12-04
 // @Author khaver
-// 
+// @Created 2012-04-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect IrisBokehWin.fx
@@ -41,6 +41,9 @@
 // Modified by LW user jwrl 20 May 2018.
 // Created a legacy version for older Windows Lightworks versions.  This version is
 // unnecessary for Linux or Mac.
+//
+// Modified by LW user jwrl 4 December 2018.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-05-20
+// @Released 2018-12-04
 // @Author khaver
-// 
+// @Created 2012-04-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect IrisBokeh.fx
@@ -42,6 +42,9 @@
 // This version will only run on versions of Lightworks better than version 14 if it is
 // compile on a Windows system.  There is a legacy version available for older Windows
 // Lightworks versions.  This restriction doesn't apply to Linux or Mac.
+//
+// Modified by LW user jwrl 4 December 2018.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

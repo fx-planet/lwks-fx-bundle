@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
-// @Author "Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)"
-// 
+// @Released 2018-12-04
+// @Author Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)
+// @Created 2012-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTiltShift_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxTiltShift.fx
@@ -48,6 +48,9 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 4 December 2018.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

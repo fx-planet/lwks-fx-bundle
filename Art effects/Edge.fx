@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-12-04
 // @Author khaver
-// 
+// @Created 2011-07-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Edge_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Edge.fx
@@ -25,6 +25,9 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified by LW user jwrl 4 December 2018.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

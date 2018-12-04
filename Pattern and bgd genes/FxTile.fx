@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-12-04
 // @Author windsturm
+// @Created 2012-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTile_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxTile.fx
@@ -25,6 +26,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified jwrl 2018-10-14:
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

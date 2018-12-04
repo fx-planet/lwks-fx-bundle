@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 4 April 2018
+// @Released 2018-12-04
 // @Author juhartik
 // @AuthorEmail "juha@linearteam.org"
-
+// @Created 2011-04-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/jh_stylize_vignette_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect jh_stylize_vignette.fx
@@ -21,6 +21,9 @@
 // Metadata header block added to better support GitHub repository.
 // VignettePS() now returns float4 instead of half4.  This ensures that 32 bit floats
 // will be properly supported as Lightworks moves into those areas.
+//
+// Modified 4 December 2018 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

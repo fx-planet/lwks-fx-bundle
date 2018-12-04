@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 4 April 2018
+// @Released 2018-12-04
 // @Author khaver
+// @Created 2011-12-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Letterbox_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Letterbox.fx
@@ -11,6 +12,9 @@
 // Modified by LW user jwrl 4 April 2018.
 // Metadata header block added to better support GitHub repository.  Description added,
 // code sections labelled.
+//
+// Modified 4 December 2018 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

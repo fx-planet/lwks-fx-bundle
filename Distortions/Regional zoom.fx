@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-12-04
 // @Author schrauber
+// @Created 2016-03-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/RegionalZoom_640.jpg
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Regional zoom.fx
@@ -15,6 +16,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Update 4 December 2018 jwrl:
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

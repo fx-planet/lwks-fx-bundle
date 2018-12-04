@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-12-04
 // @Author khaver
+// @Created 2014-11-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Water_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Water.fx
@@ -13,6 +14,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 2018-12-04 jwrl:
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

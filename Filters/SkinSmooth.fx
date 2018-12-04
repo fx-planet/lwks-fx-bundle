@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-05-30
+// @Released 2018-12-04
 // @Author baopao
+// @Created 2014-07-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SkinSmooth_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SkinSmooth.fx
@@ -36,6 +37,9 @@
 //
 // Modified 30 May 2018 jwrl.
 // Corrected a potential divide by zero bug when using the Amount parameter.
+//
+// Modified 4 December 2018 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

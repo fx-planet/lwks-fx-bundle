@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 4 April 2018
+// @Released 2018-12-04
 // @Author khaver
+// @Created 2011-12-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Polymask_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PolyMask07.fx
@@ -13,6 +14,9 @@
 //
 // 4 April 2018: Modification by jwrl
 // Metadata header block added to better support GitHub repository.
+//
+// Modified 4 December 2018 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,7 +1,8 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-12-05
 // @Author windsturm
 // @OriginalAuthor "Ian McEwan"
+// @Created 2012-10-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxRefraction_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxRefraction.fx
@@ -51,6 +52,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 2018-12-05 jwrl:
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

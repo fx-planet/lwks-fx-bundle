@@ -1,6 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-04-06
 // @Author khaver
+// @Created 2016-06-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/ExposureLeveler_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ExpoLeveler.fx
@@ -24,6 +25,9 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 6 December 2018.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

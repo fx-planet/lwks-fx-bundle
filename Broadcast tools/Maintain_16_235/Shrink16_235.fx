@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-06
+// @Released 2018-12-06
 // @Author khaver
+// @Created 2011-05-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/Shrink16_235_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Shrink16_235.fx
@@ -11,6 +12,9 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 6 December 2018.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

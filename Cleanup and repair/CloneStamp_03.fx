@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-06
+// @Released 2018-12-05
 // @Author nouanda
+// @Created 2014-10-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/CloneStamp_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CloneStamp.fx version alpha 0.03
@@ -42,6 +43,9 @@
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 2018-12-05 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

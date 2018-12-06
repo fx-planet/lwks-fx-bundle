@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-05
+// @Released 2018-12-06
 // @Author khaver
+// @Created 2014-11-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Strobe_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Strobe.fx
@@ -18,6 +19,9 @@
 //
 // Modified by LW user jwrl 5 April 2018.
 // Metadata header block added to better support GitHub repository.
+//
+// Modified 6 December 2018 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

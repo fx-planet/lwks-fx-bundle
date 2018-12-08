@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-08
+// @Released 2018-12-07
 // @Author khaver
-// @Created 2017-05-03
+// @Created 2017-05-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/VariFilmGrain_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect VariFilmGrain.fx
@@ -34,6 +34,9 @@
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 7 December 2018 jwrl.
+// Corrected creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

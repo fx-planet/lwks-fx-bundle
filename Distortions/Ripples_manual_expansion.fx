@@ -2,7 +2,7 @@
 // @Released 2018-12-04
 // @Author schrauber
 // @Created 2016-03-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ripples_manual_expansion_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/RippleManual_640.png
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Ripples_manual_expansion.fx
 //
@@ -18,6 +18,9 @@
 //
 // Modified 4 December 2018 jwrl.
 // Added creation date.
+//
+// Modified 9 December 2018 jwrl.
+// Changed screen grab.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

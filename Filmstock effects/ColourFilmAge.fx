@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-09-27
+// @Released 2018-12-10
 // @Author jwrl
 // @Created 2017-02-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColourFilmAge_640.png
@@ -50,6 +50,9 @@
 //
 // Modified 27 September 2018 jwrl.
 // Added notes to header.
+//
+// Modified 10 December 2018 jwrl.
+// Removed spurious debug lines from ps_weave() causing uncontrolled flicker.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -419,9 +422,6 @@ float4 ps_weave (float2 uv : TEXCOORD1) : COLOR
    xy += uv;
 
    float4 Fgd = tex2D (s_Chemical, xy);
-
-   scale = frac ((_Progress + 0.5) * 12345.6789);
-   Fgd = lerp (Fgd, tex2D (s_Input, xy), scale);
 
    if ((fadeDyes <= 0.0) && (Flicker <= 0.0)) return Fgd;
 

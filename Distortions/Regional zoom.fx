@@ -19,13 +19,16 @@
 //
 // Update 4 December 2018 jwrl:
 // Added creation date.
+//
+// Modified 10 December 2018 jwrl.
+// Changed category.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "Regional zoom";
-   string Category    = "Stylize";
+   string Category    = "DVE";
    string SubCategory = "Distortion";
 > = 0;
 

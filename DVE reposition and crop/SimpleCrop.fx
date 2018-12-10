@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-08-29
+// @Released 2018-12-02
 // @Author jwrl
 // @Created 2017-03-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCrop_640.png
@@ -18,6 +18,9 @@
 //
 // Modified 29 August 2018 jwrl.
 // Added notes to header.
+//
+// Modified 2 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -25,7 +28,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Simple crop";
    string Category    = "DVE";
-   string SubCategory = "Crop Presets";
+   string SubCategory = "Border and crop";
    string Notes       = "A simple crop tool with blend.";
 > = 0;
 

@@ -49,6 +49,9 @@
 // Prevented the crop function from over-running the centre point of the video.
 // Modified the background scaling to be influenced by the crop settings.
 // The blur settings are now frame based rather than pixel based.
+//
+// Modified 10 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -56,7 +59,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Format fixer";
    string Category    = "DVE";
-   string SubCategory = "User Effects";
+   string SubCategory = "Repair tools";
    string Notes       = "Designed to fix landscape/portrait format and image rotation problems";
 > = 0;
 

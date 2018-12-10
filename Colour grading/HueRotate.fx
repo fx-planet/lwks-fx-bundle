@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-04-07
+// @Released 2018-12-02
 // @Author gr00by
 // @Created 2016-06-14
 // @OriginalAuthor "Mark Ransom"
@@ -23,6 +23,9 @@
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 2 December 2018.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -30,7 +33,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Hue rotate";
    string Category    = "Colour";
-   string SubCategory = "Technical";
+   string SubCategory = "Colour Tools";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

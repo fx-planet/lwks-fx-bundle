@@ -26,6 +26,7 @@
 //
 // Modified by LW user jwrl 4 December 2018.
 // Added creation date.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -33,7 +34,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "PolyGrad";
    string Category    = "Colour";
-   string SubCategory = "Repair";
+   string SubCategory = "Colour Tools";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

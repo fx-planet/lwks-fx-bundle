@@ -26,14 +26,15 @@
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
+// Changed category and subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "HSV Wheel";
-   string Category    = "Colour";
-   string SubCategory = "Analysis";
+   string Description = "HSV wheel";
+   string Category    = "User";
+   string SubCategory = "Technical";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -4,7 +4,7 @@
 // @Created 2011-12-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColorBars_640.png
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect ColorBars.fx
+// Lightworks user effect Colorbars.fx
 //
 // This version of colorbars provides a SMPTE alternative to the Lightworks-supplied
 // EBU version.  It installs into the custom category "User", subcategory "Broadcast".
@@ -19,14 +19,15 @@
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Color Bars";
+   string Description = "Color bars";
    string Category    = "User";
-   string SubCategory = "Broadcast";
+   string SubCategory = "Technical";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

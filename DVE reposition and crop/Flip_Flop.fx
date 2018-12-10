@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-08-29
+// @Released 2018-12-05
 // @Author jwrl
 // @Created 2018-03-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flip_Flop_640.png
@@ -23,14 +23,17 @@
 //
 // Modified 13 November 2018 jwrl.
 // Edited header notes, changed "Input" to "Inp" to improve routing display.
+//
+// Modified 2018-12-05 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Flip/flop";
+   string Description = "Flip flop";
    string Category    = "DVE";
-   string SubCategory = "User Effects";
+   string SubCategory = "Repair tools";
    string Notes       = "A reference combined flip and flop effect.";
 > = 0;
 

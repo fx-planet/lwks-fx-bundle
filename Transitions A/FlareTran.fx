@@ -1,6 +1,7 @@
 // @Maintainer jwrl
-// @Released 2018-04-09
+// @Released 2018-12-19
 // @Author khaver
+// @Created 2014-08-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlareTran_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlareTran.mp4
 //-----------------------------------------------------------------------------------------//
@@ -21,6 +22,9 @@
 // Modified 9 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
+//
+// Modified 19 December 2018 jwrl.
+// Added creation date.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

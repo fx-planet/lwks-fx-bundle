@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2018-12-19
 // @Author schrauber
-// @Released 2016-08-03
+// @Created 2016-08-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flyaway_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway.mp4
 //-----------------------------------------------------------------------------------------//

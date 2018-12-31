@@ -3,7 +3,7 @@
 // @Author jwrl
 // @Created 2018-12-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/FadeUpDown_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_FadeOutIn.mp4
+// @see https://www.lwks.com/media/kunena/attachments/6375/FadeUpDown.mp4
 
 /**
 This simple effect fades any video to which it's applied up from black.  It isn't a

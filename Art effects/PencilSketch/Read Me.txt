@@ -1,0 +1,3 @@
+The PencilSketch effect will compile on any Linux or Mac version of Lightworks.  It will only compile on Windows versions
+of Lightworks later than version 14.0.  If you need it on version 14.0 or earlier and are running Windows you will find a
+version that you can use in the "Legacy Windows" folder.

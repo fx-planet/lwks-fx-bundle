@@ -216,7 +216,7 @@ def extract_metadata(path):
 
     # extract comments and transform into description
     comments, docstrings = extract_comments(lines)
-    description = '\n'.join(docstrings)
+    description = '\n'.join(docstrings).strip()
 
     lwksinfo = extract_lwksinfo_lines(lines)
     lwksinfo_parsers = (
@@ -236,11 +236,14 @@ def extract_metadata(path):
             x.startswith('//') and x.endswith('//'))) and
                 not metatag_re.findall(x))
 
-    if description:
-        metadata['description'] = description
+    if not description:
+        comments = '\n'.join(map(str.strip, comments))
 
-    if comments:
-        metadata['comments'] = '\n'.join(map(str.strip, comments))
+        # strip out comment-like lines from description
+        description = '\n'.join(
+            filter(is_not_comment_line, comments.split('\n'))).strip()
+
+    metadata['description'] = description or ''
 
     for line in lines:
         for parser in parsers:

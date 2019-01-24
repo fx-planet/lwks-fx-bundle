@@ -128,18 +128,24 @@ class CommentsExtractorMachine(dsm.StateMachine):
         initial = 'no-comment'
         transitions = (
             ('no-comment', '/', 'maybe-comment'),
-            ('maybe-comment', '*', 'multiline-comment'),
+            ('maybe-comment', '*', 'maybe-multiline-comment'),
             ('maybe-comment', '/', 'singleline-comment'),
+            ('maybe-multiline-comment', '*', 'phpdoc-block'),
             ('multiline-comment', '*', 'maybe-end-multiline-comment'),
+            ('phpdoc-block', '*', 'maybe-end-phpdoc-block'),
             ('maybe-end-multiline-comment', '/', 'no-comment'),
+            ('maybe-end-phpdoc-block', '/', 'no-comment'),
             ('singleline-comment', '\n', 'no-comment'),
         )
         fallbacks = (
             ('no-comment', 'no-comment'),
             ('maybe-comment', 'no-comment'),
-            ('maybe-end-multiline-comment', 'no-comment'),
+            ('maybe-end-multiline-comment', 'multiline-comment'),
+            ('maybe-end-phpdoc-block', 'phpdoc-block'),
+            ('maybe-multiline-comment', 'multiline-comment'),
             ('multiline-comment', 'multiline-comment'),
             ('singleline-comment', 'singleline-comment'),
+            ('phpdoc-block', 'phpdoc-block'),
         )
 
 
@@ -148,22 +154,26 @@ def extract_comments(lines):
 
     comments_found = []
     new_comment = []
+    docstrings = []
 
     def store_new_comment(state, previous):
         if state == 'no-comment' and new_comment:
             if previous == 'singleline-comment':
                 comments_found.append(''.join(new_comment[1:]))
-            if previous == 'multiline-comment':
+            if previous == 'maybe-end-multiline-comment':
                 comments_found.append(''.join(new_comment[1:-1]))
+            if previous == 'maybe-end-phpdoc-block':
+                docstrings.append(''.join(new_comment[2:-1]))
             new_comment.clear()
 
     fsm = CommentsExtractorMachine()
     fsm.when('multiline-comment', new_comment.append)
     fsm.when('singleline-comment', new_comment.append)
+    fsm.when('phpdoc-block', new_comment.append)
     fsm._eventhandler.on('change', store_new_comment)
     fsm.process_many(content)
 
-    return comments_found
+    return comments_found, docstrings
 
 
 def extract_lwksinfo_lines(lines):
@@ -205,8 +215,8 @@ def extract_metadata(path):
     lines = readlines(path)
 
     # extract comments and transform into description
-    comments = extract_comments(lines)
-    description = '\n'.join(comments)
+    comments, docstrings = extract_comments(lines)
+    description = '\n'.join(docstrings)
 
     lwksinfo = extract_lwksinfo_lines(lines)
     lwksinfo_parsers = (
@@ -226,12 +236,11 @@ def extract_metadata(path):
             x.startswith('//') and x.endswith('//'))) and
                 not metatag_re.findall(x))
 
-    # strip out comment-like lines from description
-    description = '\n'.join(
-            filter(is_not_comment_line, description.split('\n'))).strip()
-
     if description:
         metadata['description'] = description
+
+    if comments:
+        metadata['comments'] = '\n'.join(map(str.strip, comments))
 
     for line in lines:
         for parser in parsers:

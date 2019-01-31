@@ -9,24 +9,25 @@ Created in parallel with Spin Zoom, in this version some of the parameters can b
 If the remote control is not to be used, make sure that nothing or only black is connected in the "RC" input.
 Rotation centring can be either set automatically or manually.
 With automatic centring if a zoom out is performed the centre of the effect will be around the centre of input image,
-otherwise it's centred on the full frame of the output video.  <br>
- <br>
-Remote control channels: <br>
-   Channel 1: Revolutions <br>
+otherwise it's centred on the full frame of the output video.
+
+
+Remote control channels: 
+   Channel 1: Revolutions 
    Channel 2: Angle <br>
-   Channel 3: Zoom, Strength <br>
-   Channel 4: Zoom centre, vertical <br>
-   Channel 5: Zoom centre, horizontal <br>
+   Channel 3: Zoom, Strength
+   Channel 4: Zoom centre, vertical  
+   Channel 5: Zoom centre, horizontal
 The received remote control values are added to the values set within the effect.
 In order to minimize the complexity of the effect settings, a change of the remote control channels is not possible.
-When selecting the optional remote control, please note that it transmits on the right channels <br>
- <br>
+When selecting the optional remote control, please note that it transmits on the right channels
+
 Compatibility of GPU Precision (Project settings):  <br>
 A higher precision than 8-bit is recommended to make angle changes precise and fluent. <br>
 Version note: This revised version now better supports the new 
 "16-bit floating point" GPU setting than before August 2018. 
 This is especially true for remote-controlled rotation. 
-*/
+
 
 
 

@@ -21,7 +21,7 @@ The received remote control values are added to the values set within the effect
 In order to minimize the complexity of the effect settings, a change of the remote control channels is not possible.
 When selecting the optional remote control, please note that it transmits on the right channels
 
-**Compatibility of GPU Precision (Project settings):**
+*Compatibility of GPU Precision (Project settings):*
 A higher precision than 8-bit is recommended to make angle changes precise and fluent. <br>
 Version note: This revised version now better supports the new 
 "16-bit floating point" GPU setting than before August 2018. 
@@ -33,56 +33,14 @@ This is especially true for remote-controlled rotation.
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect rc_SpinZoom.fx
 //
-// Updates:
-//
-// 06 January 2018 by LW user schrauber:
-// File renamed from "Spin_Zoom_RC_180516.fx"  to "rc_SpinZoom.fx"
-// Renamed effect from "Spin Zoom, RC" to "rc Spin zoom"
-// Category changed from "DVE" to "User"
-// Subcategory changed from "User Effects" to "Remote control"
-//
-// 30 August 2018 by LW user schrauber:
-//   - Increased precision of remote control (GPU precision setting: "16-bit floating point")
-//
-// 16 May 2018 by LW user schrauber:
-//   - Remote control of the position of the effect center: The setting range now corresponds to the manual setting range.
-//   - Subcategory defined, renamed file name and data relevant to the homepage.
-//
-// 20 December 2017 by LW user schrauber: 
-//    - Fixed missing brackets added to the revolution calculation
-//    - Fixed unclear parameter setting (rotation center)
-//
-// Details:
-//
-// Setting characteristics of the zoom slider
-//    The dimensions will be doubled or halved in setting steps of 10%:
-//    -40% Dimensions / 16
-//    -30% Dimensions / 8
-//    -20% Dimensions / 4
-//    -10% Half dimensions
-//      0% No change
-//     10% Double dimensions
-//     20% Dimensions * 4
-//     30% Dimensions * 8
-//     40% Dimensions * 16
-//
-// Center of rotation:
-// Switch between automatic centering, and manually adjustable position of the axis of rotation.
-//    Automaic:
-//        Zoom >= 0: rotation center = center of the output texture
-//        Zoom <  0: rotation center = center of the input textur
-//        For this purpose, the program sections ZOOM and ROTATION are run through in different order.
-//        Zoom >= 0: first ZOOM, then ROTATION
-//        Zoom <  0: first ROTATION, then ZOOM
-//
 //--------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
    string Description = "rc Spin zoom";
-   string Category    = "User";
-   string SubCategory = "Remote control";
+   string Category    = "Test";
+   string SubCategory = "Test-Remote control";
 > = 0;
 
 

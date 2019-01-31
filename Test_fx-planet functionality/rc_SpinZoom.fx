@@ -22,12 +22,18 @@ The received remote control values are added to the values set within the effect
 In order to minimize the complexity of the effect settings, a change of the remote control channels is not possible.
 When selecting the optional remote control, please note that it transmits on the right channels
 
-Compatibility of GPU Precision (Project settings):  <br>
+
+
+
+
+
+Compatibility of GPU Precision (Project settings):
+
 A higher precision than 8-bit is recommended to make angle changes precise and fluent. <br>
 Version note: This revised version now better supports the new 
 "16-bit floating point" GPU setting than before August 2018. 
 This is especially true for remote-controlled rotation. 
-
+*/
 
 
 

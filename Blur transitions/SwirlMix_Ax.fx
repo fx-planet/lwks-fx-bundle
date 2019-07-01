@@ -2,7 +2,6 @@
 // @released 2019-02-16
 // @author jwrl
 // @created 2019-02-16
-// @see [LINK TO PNG OR JPEG]
 
 /**
  This is a swirl effect similar to schrauber's swirl mix, but optimised for titles.

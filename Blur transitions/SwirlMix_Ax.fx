@@ -24,8 +24,9 @@
 // Lightworks user effect SwirlMix.fx
 //
 // Update 2019-07-30 jwrl:
+// Fixed a major bug which meant that this could never have worked.
 // Corrected link to screen grab.
-// Removed commented out code line.
+// Changed ranges of Start and Rate to include negative values
 // Changed the name in this block from "Vortex" to "SwirlMix".  The original effect that I
 // created was called that and the name lasted.  Since schrauber beat me with his effect I
 // dropped it and concentrated on the title version development instead.
@@ -91,7 +92,7 @@ float Rate
 <
    string Group = "Swirl settings";
    string Description = "Revolutions";
-   float MinVal = 0.0;
+   float MinVal = -10.0;
    float MaxVal = 10.0;
 > = 0.0;
 
@@ -99,7 +100,7 @@ float Start
 <
    string Group = "Swirl settings";
    string Description = "Start angle";
-   float MinVal = 0.0;
+   float MinVal = -360.0;
    float MaxVal = 360.0;
 > = 0.0;
 
@@ -128,7 +129,7 @@ Bad_LW_version    // Forces a compiler error if the Lightworks version is less.
 #endif
 
 #define TWO_PI  6.2831853072
-#define PI     3.1415926536
+#define PI      3.1415926536
 #define HALF_PI 1.5707963268
 
 float _Length;
@@ -163,25 +164,25 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    if (Direction == 0) {
       amount = Amount;
-      prgrss = 1.0 - _Progress;
+      prgrss = 1.0 - Amount;
    }
    else {
       amount = 1.0 - Amount;
-      prgrss = _Progress;
+      prgrss = Amount;
    }
 
-   float angle = (length (xy1) * Amplitude * TWO_PI) + radians (Start);
+   float3 spin = float3 (Amplitude, Start, Rate) * prgrss;
+
+   float angle = (length (xy1) * spin.x * TWO_PI) + radians (spin.y);
    float scale0, scale90;
 
-   sincos (angle + (Rate * _Length * prgrss * PI), scale90, scale0);
-
-   prgrss = sin (saturate (prgrss * 3.0) * HALF_PI);
-   amount = sin (amount * HALF_PI);
+   sincos (angle + (spin.z * _Length * PI), scale90, scale0);
    xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
+   amount = sin (amount * HALF_PI);
 
    float4 Fgnd = fn_tex2D (s_Foreground, xy);
 
-   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a /* amount */ );
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
 }
 
 //-----------------------------------------------------------------------------------------//

@@ -25,7 +25,7 @@ int _LwksEffectInfo
    string Description = "Swirl mix (delta)";
    string Category    = "Mix";
    string SubCategory = "Blur transitions";
-   string Notes       = "A swirl mix effect for difference keys which always stays within frame boundaries";
+   string Notes       = "A swirl mix effect using a difference key to transition between the two sources";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

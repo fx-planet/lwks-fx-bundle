@@ -121,7 +121,7 @@ Bad_LW_version    // Forces a compiler error if the Lightworks version is less.
 #endif
 
 #define TWO_PI  6.2831853072
-#define PI     3.1415926536
+#define PI      3.1415926536
 #define HALF_PI 1.5707963268
 
 float _Length;
@@ -132,28 +132,28 @@ float _Length;
 
 float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float3 Bgd = tex2D (s_Foreground, xy1).rgb;
-   float3 Fgd = tex2D (s_Background, xy2).rgb;
+   float3 Ovl = tex2D (s_Background, xy2).rgb;
+   float3 Ref = tex2D (s_Foreground, xy1).rgb;
 
-   float kDiff = distance (Bgd.g, Fgd.g);
+   float kDiff = distance (Ref.g, Ovl.g);
 
-   kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
-   kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
+   kDiff = max (kDiff, distance (Ref.r, Ovl.r));
+   kDiff = max (kDiff, distance (Ref.b, Ovl.b));
 
-   return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Ovl, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float3 Fgd = tex2D (s_Foreground, xy1).rgb;
-   float3 Bgd = tex2D (s_Background, xy2).rgb;
+   float3 Ovl = tex2D (s_Foreground, xy1).rgb;
+   float3 Ref = tex2D (s_Background, xy2).rgb;
 
-   float kDiff = distance (Bgd.g, Fgd.g);
+   float kDiff = distance (Ref.g, Ovl.g);
 
-   kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
-   kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
+   kDiff = max (kDiff, distance (Ref.r, Ovl.r));
+   kDiff = max (kDiff, distance (Ref.b, Ovl.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Ovl, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR

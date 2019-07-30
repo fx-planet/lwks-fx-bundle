@@ -1,7 +1,8 @@
 // @maintainer jwrl
-// @released 2019-02-16
+// @released 2019-07-30
 // @author jwrl
 // @created 2019-02-16
+// @see https://www.lwks.com/media/kunena/attachments/6375/SwirlMix_Dx_640.png
 
 /**
  This is a swirl effect similar to schrauber's swirl mix, but optimised for titles.
@@ -20,9 +21,14 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Vortex.fx
+// Lightworks user effect SwirlMix.fx
 //
-//    ***  PLACE REVISION HISTORY HERE  ***
+// Update 2019-07-30 jwrl:
+// Corrected link to screen grab.
+// Removed commented out code line.
+// Changed the name in this block from "Vortex" to "SwirlMix".  The original effect that I
+// created was called that and the name lasted.  Since schrauber beat me with his effect I
+// dropped it and concentrated on the title version development instead.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -172,7 +178,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    prgrss = sin (saturate (prgrss * 3.0) * HALF_PI);
    amount = sin (amount * HALF_PI);
    xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
-//   xy = lerp (uv, xy, prgrss);
 
    float4 Fgnd = fn_tex2D (s_Foreground, xy);
 
@@ -183,7 +188,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Vortex
+technique SwirlMix
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }

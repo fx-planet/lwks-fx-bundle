@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2019-07-31
 // @Author jwrl
 // @Created 2016-02-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/MatteKey_640.png
@@ -36,6 +36,11 @@ well enough for feathering.
 //
 // Modified 23 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 31 July 2019 by user jwrl:
+// Changed the output mode to provide four options: matte and alpha, foreground and alpha,
+// matte over foreground and foreground over background.
+// Allowed the opacity adjustment to control the alpha output in all modes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -62,37 +67,11 @@ texture blurIn2 : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler matteSampler = sampler_state
-{
-   Texture   = <Mat>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Matte = sampler_state { Texture = <Mat>; };
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler FgSampler = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler blur1Sampler = sampler_state
+sampler s_Blur_1 = sampler_state
 {
    Texture   = <blurIn1>;
    AddressU  = Mirror;
@@ -102,7 +81,7 @@ sampler blur1Sampler = sampler_state
    MipFilter = Linear;
 };
 
-sampler blur2Sampler = sampler_state
+sampler s_Blur_2 = sampler_state
 {
    Texture   = <blurIn2>;
    AddressU  = Mirror;
@@ -163,10 +142,11 @@ float Slope
    float MaxVal = 1.0;
 > = 0.5;
 
-bool AlphaChan
+int AlphaChan
 <
-   string Description = "Output foreground and alpha only";
-> = false;
+   string Description = "Output";
+   string Enum = "Matte and alpha only,Foreground and alpha only,Matte over foreground,Foreground over background";
+> = 3;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -193,9 +173,9 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 invertMatte (float2 xy : TEXCOORD1) : COLOR
+float4 ps_invert (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (matteSampler, xy);
+   float4 retval = tex2D (s_Matte, xy);
 
    if (matteAlpha) { retval = float4 (retval.aaa, 1.0); }
    else { retval = float2 ((retval.r * R_VAL) + (retval.g * G_VAL) + (retval.b * B_VAL), 1.0).xxxy ;};
@@ -203,9 +183,9 @@ float4 invertMatte (float2 xy : TEXCOORD1) : COLOR
    return float4 (Invert ? retval : 1.0.xxxx - retval);
 }
 
-float4 boxBlur_1 (float2 xy : TEXCOORD1) : COLOR
+float4 ps_blur_1 (float2 xy : TEXCOORD1) : COLOR
 {
-   if (preBlur == 0.0) return tex2D (blur1Sampler, xy);
+   if (preBlur == 0.0) return tex2D (s_Blur_1, xy);
 
    float4 retval = 0.0.xxxx;
 
@@ -219,10 +199,10 @@ float4 boxBlur_1 (float2 xy : TEXCOORD1) : COLOR
    for (int i = 0; i < SAMPLE_1_2; i++) {
       xy1 = offs_1 * i;
       xy2 = offs_2 * i;
-      retval += tex2D (blur1Sampler, xy - xy1);
-      retval += tex2D (blur1Sampler, xy + xy1);
-      retval += tex2D (blur1Sampler, xy - xy2);
-      retval += tex2D (blur1Sampler, xy + xy2);
+      retval += tex2D (s_Blur_1, xy - xy1);
+      retval += tex2D (s_Blur_1, xy + xy1);
+      retval += tex2D (s_Blur_1, xy - xy2);
+      retval += tex2D (s_Blur_1, xy + xy2);
    }
 
    retval /= MAXSAMPLE_1_2;
@@ -230,9 +210,9 @@ float4 boxBlur_1 (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 boxBlur_2 (float2 xy : TEXCOORD1) : COLOR
+float4 ps_blur_2 (float2 xy : TEXCOORD1) : COLOR
 {
-   if (preBlur == 0.0) return tex2D (blur2Sampler, xy);
+   if (preBlur == 0.0) return tex2D (s_Blur_2, xy);
 
    float4 retval = 0.0.xxxx;
 
@@ -244,10 +224,10 @@ float4 boxBlur_2 (float2 xy : TEXCOORD1) : COLOR
    for (int i = 0; i < SAMPLE_1_2; i++) {
       xy1 = offs_1 * i;
       xy2 = offs_2 * i;
-      retval += tex2D (blur2Sampler, xy - xy1);
-      retval += tex2D (blur2Sampler, xy + xy1);
-      retval += tex2D (blur2Sampler, xy - xy2);
-      retval += tex2D (blur2Sampler, xy + xy2);
+      retval += tex2D (s_Blur_2, xy - xy1);
+      retval += tex2D (s_Blur_2, xy + xy1);
+      retval += tex2D (s_Blur_2, xy - xy2);
+      retval += tex2D (s_Blur_2, xy + xy2);
    }
 
    retval /= MAXSAMPLE_1_2;
@@ -255,9 +235,9 @@ float4 boxBlur_2 (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 blur_X (float2 xy : TEXCOORD1) : COLOR
+float4 ps_blur_3 (float2 xy : TEXCOORD1) : COLOR
 {
-   if (preBlur == 0.0) return tex2D (blur1Sampler, xy);
+   if (preBlur == 0.0) return tex2D (s_Blur_1, xy);
 
    float4 retval = 0.0.xxxx;
 
@@ -266,8 +246,8 @@ float4 blur_X (float2 xy : TEXCOORD1) : COLOR
 
    for (int i = 0; i < SAMPLE_3_4; i++) {
       xy1 = offset * i;
-      retval += tex2D (blur1Sampler, xy - xy1);
-      retval += tex2D (blur1Sampler, xy + xy1);
+      retval += tex2D (s_Blur_1, xy - xy1);
+      retval += tex2D (s_Blur_1, xy + xy1);
    }
 
    retval /= MAXSAMPLE_3_4;
@@ -275,9 +255,9 @@ float4 blur_X (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 blur_Y (float2 xy : TEXCOORD1) : COLOR
+float4 ps_blur_4 (float2 xy : TEXCOORD1) : COLOR
 {
-   if (preBlur == 0.0) return tex2D (blur2Sampler, xy);
+   if (preBlur == 0.0) return tex2D (s_Blur_2, xy);
 
    float4 retval = 0.0.xxxx;
 
@@ -286,8 +266,8 @@ float4 blur_Y (float2 xy : TEXCOORD1) : COLOR
 
    for (int i = 0; i < SAMPLE_3_4; i++) {
       xy2 = offs_2 * i;
-      retval += tex2D (blur2Sampler, xy - xy2);
-      retval += tex2D (blur2Sampler, xy + xy2);
+      retval += tex2D (s_Blur_2, xy - xy2);
+      retval += tex2D (s_Blur_2, xy + xy2);
    }
 
    retval /= MAXSAMPLE_3_4;
@@ -295,25 +275,23 @@ float4 blur_Y (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 matte_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (FgSampler, xy1);
-   float4 bgImg  = tex2D (BgSampler, xy2);
+   float4 Fgnd = ((AlphaChan == 0) || (AlphaChan == 2)) ? tex2D (s_Matte, uv) : tex2D (s_Foreground, uv);
+   float4 Bgnd = (AlphaChan == 2) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
 
-   float alpha  = tex2D (blur1Sampler, xy3).x;
+   float alpha  = tex2D (s_Blur_1, uv).x;
    float range  = Slope * 0.5;
    float keyMin = max (0.0, clipLevel - range);
    float keyMax = min (1.0, clipLevel + range);
 
-   retval.a = smoothstep (keyMin, keyMax, alpha);
+   Fgnd.a = smoothstep (keyMin, keyMax, alpha) * opacity;
 
-   if (!AlphaChan) {
-      alpha *= opacity;
-      retval = lerp (bgImg, retval, retval.a);
-      retval.a = 1.0;
-   }
+   if (AlphaChan < 2) { return Fgnd; };
 
-   return retval;
+   Fgnd = lerp (Bgnd, Fgnd, Fgnd.a);
+
+   return float4 (Fgnd.rgb, 1.0);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -324,42 +302,42 @@ technique standardFeather
 {
    pass P_1
    < string Script = "RenderColorTarget0 = blurIn1;"; >
-   { PixelShader = compile PROFILE invertMatte (); }
+   { PixelShader = compile PROFILE ps_invert (); }
 
    pass P_2
    < string Script = "RenderColorTarget0 = blurIn2;"; >
-   { PixelShader = compile PROFILE boxBlur_1 (); }
+   { PixelShader = compile PROFILE ps_blur_1 (); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = blurIn1;"; >
-   { PixelShader = compile PROFILE boxBlur_2 (); }
+   { PixelShader = compile PROFILE ps_blur_2 (); }
 
    pass P_4
-   { PixelShader = compile PROFILE matte_gen (); }
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique extendFeather
 {
    pass P_1
    < string Script = "RenderColorTarget0 = blurIn1;"; >
-   { PixelShader = compile PROFILE invertMatte (); }
+   { PixelShader = compile PROFILE ps_invert (); }
 
    pass P_2
    < string Script = "RenderColorTarget0 = blurIn2;"; >
-   { PixelShader = compile PROFILE boxBlur_1 (); }
+   { PixelShader = compile PROFILE ps_blur_1 (); }
 
    pass P_3
    < string Script = "RenderColorTarget0 = blurIn1;"; >
-   { PixelShader = compile PROFILE boxBlur_2 (); }
+   { PixelShader = compile PROFILE ps_blur_2 (); }
 
    pass P_4
    < string Script = "RenderColorTarget0 = blurIn2;"; >
-   { PixelShader = compile PROFILE blur_X (); }
+   { PixelShader = compile PROFILE ps_blur_3 (); }
 
    pass P_5
    < string Script = "RenderColorTarget0 = blurIn1;"; >
-   { PixelShader = compile PROFILE blur_Y (); }
+   { PixelShader = compile PROFILE ps_blur_4 (); }
 
    pass P_6
-   { PixelShader = compile PROFILE matte_gen (); }
+   { PixelShader = compile PROFILE ps_main (); }
 }

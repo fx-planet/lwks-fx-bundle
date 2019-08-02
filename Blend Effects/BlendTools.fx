@@ -11,12 +11,12 @@
  feathered.  Feathering only works within the existing alpha boundaries and is based on
  the algorithm used in the "Super blur" effect.
 
- As well as the alpha adjustments the video may be premultiplied, and transparency and
+ As well as the alpha adjustments the video may be unpremultiplied, and transparency and
  opacity may be adjusted.  Those last two behave in different ways: "Transparency" adjusts
  the key channel background transparency, and "Opacity" is a standard key opacity control.
- The premultiply settings when used with the key from black modes will only be applied
- after level adjustment regardless of the actual setting.  It's impossible to do it before
- because there is no alpha channel available at that stage.
+ The unpremultiply settings when used with the key from black modes will only be applied
+ after level adjustment regardless of the actual point selected.  It's impossible to do it
+ before because there is no alpha channel available at that stage.
 
  The effect has been placed in the "Mix" category because it's felt to be closer to the
  blend effect supplied with Lightworks than it is to any of the key effects.  That said,
@@ -170,27 +170,24 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
    float4 Fgd = tex2D (s_Foreground, uv);
    float4 K = (pow (Fgd, 1.0 / a_Gamma) * a_Gain) + a_Bright.xxxx;
 
-   int premul = a_Premul;
+   int unpremul = a_Premul;
+
+   K.a -= 0.5;
+   K   *= a_Contrast;
 
    if (KeyMode > 1) {
-      K *= a_Contrast;
       K.a = saturate ((K.r + K.g + K.b) * 2.0);
-      Fgd.a = K.a;
 
-      if (a_Premul == 1) premul = 2;
+      if (a_Premul == 1) unpremul++;
    }
-   else {
-      K.a -= 0.5;
-      K.a *= a_Contrast;
-      K.a += 0.5;
-   }
+   else K.a += 0.5;
 
-   if (premul == 1) Fgd.rgb /= Fgd.a;
+   if (unpremul == 1) Fgd.rgb /= Fgd.a;
 
-   Fgd.a = ((KeyMode == 2) || (KeyMode == 0)) ? K.a : 1.0 - K.a;
+   Fgd.a = ((KeyMode == 0) || (KeyMode == 2)) ? K.a : 1.0 - K.a;
    Fgd.a = saturate (lerp (1.0, Fgd.a, a_Amount));
 
-   if (premul == 2) Fgd.rgb /= Fgd.a;
+   if (unpremul == 2) Fgd.rgb /= Fgd.a;
 
    return Fgd;
 }

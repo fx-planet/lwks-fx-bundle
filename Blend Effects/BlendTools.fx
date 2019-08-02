@@ -1,25 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2019-02-08
 // @Author jwrl
 // @Created 2018-07-02
-// @see https://www.lwks.com/media/kunena/attachments/6375/BlendTools_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Blend_Tools_640.png
 
 /**
-Blend tools are predominantly a combination of two earlier effects, "Adjustable blend"
-and "Alpha adjust", both of which have now been withdrawn.  The feathering section is
-taken from the "Super blur" effect.
+ Blend tools is an effect that is designed to help if the alpha channel may not be quite
+ as required or to generate alpha from absolute black.  The alpha channel may be inverted,
+ gamma, gain, contrast and brightness can be adjusted, and the alpha channel may also be
+ feathered.  Feathering only works within the existing alpha boundaries and is based on
+ the algorithm used in the "Super blur" effect.
 
-The effect is designed to help if the alpha channel may not be quite as required.  The
-alpha channel may be inverted, gamma, gain, contrast and brightness can be adjusted,
-and the alpha channel may also be feathered.  Feathering only works within the existing
-alpha boundaries.
+ As well as the alpha adjustments the video may be premultiplied, and transparency and
+ opacity may be adjusted.  Those last two behave in different ways: "Transparency" adjusts
+ the key channel background transparency, and "Opacity" is a standard key opacity control.
+ The premultiply settings when used with the key from black modes will only be applied
+ after level adjustment regardless of the actual setting.  It's impossible to do it before
+ because there is no alpha channel available at that stage.
 
-As well as the alpha adjustments the video may be premultiplied, and transparency and
-opacity may be adjusted.  Those last two behave in different ways: "Transparency" adjusts
-the key channel background transparency, and "Opacity" is a standard key opacity control.
-
-The effect has been placed in the "Mix" category because it's felt to be closer to the
-blend effect supplied with Lightworks than it is to any of the key effects.
+ The effect has been placed in the "Mix" category because it's felt to be closer to the
+ blend effect supplied with Lightworks than it is to any of the key effects.  That said,
+ it is possible to export just the foreground with the processed alpha.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -29,6 +30,10 @@ blend effect supplied with Lightworks than it is to any of the key effects.
 // Renamed effect from "Key tools" to "Blend tools".
 // Changed subcategory to "Blend Effects".
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 2 August 2019 jwrl.
+// Added the ability to generate the alpha channel from luminance.
+// Added the ability to export just the foreground with the processed alpha.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,7 +42,7 @@ int _LwksEffectInfo
    string Description = "Blend tools";
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
-   string Notes       = "Provides a wide range of blend and key adjustments";
+   string Notes       = "Provides a wide range of blend and key adjustments including generation of alpha from black";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -47,13 +52,18 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
+texture Key : RenderColorTarget;
+
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
+
+sampler s_Key = sampler_state
 {
-   Texture   = <Fg>;
+   Texture   = <Key>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -61,16 +71,15 @@ sampler s_Foreground = sampler_state
    MipFilter = Linear;
 };
 
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-bool Invert
+int KeyMode
 <
-   string Description = "Invert alpha";
-> = false;
+   string Description = "Key mode";
+   string Enum = "Standard key,Inverted key,Key from black,Inverted black key";
+> = 0;
 
 float Opacity
 <
@@ -134,10 +143,11 @@ float a_Feather
    float MaxVal = 1.0;
 > = 0.0;
 
-bool a_Show
+int a_Mode
 <
-   string Description = "Show alpha channel";
-> = false;
+   string Description = "Output mode";
+   string Enum = "Blend foreground over background,Export foreground with alpha,Show alpha channel"; 
+> = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -155,45 +165,71 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (s_Foreground, xy1);
+   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 K = (pow (Fgd, 1.0 / a_Gamma) * a_Gain) + a_Bright.xxxx;
 
-   float alpha, beta = Invert ? 1.0 - Fgd.a : Fgd.a;
+   int premul = a_Premul;
 
-   if (a_Premul == 1) Fgd.rgb /= beta;
+   if (KeyMode > 1) {
+      K *= a_Contrast;
+      K.a = saturate ((K.r + K.g + K.b) * 2.0);
+      Fgd.a = K.a;
 
-   alpha = ((((pow (beta, 1.0 / a_Gamma) * a_Gain) + a_Bright) - 0.5) * a_Contrast) + 0.5;
-   beta  = alpha;
-   alpha = saturate (lerp (1.0, beta, a_Amount));
+      if (a_Premul == 1) premul = 2;
+   }
+   else {
+      K.a -= 0.5;
+      K.a *= a_Contrast;
+      K.a += 0.5;
+   }
 
-   if (a_Premul == 2) Fgd.rgb /= alpha;
+   if (premul == 1) Fgd.rgb /= Fgd.a;
+
+   Fgd.a = ((KeyMode == 2) || (KeyMode == 0)) ? K.a : 1.0 - K.a;
+   Fgd.a = saturate (lerp (1.0, Fgd.a, a_Amount));
+
+   if (premul == 2) Fgd.rgb /= Fgd.a;
+
+   return Fgd;
+}
+
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Fgd = tex2D (s_Key, uv);
+
+   float alpha = Fgd.a;
 
    if (a_Feather > 0.0) {
-      float2 uv, radius = float2 (1.0, _OutputAspectRatio) * a_Feather * RADIUS;
+      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * a_Feather * RADIUS;
 
       float angle = 0.0;
 
       for (int i = 0; i < LOOP; i++) {
-         sincos (angle, uv.x, uv.y);
-         uv *= radius;
-         alpha += tex2D (s_Foreground, xy1 + uv).a;
-         alpha += tex2D (s_Foreground, xy1 - uv).a;
-         uv += uv;
-         alpha += tex2D (s_Foreground, xy1 + uv).a;
-         alpha += tex2D (s_Foreground, xy1 - uv).a;
+         sincos (angle, xy.x, xy.y);
+         xy *= radius;
+         alpha += tex2D (s_Key, uv + xy).a;
+         alpha += tex2D (s_Key, uv - xy).a;
+         xy += xy;
+         alpha += tex2D (s_Key, uv + xy).a;
+         alpha += tex2D (s_Key, uv - xy).a;
          angle += ANGLE;
       }
 
       alpha *= (1.0 + a_Feather) / DIVIDE;
       alpha -= a_Feather;
 
-      alpha = min (saturate (alpha), beta);
+      alpha = min (saturate (alpha), Fgd.a);
    }
 
-   if (a_Show) return alpha.xxxx;
+   Fgd.a = alpha * Opacity;
 
-   return float4 (lerp (tex2D (s_Background, xy2), Fgd, alpha * Opacity).rgb, alpha);
+   if (a_Mode == 1) return Fgd;
+
+   if (a_Mode == 2) return float4 (Fgd.aaa, 1.0);
+
+   return float4 (lerp (tex2D (s_Background, uv), Fgd, Fgd.a).rgb, 1.0);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -202,6 +238,10 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique BlendTools
 {
-   pass P_1 { PixelShader = compile PROFILE ps_main (); }
-}
+   pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
+}

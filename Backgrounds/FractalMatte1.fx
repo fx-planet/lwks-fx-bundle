@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2019-08-03
 // @Author jwrl
 // @Author trirop
 // @Created 2016-05-08
@@ -12,7 +12,7 @@ Fractal matte 1 produces backgrounds generated from fractal patterns.
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMatte1.fx
 //
-// The fractal generation component was first created by Robert Schütze (trirop) in GLSL
+// The fractal generation component was first created by Robert SchÃ¼tze (trirop) in GLSL
 // sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better
 // suit its use in this effect.
 //
@@ -32,6 +32,9 @@ Fractal matte 1 produces backgrounds generated from fractal patterns.
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 3 August 2019 jwrl.
+// Corrected matte generation so that it remains stable without an input.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,33 +50,16 @@ int _LwksEffectInfo
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+texture Inp;
 
-texture FracOut : RenderColorTarget;
+texture Matte : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Frac_Sampler = sampler_state
-{
-   Texture   = <FracOut>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Input = sampler_state { Texture = <Inp>; };
+sampler s_Matte = sampler_state { Texture = <Matte>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -209,7 +195,7 @@ float _Progress;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
+float4 ps_fractals (float2 uv : TEXCOORD) : COLOR
 {
    float progress = ((_Progress + StartPoint) * PI_2) / sqrt (SCL_RATE + 1.0 - (SCL_RATE * Rate));
    float2 seed = float2 (cos (progress) * 0.3, sin (progress) * 0.5) + 0.5;
@@ -224,10 +210,10 @@ float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
    return float4 (saturate (retval), 1.0);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD, float2 xy : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (InputSampler, uv);
-   float4 retval = tex2D (Frac_Sampler, uv);
+   float4 Fgd = tex2D (s_Input, xy);
+   float4 retval = tex2D (s_Matte, uv);
 
    float luma   = dot (retval.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
    float buffer = dot (Colour.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
@@ -272,18 +258,12 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique FractalMatte1
+technique FractalMatte_1
 {
-   pass Pass_one
-   <
-      string Script = "RenderColorTarget0 = FracOut;";
-   >
-   {
-      PixelShader = compile PROFILE ps_fractals ();
-   }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_fractals (); }
 
-   pass Pass_two
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }

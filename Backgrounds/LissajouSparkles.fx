@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2019-08-03
 // @Author jwrl
 // @Author baopao
 // @Created 2016-05-14
@@ -51,6 +51,9 @@ A legacy version is available for users in that position.
 // Changed subcategory.
 // Inverted speed setting.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 3 August 2019 jwrl.
+// Corrected matte generation so that it remains stable without an input.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -75,15 +78,7 @@ texture Bgd : RenderColorTarget;
 //-----------------------------------------------------------------------------------------//
 
 sampler s_Input = sampler_state { Texture = <Inp>; };
-
-sampler s_Background = sampler_state {
-   Texture   = <Bgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Background = sampler_state { Texture = <Bgd>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -228,16 +223,16 @@ float _Progress;
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_background (float2 uv : TEXCOORD1) : COLOR
+float4 ps_background (float2 uv : TEXCOORD, float2 xy : TEXCOORD1) : COLOR
 {
    float4 topRow = lerp (topLeft, topRight, uv.x);
    float4 botRow = lerp (botLeft, botRight, uv.x);
    float4 cField = lerp (topRow, botRow, uv.y);
 
-   return lerp (cField, tex2D (s_Input, uv), extBgd);
+   return lerp (cField, tex2D (s_Input, xy), extBgd);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD, float2 UV : TEXCOORD1) : COLOR
 {
    float4 fgdPat = fgdColour;
 
@@ -268,7 +263,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    fgdPat.rgb *= sum;
    sum = saturate ((sum * 1.5) - 0.25);
 
-   return lerp (tex2D (s_Background, uv), fgdPat, sum);
+   return lerp (tex2D (s_Background, UV), fgdPat, sum);
 }
 
 //-----------------------------------------------------------------------------------------//

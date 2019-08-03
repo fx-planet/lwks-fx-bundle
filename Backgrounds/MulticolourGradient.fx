@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2019-08-03
 // @Author jwrl
 // @Created 2016-07-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/Multigrad_640.png
@@ -32,6 +32,9 @@ If the gradient blends to the centre, the position of the centre point is fully 
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 3 August 2019 jwrl.
+// Corrected matte generation so that it remains stable without an input.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,21 +50,16 @@ int _LwksEffectInfo
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+texture Inp;
+
+texture Matte : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Input = sampler_state { Texture = <Inp>; };
+sampler s_Matte = sampler_state { Texture = <Matte>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -136,12 +134,12 @@ float4 botRight
 // Pixel Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_0 (float2 uv : TEXCOORD) : COLOR
 {
-   return lerp (tex2D (FgSampler, uv), topLeft, Amount);
+   return topLeft;
 }
 
-float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_1 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_1, buff_2;
    float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
@@ -158,13 +156,10 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
             (vert >= 1.0) ? uv.y / 2.0 :
             (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
-   float4 Fgd = tex2D (FgSampler, uv);
-   float4 gradient = lerp (topLeft, topRight, horiz);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (topLeft, topRight, horiz);
 }
 
-float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_2 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_1, buff_2;
    float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
@@ -182,13 +177,10 @@ float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
    buff_2 = 1.0 - buff_2;
    vert = lerp (buff_1, buff_2, buff_0);
 
-   float4 Fgd = tex2D (FgSampler, uv);
-   float4 gradient = lerp (topLeft, topRight, horiz);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (topLeft, topRight, horiz);
 }
 
-float4 ps_main_3 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_3 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_1, buff_2;
    float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
@@ -209,13 +201,10 @@ float4 ps_main_3 (float2 uv : TEXCOORD1) : COLOR
    buff_2 = 1.0 - buff_2;
    vert = lerp (buff_1, buff_2, buff_0);
 
-   float4 Fgd = tex2D (FgSampler, uv);
-   float4 gradient = lerp (topLeft, botLeft, vert);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (topLeft, botLeft, vert);
 }
 
-float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_4 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_1, buff_2;
    float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
@@ -234,13 +223,10 @@ float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
 
    vert = sin (PI * buff_0);
 
-   float4 Fgd = tex2D (FgSampler, uv);
-   float4 gradient = lerp (topLeft, botLeft, vert);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (topLeft, botLeft, vert);
 }
 
-float4 ps_main_5 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_5 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_1, buff_2;
    float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
@@ -261,16 +247,13 @@ float4 ps_main_5 (float2 uv : TEXCOORD1) : COLOR
    buff_2 = 1.0 - buff_2;
    vert = lerp (buff_1, buff_2, buff_0);
 
-   float4 Fgd      = tex2D (FgSampler, uv);
    float4 gradient = lerp (topLeft, topRight, horiz);
    float4 botRow   = lerp (botLeft, botRight, horiz);
 
-   gradient = lerp (gradient, botRow, vert);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (gradient, botRow, vert);
 }
 
-float4 ps_main_6 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_6 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
                   (OffsX >= 1.0)  ? uv.x / 2.0 :
@@ -285,16 +268,13 @@ float4 ps_main_6 (float2 uv : TEXCOORD1) : COLOR
 
    vert = sin (PI * buff_0);
 
-   float4 Fgd      = tex2D (FgSampler, uv);
    float4 gradient = lerp (topLeft, topRight, horiz);
    float4 botRow   = lerp (botLeft, botRight, horiz);
 
-   gradient = lerp (gradient, botRow, vert);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (gradient, botRow, vert);
 }
 
-float4 ps_main_7 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_7 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_1, buff_2;
    float buff_0 = (OffsX <= 0.0) ? (uv.x / 2.0) + 0.5 :
@@ -313,16 +293,13 @@ float4 ps_main_7 (float2 uv : TEXCOORD1) : COLOR
 
    vert = sin (PI * buff_0);
 
-   float4 Fgd      = tex2D (FgSampler, uv);
    float4 gradient = lerp (topLeft, topRight, horiz);
    float4 botRow   = lerp (botLeft, botRight, horiz);
 
-   gradient = lerp (gradient, botRow, vert);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (gradient, botRow, vert);
 }
 
-float4 ps_main_8 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_8 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_1, buff_2;
    float buff_0 = (OffsX <= 0.0) ? (uv.x / 2.0) + 0.5 :
@@ -340,16 +317,13 @@ float4 ps_main_8 (float2 uv : TEXCOORD1) : COLOR
    buff_2 = 1.0 - buff_2;
    vert = lerp (buff_1, buff_2, buff_0);
 
-   float4 Fgd      = tex2D (FgSampler, uv);
    float4 gradient = lerp (topLeft, topRight, horiz);
    float4 botRow   = lerp (botLeft, botRight, horiz);
 
-   gradient = lerp (gradient, botRow, vert);
-
-   return lerp (Fgd, gradient, Amount);
+   return lerp (gradient, botRow, vert);
 }
 
-float4 ps_main_9 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_matte_9 (float2 uv : TEXCOORD) : COLOR
 {
    float buff_0 = (OffsX <= 0.0) ? (uv.x / 2.0) + 0.5 :
                   (OffsX >= 1.0) ? uv.x / 2.0 :
@@ -364,12 +338,14 @@ float4 ps_main_9 (float2 uv : TEXCOORD1) : COLOR
 
    vert = sin (PI * buff_0);
 
-   float4 Fgd = tex2D (FgSampler, uv);
    float4 gradient = lerp (topLeft, topRight, horiz);
 
-   gradient = lerp (topLeft, gradient, vert);
+   return lerp (topLeft, gradient, vert);
+}
 
-   return lerp (Fgd, gradient, Amount);
+float4 ps_main (float2 uv : TEXCOORD, float2 xy : TEXCOORD1) : COLOR
+{
+   return lerp (tex2D (s_Input, xy), tex2D (s_Matte, uv), Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -379,59 +355,99 @@ float4 ps_main_9 (float2 uv : TEXCOORD1) : COLOR
 technique Flat
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_0 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_0 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Horizontal_L_R
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_1 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_1 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Horizontal_C
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_2 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_2 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Vertical_T_B
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_3 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_3 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Vertical_C
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_4 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_4 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Four_way
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_5 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_5 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Four_way_C
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_6 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_6 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Four_way_H_C
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_7 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_7 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Four_way_V_C
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_8 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_8 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }
 
 technique Radial
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_9 (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_matte_9 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main (); }
 }

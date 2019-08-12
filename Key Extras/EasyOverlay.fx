@@ -3,7 +3,7 @@
 // @Author hugly
 // @Author schrauber
 // @Created 2019-08-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/EasyOverlay_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/EasyOverlay_640a.png
 
 /**
  'EasyOverlay' is a luminance keyer for overlays which show luminance

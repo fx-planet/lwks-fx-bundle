@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2019-08-13
 // @Author idealsceneprod (Val Gameiro)
 // @Created 2014-12-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/FourTone_640.png
@@ -29,6 +29,10 @@ colour values are all adjustable.
 // Added creation date.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 13 August 2019 jwrl.
+// Removed explicit declaration of clamp addressing to deal with the ClampToEdge cross
+// platform bug.  The effect now defaults to the correct addressing mode.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -53,21 +57,13 @@ texture Blur1 : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler InputSampler = sampler_state { Texture = <Input>; };
 
 sampler ThresholdSampler = sampler_state
 {
    Texture = <ThresholdTexture>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -76,8 +72,8 @@ sampler ThresholdSampler = sampler_state
 sampler BlurSampler = sampler_state
 {
    Texture = <Blur1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

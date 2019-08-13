@@ -6,7 +6,7 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/EasyOverlay_640a.png
 
 /**
- 'EasyOverlay' is a luminance keyer for overlays which show luminance
+ 'Easy overlay' is a luminance keyer for overlays which show luminance
  for transparency, i.e. full transparency appears as solid black in
  the overlay. The keyer works also on overlays with an alpha channel.
  It reveals transparency using a black&white mask created from the
@@ -28,7 +28,7 @@
 
 int _LwksEffectInfo
 <  string EffectGroup = "GenericPixelShader";
-   string Description = "EasyOverlay";
+   string Description = "Easy overlay";
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "For overlays where luminance represents transparency";

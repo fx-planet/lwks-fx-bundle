@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2019-08-16
 // @Author jwrl
 // @Created 2018-11-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/PosterPaint_640.png
 
 /**
-Poster paint (PosterPaintFx) is an effect that posterizes the image.  The adjustment runs
-from 0 to 20, with zero providing two steps of posterization (black and white) and twenty
-giving normal video.  The input video can be graded prior to the posterization process.
-The posterized colours can be set to either switch on giving a hard edge, or smoothly blend.
+ Poster paint (PosterPaintFx) is an effect that posterizes the image.  The adjustment runs
+ from 0 to 20, with zero providing two steps of posterization (black and white) and twenty
+ giving normal video.  The input video can be graded prior to the posterization process.
+ The posterized colours can be set to either switch on giving a hard edge, or smoothly blend.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect PosterPaintFx.fx
+// Lightworks user effect PosterPaint.fx
 //
 // Modified 23 December 2018 jwrl.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 16 August 2019 jwrl.
+// Corrected cross-platform bug which broke the effect in the Linux/OS-X world.
+// Changed inpput adjustment settings to always on or affected by posterization.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -24,7 +28,7 @@ int _LwksEffectInfo
    string Description = "Poster paint";
    string Category    = "Colour";
    string SubCategory = "Art Effects";
-   string Notes       = "An adjustable posterize effect";
+   string Notes       = "A fully adjustable posterize effect";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -97,9 +101,9 @@ float Saturation
 int RampGrade
 <
    string Group = "Input adjustment";
-   string Description = "Input adjustment changes as posterization changes";
-   string Enum = "By switching on,By fading on";
-> = 1;
+   string Description = "Input settings";
+   string Enum = "Are always active,Increase from zero as poster steps reduce";
+> = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -111,20 +115,34 @@ int RampGrade
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float fn_makeRGB (float hue, float a, float b)
+float3 fn_HSLtoRGB (float3 HSL)
 {
-   float Hue = hue;
+   float3 RGB;
 
-   if (Hue < 0.0) Hue += 1.0;
-   if (Hue > 1.0) Hue -= 1.0;
+   float dif = HSL.y - HSL.z;
 
-   Hue *= 6.0;
+   RGB.r = HSL.x + ONE_THIRD;
+   RGB.b = HSL.x - ONE_THIRD;
 
-   if (Hue < 1.0) { return b + (a - b) * Hue; }
-   else if (Hue < 3.0) { return a; }
-   else if (Hue < 4.0) { return b + (a - b) * (4.0 - Hue); }
+   RGB.r = (RGB.r < 0.0) ? RGB.r + 1.0 : (RGB.r > 1.0) ? RGB.r - 1.0 : RGB.r;
+   RGB.g = (HSL.x < 0.0) ? HSL.x + 1.0 : (HSL.x > 1.0) ? HSL.x - 1.0 : HSL.x;
+   RGB.b = (RGB.b < 0.0) ? RGB.b + 1.0 : (RGB.b > 1.0) ? RGB.b - 1.0 : RGB.b;
 
-   return b;
+   RGB *= 6.0;
+
+   RGB.r = (RGB.r < 1.0) ? (RGB.r * dif) + HSL.z :
+           (RGB.r < 3.0) ? HSL.y :
+           (RGB.r < 4.0) ? ((4.0 - RGB.r) * dif) + HSL.z : HSL.z;
+
+   RGB.g = (RGB.g < 1.0) ? (RGB.g * dif) + HSL.z :
+           (RGB.g < 3.0) ? HSL.y :
+           (RGB.g < 4.0) ? ((4.0 - RGB.g) * dif) + HSL.z : HSL.z;
+
+   RGB.b = (RGB.b < 1.0) ? (RGB.b * dif) + HSL.z :
+           (RGB.b < 3.0) ? HSL.y :
+           (RGB.b < 4.0) ? ((4.0 - RGB.b) * dif) + HSL.z : HSL.z;
+
+   return RGB;
 }
 
 float3 fn_RGBtoHSL (float3 RGB)
@@ -159,35 +177,30 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float4 RGB = tex2D (s_Foreground, uv);
 
-   float posterize = max (floor (Amount + 2.0), 1.0);
+   float3 proc = (((pow (RGB.rgb, 1.0 / Gamma) * Gain) + (Brightness - 0.5).xxx) * Contrast) + 0.5.xxx;
 
-   posterize *= 0.5;
+   float posterize = max (floor (Amount + 2.0), 1.0) * 0.5;
+   float A = (RampGrade == 1) ? saturate (2.75 - (posterize * 0.25)) : 1.0;
 
-   if (posterize < 11.0) {
-      float3 HSL = ((((pow (RGB.rgb, 1.0 / Gamma ) * Gain ) + Brightness) - 0.5.xxx) * Contrast) + 0.5.xxx;
+   float3 HSL = fn_RGBtoHSL (lerp (RGB.rgb, proc, A));
 
-      float A = (RampGrade == 1) ? saturate (2.75 - (posterize * 0.25)) : 1.0;
+   HSL.y = saturate (HSL.y * lerp (1.0, Saturation, A));
+   HSL.x = frac (HSL.x + (A * HueAngle / 360.0));
 
-      HSL = lerp (RGB.rgb, HSL, A);
-      HSL = fn_RGBtoHSL (HSL);
-      HSL.y = saturate (HSL.y * lerp (1.0, Saturation, A));
+   if (Amount < 20.0) {
       HSL.yz = saturate (round (HSL.yz * posterize) / posterize);
 
       if (HSL.y == 0.0) return float4 (HSL.zzz, RGB.a);
 
-      HSL.x = frac (HSL.x + (A * HueAngle / 360.0));
       posterize *= 6.0;
       HSL.x = saturate (round (HSL.x * posterize) / posterize);
-
-      A = HSL.y * HSL.z;
-      A = (HSL.z < 0.5) ? HSL.z + A : (HSL.y + HSL.z) - A;
-
-      float B = (2.0 * HSL.z) - A;
-
-      RGB.r = fn_makeRGB (HSL.x + ONE_THIRD, A, B);
-      RGB.g = fn_makeRGB (HSL.x, A, B);
-      RGB.b = fn_makeRGB (HSL.x - ONE_THIRD, A, B);
    }
+
+   float S = HSL.y * HSL.z;
+
+   HSL.y = (HSL.z < 0.5) ? HSL.z + S : (HSL.y + HSL.z) - S;
+   HSL.z = (2.0 * HSL.z) - HSL.y;
+   RGB.rgb = fn_HSLtoRGB (HSL);
 
    return RGB;
 }
@@ -196,9 +209,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique PosterPaintFx
+technique PosterPaint
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

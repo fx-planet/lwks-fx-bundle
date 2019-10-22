@@ -1,26 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2019-10-22
 // @Author jwrl
 // @Created 2018-06-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/AnamorphicFx_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/AnamorphicTools_640.png
 
 /**
-This effect is a comprehensive toolbox to support anamorphic video.  It automatically
-pillarboxes or letterboxes, depending on the aspect ratio selected.  It also has the
-ability to pan and scan - in that mode there is no pillarbox or letterbox.  Instead
-the frame is filled and the pan and scan control is used to pan or tilt within the
-corrected frame.  That control will never overrun the frame boundary, and will always
-be scaled to work across the full control range.  This ensures that maximum precision
-for pan and scan positioning is always available.
+ This effect is a comprehensive toolbox to support anamorphic video.  It automatically
+ pillarboxes or letterboxes, depending on the aspect ratio selected.  It also has the
+ ability to pan and scan - in that mode there is no pillarbox or letterbox.  Instead
+ the frame is filled and the pan and scan control is used to pan or tilt within the
+ corrected frame.  That control will never overrun the frame boundary, and will always
+ be scaled to work across the full control range.  This ensures that maximum precision
+ for pan and scan positioning is always available.
 
-Finally, a letterbox function is provided to clean up anything unwanted.  This is
-applied after everything else, and cannot be zoomed or positioned. A comprehensive
-range of preset aspect ratios is provided, but if they don't meet the need custom
-aspect ratios from 1:2 (0.5:1) to 4:1 can be set manually.
+ Finally, a letterbox function is provided to clean up anything unwanted.  This is
+ applied after everything else, and cannot be zoomed or positioned. A comprehensive
+ range of preset aspect ratios is provided, but if they don't meet the need custom
+ aspect ratios from 1:2 (0.5:1) to 4:1 can be set manually.
 
-NOTE:  Where letterbox or pillarbox boundaries are exceeded the alpha channel will be
-set to zero.  That means that the output of this effect can be blended with background
-layers using Blend, DVEs and the like.
+ NOTE:  Either or both of the anamorphic and letterbox sections can be bypassed if the
+ user requires just one or the other.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -45,6 +44,9 @@ layers using Blend, DVEs and the like.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 22 Oct 2019 by user jwrl:
+// Changed letterbox crop to opaque.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -76,7 +78,7 @@ sampler s_Input = sampler_state
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define EMPTY (0.0).xxxx
+#define BLACK float2(0.0, 1.0).xxxy
 
 float _OutputAspectRatio;
 
@@ -203,7 +205,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    xy1 += 0.5.xx;
 
-   float4 retval = max (xy2.x, xy2.y) > 0.5 ? EMPTY : tex2D (s_Input, xy1);
+   float4 retval = max (xy2.x, xy2.y) <= 0.5 ? tex2D (s_Input, xy1) : BLACK;
 
    if (Letterbox != 0) {
       xy2 = abs (uv - 0.5.xx);
@@ -216,7 +218,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       if (ratio < 1.0) xy2.x /= ratio;
       else xy2.y *= ratio;
 
-      if (max (xy2.x, xy2.y) > 0.5) return EMPTY;
+      if (max (xy2.x, xy2.y) > 0.5) return BLACK;
    }
 
    return retval;

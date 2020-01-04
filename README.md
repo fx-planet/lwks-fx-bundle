@@ -1,4 +1,4 @@
-# Lightworks user Fx library, November 6, 2019.
+# Lightworks user Fx library, January 4, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -230,11 +230,18 @@ If you need to use two effects that have the same name, simply open one of them 
 |Chromatic aberration fixer    |ChromaticAbFixer.fx     |
 |Clone stamp                   |CloneStamp.fx           |
 |Cubic lens distortion         |CubicLensDistortion.fx  |
-|Flip flop                     |FlipFlop.fx             |
 |Format fixer                  |FormatFixer.fx          |
 |Pixel fixer                   |PixelFixer.fx           |
 |Social media formatter        |SocialMedia.fx          |
 |Warped stretch                |WarpedStretch.fx        |
+
+## CATEGORY FOLDER: Simple Tools
+|EFFECT                        |FILE NAME               |
+|:---------------------------- |:---------------------- |
+|Flip flop                     |FlipFlop.fx             |
+|Key out black                 |KeyOutBlack.fx          |
+|Title blend fix               |TitleFix.fx             |
+|Vibrance                      |Vibrance.fx             |
 
 ## CATEGORY FOLDER: Special Effects
 |EFFECT                        |FILE NAME               |

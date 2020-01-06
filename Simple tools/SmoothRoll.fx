@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-01-05
+// @Released 2020-01-06
 // @Author jwrl
 // @Created 2020-01-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/SmoothRoll_640.png
@@ -12,6 +12,9 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SmoothRoll.fx
+//
+// Modified 6 January 2020 by user jwrl:
+// Changed blur from linear to a bi-directional 6 tap gaussian blur.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -71,10 +74,11 @@ float Smoothing
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define SAMPLES   15
-#define SAMPSCALE 31
+#define STRENGTH  0.00125
 
-#define STRENGTH  0.000675
+float _OutputAspectRatio;
+
+float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -95,19 +99,36 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_main_R (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = tex2D (s_Title, xy1);
+   float4 Fgnd = tex2D (s_Title, xy1) * _gaussian [0];
 
-   float2 xy = 0.0.xx;
+   float2 uv = float2 (0.0, Smoothing * _OutputAspectRatio * STRENGTH);
+   float2 xy = xy1 + uv;
 
-   float blurOffset = Smoothing * STRENGTH;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
 
-   for (int i = 0; i < SAMPLES; i++) {
-      xy.y += blurOffset;
-      Fgnd += tex2D (s_Title, xy - xy1);
-      Fgnd += tex2D (s_Title, xy + xy1);
-   }
+   xy = xy1 - uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
 
-   Fgnd  /= SAMPSCALE;
    Fgnd.a = pow (Fgnd.a, 0.5);
 
    return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
@@ -115,19 +136,36 @@ float4 ps_main_R (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_main_C (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = tex2D (s_Title, xy1);
+   float4 Fgnd = tex2D (s_Title, xy1) * _gaussian [0];
 
-   float2 xy = 0.0.xx;
+   float2 uv = float2 (Smoothing * STRENGTH, 0.0);
+   float2 xy = xy1 + uv;
 
-   float blurOffset = Smoothing * STRENGTH;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   xy += uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
 
-   for (int i = 0; i < SAMPLES; i++) {
-      xy.x += blurOffset;
-      Fgnd += tex2D (s_Title, xy - xy1);
-      Fgnd += tex2D (s_Title, xy + xy1);
-   }
+   xy = xy1 - uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   xy -= uv;
+   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
 
-   Fgnd  /= SAMPSCALE;
    Fgnd.a = pow (Fgnd.a, 0.5);
 
    return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
@@ -156,4 +194,3 @@ technique SmoothRoll_O
    pass P_2
    { PixelShader = compile PROFILE ps_main_C (); }
 }
-

@@ -6,8 +6,10 @@
 
 /**
  This effect provides a simple means of smoothing the movement of a credit roll or crawl.
- It does this by applying a small amount of directional blur to the title.  No action is
- required apart from adjusting the smoothing to give the best looking result.
+ It does this by applying a small amount of directional blur to the title.
+
+ Simply add this effect after your roll or crawl.  No action is required apart from
+ adjusting the smoothing to give the best looking result and selecting roll or crawl mode.
 */
 
 //-----------------------------------------------------------------------------------------//

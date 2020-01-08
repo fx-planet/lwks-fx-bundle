@@ -1,4 +1,4 @@
-# Lightworks user Fx library, January 5, 2020.
+# Lightworks user Fx library, January 8, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -96,7 +96,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Simple crop                   |Simple_crop.fx          |
 |Simple matte                  |Simple_matte.fx         |
 |Vignette                      |Vignette.fx             |
-|Visual crop                   |VisualCrop.fx           |
 
 ## CATEGORY FOLDER: Colour Tools
 |EFFECT                        |FILE NAME               |
@@ -243,6 +242,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Smooth roll                   |SmoothRoll.fx           |
 |Title blend fix               |TitleFix.fx             |
 |Vibrance                      |Vibrance.fx             |
+|Visual crop                   |VisualCrop.fx           |
 
 ## CATEGORY FOLDER: Special Effects
 |EFFECT                        |FILE NAME               |

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-01-14
 // @Author "Nicholas Carroll"
 // @Created 2016-05-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/INK_640.png
@@ -38,6 +38,9 @@ INK is a proportionate colour difference keyer
 //
 // Modified 23 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 14 Jan 2020 by user jwrl:
+// Changed subcategory from "Key Extras" to "Simple tools".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,7 +48,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "INK";
    string Category    = "Key";
-   string SubCategory = "Key Extras";
+   string SubCategory = "Simple tools";
    string Notes       = "INK is a quick, simple and effective proportionate colour difference keyer";
 > = 0;
 

@@ -1,4 +1,4 @@
-# Lightworks user Fx library, January 8, 2020.
+# Lightworks user Fx library, January 14, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -177,7 +177,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Delta key with blend          |DeltaKeyWithBlend.fx    |
 |Delta mask                    |DeltaMaskFx.fx          |
 |Easy overlay                  |EasyOverlay.fx          |
-|INK                           |InkFx.fx                |
 |Key despill                   |KeyDespillFx.fx         |
 |Lumakey and matte             |LumakeyAndMatte.fx      |
 |Lumakey with DVE              |LumakeyWithDVE.fx       |
@@ -238,6 +237,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                        |FILE NAME               |
 |:---------------------------- |:---------------------- |
 |Flip flop                     |FlipFlop.fx             |
+|INK                           |InkFx.fx                |
 |Key out black                 |KeyOutBlack.fx          |
 |Smooth roll                   |SmoothRoll.fx           |
 |Title blend fix               |TitleFix.fx             |

@@ -1,4 +1,4 @@
-# Lightworks user Fx library, January 14, 2020.
+# Lightworks user Fx library, January 15, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -6,7 +6,7 @@ The effects in this ZIP file were created by Lightworks users - thank you to all
 Use of these effects is simple:
 
 1. Copy the FX file(s) that you need to your computer. Anywhere will do as long as you know where to find them..
-2. Launch Lightworks, open a project, then open the Effects panel.  In "Flexible" mode there's a button in your timeline, in "Fixed" mode you must select the VFX tab.
+2. Launch Lightworks, open a project, then open the Effects panel by clicking the F9 key.
 3. Select the orange "+" symbol, and right click in the window displaying the Lightworks effects.
 4. From the drop down menu that appears choose "Create template from .FX file..".
 5. In the top left of the window that appears click on "Places" and navigate to the folder in which you stored the FX file.

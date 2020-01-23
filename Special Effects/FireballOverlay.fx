@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-01-30
+// @Released 2020-01-23
 // @Author jwrl
 // @Author Unknown
 // @Created 2019-01-29
@@ -31,6 +31,9 @@
 //
 // Modified jwrl 2019-01-30:
 // Changed the intensity so that as it's reduced below unity the flame yellows.
+//
+// Modified jwrl 2020-01-23:
+// Added "DisplayAsPercentage" flag to "Speed" and increased range from 100% to 200%.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -76,8 +79,9 @@ float Amount
 float Speed
 <
    string Description = "Flicker rate";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 1.0;
+   float MaxVal = 2.0;
 > = 0.5;
 
 float Hue
@@ -253,4 +257,3 @@ technique FireballOverlay
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

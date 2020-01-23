@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-01-30
+// @Released 2020-01-23
 // @Author jwrl
 // @Author Unknown
 // @Created 2019-01-28
@@ -38,6 +38,9 @@
 // predetermined minimum value as they approach zero with either positive or negative
 // values.  This will potentially add a little extra flicker around the centre X axis
 // with the higher resolution formats.
+//
+// Modified jwrl 2020-01-23:
+// Added "DisplayAsPercentage" flag to "Speed" and increased range from 100% to 200%.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -56,8 +59,9 @@ int _LwksEffectInfo
 float Speed
 <
    string Description = "Flicker rate";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 1.0;
+   float MaxVal = 2.0;
 > = 0.5;
 
 float Hue
@@ -224,4 +228,3 @@ technique Fireball
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

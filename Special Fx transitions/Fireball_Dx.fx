@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-03-22
+// @Released 2020-01-23
 // @Author jwrl
 // @Author Unknown
 // @Created 2019-03-22
@@ -26,6 +26,10 @@
 // I have used the result to transition between two sources.  I have also added position
 // and scaling adjustments to increase flexibility.  The hue of the flames can also be
 // adjusted as can the flame intensity.
+//
+// Modified jwrl 2020-01-23:
+// Added "DisplayAsPercentage" flag to "Speed" and increased range from 100% to 200%.
+// Added a centre circle wipe to clear the final streaks more convincingly.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -90,8 +94,9 @@ int SetTechnique
 float Speed
 <
    string Description = "Flicker rate";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 1.0;
+   float MaxVal = 2.0;
 > = 0.5;
 
 float Hue
@@ -245,10 +250,17 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    Ball = fn_hueShift (saturate (Ball * Intensity));
 
    float4 Fgnd = lerp (tex2D (s_Foreground, uv), Ball, fire);
+   float4 Bgnd = tex2D (s_Background, uv);
 
    fire = saturate ((1.0 - (fire_blu * fire_blu)) / amount);
 
-   return lerp (tex2D (s_Background, uv), Fgnd, fire);
+   Fgnd = lerp (Bgnd, Fgnd, fire);
+   xy = float2 ((uv.x - PosX) * _OutputAspectRatio, uv.y - PosY);
+
+   float radius = pow (max (Amount - 0.5, 0.0) * 2.0, 4.0);
+   float circle = pow (radius / length (xy), 2.0);
+
+   return lerp (Fgnd, Bgnd, circle);
 }
 
 float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
@@ -288,10 +300,17 @@ float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
    Ball = fn_hueShift (saturate (Ball * Intensity));
 
    float4 Fgnd = lerp (tex2D (s_Background, uv), Ball, fire);
+   float4 Bgnd = tex2D (s_Foreground, uv);
 
    fire = saturate ((1.0 - (fire_blu * fire_blu)) / amount);
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, fire);
+   Fgnd = lerp (Bgnd, Fgnd, fire);
+   xy = float2 ((uv.x - PosX) * _OutputAspectRatio, uv.y - PosY);
+
+   float radius = pow (max (0.5 - Amount, 0.0) * 2.0, 4.0);
+   float circle = pow (radius / length (xy), 2.0);
+
+   return lerp (Fgnd, Bgnd, circle);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -309,4 +328,3 @@ technique FireballOverlay_2
    pass P_1
    { PixelShader = compile PROFILE ps_main_2 (); }
 }
-

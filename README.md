@@ -414,6 +414,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Dream sequence            |Dreams_Dx.fx            |Dreams_Ax.fx            |Dreams_Adx.fx            |
 |Fly away                  |FlyAway_Dx.fx           |                        |                         |
 |Fireball transition       |Fireball_Dx.fx          |                        |                         |
+|Fireball transition B     |Fireball_B_Dx.fx        |                        |                         |
 |Page Roll                 |PageRoll_Dx.fx          |                        |                         |
 |Sinusoidal mix            |Sine_Dx.fx              |Sine_Ax.fx              |Sine_Adx.fx              |
 |The twister               |Twister_Dx.fx           |Twister_Ax.fx           |Twister_Adx.fx           |

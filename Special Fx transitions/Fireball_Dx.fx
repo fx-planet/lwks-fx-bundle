@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-01-23
+// @Released 2020-01-24
 // @Author jwrl
 // @Author Unknown
 // @Created 2019-03-22
@@ -16,7 +16,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect FireballOverlay.fx
+// Lightworks user effect Fireball_Dx.fx
 //
 // Author's note by jwrl 2019-03-22:
 // This effect is based on a matchbook fireball effect called CPGP_Fireball.glsl found
@@ -24,12 +24,14 @@
 // the original author to credit them properly but I am very grateful to them.
 //
 // I have used the result to transition between two sources.  I have also added position
-// and scaling adjustments to increase flexibility.  The hue of the flames can also be
-// adjusted as can the flame intensity.
+// adjustment.  The hue of the flames can be adjusted as can the flame intensity.
 //
 // Modified jwrl 2020-01-23:
 // Added "DisplayAsPercentage" flag to "Speed" and increased range from 100% to 200%.
 // Added a centre circle wipe to clear the final streaks more convincingly.
+//
+// Modified jwrl 2020-01-24:
+// Added "DisplayAsPercentage" flag to "Intensity".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -109,6 +111,7 @@ float Hue
 float Intensity
 <
    string Description = "Flame intensity";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.5;
    float MaxVal = 1.5;
 > = 1.0;
@@ -317,13 +320,13 @@ float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique FireballOverlay_1
+technique Fireball_Dx_1
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main_1 (); }
 }
 
-technique FireballOverlay_2
+technique Fireball_Dx_2
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main_2 (); }

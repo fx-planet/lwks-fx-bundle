@@ -1,4 +1,4 @@
-# Lightworks user Fx library, February 25, 2020.
+# Lightworks user Fx library, February 29, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -52,6 +52,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |:---------------------------- |:---------------------- |
 |Alpha feather                 |AlphaFeatherFx.fx       |
 |Blend tools                   |BlendTools.fx           |
+|Boolean blend plus            |BooleanBlendPlus.fx     |
 |Drop shadow and border        |DropShadowBdr.fx        |
 |Drop shadow plus blend        |DropShadowBlend.fx      |
 |Enhanced blend                |EnhancedBlend.fx        |
@@ -236,6 +237,7 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: Simple Tools
 |EFFECT                        |FILE NAME               |
 |:---------------------------- |:---------------------- |
+|Auto mask                     |AutoMask.fx             |
 |Boolean blend                 |BooleanBlend.fx         |
 |Flip flop                     |FlipFlop.fx             |
 |INK                           |InkFx.fx                |

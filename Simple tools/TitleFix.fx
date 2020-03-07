@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-01-04
+// @Released 2020-03-07
 // @Author jwrl
 // @Created 2019-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/TitleFix_640.png
@@ -12,10 +12,17 @@
  To use it, disconnect the title input, apply this effect to the title then apply the blend or
  DVE effect that you need.  You will get a result very similar to that obtained with a standard
  title effect.
+
+ It also has the ability to smooth and antialias text produced by any Lightworks text effect.
+ This can be particularly useful when moving or zooming on a title.  The default setting of
+ 10% is subjective, and will almost certainly vary depending on text size and style.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TitleFix.fx
+//
+// Modified 2020-03-07 jwrl:
+// Added a gaussian blur to smooth and antialias text edges.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -33,13 +40,36 @@ int _LwksEffectInfo
 
 texture Input;
 
-sampler s_Input = sampler_state { Texture = <Input>; };
+sampler s_Input = sampler_state
+{
+   Texture   = <Input>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-// No parameters needed or provided
+float Smoothing
+<
+   string Description = "Smooth edges";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define STRENGTH  0.00125
+
+float _OutputAspectRatio;
+
+float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -47,7 +77,40 @@ sampler s_Input = sampler_state { Texture = <Input>; };
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval;
+
+   if (Smoothing == 0.0) { retval = tex2D (s_Input, uv); }
+   else {
+      retval = tex2D (s_Input, uv) * _gaussian [0];
+
+      float2 xy1 = float2 (1.0, _OutputAspectRatio) * Smoothing * STRENGTH;
+      float2 xy2 = uv + xy1;
+
+      retval += tex2D (s_Input, xy2) * _gaussian [1];
+      xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [2];
+      xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [3];
+      xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [4];
+      xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [5];
+      xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [6];
+
+      xy2 = uv - xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [1];
+      xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [2];
+      xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [3];
+      xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [4];
+      xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [5];
+      xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [6];
+   }
 
    retval.a = pow (retval.a, 0.5);
    retval.rgb /= retval.a;
@@ -64,4 +127,3 @@ technique TitleFix
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

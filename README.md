@@ -131,6 +131,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                        |FILE NAME               |
 |:---------------------------- |:---------------------- |
 |2D DVE plus alpha             |2dDVEplusAlpha.fx       |
+|2D DVE plus antialias         |2dDVEplusAntialias.fx   |
 |Deco DVE                      |DecoDVE.fx              |
 |DVE with vignette             |DVEwithVignette.fx      |
 |Framed DVE                    |FramedDVE.fx            |

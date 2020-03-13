@@ -1,24 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-03-12
 // @Author jwrl
 // @Author Editshare
 // @Created 2018-10-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_alpha_640.png
 
 /**
-This a 2D DVE that performs as the Editshare version does, but with some differences.
-The first is the obvious one that Fg, Bg and drop shadow alphas are passed through
-to the output.  This has the side effect that any transparent areas of the background
-are also blanked.  The behaviour of the drop shadow is also different, and in this
-effect scales along with the foreground.  This is felt to be more logical behaviour
-when using the DVE to zoom an image up to full screen.
+ This a 2D DVE that performs as the Editshare version does, but with some differences.
+ The first is the obvious one that Fg, Bg and drop shadow alphas are passed through 
+ to the output.  This has the side effect that any transparent areas of the background
+ are also blanked.  The behaviour of the drop shadow is also different, and in this
+ effect scales along with the foreground.  This is felt to be more logical behaviour
+ when using the DVE to zoom an image up to full screen.
 
-Fixed in this version of the 2D DVE is the half texel offset error which can appear
-as a transparent boundary between the image and the drop shadow under the right
-conditions in the Editshare version.  Also fixed is the fact the shadow is calculated
-from Fg frame boundaries regardless of whether they are opaque or not.  Finally, the
-presence of the drop shadow will not punch a transparent hole in the composite when
-used with downstream blend and DVE effects.
+ Fixed in this version of the 2D DVE is the half texel offset error which can appear
+ as a transparent boundary between the image and the drop shadow under the right
+ conditions in the Editshare version.  Also fixed is the fact the shadow is calculated
+ from Fg frame boundaries regardless of whether they are opaque or not.  Finally, the
+ presence of the drop shadow will not punch a transparent hole in the composite when
+ used with downstream blend and DVE effects.
+
+ NOTE:  THIS EFFECT IS NOW OBSOLETE AND WILL BE WITHDRAWN.  THE SAME FUNCTIONALITY IS
+ AVAILABLE IN 2D DVE PLUS ANTIALIAS AND THAT EFFECT SHOULD BE USED INSTEAD.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -54,6 +57,9 @@ used with downstream blend and DVE effects.
 // Modified jwrl 2018-12-23:
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-03-12:
+// Added obsolescent warning.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

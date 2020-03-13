@@ -11,8 +11,7 @@
 /**
  This a 2D DVE that performs as the Editshare version does, but with some differences.
  The first is the obvious one that Fg, Bg and drop shadow alphas are passed through
- to the output.  This has the side effect that any transparent areas of the background
- are also blanked.  The behaviour of the drop shadow is also different, and in this
+ to the output.  The behaviour of the drop shadow is also different, and in this
  effect scales along with the foreground.  This is felt to be more logical behaviour
  when using the DVE to zoom an image up to full screen.
 
@@ -348,15 +347,9 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    retval.a = max (retval.a, alpha * (1.0 - ShadowTransparency));
 
-   // The background layer is now obtained and if transparent, set to empty.
-
-   float4 Bgnd = tex2D (s_Background, xy2);
-
-   if (Bgnd.a <= 0.0) Bgnd = EMPTY;
-
    // The foreground is mixed into the background and we're done.
 
-   return lerp (Bgnd, retval, retval.a * Opacity);
+   return lerp (tex2D (s_Background, xy2), retval, retval.a * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//

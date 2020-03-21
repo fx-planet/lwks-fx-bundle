@@ -29,7 +29,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Gradient shape";
    string Category    = "Matte";
-   string SubCategory = "Custom";
+   string SubCategory = "Border and Crop";
    string Notes       = "Creates colour gradients inside or outside an ellipsoid or rectangular shape";
 > = 0;
 
@@ -292,7 +292,7 @@ float4 ps_main_1 (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
       Bgnd = tex2D (s_Input, xy1);
    }
 
-   // This is an implementation of the standard equation for an ellipse: (x / a)² + (y / b)² = c.
+   // This is an implementation of the standard equation for an ellipse: (x / a)Â² + (y / b)Â² = c.
 
    float2 uv2 = pow (uv1 / float2 (Xradius, Yradius), 2.0);
 

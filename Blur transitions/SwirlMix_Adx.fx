@@ -2,7 +2,7 @@
 // @released 2019-07-30
 // @author jwrl
 // @created 2019-07-30
-// @see https://www.lwks.com/media/kunena/attachments/6375/SwirlMix_Dx_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_SwirlMix_640.png
 
 /**
  This is a swirl effect similar to schrauber's swirl mix, but optimised for use with

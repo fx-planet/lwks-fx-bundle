@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-03-20
+// @Released 2020-03-28
 // @Author jwrl
 // @Author Editshare
 // @Created 2020-03-20
@@ -22,6 +22,13 @@
 // Lightworks user effect GradShape.fx
 //
 // Based on shapes3.fx, copyright (c) EditShare EMEA.  All Rights Reserved
+//
+// Author's note: since I threw resources at this to make it work it can almost certainly
+// be refined,  It is by no means elegant, and if I can work out how to I will fix it.
+//
+// Modified 28 March 2020 jwrl.
+// Increased range of width and height to 200% to allow for aspect ratio limits.
+// Added "DisplayAsPercentage" flag to width and height for version 2020+.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -70,15 +77,17 @@ float CentreY
 float Width
 <
    string Description = "Width";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 1.0;
+   float MaxVal = 2.0;
 > = 0.5;
 
 float Height
 <
    string Description = "Height";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 1.0;
+   float MaxVal = 2.0;
 > = 0.5;
 
 float Softness

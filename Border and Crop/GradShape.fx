@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-03-28
+// @Released 2020-03-29
 // @Author jwrl
 // @Author Editshare
 // @Created 2020-03-20
@@ -23,12 +23,17 @@
 //
 // Based on shapes3.fx, copyright (c) EditShare EMEA.  All Rights Reserved
 //
-// Author's note: since I threw resources at this to make it work it can almost certainly
-// be refined,  It is by no means elegant, and if I can work out how to I will fix it.
+// Author's note: since I originally just threw resources at this to make it work it can
+// almost certainly be refined,  It is by no means elegant, and if I can work out how to
+// I will fix it.  The functionality will not change!!!
 //
 // Modified 28 March 2020 jwrl.
 // Increased range of width and height to 200% to allow for aspect ratio limits.
 // Added "DisplayAsPercentage" flag to width and height for version 2020+.
+//
+// Modified 29 March 2020 jwrl.
+// Split the colour gradient sections into a separate shader.  This reduced the amount of
+// redundant code in the effect without changing the functionality.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,12 +46,19 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs and Samplers
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
+texture Gradient : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
 sampler s_Input = sampler_state { Texture = <Inp>; };
+sampler s_Color = sampler_state { Texture = <Gradient>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -159,78 +171,98 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+float4 ps_grad (float2 uv : TEXCOORD0) : COLOR
+{
+   float2 xy = uv;
+
+   if (!Invert) {
+      // In this mode the gradient is range limited to the size of the shape.
+      // We must therefore get that range into xy, including border softness
+
+      float2 range = float2 (Width / _OutputAspectRatio, Height) / 2.0;
+
+      range += float2 (Softness / _OutputAspectRatio, Softness);
+
+      // Calculate the X and Y range values
+
+      xy += range - 0.5.xx;
+      range += range;
+      xy /= range;
+   }
+
+   // Calculate the X and Y gradient linearity
+
+   float X_linearity = Hlin < 0.0 ? 1.0 / (1.0 + (2.0 * abs (Hlin))) : 1.0 + (2.0 * Hlin);
+   float Y_linearity = Vlin < 0.0 ? 1.0 + (2.0 * abs (Vlin)) : 1.0 / (1.0 + (2.0 * Vlin));
+
+   // Set up the X gradient amount, allowing for the gradient linearity
+
+   float amt = pow (xy.x, X_linearity);
+
+   // Create upper and lower edge colour gradients
+
+   float4 retval = lerp (TLcolour, TRcolour, amt);
+   float4 retsub = lerp (BLcolour, BRcolour, amt);
+
+   // Now set up the Y gradient amount
+
+   amt = pow (xy.y, Y_linearity);
+
+   // Use it to return the composite colour gradient
+
+   return lerp (retval, retsub, amt);
+}
+
 float4 ps_main_0 (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 {
-   float2 border = float2 (1.0 / _OutputAspectRatio, 1.0) * Softness;
+   float4 Bgnd, Fgnd, retval;
 
-   // Get rectangle crop edges
+   if (Invert) {
+      // Recover and assign the colour and video layers appropriately.  In the full screen
+      // (inverted) mode the colour gradient must be blended with the background to correctly
+      // support the colour alpha channels.
+
+      retval = tex2D (s_Color, xy1);
+      Fgnd = tex2D (s_Input, xy1);
+      Bgnd = lerp (Fgnd, retval, retval.a);
+   }
+   else {
+      // This time the colour recovery process must respect the X/Y position so get that first.
+      // It's range limited to run between 0 and 1 which in extreme cases may cause a one pixel
+      // error in colour at the edge of frame.  That shouldn't be significant.
+
+      float2 uv = saturate (xy0 + float2 (0.5 - CentreX, CentreY - 0.5));
+
+      Fgnd = tex2D (s_Color, uv);
+      Bgnd = tex2D (s_Input, xy1);
+   }
+
+   // Get the border width as set with Softness and correct it for the aspect ratio.
+
+   float2 border = float2 (Softness / _OutputAspectRatio, Softness);
+
+   // Get rectangle crop edges, allowing for the aspect ratio
 
    float top = 1.0 - CentreY - (Height / 2.0);
    float bottom = top + Height;
    float left = CentreX - (Width / (_OutputAspectRatio * 2.0));
    float right = left + (Width / _OutputAspectRatio);
 
-   // Get outer boundaries caused by softness setting
+   // Get the outer boundaries and extend them by the softness setting
 
    float outer_l = left - border.x;
    float outer_r = right + border.x;
    float outer_t = top - border.y;
    float outer_b = bottom + border.y;
 
-   // Calculate the X and Y linearity
-
-   float X_linearity = Hlin < 0.0 ? 1.0 / (1.0 + (2.0 * abs (Hlin))) : 1.0 + (2.0 * Hlin);
-   float Y_linearity = Vlin < 0.0 ? 1.0 + (2.0 * abs (Vlin)) : 1.0 / (1.0 + (2.0 * Vlin));
-   float amt;
-
-   float4 Bgnd, colour, retval;
-
-   if (Invert) {
-      // Calculate the X mix amount (amt), allowing for the X linearity
-
-      amt = pow (xy0.x, X_linearity);
-
-      // Get the bottom and top colour gradients
-
-      colour = lerp (BLcolour, BRcolour, amt);
-      retval = lerp (TLcolour, TRcolour, amt);
-
-      // Combine them to produce a vertical gradient
-
-      amt = pow (xy0.y, Y_linearity);
-      retval = lerp (retval, colour, amt);
-
-      // Now assign the colour and video layers appropriately.  In this mode the colour gradient
-      // must be premixed with the background to correctly support the colour alpha channels.
-
-      colour = tex2D (s_Input, xy1);
-      Bgnd   = lerp (colour, retval, retval.a);
-   }
-   else {
-      // This time amt is scaled between the left and right edges of frame.
-
-      amt = pow ((xy0.x - outer_l) / (outer_r - outer_l), X_linearity);
-
-      colour = lerp (BLcolour, BRcolour, amt);
-      retval = lerp (TLcolour, TRcolour, amt);
-
-      // Now amt is scaled between the top and bottom of frame
-
-      amt = pow ((xy0.y - outer_t) / (outer_b - outer_t), Y_linearity);
-
-      // The colour and Bgnd values are reversed so that the shape is a solid overlaying
-      // the video frame.  This also means that we don't need to premix Bgnd this time.
-
-      colour = lerp (retval, colour, amt);
-      Bgnd = tex2D (s_Input, xy1);
-   }
+   // This section is identical to the Editshare effect which wasn't commented
 
    if ((xy0.x >= left) && (xy0.x <= right) && (xy0.y >= top) && (xy0.y <= bottom)) {
-      retval = lerp (Bgnd, colour, colour.a); }
+      retval = lerp (Bgnd, Fgnd, Fgnd.a); }
    else {
       if (xy0.x < outer_l || xy0.x > outer_r || xy0.y < outer_t || xy0.y > outer_b) { retval = Bgnd; }
       else {
-         amt = 1.0;
+         float amt = 1.0;
 
          if (xy0.x < left) {
             if (xy0.y < top) { amt -= (length ((xy0 - float2 (left, top)) / border)); }
@@ -245,7 +277,7 @@ float4 ps_main_0 (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
          else if (xy0.y < top) { amt = (xy0.y - outer_t) / border.y; }
          else amt = (outer_b - xy0.y) / border.y;
 
-         retval = lerp (Bgnd, colour, max (amt, 0.0) * colour.a);
+         retval = lerp (Bgnd, Fgnd, max (amt, 0.0) * Fgnd.a);
       }
    }
 
@@ -254,74 +286,67 @@ float4 ps_main_0 (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 
 float4 ps_main_1 (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 {
-   float2 border = float2 (1.0 / _OutputAspectRatio, 1.0) * Softness;
+   float4 Bgnd, Fgnd, retval;
+
+   if (Invert) {
+      retval = tex2D (s_Color, xy0);
+      Fgnd = tex2D (s_Input, xy1);
+      Bgnd = lerp (Fgnd, retval, retval.a);
+   }
+   else {
+      float2 uv = saturate (xy0 + float2 (0.5 - CentreX, CentreY - 0.5));
+
+      Fgnd = tex2D (s_Color, uv);
+      Bgnd = tex2D (s_Input, xy1);
+   }
+
+   // Get the border width and the centre of the circle/ellpise
+
+   float2 border = float2 (Softness / _OutputAspectRatio, Softness);
    float2 uv1 = xy0 - float2 (CentreX, 1.0 - CentreY);
 
-   // Get the X and Y radii
+   // Now calulate the X and Y radii and the X and Y softness radii
 
    float Xradius = Width / (_OutputAspectRatio * 2.0);
    float Yradius = Height / 2.0;
-   float Xsofts  = Xradius + (Softness / _OutputAspectRatio);
-   float Ysofts  = Yradius + Softness;
+   float Xsofts  = Xradius + border.x;
+   float Ysofts  = Yradius + border.y;
 
-   // Get the colour boundaries including softness setting
+   // Get the colour boundaries including any softness range
 
    float top = 1.0 - CentreY - Ysofts;
    float bottom = Ysofts - CentreY + 1.0;
    float left = CentreX - Xsofts;
    float right = CentreX + Xsofts;
 
-   float X_linearity = Hlin < 0.0 ? 1.0 / (1.0 + (2.0 * abs (Hlin))) : 1.0 + (2.0 * Hlin);
-   float Y_linearity = Vlin < 0.0 ? 1.0 + (2.0 * abs (Vlin)) : 1.0 / (1.0 + (2.0 * Vlin));
-   float amt;
-
-   float4 Bgnd, colour, retval;
-
-   if (Invert) {
-      amt = pow (xy0.x, X_linearity);
-
-      colour = lerp (BLcolour, BRcolour, amt);
-      retval = lerp (TLcolour, TRcolour, amt);
-
-      amt = pow (xy0.y, Y_linearity);
-      retval = lerp (retval, colour, amt);
-
-      colour = tex2D (s_Input, xy1);
-      Bgnd   = lerp (colour, retval, retval.a);
-   }
-   else {
-      amt = pow ((xy0.x - left) / (right - left), X_linearity);
-
-      colour = lerp (BLcolour, BRcolour, amt);
-      retval = lerp (TLcolour, TRcolour, amt);
-
-      amt = pow ((xy0.y - top) / (bottom - top), Y_linearity);
-
-      colour = lerp (retval, colour, amt);
-      Bgnd = tex2D (s_Input, xy1);
-   }
-
-   // This is an implementation of the standard equation for an ellipse: (x / a)² + (y / b)² = c.
+   // This is my implementation of the standard equation for an ellipse: (x / a)² + (y / b)² = c.
+   // First we divide both X and Y by their respective radii and square the result.
 
    float2 uv2 = pow (uv1 / float2 (Xradius, Yradius), 2.0);
 
+   // We now add the squared values to each other, thus completing the equation (v1 = c).
+
    float v1 = uv2.x + uv2.y;
 
-   // We now repeat the process for the feathered boundary
+   // We repeat the equation for the X and Y softness radii (this time v2 = c).
 
    uv2 = pow (uv1 / float2 (Xsofts, Ysofts), 2.0);
 
    float v2 = uv2.x + uv2.y;
 
-   if (v1 < 1.0) { retval = lerp (Bgnd, colour, colour.a); }
+   // From here on is effectively what was done in the Editshare version, although their single
+   // comment has been expanded.  Also sincos() has been used instead of separate sin() and cos().
+
+   if (v1 < 1.0) { retval = lerp (Bgnd, Fgnd, Fgnd.a); }
    else if (v2 > 1.0) { retval = Bgnd; }
    else {
-      // This next converts the ellipse to our workspace, using a method found at
+      // This next converts the ellipse into our workspace, using a method found at
       // http://www.shader.com/discussion/question/what-is-the-equation-of-an-ellipse-in-polar-coordinates/
 
-      float theta  = atan2 (uv1.y, uv1.x);
-      float Xedge  = sin (theta);
-      float Yedge  = cos (theta);
+      float Xedge, Yedge, theta = atan2 (uv1.y, uv1.x);
+
+      sincos (theta, Xedge, Yedge);
+
       float Xblend = Xedge * Xsofts;
       float Yblend = Yedge * Ysofts;
 
@@ -332,7 +357,7 @@ float4 ps_main_1 (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
       float dUpper = (Xsofts * Ysofts) / sqrt ((Yblend * Yblend) + (Xblend * Xblend));
       float range  = length (uv1);
 
-      retval = lerp (Bgnd, colour, (1.0 - ((range - dLower) / (dUpper - dLower))) * colour.a);
+      retval = lerp (Bgnd, Fgnd, (1.0 - ((range - dLower) / (dUpper - dLower))) * Fgnd.a);
    }
 
    return retval;
@@ -344,11 +369,20 @@ float4 ps_main_1 (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 
 technique GradShape_0
 {
-   pass P1 { PixelShader = compile PROFILE ps_main_0 (); }
+   pass P_1
+   < string Script = "RenderColorTarget0 = Gradient;"; >
+   { PixelShader = compile PROFILE ps_grad (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_0 (); }
 }
 
 technique GradShape_1
 {
-   pass P1 { PixelShader = compile PROFILE ps_main_1 (); }
-}
+   pass P1
+   < string Script = "RenderColorTarget0 = Gradient;"; >
+   { PixelShader = compile PROFILE ps_grad (); }
 
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_1 (); }
+}

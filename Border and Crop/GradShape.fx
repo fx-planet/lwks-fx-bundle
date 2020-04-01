@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-03-29
+// @Released 2020-04-01
 // @Author jwrl
 // @Author Editshare
 // @Created 2020-03-29
@@ -26,6 +26,10 @@
 // This is just the original Editshare effect, with an additional shader added to create
 // the gradient.  A preamble has been added to both the rectangle and ellipse shaders to
 // allow the gradient to be used as either the inner or outer area of the frame.
+//
+// Modified April 1 2020 jwrl:
+// Corrected a bug that meant that scaling beyond full screen could return an incorrect
+// colour address if the position was panned up or left.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -168,15 +172,16 @@ float4 ps_make_gradient (float2 uv : TEXCOORD0) : COLOR
    float2 xy = uv;
 
    if (!Invert) {
-      // In this mode the gradient is range limited to the size of the shape.
-      // We must therefore get that range into xy, including border softness
+      // In this mode the gradient is range limited to the size of the shape.  We
+      // therefore get that range into xy, including border softness and position.
 
       float2 range = float2 (Width / _OutputAspectRatio, Height) / 2.0;
 
       range += float2 (Softness / _OutputAspectRatio, Softness);
 
-      // Calculate the X and Y range values
+      // Calculate the X and Y range values allowing for position
 
+      xy += float2 (0.5 - CentreX, CentreY - 0.5);
       xy += range - 0.5.xx;
       range += range;
       xy /= range;
@@ -207,26 +212,18 @@ float4 ps_make_gradient (float2 uv : TEXCOORD0) : COLOR
 
 float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 {
-   float4 bg, FGColour, ret;
+   // Recover and assign the colour and video layers appropriately
+
+   float4 FGColour = tex2D (s_Colour, xy);
+   float4 ret, bg = tex2D (s_Input, xy1);
 
    if (Invert) {
-      // Recover and assign the colour and video layers appropriately.  In the full screen
-      // (inverted) mode the colour gradient must be blended with the background to correctly
-      // support the colour alpha channels.
+      // In full screen (inverted) mode the colour gradient must be blended with the background
+      // in advance to correctly support the colour alpha channels.
 
-      ret = tex2D (s_Colour, xy);
-      FGColour = tex2D (s_Input, xy1);
-      bg = lerp (FGColour, ret, ret.a);
-   }
-   else {
-      // This time the colour recovery process must respect the X/Y position so get that first.
-      // It's range limited to run between 0 and 1 which in extreme cases may cause a one pixel
-      // error in colour at the edge of frame.  That shouldn't be significant.
-
-      float2 uv = saturate (xy + float2 (0.5 - CentreX, CentreY - 0.5));
-
-      FGColour = tex2D (s_Colour, uv);
-      bg = tex2D (s_Input, xy1);
+      ret = bg;
+      bg = lerp (ret, FGColour, FGColour.a);
+      FGColour = ret;
    }
 
    // From here on is the original Editshare effect
@@ -275,18 +272,13 @@ float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 
 float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 {
-   float4 bg, FGColour, ret;
+   float4 FGColour = tex2D (s_Colour, xy);
+   float4 ret, bg = tex2D (s_Input, xy1);
 
    if (Invert) {
-      ret = tex2D (s_Colour, xy);
-      FGColour = tex2D (s_Input, xy1);
-      bg = lerp (FGColour, ret, ret.a);
-   }
-   else {
-      float2 uv = saturate (xy + float2 (0.5 - CentreX, CentreY - 0.5));
-
-      FGColour = tex2D (s_Colour, uv);
-      bg = tex2D (s_Input, xy1);
+      ret = bg;
+      bg = lerp (ret, FGColour, FGColour.a);
+      FGColour = ret;
    }
 
    // From here on is the original Editshare effect

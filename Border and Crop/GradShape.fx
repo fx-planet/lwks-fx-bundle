@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-04-01
+// @Released 2020-04-02
 // @Author jwrl
 // @Author Editshare
 // @Created 2020-03-29
@@ -23,13 +23,16 @@
 //
 // Based on shapes3.fx, copyright (c) EditShare EMEA.  All Rights Reserved
 //
-// This is just the original Editshare effect, with an additional shader added to create
-// the gradient.  A preamble has been added to both the rectangle and ellipse shaders to
-// allow the gradient to be used as either the inner or outer area of the frame.
+// This began as the original Editshare effect, with an additional shader added to create
+// the gradient.  A preamble was added to both the rectangle and ellipse shaders to allow
+// the gradient to be used as either the inner or outer area of the frame.
 //
 // Modified April 1 2020 jwrl:
 // Corrected a bug that meant that scaling beyond full screen could return an incorrect
 // colour address if the position was panned up or left.
+//
+// Modified April 2 2020 jwrl:
+// Restructured the rectangle and ellipse shaders to simplify the execution slightly.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -173,112 +176,117 @@ float4 ps_make_gradient (float2 uv : TEXCOORD0) : COLOR
 
    if (!Invert) {
       // In this mode the gradient is range limited to the size of the shape.  We
-      // therefore get that range into xy, including border softness and position.
+      // therefore scale xy by the range, adding an allowance for border softness.
 
       float2 range = float2 (Width / _OutputAspectRatio, Height) / 2.0;
 
       range += float2 (Softness / _OutputAspectRatio, Softness);
 
-      // Calculate the X and Y range values allowing for position
+      // Add the range to xy and simultaneously adjust it for position, then divide
+      // by double the range value.  Doing this scales xy to fit the shape boundaries.
 
-      xy += float2 (0.5 - CentreX, CentreY - 0.5);
-      xy += range - 0.5.xx;
-      range += range;
-      xy /= range;
+      xy += range - float2 (CentreX, 1.0 - CentreY);
+      xy /= range + range;
    }
 
    // Calculate the X and Y gradient linearity
 
-   float X_linearity = Hlin < 0.0 ? 1.0 / (1.0 + (2.0 * abs (Hlin))) : 1.0 + (2.0 * Hlin);
-   float Y_linearity = Vlin < 0.0 ? 1.0 + (2.0 * abs (Vlin)) : 1.0 / (1.0 + (2.0 * Vlin));
+   float linearity = Hlin < 0.0 ? 1.0 / (1.0 + (2.0 * abs (Hlin))) : 1.0 + (2.0 * Hlin);
 
-   // Set up the X gradient amount, allowing for the gradient linearity
+   // Set up the X gradient linearity and use it to offset the mix value
 
-   float amt = pow (xy.x, X_linearity);
+   float amount = pow (xy.x, linearity);
 
    // Create upper and lower edge colour gradients
 
-   float4 retval = lerp (TLcolour, TRcolour, amt);
-   float4 retsub = lerp (BLcolour, BRcolour, amt);
+   float4 retval = lerp (TLcolour, TRcolour, amount);
+   float4 retsub = lerp (BLcolour, BRcolour, amount);
 
-   // Now set up the Y gradient amount
+   // Now set up the Y gradient linearity
 
-   amt = pow (xy.y, Y_linearity);
+   linearity = Vlin < 0.0 ? 1.0 + (2.0 * abs (Vlin)) : 1.0 / (1.0 + (2.0 * Vlin));
+   amount = pow (xy.y, linearity);
 
-   // Use it to return the composite colour gradient
+   // Use it to return the composite XY colour gradient
 
-   return lerp (retval, retsub, amt);
+   return lerp (retval, retsub, amount);
 }
 
 float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 {
    // Recover and assign the colour and video layers appropriately
 
-   float4 FGColour = tex2D (s_Colour, xy);
-   float4 ret, bg = tex2D (s_Input, xy1);
+   float4 temp = tex2D (s_Colour, xy);
+   float4 Bgnd = tex2D (s_Input, xy1);
+   float4 Fgnd = lerp (Bgnd, temp, temp.a);
 
    if (Invert) {
-      // In full screen (inverted) mode the colour gradient must be blended with the background
-      // in advance to correctly support the colour alpha channels.
+      // In full screen (inverted) mode the colour gradient and background are swapped.
 
-      ret = bg;
-      bg = lerp (ret, FGColour, FGColour.a);
-      FGColour = ret;
+      temp = Bgnd;
+      Bgnd = Fgnd;
+      Fgnd = temp;
    }
 
-   // From here on is the original Editshare effect
+   // Calculate the inner rectangle boundaries
 
-   // Calc exact rectangle bounds
+   float innerL = CentreX - (Width / (_OutputAspectRatio * 2.0));
+   float innerR = innerL + Width / _OutputAspectRatio;
+   float innerT = 1.0 - CentreY - (Height / 2.0);
+   float innerB = innerT + Height;
 
-   float l = CentreX - (Width / (_OutputAspectRatio * 2.0));
-   float r = l + Width / _OutputAspectRatio;
-   float t = 1.0 - CentreY - (Height / 2.0);
-   float b = t + Height;
+   // If the current position is entirely inside the rectangle return the foreground.
+   // By forcing an early quit we avoid performing redundant conditional evaluations.
 
-   if (xy.x >= l && xy.x <= r && xy.y >= t && xy.y <= b) { ret = lerp (bg, FGColour, FGColour.a); }
-   else {
-      float2 softness = float2 (Softness / _OutputAspectRatio, Softness);
+   if ((xy.x >= innerL) && (xy.x <= innerR) && (xy.y >= innerT) && (xy.y <= innerB)) return Fgnd;
 
-      // calc outer bounds
+   // Now we get the softness, allowing for the aspect ratio
 
-      float l2 = l - softness.x;
-      float r2 = r + softness.x;
-      float t2 = t - softness.y;
-      float b2 = b + softness.y;
+   float2 softness = float2 (Softness / _OutputAspectRatio, Softness);
 
-      if (xy.x < l2 || xy.x > r2 || xy.y < t2 || xy.y > b2) { ret = bg; }
-      else {
-         float amt = 1.0;
+   // Calculate the outer boundaries allowing for edge softness
 
-         if (xy.x < l) {
-            if (xy.y < t) { amt = 1.0 - (length ((xy - float2 (l, t)) / softness)); }
-            else if (xy.y > b) { amt = 1.0 - (length ((xy - float2 (l, b)) / softness)); }
-            else amt = (xy.x - l2) / softness.x;
-         }
-         else if (xy.x > r) {
-            if (xy.y < t) { amt = 1.0 - (length ((xy - float2 (r, t)) / softness)); }
-            else if (xy.y > b) { amt = 1.0 - (length ((xy - float2 (r, b)) / softness)); }
-            else amt = (r2 - xy.x) / softness.x;
-         }
-         else if (xy.y < t) { amt = (xy.y - t2) / softness.y; }
-         else amt = (b2 - xy.y) / softness.y;
+   float outerL = innerL - softness.x;
+   float outerR = innerR + softness.x;
+   float outerT = innerT - softness.y;
+   float outerB = innerB + softness.y;
 
-         ret = lerp (bg, FGColour, max (amt, 0.0) * FGColour.a);
-      }
+   // If the current position falls entirely outside the softness mix return the background.
+
+   if ((xy.x < outerL) || (xy.x > outerR) || (xy.y < outerT) || (xy.y > outerB)) return Bgnd;
+
+   float amount = 1.0;
+
+   // Calculate the amount to mix the foreground and background
+
+   if (xy.x < innerL) {
+      if (xy.y < innerT) { amount -= length ((xy - float2 (innerL, innerT)) / softness); }
+      else if (xy.y > innerB) { amount -= length ((xy - float2 (innerL, innerB)) / softness); }
+      else amount = (xy.x - outerL) / softness.x;
    }
+   else if (xy.x > innerR) {
+      if (xy.y < innerT) { amount -= length ((xy - float2 (innerR, innerT)) / softness); }
+      else if (xy.y > innerB) { amount -= length ((xy - float2 (innerR, innerB)) / softness); }
+      else amount = (outerR - xy.x) / softness.x;
+   }
+   else if (xy.y < innerT) { amount = (xy.y - outerT) / softness.y; }
+   else amount = (outerB - xy.y) / softness.y;
 
-   return ret;
+   // Return a mix of background and foreground depending on softness
+
+   return lerp (Bgnd, Fgnd, max (amount, 0.0));
 }
 
 float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 {
-   float4 FGColour = tex2D (s_Colour, xy);
-   float4 ret, bg = tex2D (s_Input, xy1);
+   float4 temp = tex2D (s_Colour, xy);
+   float4 Bgnd = tex2D (s_Input, xy1);
+   float4 Fgnd = lerp (Bgnd, temp, temp.a);
 
    if (Invert) {
-      ret = bg;
-      bg = lerp (ret, FGColour, FGColour.a);
-      FGColour = ret;
+      temp = Bgnd;
+      Bgnd = Fgnd;
+      Fgnd = temp;
    }
 
    // From here on is the original Editshare effect
@@ -301,24 +309,31 @@ float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
    float v1 = (posSq.x / (a * a)) + (posSq.y / (b * b));
    float v2 = (posSq.x / (sa * sa)) + (posSq.y / (sb * sb));
 
-   if (v1 < 1.0) { ret = lerp (bg, FGColour, FGColour.a); }
-   else if (v2 > 1.0) { ret = bg; }
-   else {
-      // http://www.slader.com/discussion/question/what-is-the-equation-of-an-ellipse-in-polar-coordinates/
+   // Slightly restructured code from here on, so I've commented what I've done - jwrl.
 
-      float theta = atan2 (pos.y, pos.x);
+   // If the current position is entirely within the solid ellipse we return the foreground,
+   // and if it's entirely outside the soft edge of the ellipse we return the background.
 
-      float cosThetaSq = pow (cos (theta), 2.0);
-      float sinThetaSq = pow (sin (theta), 2.0);
+   if (v1 < 1.0) return Fgnd;
 
-      float dLower = (a * b) / sqrt ((b *  b * cosThetaSq) + (a * a * sinThetaSq));
-      float dUpper = (sa * sb) / sqrt ((sb * sb * cosThetaSq) + (sa * sa * sinThetaSq));
-      float d      = length (pos);
+   if (v2 > 1.0) return Bgnd;
 
-      ret = lerp (bg, FGColour, (1.0 - ((d - dLower) / (dUpper - dLower))) * FGColour.a);
-   }
+   // http://www.slader.com/discussion/question/what-is-the-equation-of-an-ellipse-in-polar-coordinates/
 
-   return ret;
+   // I have replaced the original explicit sin() and cos() functions with sincos().  The atan2()
+   // operation to produce theta has also been placed inside the sincos() function.  In the process
+   // I have moved the pow() expressions used to square the sine and cosine values into dLower and
+   // dUpper.  This simplifies those calculations slightly - jwrl.
+
+   float cosTheta, sinTheta;
+
+   sincos (atan2 (pos.y, pos.x), sinTheta, cosTheta);
+
+   float dLower = (a * b) / sqrt (pow (a * sinTheta, 2.0) + pow (b * cosTheta, 2.0));
+   float dUpper = (sa * sb) / sqrt (pow (sa * sinTheta, 2.0) + pow (sb * cosTheta, 2.0));
+   float amount = (length (pos) - dLower) / (dUpper - dLower);
+
+   return lerp (Fgnd, Bgnd, amount);
 }
 
 //-----------------------------------------------------------------------------------------//

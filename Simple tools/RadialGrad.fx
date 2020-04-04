@@ -1,15 +1,20 @@
 // @Maintainer jwrl
-// @Released 2020-04-03
+// @Released 2020-04-04
 // @Author jwrl
 // @Created 2020-04-03
-// @see https://www.lwks.com/media/kunena/attachments/6375/RadialGrad_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/RadialGradient_640.png
 
 /**
- This generates a radial colour gradient, the centre point of which can be adjusted.
+ This generates a radial colour gradient, the centre point of which can be adjusted.  The
+ aspect ratio can also be corrected for, changing the geometry from circular to an ellipse
+ defined by the aspect ratio of the video format.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RadialGrad.fx
+//
+// Modified 2020-04-04 - jwrl.
+// Added aspect ratio correction and a means of varying the amount of correction applied.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -27,7 +32,7 @@ int _LwksEffectInfo
 
 texture Inp;
 
-sampler2D s_Input = sampler_state { Texture = <Inp>; };
+sampler s_Input = sampler_state { Texture = <Inp>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -46,6 +51,14 @@ float4 CentreColour
    string Description = "Centre colour";
    bool SupportsAlpha = true;
 > = { 0.314, 0.784, 1.0, 1.0 };
+
+float Aspect
+<
+   string Group = "Colour range";
+   string Description = "Aspect ratio";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
 
 float OffsX
 <
@@ -69,12 +82,21 @@ float OffsY
 
 #define PI    3.141592654
 
+float _OutputAspectRatio;
+
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD0, float2 xy2 : TEXCOORD1) : COLOR
+float4 ps_main (float2 xy : TEXCOORD0, float2 xy2 : TEXCOORD1) : COLOR
 {
+   float2 xy1 = xy - 0.5.xx;
+
+   if (_OutputAspectRatio < 0) { xy1.x *= _OutputAspectRatio; }
+   else xy1.y /= _OutputAspectRatio;
+
+   xy1 = lerp (xy1 + 0.5.xx, xy, Aspect);
+
    float buff_0 = (OffsX <= 0.0) ? (xy1.x / 2.0) + 0.5 :
                   (OffsX >= 1.0) ? xy1.x / 2.0 :
                   (OffsX > xy1.x) ? xy1.x / (2.0 * OffsX) : ((xy1.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
@@ -105,4 +127,3 @@ technique RadialGrad
    pass P_1 
    { PixelShader = compile PROFILE ps_main (); }
 }
-

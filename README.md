@@ -1,4 +1,4 @@
-# Lightworks user Fx library, April 3, 2020.
+# Lightworks user Fx library, April 11, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -246,6 +246,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |INK                           |InkFx.fx                |
 |Key out black                 |KeyOutBlack.fx          |
 |Radial gradient               |RadialGrad.fx           |
+|Simple star                   |SimpleStar.fx           |
 |Smooth roll                   |SmoothRoll.fx           |
 |Title blend fix               |TitleFix.fx             |
 |Vibrance                      |Vibrance.fx             |

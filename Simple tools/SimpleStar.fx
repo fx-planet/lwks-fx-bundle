@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-04-11
+// @Released 2020-04-12
 // @Maintainer jwrl
 // @Created 2020-04-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleStar_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Simple_Star_640.png
 
 /**
  Simple star is a glint effect which creates star filter-like highlights, with 4, 5,
@@ -30,8 +30,15 @@
 // trig functions are needed to generate the stars from either the full or half line.
 //
 // Once the selected star is created it is opened in ps_main(), positioned, rotated and
-// coloured and mixed as required.  Although between three and four passes are used the
-// simplicity of each one should keep the overall GPU load low.
+// coloured and mixed as required.  Smaller star points around the centre hotspot are
+// added, and an anular halo is finally overlaid.
+//
+// This looks considerably more complex than it in fact is.  Although between three and
+// four passes are used the simplicity of each one should keep the overall GPU load low.
+//
+// Modified 2020-04-12 jwrl
+// Explicitly defined linear filtration in target samplers.  This fixes a problem with
+// jaggy edges when rotating at other than right angles.  See note in declaration.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -60,10 +67,30 @@ texture Glint : RenderColorTarget;
 
 sampler s_Input = sampler_state { Texture = <Inp>; };
 
-sampler s_Points_1 = sampler_state { Texture = <Points_1>; };
-sampler s_Points_2 = sampler_state { Texture = <Points_2>; };
+// NOTE: Linear filteration has been explicitly defined here.  This is because it
+// appears that Cg defaults to point filtration in targets, not linear as I had
+// assumed it to be.  This becomes a very important issue when rotating an image.
 
-sampler s_Glint = sampler_state { Texture = <Glint>; };
+sampler s_Points_1 = sampler_state {
+   Texture   = <Points_1>;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler s_Points_2 = sampler_state {
+   Texture   = <Points_2>;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler s_Glint = sampler_state {
+   Texture   = <Glint>;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -173,13 +200,18 @@ float CentreY
 
 #define QUAD_PI     12.566370614
 #define ONE_THIRD   0.3333333333
-#define SQRT_2      1.4142135624
+#define SCALE_45    0.9722718241   // 1.375 * sine 45
 
 float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
+
+float fn_xtra (sampler s, float2 p)
+{
+   return (p.x < 0.0) || (p.y < 0.0) || (p.x > 1.0) || (p.y > 1.0) ? 0.0 : tex2D (s, p).a;
+}
 
 float4 fn_tex2D (sampler s, float2 p)
 {
@@ -418,34 +450,45 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    sincos (radians (Rotation), sine, cosine);
 
+   float2 aspect = float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
    float2 psn = float2 (CentreX, 1.0 - CentreY);
    float2 xy  = uv - psn;
-   float2 xy1 = (xy * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio)) * sine;
+   float2 xy1 = xy * sine * aspect;
 
-   xy  = (xy * cosine) - xy1.yx;
-   xy1 = xy * 2.0;
+   xy = (xy * cosine) - xy1.yx;
+
+   // Now set up the coordinates to rotate and scale the star so that we have small
+   // stars at the centre.  Angles of 45 and plus and minus 22.5 degrees are used.
+
+   xy1 = xy * 1.5;         // Scale xy1 for the mini stars
 
    float2 xy2 = xy1 * SINE_22_5;
-   float2 xy3 = xy1 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio) * COSINE_22_5;
+   float2 xy3 = xy1 * COSINE_22_5 * aspect;
 
-   xy2 += CENTRE;
+   xy2 += CENTRE;          // Reset xy2 to the global coordinates
 
-   xy1 = xy2 + xy3.yx;
-   xy2 = xy2 - xy3.yx;
-   xy3 = xy * SQRT_2;
+   xy1 = xy2 + xy3.yx;     // Mini star #1
+   xy2 = xy2 - xy3.yx;     // Mini star #2
+   xy3 = xy * SCALE_45;    // This incorporates both the scale and cos/sin 45 degrees
+   xy += CENTRE;           // Reset xy to the global coordinates to get the main star
 
-   xy  += CENTRE;
-   xy3 += float2 (xy3 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio) + CENTRE).yx;
+   // We add the aspect ratio corrected and rotated xy3 to give the 45 degree version
 
-   // Recover the star and the input video
+   xy3 += float2 ((xy3 * aspect) + CENTRE).yx;
+
+   // Recover the input video and the star, using our blanking function for the star
 
    float4 Star = fn_tex2D (s_Glint, xy);
    float4 Bgnd = tex2D (s_Input, uv);
 
-   float xtra = fn_tex2D (s_Glint, xy1).a;
+   // Now get the first mini star from the star alpha using fn_xtra()
 
-   xtra = max (xtra, fn_tex2D (s_Glint, xy2).a);
-   xtra = max (xtra, fn_tex2D (s_Glint, xy3).a);
+   float xtra = fn_xtra (s_Glint, xy1);
+
+   // Get the other two and combine them with the main star as a luminance value
+
+   xtra = max (xtra, fn_xtra (s_Glint, xy2));
+   xtra = max (xtra, fn_xtra (s_Glint, xy3));
    xtra = max ((xtra * 3.0) - 2.0, 0.0) * 0.8;
    Star = max (Star, xtra.xxxx);
 
@@ -470,7 +513,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // Combine the star with the video using a screen blend
 
-   Star = saturate (Bgnd - (Star * Bgnd) + Star);
+   Star = saturate (Star + Bgnd - (Star * Bgnd));
 
    return lerp (Bgnd, Star, Strength);
 }

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-04-12
 // @Author jwrl
 // @Created 2017-05-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_vignette_640.png
@@ -55,6 +55,9 @@ reasonable needs.
 // Modified jwrl 2018-12-23:
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-04-12:
+// Added linear filtering to s_Background to improve smoothness.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -89,7 +92,12 @@ sampler s_Foreground = sampler_state
    MipFilter = Linear;
 };
 
-sampler s_Background = sampler_state { Texture = <Bgd>; };
+sampler s_Background = sampler_state {
+   Texture = <Bgd>;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 sampler s_Input = sampler_state
 {

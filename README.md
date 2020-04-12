@@ -1,4 +1,4 @@
-# Lightworks user Fx library, April 11, 2020.
+# Lightworks user Fx library, April 12, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -131,7 +131,6 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: DVE Extras
 |EFFECT                        |FILE NAME               |
 |:---------------------------- |:---------------------- |
-|2D DVE plus alpha             |2dDVEplusAlpha.fx       |
 |2D DVE plus antialias         |2dDVEplusAntialias.fx   |
 |Deco DVE                      |DecoDVE.fx              |
 |DVE with vignette             |DVEwithVignette.fx      |

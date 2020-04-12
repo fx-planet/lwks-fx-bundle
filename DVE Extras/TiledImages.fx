@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-04-12
 // @Author windsturm
 // @Created 2012-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTile_640.png
@@ -31,6 +31,9 @@
 // Changed category.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-04-12:
+// Changed clamp addressing to ClampToEdge for compatibility reasons.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,8 +54,8 @@ texture Input;
 sampler s0 = sampler_state
 {
    Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

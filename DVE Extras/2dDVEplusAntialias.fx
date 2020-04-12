@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-03-12
+// @Released 2020-04-12
 // @Author schrauber
 // @Author jwrl
 // @Author Editshare
@@ -63,6 +63,9 @@
 // If both X and Y scale factors are unity we exit the blur routine immediately.
 // Removed the redundant aspect ratio correction from the blur scale factor.  While it is
 // necessary for a standard blur, it should not be necessary here.
+//
+// Modified jwrl 2020-04-12:
+// Added linear filtering to s_Foreground to improve antialiasing.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -87,7 +90,13 @@ texture Inp : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Foreground = sampler_state {
+   Texture   = <Fg>;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
 sampler2D s_Background = sampler_state { Texture = <Bg>; };
 
 sampler s_Input = sampler_state

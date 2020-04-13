@@ -2,7 +2,7 @@
 // @Released 2020-04-12
 // @Maintainer jwrl
 // @Created 2020-04-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/Simple_Star_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Simple_star_640.png
 
 /**
  Simple star is a glint effect which creates star filter-like highlights, with 4, 5,
@@ -200,7 +200,7 @@ float CentreY
 
 #define QUAD_PI     12.566370614
 #define ONE_THIRD   0.3333333333
-#define SCALE_45    0.9722718241   // 1.375 * sine 45
+#define SCALE_45    1.2374368671   // 1.75 * sine 45
 
 float _OutputAspectRatio;
 
@@ -460,7 +460,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    // Now set up the coordinates to rotate and scale the star so that we have small
    // stars at the centre.  Angles of 45 and plus and minus 22.5 degrees are used.
 
-   xy1 = xy * 1.5;         // Scale xy1 for the mini stars
+   xy1 = xy * 2.0;         // Scale xy1 for the mini stars
 
    float2 xy2 = xy1 * SINE_22_5;
    float2 xy3 = xy1 * COSINE_22_5 * aspect;
@@ -489,7 +489,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    xtra = max (xtra, fn_xtra (s_Glint, xy2));
    xtra = max (xtra, fn_xtra (s_Glint, xy3));
-   xtra = max ((xtra * 3.0) - 2.0, 0.0) * 0.8;
+   xtra = max ((xtra * 4.0) - 2.0, 0.0) * 0.4;
    Star = max (Star, xtra.xxxx);
 
    // Mix the user selected colour with the rainbow pattern

@@ -1,22 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-04-16
 // @Author jwrl
 // @Author abelmilanes
 // @Created 2017-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmExp_640.png
 
 /**
-This is an effect that simulates exposure adjustment using a Cineon profile.  It is
-fairly accurate at the expense of requiring some reasonably complex maths.  With current
-GPU types this shouldn't be an issue.
+ This is an effect that simulates exposure adjustment using a Cineon profile.  It is
+ fairly accurate at the expense of requiring some reasonably complex maths.  With current
+ GPU types this shouldn't be an issue.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmExposure.fx
 //
 // This effect was started by user abelmilanes as FilmFx.fx in 2011 but was never
-// completed.  This version was completed by jwrl.  There has been considerable code
-// cleanup for efficiency and speed reasons.  The alpha channel is now preserved which
+// completed.  This version was completed by jwrl.  Hopefully abelmilane's original
+// intentions have been preserved.  In the process there has been considerable code
+// cleanup for efficiency and speed reasons.  The alpha channel is now passed which
 // the unfinished original didn't do.  The "amount" parameter is an addition so that
 // the effect can now be faded out.
 //
@@ -44,6 +45,10 @@ GPU types this shouldn't be an issue.
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 16 April 2020 jwrl.
+// Removed buggy "all()" Cg expression.  Both "all()" and "any()" suffer from this Cg
+// documented bug.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -120,7 +125,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // Convert RGB to linear
 
-   float3 lin = (all (Src.rgb < 0.04045)) ? Src.rgb / 12.92 : pow ((Src.rgb + 0.055.xxx) / 1.055, 2.4);
+   float test = max (Src.r, max (Src.g, Src.b));   // Workaround to address Cg's all() bug
+
+   float3 lin = (test < 0.04045) ? Src.rgb / 12.92 : pow ((Src.rgb + 0.055.xxx) / 1.055, 2.4);
 
    // Convert linear to Kodak Cineon
 
@@ -136,9 +143,10 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // Back to RGB
 
-   retval.rgb = (all (lin < 0.0031308)) ? saturate (lin * 12.92)
-                                        : saturate ((1.055 * pow (lin, 0.4166667)) - 0.055);
-   retval.a = Src.a;
+   test = max (lin.r, max (lin.g, lin.b));
+
+   retval.rgb = (test < 0.0031308) ? lin * 12.92 : (1.055 * pow (lin, 0.4166667)) - 0.055;
+   retval = { saturate (retval.rgb), Src.a };
 
    return lerp (retval, Src, Amount);
 }

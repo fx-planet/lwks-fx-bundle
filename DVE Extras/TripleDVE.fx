@@ -1,22 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-04-16
 // @Author jwrl
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_640.png
 
 /**
-This is a combination of three DVEs each of which has been reverse engineered to match
-Editshare's 2D DVE parameters.  DVE 1 adjusts the foreground and DVE 2 adjusts the
-background.  The foreground can be cropped with rounded corners and given a bi-colour
-border.  Both the edges and borders can be feathered, and a drop shadow is also provided.
+ This is a combination of three DVEs each of which has been reverse engineered to match
+ Editshare's 2D DVE parameters.  DVE 1 adjusts the foreground and DVE 2 adjusts the
+ background.  The foreground can be cropped with rounded corners and given a bi-colour
+ border.  Both the edges and borders can be feathered, and a drop shadow is also provided.
 
-DVE 3 takes the cropped, bordered output of DVE 1 as its input.  This means that you can
-scale the background and foreground independently, then adjust position and size of the
-cropped foreground.
+ DVE 3 takes the cropped, bordered output of DVE 1 as its input.  This means that you can
+ scale the background and foreground independently, then adjust position and size of the
+ cropped foreground.
 
-Because of the way that the DVEs are created and applied they have exactly the same
-quality impact on the final result as a single DVE would.  In effect it's three DVEs for
-the price of one.
+ Because of the way that the DVEs are created and applied they have exactly the same
+ quality impact on the final result as a single DVE would.  In effect it's three DVEs for
+ the price of one.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -37,9 +37,13 @@ the price of one.
 // Modified 29 August 2018 jwrl.
 // Added notes to header.
 //
-// Modified jwrl 2018-12-23:
+// Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 16 April 2020 jwrl.
+// Explicitly set SupportsAlpha flag for the border colours to false.
+// Added DisplayAsPercentage flags for version 2020 and higher.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -158,12 +162,14 @@ float4 BorderColour_1
 <
    string Group = "Border";
    string Description = "Colour 1";
+   bool SupportsAlpha = false;
 > = { 0.855, 0.855, 0.855, 1.0 };
 
 float4 BorderColour_2
 <
    string Group = "Border";
    string Description = "Colour 2";
+   bool SupportsAlpha = false;
 > = { 0.345, 0.655, 0.926, 1.0 };
 
 float Shadow
@@ -202,7 +208,7 @@ float PosX_1
 <
    string Group = "DVE 1";
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -211,7 +217,7 @@ float PosY_1
 <
    string Group = "DVE 1";
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -220,6 +226,7 @@ float Scale_1
 <
    string Group = "DVE 1";
    string Description = "Master scale";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -228,6 +235,7 @@ float ScaleX_1
 <
    string Group = "DVE 1";
    string Description = "Scale X";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -236,6 +244,7 @@ float ScaleY_1
 <
    string Group = "DVE 1";
    string Description = "Scale Y";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -244,7 +253,7 @@ float PosX_2
 <
    string Group = "DVE 2";
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -253,7 +262,7 @@ float PosY_2
 <
    string Group = "DVE 2";
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -262,6 +271,7 @@ float Scale_2
 <
    string Group = "DVE 2";
    string Description = "Master scale";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -270,6 +280,7 @@ float ScaleX_2
 <
    string Group = "DVE 2";
    string Description = "Scale X";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -278,6 +289,7 @@ float ScaleY_2
 <
    string Group = "DVE 2";
    string Description = "Scale Y";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -286,7 +298,7 @@ float PosX_3
 <
    string Group = "DVE 3";
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -295,7 +307,7 @@ float PosY_3
 <
    string Group = "DVE 3";
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -304,6 +316,7 @@ float Scale_3
 <
    string Group = "DVE 3";
    string Description = "Master scale";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -312,6 +325,7 @@ float ScaleX_3
 <
    string Group = "DVE 3";
    string Description = "Scale X";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;
@@ -320,6 +334,7 @@ float ScaleY_3
 <
    string Group = "DVE 3";
    string Description = "Scale Y";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
    float MaxVal = 10.0;
 > = 1.0;

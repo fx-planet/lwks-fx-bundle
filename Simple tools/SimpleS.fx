@@ -2,7 +2,7 @@
 // @Released 2020-04-29
 // @Author jwrl
 // @Created 2020-04-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleS_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleScurve_640.png
 
 /**
  This effect allows the user to apply an S-curve correction to red, green and blue video
@@ -24,14 +24,10 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
 texture Inp;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
 
 sampler s_Input = sampler_state { Texture = <Inp>; };
 
@@ -81,12 +77,15 @@ float CurveB
 // Functions
 //-----------------------------------------------------------------------------------------//
 
+// If the input video is less than 0.5 this function will double it and raise it to
+// the power of the value in curve, then halve it.  If it is greater than 0.5 it will
+// invert it then double and raise it to the power of the curve before inverting and
+// halving it again.  This will give an S curve when the two components are combined.
+
 float fn_s_curve (float video, float curve)
 {
-   float Scurve = (2.0 * max (0.0, curve)) + 1.0;
-
-   return (video < 0.5) ?  pow (video * 2.0, Scurve) * 0.5
-                        : 1.0 - (pow ((1.0 - video) * 2.0, Scurve) * 0.5);
+   return (video > 0.5) ? 1.0 - (pow (2.0 - video - video, curve) * 0.5)
+                        : pow (video + video, curve) * 0.5;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -95,14 +94,28 @@ float fn_s_curve (float video, float curve)
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
-   float4 compnt = retval;
+   float4 inp    = tex2D (s_Input, uv);   // Recover the video source
+   float4 retval = inp;                   // Only really needs inp.a
 
-   compnt.r = fn_s_curve (retval.r, CurveR + CurveY);
-   compnt.g = fn_s_curve (retval.g, CurveG + CurveY);
-   compnt.b = fn_s_curve (retval.b, CurveB + CurveY);
+   // Now load a float3 variable with double the Y curve and offset it
+   // by 1 to give us a range from 1 to 3, limited to a minimum of 1.
 
-   return lerp (retval, compnt, Amount);
+   float3 curves = (max (CurveY + CurveY, 0.0) + 1.0).xxx;
+
+   // Add to the luminance curves the doubled and limited RGB values.
+   // This means that each curve value will now range between 1 and 6.
+
+   curves += max (float3 (CurveR, CurveG, CurveB) * 2.0, 0.0.xxx);
+
+   // Now place the individual S-curve modified RGB channels into retval
+
+   retval.r = fn_s_curve (inp.r, curves.r);
+   retval.g = fn_s_curve (inp.g, curves.g);
+   retval.b = fn_s_curve (inp.b, curves.b);
+
+   // Return the processed video, mixing it back with the input video
+
+   return lerp (inp, retval, Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -114,4 +127,3 @@ technique SimpleS
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

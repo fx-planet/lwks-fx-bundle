@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-04-29
+// @Released 2020-05-01
 // @Author jwrl
 // @Created 2020-04-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/SimpleScurve_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Simple_S_640.png
 
 /**
  This effect allows the user to apply an S-curve correction to red, green and blue video

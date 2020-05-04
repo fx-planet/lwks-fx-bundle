@@ -1,38 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-05-04
 // @Author jwrl
 // @Created 2018-03-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_640.png
 
 /**
-DESCRIPTION:
-This is a luminance key similar to the Editshare effect, but with some differences.  A crop
-function and a simple DVE have been included to provide these often-needed functions without
-the need to add any external effects.
+ DESCRIPTION:
+ This is a luminance key similar to the Editshare effect, but with some differences.  A crop
+ function and a simple DVE have been included to provide these often-needed functions without
+ the need to add any external effects.
 
-DIFFERENCES:
-The most obvious difference from the Lightworks version is in the way that the parameters
-are identified.  "Tolerance" is labelled "Key clip" in this effect, "Edge Softness" is now
-"Key Softness" and "Invert" has become "Invert key".  These are the industry standard terms
-used for these functions, so this change makes the effect more consistent with any existing
-third party key software.
+ DIFFERENCES:
+ The most obvious difference from the Lightworks version is in the way that the parameters
+ are identified.  "Tolerance" is labelled "Key clip" in this effect, "Edge Softness" is now
+ "Key Softness" and "Invert" has become "Invert key".  These are the industry standard terms
+ used for these functions, so this change makes the effect more consistent with any existing
+ third party key software.
 
-Regardless of whether the key is inverted or not, the clip setting in this keyer always works
-from black at 0% to white at 100%.  In the Lightworks effect the equivalent setting changes
-sense when the key is inverted.  This is unexpected to say the least and has been avoided.
-Key softness in this effect is symmetrical around the key edge.  This is consistent with the
-way that a traditional analog luminance keyer works.  The alpha signal produced can either
-replace any existing foreground alpha or be gated with it.  It can then be used to key the
-foreground over the background or passed on to other effects.  Any background image will be
-suppressed in this mode.
+ Regardless of whether the key is inverted or not, the clip setting in this keyer always works
+ from black at 0% to white at 100%.  In the Lightworks effect the equivalent setting changes
+ sense when the key is inverted.  This is unexpected to say the least and has been avoided.
+ Key softness in this effect is symmetrical around the key edge.  This is consistent with the
+ way that a traditional analog luminance keyer works.  The alpha signal produced can either
+ replace any existing foreground alpha or be gated with it.  It can then be used to key the
+ foreground over the background or passed on to other effects.  Any background image will be
+ suppressed in this mode.
 
-DVE AND CROP COMPONENTS:
-Cropping can be set up by dragging the upper left and lower right corners of the crop area
-on the edit viewer, or in the normal way by dragging the sliders.  The crop is a simple hard
-edged one, and operates before the DVE.  The DVE is a simple 2D DVE, but zooming is achieved
-by Z-axis adjustment.  This is treated as an offset from zero, and has limted range only.
-Negative values give size reduction which strictly speaking is incorrect, but feels more
-natural - smaller numbers equal smaller images.
+ DVE AND CROP COMPONENTS:
+ Cropping can be set up by dragging the upper left and lower right corners of the crop area
+ on the edit viewer, or in the normal way by dragging the sliders.  The crop is a simple hard
+ edged one, and operates before the DVE.  The DVE is a simple 2D DVE, but zooming is achieved
+ by Z-axis adjustment.  This is treated as an offset from zero, and has limted range only.
+ Negative values give size reduction which strictly speaking is incorrect, but feels more
+ natural - smaller numbers equal smaller images.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -62,6 +62,9 @@ natural - smaller numbers equal smaller images.
 //
 // Modified 23 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 4 May 2020 by user jwrl:
+// Combined crop with main luminance key and DVE code.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -80,24 +83,19 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture InpCrop  : RenderColorTarget;
-
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_Cropped = sampler_state
+sampler s_Foreground = sampler_state
 {
-   Texture   = <InpCrop>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
+   Texture   = <Fg>;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
 };
+
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -223,22 +221,16 @@ float CropBottom
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
-{
-   // Range limit X and Y crop values and invert the Y values so that more positive
-   // Y settings move the crop line up the screen rather than down as they do in Cg.
-
-   float left  = max (0.0, CropLeft);
-   float right = min (1.0, CropRight);
-   float top   = max (0.0, 1.0 - CropTop);
-   float botm  = min (1.0, 1.0 - CropBottom);
-
-   return (uv.x >= left) && (uv.y >= top) && (uv.x <= right) && (uv.y <= botm)
-          ? tex2D (s_Foreground, uv) : EMPTY;
-}
-
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
+   // Calculate the crop boundaries.  These are limited to the edge of frame so that no
+   // illegal addresses for the input sampler ranges can ever be produced.
+
+   float L = max (0.0, CropLeft);
+   float R = min (1.0, CropRight);
+   float T = max (0.0, 1.0 - CropTop);
+   float B = min (1.0, 1.0 - CropBottom);
+
    // Set up range limited DVE scaling.  Values of zero or below will be ignored if
    // input manually.  The minimum value will be limited to 0.0001.
 
@@ -250,10 +242,11 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    // Recover background and foreground, limiting the foreground to legal addresses.  This
    // is done to ensure that the differences in cross platform edge clamping are bypassed.
+   // It also gives us the cropping that we want.
 
    float4 Bgd = (KeyMode < HIDE_BGD) ? tex2D (s_Background, xy2) : EMPTY;
-   float4 Fgd = (xy3.x >= 0.0) && (xy3.x <= 1.0) && (xy3.y >= 0.0) && (xy3.y <= 1.0)
-              ? tex2D (s_Cropped, xy3) : EMPTY;
+   float4 Fgd = (xy3.x >= L) && (xy3.x <= R) && (xy3.y >= T) && (xy3.y <= B)
+              ? tex2D (s_Foreground, xy3) : EMPTY;
 
    // Set up the key clip and softness from the Fgd luminance
 
@@ -279,9 +272,5 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 technique LumakeyWithDVE
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = InpCrop;"; >
-   { PixelShader = compile PROFILE ps_crop (); }
-
-   pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }

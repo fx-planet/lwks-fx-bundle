@@ -1,4 +1,4 @@
-# Lightworks user Fx library, April 29, 2020.
+# Lightworks user Fx library, May 10, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -135,6 +135,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Deco DVE                      |DecoDVE.fx              |
 |DVE with vignette             |DVEwithVignette.fx      |
 |Framed DVE                    |FramedDVE.fx            |
+|Rosehaven                     |Rosehaven.fx            |
 |Spin zoom                     |SpinZoom20171022.fx     |
 |Tiled images                  |TiledImages.fx          |
 |Triple DVE                    |TripleDVE.fx            |
@@ -244,6 +245,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Flip flop                     |FlipFlop.fx             |
 |INK                           |InkFx.fx                |
 |Key out black                 |KeyOutBlack.fx          |
+|Mirrors                       |Mirrors.fx              |
 |Radial gradient               |RadialGrad.fx           |
 |Simple S curve                |SimpleS.fx              |
 |Simple star                   |SimpleStar.fx           |

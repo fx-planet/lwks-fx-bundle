@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2020-04-04
+// @Released 2020-05-15
 // @Author jwrl
 // @Created 2020-04-03
-// @see https://www.lwks.com/media/kunena/attachments/6375/RadialGradient_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/RadialGrad_640.png
 
 /**
- This generates a radial colour gradient, the centre point of which can be adjusted.  The
- aspect ratio can also be corrected for, changing the geometry from circular to an ellipse
- defined by the aspect ratio of the video format.
+ This generates a radial colour gradient, the radius of which can be adjusted.  The position
+ can also be adjusted and the aspect ratio can also be altered.  This allows the geometry to
+ be changed from circular to a vertical or horizontal ellipse.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,6 +15,12 @@
 //
 // Modified 2020-04-04 - jwrl.
 // Added aspect ratio correction and a means of varying the amount of correction applied.
+//
+// Modified 2020-05-15 - jwrl.
+// Simplified code generally.
+// Added a limited range diameter control.
+// Relabelled "Centre colour" to "Inner colour".
+// Changed aspect ratio correction so that it tracks the output aspect ratio.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,42 +44,51 @@ sampler s_Input = sampler_state { Texture = <Inp>; };
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float4 OuterColour
+float4 Colour_1
 <
    string Group = "Colour range";
    string Description = "Outer colour";
    bool SupportsAlpha = true;
 > = { 0.0, 0.0, 1.0, 1.0 };
 
-float4 CentreColour
+float4 Colour_2
 <
    string Group = "Colour range";
-   string Description = "Centre colour";
+   string Description = "Inner colour";
    bool SupportsAlpha = true;
 > = { 0.314, 0.784, 1.0, 1.0 };
+
+float Radius
+<
+   string Group = "Colour range";
+   string Description = "Diameter";
+   string Flags = "DisplayAsPercentage";
+   float MinVal = 0.5;
+   float MaxVal = 1.5;
+> = 1.0;
 
 float Aspect
 <
    string Group = "Colour range";
-   string Description = "Aspect ratio";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+   string Description = "Aspect ratio 1:x";
+   float MinVal = 0.25;
+   float MaxVal = 4.0;
+> = 1.0;
 
-float OffsX
+float Offs_X
 <
    string Description = "Gradient centre";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 0.5;
 
-float OffsY
+float Offs_Y
 <
    string Description = "Gradient centre";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
@@ -88,34 +103,23 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD0, float2 xy2 : TEXCOORD1) : COLOR
+float4 ps_main (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 {
-   float2 xy1 = xy - 0.5.xx;
+   float2 xy2 = xy0 - 0.5.xx;
 
-   if (_OutputAspectRatio < 0) { xy1.x *= _OutputAspectRatio; }
-   else xy1.y /= _OutputAspectRatio;
+   float ratio = max (Aspect, 0.0001) * _OutputAspectRatio;
 
-   xy1 = lerp (xy1 + 0.5.xx, xy, Aspect);
+   if (ratio < 1.0) xy2.x *= ratio;
+   else xy2.y /= ratio;
 
-   float buff_0 = (OffsX <= 0.0) ? (xy1.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0) ? xy1.x / 2.0 :
-                  (OffsX > xy1.x) ? xy1.x / (2.0 * OffsX) : ((xy1.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   xy2 /= Radius;
+   xy2 += float2 (1.0 - Offs_X, ((Offs_Y - 0.5) / _OutputAspectRatio) + 0.5);
 
-   float horiz = sin (PI * buff_0);
-   float vert  = 1.0 - OffsY;
+   float2 mask = sin (saturate (xy2) * PI);
 
-   buff_0 = (vert <= 0.0) ? (xy1.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? xy1.y / 2.0 :
-            (vert > xy1.y) ? xy1.y / (2.0 * vert) : ((xy1.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   float4 retval = lerp (Colour_1, lerp (Colour_1, Colour_2, mask.x), mask.y);
 
-   vert = sin (PI * buff_0);
-
-   float4 Bgnd     = tex2D (s_Input, xy2);
-   float4 gradient = lerp (OuterColour, CentreColour, horiz);
-
-   gradient = lerp (OuterColour, gradient, vert);
-
-   return lerp (Bgnd, gradient, gradient.a);
+   return lerp (tex2D (s_Input, xy1), retval, retval.a);
 }
 
 //-----------------------------------------------------------------------------------------//

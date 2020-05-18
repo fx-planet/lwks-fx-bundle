@@ -17,8 +17,10 @@
 //
 // Modified jwrl 2020-05-18:
 // Added effects header block and a rudimentary description.
-// Changed Border addressing to ClampToEdge, since Border differs from Windows in Linux.
-// Added check for _LENGTH in version 14.5 or better.  Effect may fail otherwise.
+// Changed the Border addressing to ClampToEdge, since the behaviour of Border differs
+// between Windows and Linux / OS/X.
+// Added check for _LENGTH to check for version 14.5 or better.  The effect will fail
+// if earlier versions of Lightworks are used.
 // Changed subcategory from "User Effects" to "Video artefacts" for consistency with other
 // effects library categories.
 //-----------------------------------------------------------------------------------------//

@@ -337,6 +337,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Night vision                  |NightVision.fx          |
 |Old monitor                   |OldMonitor.fx           |
 |Quadruplex VTR simulator      |QuadVTRsimulator.fx     |
+|Screen shake                  |Screenshake.fx          |
 |VHS simulator                 |VHSsimulator.fx         |
 |Video noise                   |VideoNoise.fx           |
 

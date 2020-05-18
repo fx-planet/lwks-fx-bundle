@@ -16,6 +16,7 @@
 // Ported to HLSL/Cg and adapted for Lightworks by hugly 2019-09-07
 //
 // Modified jwrl 2020-05-18:
+// Preserved Fg alpha channel throughout.
 // Added effects header block and a rudimentary description.
 // Changed the Border addressing to ClampToEdge, since the behaviour of Border differs
 // between Windows and Linux / OS/X.
@@ -23,6 +24,11 @@
 // if earlier versions of Lightworks are used.
 // Changed subcategory from "User Effects" to "Video artefacts" for consistency with other
 // effects library categories.
+// Rewrote function random3() to reduce the maths operations.
+// Rewrote function simplex3d() to correct the implicit float3 conversions which wouldn't
+// have worked in Linux and OS/X.
+// Added frac() to the time calculation to prevent speed overflow causing the shake to
+// stop prematurely.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -33,7 +39,6 @@ int _LwksEffectInfo
    string SubCategory = "Video artefacts";
    string Notes       = "Random screen shake, slightly zoomed in, no motion blur";
 > = 0;
-
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -91,63 +96,49 @@ uniform float _Length;
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float3 random3(float3 c) 
+float3 random3 (float3 c)
 {
-    float j = 4096.0*sin(dot(c,float3(17.0, 59.4, 15.0)));
-    float3 r;
-    r.z = frac(512.0*j);
-    j *= .125;
-    r.x = frac(512.0*j);
-    j *= .125;
-    r.y = frac(512.0*j);
-    return r;
+   float j = 4096.0 * sin (dot (c, float3 (17.0, 59.4, 15.0)));
+
+   return frac (float3 (512.0, 64.0, 8.0) * j);
 }
 
-float simplex3d(float3 p) 
+float simplex3d (float3 p)
 {    
-    float3 s = floor(p + dot(p, float3(F3.xxx)));
-    float3 x = p - s + dot(s, float3(G3.xxx));
-    
-    float3 e = step(float3(0.0.xxx), x - x.yzx);
-    float3 i1 = e*(1.0 - e.zxy);
-    float3 i2 = 1.0 - e.zxy*(1.0 - e);
-        
-    float3 x1 = x - i1 + G3;
-    float3 x2 = x - i2 + 2.0*G3;
-    float3 x3 = x - 1.0 + 3.0*G3;
-    
-    float4 w, d;
-    
-    w.x = dot(x, x);
-    w.y = dot(x1, x1);
-    w.z = dot(x2, x2);
-    w.w  = dot(x3, x3);
-    
-    w = max(0.6 - w, 0.0);
-    
-    d.x = dot(random3(s)-.5, x);
-    d.y = dot(random3(s + i1)-.5, x1);
-    d.z = dot(random3(s + i2)-.5, x2);
-    d.w = dot(random3(s + 1.0)-.5, x3);
+   float3 s = floor (p + dot (p, F3.xxx).xxx);
+   float3 x = p - s + dot (s, G3.xxx).xxx;
 
-    w *= w;    w *= w;    d *= w;   //**
-	 
-    return dot(d, float4(52.0.xxxx));
+   float3 e = step (0.0.xxx, x - x.yzx);
+   float3 i1 = e * (1.0.xxx - e.zxy);
+   float3 i2 = 1.0.xxx - e.zxy * (1.0.xxx - e);
+
+   float3 x1 = x - i1 + G3;
+   float3 x2 = x - i2 + 2.0 * G3;
+   float3 x3 = x - 1.0.xxx + 3.0 * G3;
+
+   float4 w = float4 (dot (x, x), dot (x1, x1), dot (x2, x2), dot (x3, x3));
+
+   w = pow (max (0.6.xxxx - w, 0.0.xxxx), 4.0);
+
+   float4 d = float4 (dot (random3 (s) - 0.5.xxx, x), dot (random3 (s + i1) - 0.5.xxx, x1),
+                      dot (random3 (s + i2) - 0.5.xxx, x2), dot (random3 (s + 1.0.xxx) - 0.5.xxx, x3));
+
+   return dot (d * w, 52.0.xxxx);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_Screenshake(float2 uv : TEXCOORD ) : COLOR
+float4 ps_Screenshake (float2 uv : TEXCOORD1) : COLOR
 {    
-    uv = (uv + 0.02.xx) / 1.04.xx;   //** zoom
-    
-    float3 p3 = float3(0,0, iTime * speed) * 8.0 + 200.0;
+   float2 xy = (uv + 0.02.xx) / 1.04.xx;   //** zoom
 
-    float2 noise = float2(simplex3d(p3), simplex3d(p3 + 10.0)) * strength/30;
+   float3 p3 = float3 (0.0.xx, frac (iTime * speed)) * 8.0 + 200.0.xxx;
 
-    return float4( tex2D( s_Fg, uv + noise).rgb, 1.0);
+   xy += float2 (simplex3d (p3), simplex3d (p3 + 10.0.xxx)) * strength / 30.0;
+
+   return tex2D (s_Fg, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -155,4 +146,3 @@ float4 ps_Screenshake(float2 uv : TEXCOORD ) : COLOR
 //-----------------------------------------------------------------------------------------//
 
 technique tech_Screenshake {pass one {PixelShader = compile PROFILE ps_Screenshake (); }}
-

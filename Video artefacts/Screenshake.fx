@@ -89,8 +89,10 @@ uniform float _Length;
 
 #define iTime (_Length * _Progress) 
 
-#define F3 0.3333333
-#define G3 0.1666667
+#define SIXTH_3 0.1666667.xxx
+#define THIRD_3 0.3333333.xxx
+#define HALF_3  0.5.xxx
+#define ONE_3   1.0.xxx
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -105,25 +107,24 @@ float3 random3 (float3 c)
 
 float simplex3d (float3 p)
 {    
-   float3 s = floor (p + dot (p, F3.xxx).xxx);
-   float3 x = p - s + dot (s, G3.xxx).xxx;
+   float3 s = floor (p + dot (p, THIRD_3).xxx);
+   float3 x = p - s + dot (s, SIXTH_3).xxx;
 
-   float3 e = step (0.0.xxx, x - x.yzx);
-   float3 i1 = e * (1.0.xxx - e.zxy);
-   float3 i2 = 1.0.xxx - e.zxy * (1.0.xxx - e);
+   float3 e  = step (0.0.xxx, x - x.yzx);
+   float3 i1 = e * (ONE_3 - e.zxy);
+   float3 i2 = ONE_3 - e.zxy * (ONE_3 - e);
 
-   float3 x1 = x - i1 + G3;
-   float3 x2 = x - i2 + 2.0 * G3;
-   float3 x3 = x - 1.0.xxx + 3.0 * G3;
+   float3 x1 = x - i1 + SIXTH_3;
+   float3 x2 = x - i2 + THIRD_3;
+   float3 x3 = x - HALF_3;
 
    float4 w = float4 (dot (x, x), dot (x1, x1), dot (x2, x2), dot (x3, x3));
 
-   w = pow (max (0.6.xxxx - w, 0.0.xxxx), 4.0);
+   w  = pow (max (0.6.xxxx - w, 0.0.xxxx), 4.0);
+   w *= float4 (dot (random3 (s) - HALF_3, x), dot (random3 (s + i1) - HALF_3, x1),
+                dot (random3 (s + i2) - HALF_3, x2), dot (random3 (s + ONE_3) - HALF_3, x3));
 
-   float4 d = float4 (dot (random3 (s) - 0.5.xxx, x), dot (random3 (s + i1) - 0.5.xxx, x1),
-                      dot (random3 (s + i2) - 0.5.xxx, x2), dot (random3 (s + 1.0.xxx) - 0.5.xxx, x3));
-
-   return dot (d * w, 52.0.xxxx);
+   return dot (w, 52.0.xxxx);
 }
 
 //-----------------------------------------------------------------------------------------//

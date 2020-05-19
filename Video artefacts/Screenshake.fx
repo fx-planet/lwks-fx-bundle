@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-05-18
-// @Author flyingrub https://www.shadertoy.com/view/wsBXWW
+// @Released 2020-05-19
 // @Author hugly
+// @Author flyingrub https://www.shadertoy.com/view/wsBXWW
 // @Created 2019-09-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/ScreenShake_640.png
 
@@ -15,20 +15,27 @@
 //
 // Ported to HLSL/Cg and adapted for Lightworks by hugly 2019-09-07
 //
-// Modified jwrl 2020-05-18:
-// Preserved Fg alpha channel throughout.
-// Added effects header block and a rudimentary description.
-// Changed the Border addressing to ClampToEdge, since the behaviour of Border differs
-// between Windows and Linux / OS/X.
-// Added check for _LENGTH to check for version 14.5 or better.  The effect will fail
-// if earlier versions of Lightworks are used.
-// Changed subcategory from "User Effects" to "Video artefacts" for consistency with other
-// effects library categories.
-// Rewrote function random3() to reduce the maths operations.
-// Rewrote function simplex3d() to correct the implicit float3 conversions which wouldn't
-// have worked in Linux and OS/X.
-// Added frac() to the time calculation to prevent speed overflow causing the shake to
-// stop prematurely.
+// Modified jwrl 2020-05-18.
+// In order of application, the changes are:
+//   Preserved Fg alpha channel throughout.
+//   Added frac() to the time calculation to prevent speed overflow causing the shake to
+//   stop prematurely.
+//   Rewrote function random3() to reduce the maths operations.
+//   Rewrote function simplex3d() to correct all implicit float3 conversions which wouldn't
+//   have worked in Linux and OS/X.  Also simplified it to reduce the maths operations.
+//   Added effects header block and a rudimentary description.
+//   Changed subcategory from "User Effects" to "Video artefacts" for consistency with
+//   other effects library subcategories.
+//   Changed the sampler addressing to ClampToEdge, since the behaviour of Border differs
+//   between Windows and Linux / OS/X.
+//   Added check for _LENGTH to check for version 14.5 or better.  The effect will now
+//   fail if earlier versions of Lightworks are used.
+//
+// Modified jwrl 2020-05-19.
+// Changed frac (time) to frac (time / 13.0) and scaled the result by 13.  Since it was
+// already scaled by 8, it is now scaled by 104.  This was done because a simple frac()
+// gave a result that was too obviously cyclic.  Dividing by a prime number that is not
+// related to a standard frame rate helps that.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -79,6 +86,8 @@ float speed
 //-----------------------------------------------------------------------------------------//
 // Global Declarations
 //-----------------------------------------------------------------------------------------//
+
+// This produces a compiler error if this is installed in version 14 or earlier.
 
 #ifndef _LENGTH
 Bad Lightworks version
@@ -135,7 +144,7 @@ float4 ps_Screenshake (float2 uv : TEXCOORD1) : COLOR
 {    
    float2 xy = (uv + 0.02.xx) / 1.04.xx;   //** zoom
 
-   float3 p3 = float3 (0.0.xx, frac (iTime * speed)) * 8.0 + 200.0.xxx;
+   float3 p3 = float3 (0.0.xx, frac (iTime / 13.0) * speed * 104.0) + 200.0.xxx;
 
    xy += float2 (simplex3d (p3), simplex3d (p3 + 10.0.xxx)) * strength / 30.0;
 

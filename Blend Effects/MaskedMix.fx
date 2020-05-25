@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-23
+// @Released 2020-05-25
 // @Author jwrl
 // @Created 2020-05-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMix_640.png
@@ -10,9 +10,13 @@
  foreground.  There are some major differences.  The first is that instead of putting the
  mask input on the bottom layer it is placed on the top.  This just appears to make more
  sense.  The next layer is the fill layer, then the bottom is the background.  The next
- difference is that the blend can be enhanced to better handle title effects.  Third, when
- used with title effects drop shadows will be preserved.  This has implications if you
- choose to use coloured drop shadows, because they will be affected by the fill layer.
+ difference is that the blend can be enhanced to better handle title effects.
+
+ Third, when used with title effects drop shadows will be preserved.  This will have
+ implications if you choose to use coloured drop shadows, because they will be affected
+ by the fill layer.  In an attempt to help with this sort of issue a colour match mode
+ has been included.  Fairly obviously, if your drop shadow colour matches the mask you
+ will still have problems.
 
  Finally, blending treats the foreground/fill mix as a single layer over the background.
  While every attempt has been made to match the standard blend modes used in graphic arts
@@ -24,6 +28,9 @@
 
 //-----------------------------------------------------------------------------------------//
 // User effect MaskedMix.fx
+//
+// Modified 2020-05-25 jwrl:
+// Added the ability to derive the mask by colour matching.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -81,6 +88,18 @@ float Amount
    float MaxVal = 1.0;
 > = 1.0;
 
+int Mode
+<
+   string Description = "Mask mode";
+   string Enum = "Foreground luminance,Foreground colour match";
+> = 0;
+
+float4 MatchColour
+<
+   string Description = "Colour match";
+   bool SupportsAlpha = false;
+> = { 1.0, 1.0, 1.0, 1.0 };
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -134,7 +153,7 @@ float4 fn_hsv2rgb (float4 hsv)
    return float4 (hsv.z * lerp (1.0.xxx, rgb, hsv.y), hsv.w);
 }
 
-float4 fn_tex2D (sampler s_Mask, float2 xy1, sampler s_Texture, float2 xy2)
+float4 fn_tx (sampler s_Mask, float2 xy1, sampler s_Texture, float2 xy2)
 {
    float4 Fgd = tex2D (s_Mask, xy1);
    float4 Tex = tex2D (s_Texture, xy2);
@@ -144,9 +163,10 @@ float4 fn_tex2D (sampler s_Mask, float2 xy1, sampler s_Texture, float2 xy2)
       Fgd.rgb /= Fgd.a;
    }
 
-   float alpha = min (max (Fgd.r, max (Fgd.g, Fgd.b)), Tex.a);
+   float alpha = (Mode == 0) ? max (Fgd.r, max (Fgd.g, Fgd.b))
+                             : smoothstep (0.25, 0.0, distance (MatchColour, Fgd));
 
-   Fgd.rgb = lerp (Fgd.rgb, Tex.rgb, alpha * Mix);
+   Fgd.rgb = lerp (Fgd.rgb, Tex.rgb, min (alpha, Tex.a) * Mix);
 
    return Fgd;
 }
@@ -162,7 +182,7 @@ float4 ps_null (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amount);
@@ -174,7 +194,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEX
 
 float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = min (Fgnd.rgb, Bgnd.rgb);
@@ -184,7 +204,7 @@ float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
 
 float4 ps_multiply (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb *= Bgnd.rgb;
@@ -194,7 +214,7 @@ float4 ps_multiply (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 :
 
 float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    if (Fgnd.r > 0.0) Fgnd.r = 1.0 - ((1.0 - Bgnd.r) / Fgnd.r);
@@ -206,7 +226,7 @@ float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3
 
 float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = max (Fgnd.rgb + Bgnd.rgb - WHITE, BLACK);
@@ -216,7 +236,7 @@ float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3
 
 float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float luma = dot (Bgnd, LUMA);
@@ -230,7 +250,7 @@ float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 x
 
 float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = max (Fgnd.rgb, Bgnd.rgb);
@@ -240,7 +260,7 @@ float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : 
 
 float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb));
@@ -250,7 +270,7 @@ float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
 
 float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.r = (Fgnd.r == 1.0) ? 1.0 : Bgnd.r / (1.0 - Fgnd.r);
@@ -262,7 +282,7 @@ float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy
 
 float4 ps_linearDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = min (Fgnd.rgb + Bgnd.rgb, WHITE);
@@ -272,7 +292,7 @@ float4 ps_linearDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy
 
 float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float  luma = dot (Bgnd, LUMA);
@@ -286,7 +306,7 @@ float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 
 
 float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float3 retMin = 2.0 * Bgnd.rgb * Fgnd.rgb;
@@ -301,7 +321,7 @@ float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : 
 
 float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float3 retMax = (2.0 * Fgnd.rgb) - WHITE;
@@ -319,7 +339,7 @@ float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 
 
 float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float3 retMin = saturate (2.0 * Bgnd.rgb * Fgnd.rgb);
@@ -334,7 +354,7 @@ float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 
 
 float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float3 retMax, retMin;
@@ -359,7 +379,7 @@ float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3
 
 float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float3 retMin = max ((2.0 * Fgnd.rgb) + Bgnd.rgb - WHITE, BLACK);
@@ -374,7 +394,7 @@ float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy
 
 float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float3 retMax = 2.0 * Fgnd.rgb;
@@ -389,7 +409,7 @@ float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 :
 
 float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    float3 ref = WHITE - Bgnd.rgb;
@@ -405,7 +425,7 @@ float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : 
 
 float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = abs (Fgnd.rgb - Bgnd.rgb);
@@ -415,7 +435,7 @@ float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3
 
 float4 ps_exclusion (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb * (WHITE - (2.0 * Fgnd.rgb)));
@@ -425,7 +445,7 @@ float4 ps_exclusion (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 
 
 float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.rgb = max (Bgnd.rgb - Fgnd.rgb, BLACK);
@@ -435,7 +455,7 @@ float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 :
 
 float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
 
    Fgnd.r = (Fgnd.r == 0.0) ? 1.0 : min (Bgnd.r / Fgnd.r, 1.0);
@@ -449,7 +469,7 @@ float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
 
 float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
    float4 blnd = fn_rgb2hsv (Bgnd);
    float4 ref  = fn_rgb2hsv (Fgnd);
@@ -462,7 +482,7 @@ float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXC
 
 float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
@@ -473,7 +493,7 @@ float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3
 
 float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
    float4 blnd = fn_rgb2hsv (Fgnd);
 
@@ -484,7 +504,7 @@ float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
 
 float4 ps_luminosity (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1, s_Fill, xy2);
+   float4 Fgnd = fn_tx (s_Foreground, xy1, s_Fill, xy2);
    float4 Bgnd = tex2D (s_Background, xy3);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
@@ -543,4 +563,3 @@ technique Hue           { pass P_1 { PixelShader = compile PROFILE ps_hue (); } 
 technique Saturation    { pass P_1 { PixelShader = compile PROFILE ps_saturation (); } }
 technique Colour        { pass P_1 { PixelShader = compile PROFILE ps_colour (); } }
 technique Luminosity    { pass P_1 { PixelShader = compile PROFILE ps_luminosity (); } }
-

@@ -164,7 +164,7 @@ float4 fn_tx (sampler s_Mask, float2 xy1, sampler s_Texture, float2 xy2)
    }
 
    float alpha = (Mode == 0) ? max (Fgd.r, max (Fgd.g, Fgd.b))
-                             : smoothstep (0.25, 0.0, distance (MatchColour, Fgd));
+                             : smoothstep (0.5, 0.0, distance (MatchColour, Fgd));
 
    Fgd.rgb = lerp (Fgd.rgb, Tex.rgb, min (alpha, Tex.a) * Mix);
 

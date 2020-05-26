@@ -39,7 +39,9 @@
 // Added the ability to derive the mask by colour matching.
 //
 // Modified 2020-05-26 jwrl:
-// Cosmetic changes only!
+// Reworked the fill masking to clean up the edges.  Previously there was a visible hard
+// edge between the masked fill and the foreground.  That has now been fixed.
+// From here on are cosmetic changes only!
 // Descriptive header completely rewritten.
 // Notes string reworded to hopefully be clearer.
 // Parameter Mode changed from "Mask mode" to "Use as mask:".
@@ -173,15 +175,16 @@ float4 fn_tx (sampler s_Mask, float2 xy1, sampler s_Texture, float2 xy2)
    float4 Fgd = tex2D (s_Mask, xy1);
    float4 Tex = tex2D (s_Texture, xy2);
 
+   float alpha = (Mode == 0) ? max (Fgd.r, max (Fgd.g, Fgd.b))
+                             : smoothstep (1.0, 0.0, distance (MatchColour, Fgd));
+
+   Tex.rgb *= min (alpha, Tex.a);
+   Fgd.rgb  = lerp (Fgd.rgb, Tex.rgb, Mix);
+
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
    }
-
-   float alpha = (Mode == 0) ? max (Fgd.r, max (Fgd.g, Fgd.b))
-                             : smoothstep (0.5, 0.0, distance (MatchColour, Fgd));
-
-   Fgd.rgb = lerp (Fgd.rgb, Tex.rgb, min (alpha, Tex.a) * Mix);
 
    return Fgd;
 }

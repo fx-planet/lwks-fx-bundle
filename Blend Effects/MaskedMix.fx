@@ -1,29 +1,35 @@
 // @Maintainer jwrl
-// @Released 2020-05-25
+// @Released 2020-05-26
 // @Author jwrl
 // @Created 2020-05-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMix_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMixRoute.png
 
 /**
- This is a variant of Editshare's masked blend that allows the mask to be mixed with the
- foreground.  There are some major differences.  The first is that instead of putting the
- mask input on the bottom layer it is placed on the top.  This just appears to make more
- sense.  The next layer is the fill layer, then the bottom is the background.  The next
- difference is that the blend can be enhanced to better handle title effects.
+ This is a variant of Editshare's masked blend that allows the mask to be mixed with
+ the foreground.  There are some major differences.  The first is that instead of
+ putting the mask input on the bottom layer it is placed on the top.  This just appears
+ to make more sense to me.  The next layer is the fill layer, then the bottom is the
+ background.  The next difference is that the blend can be enhanced to better handle
+ title effects.  Third, when used with title effects drop shadows will be preserved.
+ This has implications if you choose to use coloured drop shadows, because they will
+ be affected by the fill layer.
 
- Third, when used with title effects drop shadows will be preserved.  This will have
- implications if you choose to use coloured drop shadows, because they will be affected
- by the fill layer.  In an attempt to help with this sort of issue a colour match mode
- has been included.  Fairly obviously, if your drop shadow colour matches the mask you
- will still have problems.
+ To circumvent issues like that, this effect also has the ability to derive the mask
+ using a colour match process.  This also helps where the mask doesn't have at least
+ one of red, green or blue at maximum level.  It adds two controls to do this: one for
+ enabling and disabling colour matching, and the other for selecting the colour to
+ match.  The simplest way to match the colours is to apply the effect, disable it so
+ that the foreground layer is displayed, and use the eyedropper on the colour wheel
+ to select the colour to match.  Once you have the match, enable the effect and
+ continue with the rest of the setup process.
 
  Finally, blending treats the foreground/fill mix as a single layer over the background.
- While every attempt has been made to match the standard blend modes used in graphic arts
- software, hue blending has been modified to give a cleaner fill mix.  Also, because of
- the reorganisation and renaming of the mask layers compared to the Lightworks masked
- blend effect, bypassing the effect will show the foreground layer, and not the fill
- layer.  This was considered to be a reasonable change.
+ While every attempt has been made to match the standard blend modes used in graphic
+ arts software, hue blending has been modified to give a cleaner fill mix.  Also, because
+ of the reorganisation and renaming of the mask layers compared to the Lightworks masked
+ blend effect, bypassing the effect will show the foreground layer, and not the fill layer.
+ This was considered to be a reasonable change.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -31,6 +37,15 @@
 //
 // Modified 2020-05-25 jwrl:
 // Added the ability to derive the mask by colour matching.
+//
+// Modified 2020-05-26 jwrl:
+// Cosmetic changes only!
+// Descriptive header completely rewritten.
+// Notes string reworded to hopefully be clearer.
+// Parameter Mode changed from "Mask mode" to "Use as mask:".
+// First Mode enumerator now reads "Foreground" and not "Foreground luminance".
+// Second Mode enumerator is now "Matching foreground colour" not "Foreground colour match".
+// Parameter MatchColour changed from "Colour match" to read "Colour to match".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,7 +54,7 @@ int _LwksEffectInfo
    string Description = "Masked mix";
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
-   string Notes       = "This is a variant of masked blend that allows the mask to be mixed with the foreground.";
+   string Notes       = "This is a variant of masked blend that allows the masked fill to be mixed with the mask colour.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -90,13 +105,13 @@ float Amount
 
 int Mode
 <
-   string Description = "Mask mode";
-   string Enum = "Foreground luminance,Foreground colour match";
+   string Description = "Use as mask:";
+   string Enum = "Foreground,Matching foreground colour";
 > = 0;
 
 float4 MatchColour
 <
-   string Description = "Colour match";
+   string Description = "Colour to match";
    bool SupportsAlpha = false;
 > = { 1.0, 1.0, 1.0, 1.0 };
 

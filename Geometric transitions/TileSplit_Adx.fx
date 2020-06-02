@@ -1,20 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Tiles_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Tiles.mp4
 
 /**
-This is a delta key transition that splits a keyed image into tiles then blows them apart
-or materialises the key from tiles.
+ This is a delta key transition that splits a keyed image into tiles then blows them apart
+ or materialises the key from tiles.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TileSplit_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -78,8 +82,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Width
@@ -104,6 +108,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -142,7 +151,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -189,7 +199,8 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
 
    float4 Fgnd = fn_tex2D (s_Tiles, uv + float2 (0.0, offset / _OutputAspectRatio));
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a);
+   return Ftype ? lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a)
+                : lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
@@ -235,4 +246,3 @@ technique Adx_TileSplit_O
    pass P_3
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

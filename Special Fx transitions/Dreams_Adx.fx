@@ -1,19 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Ripples_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Ripples.mp4
 
 /**
-This effect ripples the outgoing or incoming delta key as it dissolves.
+ This effect ripples the outgoing or incoming delta key as it dissolves.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dreams_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -86,8 +90,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int WaveType
@@ -145,6 +149,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -198,7 +207,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -278,9 +288,16 @@ float4 ps_blur_O (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd   = tex2D (s_Foreground, uv);
-   float4 Fgnd   = tex2D (s_Blur_Y, uv);
-   float4 retval = EMPTY;
+   float4 Bgnd, Fgnd, retval = EMPTY;
+
+   if (Ftype) {
+      Bgnd = tex2D (s_Foreground, uv);
+      Fgnd = tex2D (s_Blur_Y, uv);
+   }
+   else {
+      Bgnd = tex2D (s_Background, uv);
+      Fgnd = tex2D (s_Blur_Y, uv);
+   }
 
    float BlurY = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
                                          : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
@@ -361,4 +378,3 @@ technique Dreams_Adx_O
    pass P_3
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

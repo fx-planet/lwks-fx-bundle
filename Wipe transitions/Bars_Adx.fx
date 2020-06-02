@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Bars_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Bars.mp4
 
 /**
-This is a delta key transition that moves the strips of a delta key together from off-screen
-either horizontally or vertically or splits the delta key into strips then blows them apart
-either horizontally or vertically.  Useful for applying transitions to titles.
+ This is a delta key transition that moves the strips of a delta key together from off-screen
+ either horizontally or vertically or splits the delta key into strips then blows them apart
+ either horizontally or vertically.  Useful for applying transitions to titles.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Bars_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -68,8 +72,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int SetTechnique
@@ -91,6 +95,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -121,7 +130,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if (Ttype == 0) {
+   if ((Ttype == 0) && Ftype) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
@@ -149,7 +158,7 @@ float4 ps_horiz (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    if (Ttype == 0) {
       xy.x += (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
-      Bgnd = fn_tex2D (s_Foreground, xy2);
+      Bgnd = Ftype ? fn_tex2D (s_Foreground, xy2) : fn_tex2D (s_Background, xy2);
    }
    else {
       xy.x += ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
@@ -172,7 +181,7 @@ float4 ps_vert (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    if (Ttype == 0) {
       xy.y += (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
-      Bgnd = fn_tex2D (s_Foreground, xy2);
+      Bgnd = Ftype ? fn_tex2D (s_Foreground, xy2) : fn_tex2D (s_Background, xy2);
    }
    else {
       xy.y += ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
@@ -207,4 +216,3 @@ technique Bars_Adx_V
    pass P_2
    { PixelShader = compile PROFILE ps_vert (); }
 }
-

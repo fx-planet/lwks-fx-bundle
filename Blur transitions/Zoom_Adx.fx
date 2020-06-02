@@ -1,23 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Zoom_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Zoom.mp4
 
 /**
-IMPORTANT NOTE:  WHEN USED WITH THE MICROSOFT WINDOWS OPERATING SYSTEM THIS EFFECT IS
-ONLY SUITABLE FOR LIGHTWORKS VERSION 14.5 AND BETTER.
+ IMPORTANT NOTE:  WHEN USED WITH THE MICROSOFT WINDOWS OPERATING SYSTEM THIS EFFECT IS
+ ONLY SUITABLE FOR LIGHTWORKS VERSION 14.5 AND BETTER.
 
-This effect is a user-selectable zoom in or zoom out that transitions into or out of
-a delta key.
+ This effect is a user-selectable zoom in or zoom out that transitions into or out of
+ a delta key.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Zoom_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -81,14 +85,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
-> = 0;
-
-int Ttype
-<
-   string Description = "Direction";
-   string Enum = "Zoom out,Zoom in";
+   string Description = "Transition position";
+   string Enum = "At start (zoom out),At end (zoom out),At start (zoom in),At end (zoom in)";
 > = 0;
 
 float zoomAmount
@@ -124,6 +122,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -154,15 +157,16 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 
 float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float3 Bgd = tex2D (s_Foreground, xy1).rgb;
-   float3 Fgd = tex2D (s_Background, xy2).rgb;
+   float3 Fgd = tex2D (s_Foreground, xy1).rgb;
+   float3 Bgd = tex2D (s_Background, xy2).rgb;
 
    float kDiff = distance (Bgd.g, Fgd.g);
 
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -178,21 +182,14 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_zoom_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_zoom_A (float2 uv : TEXCOORD1, uniform sampler imgSampler) : COLOR
 {
-   if (zoomAmount == 0.0) return tex2D (s_Super, uv);
+   if (zoomAmount == 0.0) return tex2D (imgSampler, uv);
 
-   float scale, zoomStrength;
+   float zoomStrength = zoomAmount * (1.0 - Amount);
+   float scale = 1.0 - zoomStrength;
 
-   if (Ttype == 0) {
-      zoomStrength = zoomAmount * (1.0 - Amount);
-      scale = 1.0 - zoomStrength;
-      zoomStrength /= SAMPLE;
-   }
-   else {
-      zoomStrength = zoomAmount * (1.0 - Amount) / SAMPLE;
-      scale = 1.0;
-   }
+   zoomStrength /= SAMPLE;
 
    float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
    float2 xy = uv - zoomCentre;
@@ -200,28 +197,19 @@ float4 ps_zoom_I (float2 uv : TEXCOORD1) : COLOR
    float4 retval = EMPTY;
 
    for (int i = 0; i < SAMPLE; i++) {
-      retval += fn_tex2D (s_Super, xy * scale + zoomCentre);
+      retval += tex2D (imgSampler, xy * scale + zoomCentre);
       scale += zoomStrength;
    }
 
    return retval / DIVISOR;
 }
 
-float4 ps_zoom_O (float2 uv : TEXCOORD1) : COLOR
+float4 ps_zoom_B (float2 uv : TEXCOORD1, uniform sampler imgSampler) : COLOR
 {
-   if (zoomAmount == 0.0) return tex2D (s_Super, uv);
+   if (zoomAmount == 0.0) return tex2D (imgSampler, uv);
 
-   float scale, zoomStrength;
-
-   if (Ttype == 0) {
-      zoomStrength = zoomAmount * Amount / SAMPLE;
-      scale = 1.0;
-   }
-   else {
-      zoomStrength = zoomAmount * Amount;
-      scale = 1.0 - zoomStrength;
-      zoomStrength /= SAMPLE;
-   }
+   float zoomStrength = zoomAmount * Amount / SAMPLE;
+   float scale = 1.0;
 
    float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
    float2 xy = uv - zoomCentre;
@@ -229,110 +217,130 @@ float4 ps_zoom_O (float2 uv : TEXCOORD1) : COLOR
    float4 retval = EMPTY;
 
    for (int i = 0; i < SAMPLE; i++) {
-      retval += fn_tex2D (s_Super, xy * scale + zoomCentre);
+      retval += tex2D (imgSampler, xy * scale + zoomCentre);
       scale += zoomStrength;
    }
 
    return retval / DIVISOR;
 }
 
-float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_zoom_C (float2 uv : TEXCOORD1, uniform sampler imgSampler) : COLOR
 {
-   float4 retval;
+   if (zoomAmount == 0.0) return tex2D (imgSampler, uv);
 
-   if (zoomAmount == 0.0) { retval = tex2D (s_Background, uv); }
-   else {
-      float scale, zoomStrength;
+   float zoomStrength = zoomAmount * (1.0 - Amount) / SAMPLE;
+   float scale = 1.0;
 
-      if (Ttype == 0) {
-         zoomStrength = zoomAmount * (1.0 - Amount);
-         scale = 1.0 - zoomStrength;
-         zoomStrength /= SAMPLE;
-      }
-      else {
-         zoomStrength = zoomAmount * (1.0 - Amount) / SAMPLE;
-         scale = 1.0;
-      }
+   float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
+   float2 xy = uv - zoomCentre;
 
-      float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
-      float2 xy = uv - zoomCentre;
+   float4 retval = EMPTY;
 
-      retval = EMPTY;
-
-      for (int i = 0; i < SAMPLE; i++) {
-         retval += fn_tex2D (s_Title, xy * scale + zoomCentre);
-         scale += zoomStrength;
-      }
-
-      retval /= DIVISOR;
+   for (int i = 0; i < SAMPLE; i++) {
+      retval += tex2D (imgSampler, xy * scale + zoomCentre);
+      scale += zoomStrength;
    }
 
-   return lerp (tex2D (s_Foreground, uv), retval, retval.a * Amount);
+   return retval / DIVISOR;
 }
 
-float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
+float4 ps_zoom_D (float2 uv : TEXCOORD1, uniform sampler imgSampler) : COLOR
 {
-   float4 retval;
+   if (zoomAmount == 0.0) return tex2D (imgSampler, uv);
 
-   if (zoomAmount == 0.0) { retval = tex2D (s_Foreground, uv); }
-   else {
-      float scale, zoomStrength;
+   float zoomStrength = zoomAmount * Amount;
+   float scale = 1.0 - zoomStrength;
 
-      if (Ttype == 0) {
-         zoomStrength = zoomAmount * Amount / SAMPLE;
-         scale = 1.0;
-      }
-      else {
-         zoomStrength = zoomAmount * Amount;
-         scale = 1.0 - zoomStrength;
-         zoomStrength /= SAMPLE;
-      }
+   zoomStrength /= SAMPLE;
 
-      float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
-      float2 xy = uv - zoomCentre;
+   float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
+   float2 xy = uv - zoomCentre;
 
-      retval = EMPTY;
+   float4 retval = EMPTY;
 
-      for (int i = 0; i < SAMPLE; i++) {
-         retval += fn_tex2D (s_Title, xy * scale + zoomCentre);
-         scale += zoomStrength;
-      }
-
-      retval /= DIVISOR;
+   for (int i = 0; i < SAMPLE; i++) {
+      retval += tex2D (imgSampler, xy * scale + zoomCentre);
+      scale += zoomStrength;
    }
 
-   return lerp (tex2D (s_Background, uv), retval, retval.a * (1.0 - Amount));
+   return retval / DIVISOR;
+}
+
+float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Fgnd = tex2D (s_Title, uv);
+   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+}
+
+float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Fgnd = tex2D (s_Title, uv);
+
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - Amount));
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_Zoom_I
+technique Adx_Zoom_A
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Super;"; >
+   pass P_0 < string Script = "RenderColorTarget0 = Title;"; >
    { PixelShader = compile PROFILE ps_keygen_I (); }
 
-   pass P_2
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_zoom_I (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_zoom_A (s_Title); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_zoom_A (s_Super); }
 
    pass P_3
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_in (); }
 }
 
-technique Adx_Zoom_O
+technique Adx_Zoom_B
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Super;"; >
+   pass P_0 < string Script = "RenderColorTarget0 = Title;"; >
    { PixelShader = compile PROFILE ps_keygen_O (); }
 
-   pass P_2
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_zoom_O (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_zoom_B (s_Title); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_zoom_B (s_Super); }
 
    pass P_3
-   { PixelShader = compile PROFILE ps_main_O (); }
+   { PixelShader = compile PROFILE ps_main_out (); }
 }
 
+technique Adx_Zoom_C
+{
+   pass P_0 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_keygen_I (); }
+
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_zoom_C (s_Title); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_zoom_C (s_Super); }
+
+   pass P_3
+   { PixelShader = compile PROFILE ps_main_in (); }
+}
+
+technique Adx_Zoom_D
+{
+   pass P_0 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_keygen_O (); }
+
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_zoom_D (s_Title); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_zoom_D (s_Super); }
+
+   pass P_3
+   { PixelShader = compile PROFILE ps_main_out (); }
+}

@@ -1,19 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Stretch_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Stretch.mp4
 
 /**
-This effect stretches a delta key horizontally or vertically to transition in or out.
+ This effect stretches a delta key horizontally or vertically to transition in or out.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Stretch_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -66,8 +70,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Horizontal in,Horizontal out,Vertical in,Vertical out";
+   string Description = "Transition position";
+   string Enum = "At start (horizontal),At end (horizontal),At start (vertical),At end (vertical)";
 > = 0;
 
 float Stretch
@@ -83,6 +87,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -119,7 +128,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -148,8 +158,9 @@ float4 ps_horiz_I (float2 uv : TEXCOORD1) : COLOR
    xy.y = lerp (xy.y, distort, stretch);
 
    float4 Fgnd = fn_tex2D (s_Title, xy + CENTRE);
+   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * Amount);
+   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 float4 ps_horiz_O (float2 uv : TEXCOORD1) : COLOR
@@ -182,8 +193,9 @@ float4 ps_vert_I (float2 uv : TEXCOORD1) : COLOR
    xy.y /= 1.0 + (5.0 * stretch);
 
    float4 Fgnd = fn_tex2D (s_Title, xy + CENTRE);
+   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * Amount);
+   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 float4 ps_vert_O (float2 uv : TEXCOORD1) : COLOR
@@ -246,4 +258,3 @@ technique Adx_Vstretch_O
    pass P_2
    { PixelShader = compile PROFILE ps_vert_O (); }
 }
-

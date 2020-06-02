@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Twister_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Twister.mp4
 
 /**
-This is a dissolve/wipe that uses sine & cosine distortions to perform a rippling twist to
-establish or remove a delta key.  The range of possible effect variations possible with
-different combinations of settings is almost inifinite.
+ This is a dissolve/wipe that uses sine & cosine distortions to perform a rippling twist to
+ establish or remove a delta key.  The range of possible effect variations possible with
+ different combinations of settings is almost inifinite.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Twister_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -68,8 +72,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int TransProfile
@@ -131,6 +135,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -169,7 +178,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -208,7 +218,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
    xy.y += offset * float (Mode * 2);
 
    float4 Fgd = fn_tex2D (s_Title, xy);
-   float4 Bgd = lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a * amount);
+   float4 Bgd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+
+   Bgd = lerp (Bgd, Fgd, Fgd.a * amount);
 
    if (Show_Axis) {
       float AxisLine = max (0.0, (1.0 - (abs (T_Axis) * _OutputHeight * 0.25)) * 3.0 - 2.0);
@@ -278,4 +290,3 @@ technique Twister_Adx_O
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

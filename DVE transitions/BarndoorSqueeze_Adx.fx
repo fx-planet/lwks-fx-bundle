@@ -1,22 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_SplitSqueeze_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_SplitSqueeze.mp4
 
 /**
-This is similar to the split squeeze effect, customised to suit its use with delta
-keys.  It moves the separated foreground image halves apart and squeezes them to the
-edge of screen or expands the halves from the edges.  It operates either vertically
-or horizontally depending on the user setting.
+ This is similar to the split squeeze effect, customised to suit its use with delta
+ keys.  It moves the separated foreground image halves apart and squeezes them to the
+ edge of screen or expands the halves from the edges.  It operates either vertically
+ or horizontally depending on the user setting.
 */
 
 //-----------------------------------------------------------------------------------------//
 // User effect BarndoorSqueeze_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -69,8 +73,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Expand horizontal,Squeeze horizontal,Expand vertical,Squeeze vertical";
+   string Description = "Transition position";
+   string Enum = "At start (horizontal),At end (horizontal),At start (vertical),At end (vertical)";
 > = 0;
 
 float Split
@@ -86,6 +90,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -118,7 +127,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -143,7 +153,8 @@ float4 ps_expand_H (float2 uv : TEXCOORD1) : COLOR
    float4 Fgnd = (uv.x > posAmt) ? fn_tex2D (s_Title, float2 ((uv.x + amount) / Amount, uv.y))
                : (uv.x < negAmt) ? fn_tex2D (s_Title, float2 (uv.x / Amount, uv.y)) : EMPTY;
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a);
+   return Ftype ? lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a)
+                : lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 float4 ps_squeeze_H (float2 uv : TEXCOORD1) : COLOR
@@ -167,7 +178,8 @@ float4 ps_expand_V (float2 uv : TEXCOORD1) : COLOR
    float4 Fgnd = (uv.y > posAmt) ? fn_tex2D (s_Title, float2 (uv.x, (uv.y + amount) / Amount))
                : (uv.y < negAmt) ? fn_tex2D (s_Title, float2 (uv.x, uv.y / Amount)) : EMPTY;
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a);
+   return Ftype ? lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a)
+                : lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 float4 ps_squeeze_V (float2 uv : TEXCOORD1) : COLOR
@@ -225,4 +237,3 @@ technique Squeeze_V
    pass P_2
    { PixelShader = compile PROFILE ps_squeeze_V (); }
 }
-

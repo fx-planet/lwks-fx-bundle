@@ -1,19 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Squeeze_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Squeeze.mp4
 
 /**
-This mimics the Lightworks squeeze effect but fades delta keys in or out.
+ This mimics the Lightworks squeeze effect but fades delta keys in or out.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Squeeze_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -66,8 +70,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int SetTechnique
@@ -82,6 +86,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -109,7 +118,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if (Ttype == 0) {
+   if (Ftype && (Ttype == 0)) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
@@ -134,7 +143,7 @@ float4 ps_squeeze_right (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (2.0, uv.y) : float2 (uv.x / Amount, uv.y);
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (2.0, uv.y) : float2 ((uv.x - 1.0) / (1.0 - Amount) + 1.0, uv.y);
@@ -154,7 +163,7 @@ float4 ps_squeeze_left (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (2.0, uv.y) : float2 ((uv.x - 1.0) / Amount + 1.0, uv.y);
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (2.0, uv.y) : float2 (uv.x  / (1.0 - Amount), uv.y);
@@ -174,7 +183,7 @@ float4 ps_squeeze_down (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (uv.x, 2.0) : float2 (uv.x, uv.y / Amount);
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (uv.x, 2.0) : float2 (uv.x, (uv.y - 1.0) / (1.0 - Amount) + 1.0);
@@ -194,7 +203,7 @@ float4 ps_squeeze_up (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (uv.x, 2.0) : float2 (uv.x, (uv.y - 1.0) / Amount + 1.0);
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (uv.x, 2.0) : float2 (uv.x, uv.y  / (1.0 - Amount));

@@ -1,19 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Granular_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Granular.mp4
 
 /**
-This effect uses a granular noise driven pattern to transition into or out of a delta key.
+ This effect uses a granular noise driven pattern to transition into or out of a delta key.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Granular_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2020-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified  jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -78,8 +82,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int SetTechnique
@@ -143,6 +147,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -166,9 +175,9 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd, Bgd;
 
-   if (Ttype == 0) {
-      Fgd = tex2D (s_Background, xy2).rgb;
+   if (Ftype && (Ttype == 0)) {
       Bgd = tex2D (s_Foreground, xy1).rgb;
+      Fgd = tex2D (s_Background, xy2).rgb;
    }
    else {
       Fgd = tex2D (s_Foreground, xy1).rgb;
@@ -269,9 +278,13 @@ float4 ps_flat (float2 uv : TEXCOORD1) : COLOR
    float noise  = tex2D (s_Buffer_1, ((uv - 0.5) / pSize) + 0.5).x;
    float amount = saturate (((Amount - 0.5) * 2.0) + noise);
 
-   float4 Fgnd = tex2D (s_Title, uv);
-   float4 retval = (Ttype == 0) ? lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * amount)
-                                : lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount));
+   float4 retval, Fgnd = tex2D (s_Title, uv);
+
+   if (Ttype == 0) {
+      retval = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+      retval = lerp (retval, Fgnd, Fgnd.a * amount);
+   }
+   else retval = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount));
 
    if (!Sparkling) return retval;
 
@@ -288,9 +301,14 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float grad   = tex2D (s_Buffer_2, uv).x;
    float amount = saturate (((0.5 - grad) * 2) + noise);
 
-   float4 Fgnd = tex2D (s_Title, uv);
-   float4 retval = (Ttype == 0) ? lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * amount)
-                                : lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount));
+   float4 retval, Fgnd = tex2D (s_Title, uv);
+
+   if (Ttype == 0) {
+      float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+
+      retval = lerp (Bgnd, Fgnd, Fgnd.a * amount);
+   }
+   else retval = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount));
 
    if (!Sparkling) return retval;
 
@@ -385,4 +403,3 @@ technique Flat
    pass P_5
    { PixelShader = compile PROFILE ps_flat (); }
 }
-

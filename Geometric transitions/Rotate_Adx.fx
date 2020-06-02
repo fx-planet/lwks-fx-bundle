@@ -1,19 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Rotate_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Rotate.mp4
 
 /**
-This rotates a delta key out or in.
+ This rotates a delta key out or in.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Rotate_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -66,8 +70,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int SetTechnique
@@ -82,6 +86,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -111,13 +120,13 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if (Ttype == 0) {
+   if (Ftype && (Ttype == 0)) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
    else {
-      Fgd = tex2D (s_Background, xy2).rgb;
       Bgd = tex2D (s_Foreground, xy1).rgb;
+      Fgd = tex2D (s_Background, xy2).rgb;
    }
 
    float kDiff = distance (Bgd.g, Fgd.g);
@@ -137,7 +146,7 @@ float4 ps_rotate_right (float2 uv : TEXCOORD1) : COLOR
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (2.0, uv.y)
          : float2 ((uv.x / Amount) - ((1.0 - Amount) * 0.2), ((uv.y - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.y) * uv.x * cos (Amount * HALF_PI));
-      Bgnd = fn_tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? fn_tex2D (s_Foreground, uv) : fn_tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (2.0, uv.y)
@@ -159,7 +168,7 @@ float4 ps_rotate_left (float2 uv : TEXCOORD1) : COLOR
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (2.0, uv.y)
          : float2 ((uv.x - 1.0) / Amount + 1.0 + ((1.0 - Amount) * 0.2), ((uv.y - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.y) * (1.0 - uv.x) * cos (Amount * HALF_PI));
-      Bgnd = fn_tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? fn_tex2D (s_Foreground, uv) : fn_tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (2.0, uv.y)
@@ -181,7 +190,7 @@ float4 ps_rotate_down (float2 uv : TEXCOORD1) : COLOR
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (2.0, uv.y)
          : float2 (((uv.x - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.x) * uv.y * cos (Amount * HALF_PI), (uv.y / Amount) - ((1.0 - Amount) * 0.2));
-      Bgnd = fn_tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? fn_tex2D (s_Foreground, uv) : fn_tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (2.0, uv.y)
@@ -203,7 +212,7 @@ float4 ps_rotate_up (float2 uv : TEXCOORD1) : COLOR
    if (Ttype == 0) {
       xy = (Amount == 0.0) ? float2 (2.0, uv.y)
          : float2 (((uv.x - 0.5) / (2.0 - Amount)) + 0.5 + (0.5 - uv.x) * (1.0 - uv.y) * cos (Amount * HALF_PI), (uv.y - 1.0) / Amount + 1.0 + ((1.0 - Amount) * 0.2));
-      Bgnd = fn_tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? fn_tex2D (s_Foreground, uv) : fn_tex2D (s_Background, uv);
    }
    else {
       xy = (Amount == 1.0) ? float2 (2.0, uv.y)

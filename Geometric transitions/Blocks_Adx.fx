@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Blocks_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Blocks.mp4
 
 /**
-This effect is used to transition into or out of a delta (difference) key, and is useful
-with titles.  The title fades in from blocks that progressively reduce in size or builds
-into larger and larger blocks as it fades.
+ This effect is used to transition into or out of a delta (difference) key, and is useful
+ with titles.  The title fades in from blocks that progressively reduce in size or builds
+ into larger and larger blocks as it fades.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Blocks_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -68,8 +72,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float blockSize
@@ -94,6 +98,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -132,7 +141,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -154,7 +164,7 @@ float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    if (blockSize > 0.0) {
       float AspectRatio = clamp (AR, 0.01, 10.0);
-      float Bsize = cos (Amount * HALF_PI);
+      float Bsize = max (1e-10, cos (Amount * HALF_PI));
 
       Bsize *= blockSize * BLOCKS;
 
@@ -164,8 +174,9 @@ float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    }
 
    float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Bgnd = Ftype ? tex2D (s_Foreground, xy2) : tex2D (s_Background, xy2);
 
-   return lerp (tex2D (s_Foreground, xy2), Fgnd, Fgnd.a * Amount);
+   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 float4 ps_main_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -174,7 +185,7 @@ float4 ps_main_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    if (blockSize > 0.0) {
       float AspectRatio = clamp (AR, 0.01, 10.0);
-      float Bsize = sin (Amount * HALF_PI);
+      float Bsize = max (1e-10, sin (Amount * HALF_PI));
 
       Bsize *= blockSize * BLOCKS;
 
@@ -211,4 +222,3 @@ technique Adx_Blocks_O
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

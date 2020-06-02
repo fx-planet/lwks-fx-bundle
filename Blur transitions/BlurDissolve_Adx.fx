@@ -1,24 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Blur_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Blur.mp4
 
 /**
-IMPORTANT NOTE:  WHEN USED WITH THE MICROSOFT WINDOWS OPERATING SYSTEM THIS EFFECT IS
-ONLY SUITABLE FOR LIGHTWORKS VERSION 14.5 AND BETTER.
+ This effect applies a directional blur to the title, the angle and strength of which
+ can be independently set.  It then progressively reduces the blur to reveal the key
+ or increases the blur of the key as it fades it out.
 
-This effect applies a directional blur to the title, the angle and strength of which
-can be independently set.  It then progressively reduces the blur to reveal the key
-or increases the blur of the key as it fades it out.
+ IMPORTANT NOTE:  WHEN USED WITH THE MICROSOFT WINDOWS OPERATING SYSTEM THIS EFFECT IS
+ ONLY SUITABLE FOR LIGHTWORKS VERSION 14.5 AND BETTER.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BlurDissolve_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -71,8 +75,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float BlurAngle
@@ -105,6 +109,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -146,7 +155,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -181,7 +191,8 @@ float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd = saturate (Fgnd / SAMPSCALE);
    Fgnd.a *= saturate (((Amount - 0.5) * ((BlurStrength * 3.0) + 1.5)) + 0.5);
 
-   return lerp (tex2D (s_Foreground, xy2), Fgnd, Fgnd.a);
+   return Ftype ? lerp (tex2D (s_Foreground, xy2), Fgnd, Fgnd.a)
+                : lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
 }
 
 float4 ps_main_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -229,4 +240,3 @@ technique BlurDissolve_Adx_O
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

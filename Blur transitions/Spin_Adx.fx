@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Spin_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Spin.mp4
 
 /**
-The effect applies a rotary blur to transition into or out of a delta key and is based on
-original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).  The direction,
-aspect ratio, centring and strength of the blur can all be set.
+ The effect applies a rotary blur to transition into or out of a delta key and is based on
+ original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).  The direction,
+ aspect ratio, centring and strength of the blur can all be set.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -88,8 +92,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int CW_CCW
@@ -139,6 +143,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -169,7 +178,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -219,7 +229,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1, uniform int passNum) : COLOR
 
    if (passNum != 4) { return retval; }
 
-   return lerp (tex2D (s_Foreground, uv), retval, retval.a * Amount);
+   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+
+   return lerp (Bgnd, retval, retval.a * Amount);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1, uniform int passNum) : COLOR
@@ -304,4 +316,3 @@ technique Adx_Spin_O
    pass P_6
    { PixelShader = compile PROFILE ps_main_O (4); }
 }
-

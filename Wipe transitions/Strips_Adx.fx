@@ -1,20 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Strips_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Strips.mp4
 
 /**
-A transition that splits a delta key into strips and compresses it to zero height.  The
-vertical centring can be adjusted so that the collapse is symmetrical.
+ A transition that splits a delta key into strips and compresses it to zero height.  The
+ vertical centring can be adjusted so that the collapse is symmetrical.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Strips_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -67,8 +71,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Spacing
@@ -112,6 +116,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -150,7 +159,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -185,8 +195,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
    xy.y = (xy.y * Height) + offset + centre_Y;
 
    float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * Amount);
+   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
@@ -235,4 +246,3 @@ technique Strips_Adx_O
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

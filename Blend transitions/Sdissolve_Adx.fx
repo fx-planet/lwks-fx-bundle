@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Scurve-640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Scurve.mp4
 
 /**
-This is essentially the same as the S dissolve but extended to dissolve delta keys.
-A trigonometric curve is applied to the "Amount" parameter and the linearity of the
-curve can be adjusted.
+ This is essentially the same as the S dissolve but extended to dissolve delta keys.
+ A trigonometric curve is applied to the "Amount" parameter and the linearity of the
+ curve can be adjusted.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Sdissolve_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -56,8 +60,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Linearity
@@ -74,6 +78,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -88,8 +97,16 @@ float KeyGain
 
 float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Bgnd = tex2D (s_Foreground, xy1);
-   float4 Fgnd = tex2D (s_Background, xy2);
+   float4 Bgnd, Fgnd;
+
+   if (Ftype) {
+      Bgnd = tex2D (s_Foreground, xy1);
+      Fgnd = tex2D (s_Background, xy2);
+   }
+   else {
+      Fgnd = tex2D (s_Foreground, xy1);
+      Bgnd = tex2D (s_Background, xy2);
+   }
 
    float kDiff = distance (Bgnd.g, Fgnd.g);
 
@@ -141,4 +158,3 @@ technique Sdissolve_Adx_O
    pass P_1
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

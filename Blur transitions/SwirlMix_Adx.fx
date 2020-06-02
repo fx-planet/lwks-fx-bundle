@@ -1,5 +1,5 @@
 // @maintainer jwrl
-// @released 2019-07-30
+// @Released 2020-06-02
 // @author jwrl
 // @created 2019-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_SwirlMix_640.png
@@ -17,6 +17,10 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SwirlMix_Adx.fx
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -61,8 +65,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Whirl in,Whirl out,";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Amplitude
@@ -112,6 +116,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -132,28 +141,29 @@ float _Length;
 
 float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float3 Ovl = tex2D (s_Background, xy2).rgb;
-   float3 Ref = tex2D (s_Foreground, xy1).rgb;
+   float3 Fgd = tex2D (s_Foreground, xy1).rgb;
+   float3 Bgd = tex2D (s_Background, xy2).rgb;
 
-   float kDiff = distance (Ref.g, Ovl.g);
+   float kDiff = distance (Bgd.g, Fgd.g);
 
-   kDiff = max (kDiff, distance (Ref.r, Ovl.r));
-   kDiff = max (kDiff, distance (Ref.b, Ovl.b));
+   kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
+   kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Ovl, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float3 Ovl = tex2D (s_Foreground, xy1).rgb;
-   float3 Ref = tex2D (s_Background, xy2).rgb;
+   float3 Fgd = tex2D (s_Foreground, xy1).rgb;
+   float3 Bgd = tex2D (s_Background, xy2).rgb;
 
-   float kDiff = distance (Ref.g, Ovl.g);
+   float kDiff = distance (Bgd.g, Fgd.g);
 
-   kDiff = max (kDiff, distance (Ref.r, Ovl.r));
-   kDiff = max (kDiff, distance (Ref.b, Ovl.b));
+   kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
+   kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Ovl, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
@@ -171,8 +181,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
    xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
 
    float4 Fgnd = tex2D (s_Title, xy);
+   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
 
-   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * amount);
+   return lerp (Bgnd, Fgnd, Fgnd.a * amount);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
@@ -217,4 +228,3 @@ technique SwirlMix_Adx_1
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

@@ -1,20 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_FoldNeg_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_FoldNeg.mp4
 
 /**
-This effect separates foreground from background then dissolves them through a negative
-mix of the two components.  The result is a sort of ghostly double transition.
+ This effect separates foreground from background then dissolves them through a negative
+ mix of the two components.  The result is a sort of ghostly double transition.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FoldNeg_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,8 +59,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float KeyGain
@@ -65,6 +69,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -78,8 +87,16 @@ float KeyGain
 
 float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = tex2D (s_Background, xy1);
-   float4 Bgnd = tex2D (s_Foreground, xy2);
+   float4 Fgnd, Bgnd;
+
+   if (Ftype) {
+      Fgnd = tex2D (s_Background, xy1);
+      Bgnd = tex2D (s_Foreground, xy2);
+   }
+   else {
+      Bgnd = tex2D (s_Background, xy1);
+      Fgnd = tex2D (s_Foreground, xy2);
+   }
 
    float kDiff = distance (Fgnd.g, Bgnd.g);
 
@@ -137,4 +154,3 @@ technique FoldNeg_Adx_O
    pass P_1
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

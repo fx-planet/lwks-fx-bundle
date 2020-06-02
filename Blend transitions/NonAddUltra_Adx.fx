@@ -1,24 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_NonAddUltra_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_NonAddUltra.mp4
 
 /**
-This is an extreme non-additive mix for delta (difference) keys.  The incoming key is
-faded in to full value at the 50% point, at which stage the background video starts
-to fade out.  The two images are mixed by giving the source with the maximum level
-priority.  The dissolve out is the reverse of that
+ This is an extreme non-additive mix for delta (difference) keys.  The incoming key is
+ faded in to full value at the 50% point, at which stage the background video starts
+ to fade out.  The two images are mixed by giving the source with the maximum level
+ priority.  The dissolve out is the reverse of that.
 
-The result is extreme, but can be interesting.
+ The result is extreme, but can be interesting.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect NonAddUltra_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,8 +63,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Linearity
@@ -77,14 +81,27 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = tex2D (s_Background, xy1);
-   float4 Bgnd = tex2D (s_Foreground, xy2);
+   float4 Fgnd, Bgnd;
+
+   if (Ftype) {
+      Bgnd = tex2D (s_Foreground, xy1);
+      Fgnd = tex2D (s_Background, xy2);
+   }
+   else {
+      Fgnd = tex2D (s_Foreground, xy1);
+      Bgnd = tex2D (s_Background, xy2);
+   }
 
    float outAmount = min (1.0, Amount * 2.0);
    float in_Amount = min (1.0, (1.0 - Amount) * 2.0);
@@ -142,4 +159,3 @@ technique Adx_NonAddUltra_O
    pass P_1
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

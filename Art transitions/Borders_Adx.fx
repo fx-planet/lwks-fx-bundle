@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Borders_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Borders.mp4
 
 /**
-An alpha transition that generates borders from the delta key then uses them to make the
-image materialise from four directions or blow apart in four directions.  Each quadrant
-is independently coloured.
+ An alpha transition that generates borders from the delta key then uses them to make the
+ image materialise from four directions or blow apart in four directions.  Each quadrant
+ is independently coloured.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Borders_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -88,8 +92,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Radius
@@ -142,6 +146,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -203,7 +212,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -335,7 +345,8 @@ float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
       Opacity = 1.0 - sin (Opacity * HALF_PI);
    }
 
-   float4 Bgnd = lerp (tex2D (s_Foreground, uv2), Super, Super.a * Opacity);
+   float4 Bgnd = Ftype ? lerp (tex2D (s_Foreground, uv2), Super, Super.a * Opacity)
+                       : lerp (tex2D (s_Background, uv2), Super, Super.a * Opacity);
 
    return lerp (Bgnd, retval, retval.a * Outline);
 }
@@ -414,4 +425,3 @@ technique Adx_Borders_O
    pass P_4
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

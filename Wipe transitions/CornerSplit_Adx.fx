@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Corners_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Corners.mp4
 
 /**
-This is a four-way split which moves a delta key out to the corners of the frame or moves
-it in from the corners of the frame to form the image.  A quick way of applying a transition
-to a title without messing around too much with routing.
+ This is a four-way split which moves a delta key out to the corners of the frame or moves
+ it in from the corners of the frame to form the image.  A quick way of applying a transition
+ to a title without messing around too much with routing.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CornerSplit_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -79,8 +83,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float KeyGain
@@ -89,6 +93,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -121,7 +130,8 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
+   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
+                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
 float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -178,7 +188,8 @@ float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    float4 Fgnd = (uv1.y > posAmt) ? fn_tex2D (s_Horizontal, xy1)
                : (uv1.y < negAmt) ? fn_tex2D (s_Horizontal, xy2) : EMPTY;
 
-   return lerp (tex2D (s_Foreground, uv2), Fgnd, Fgnd.a);
+   return Ftype ? lerp (tex2D (s_Foreground, uv2), Fgnd, Fgnd.a)
+                : lerp (tex2D (s_Background, uv2), Fgnd, Fgnd.a);
 }
 
 float4 ps_main_O (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
@@ -228,4 +239,3 @@ technique CornerSplit_Adx_O
    pass P_3
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

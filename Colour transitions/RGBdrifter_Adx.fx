@@ -1,21 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_RGBdrift_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_RGBdrift.mp4
 
 /**
-This transitions a delta key in or out using different curves for each of red, green and
-blue.  One colour and alpha is always linear, and the other two can be set using the
-colour profile selection.
+ This transitions a delta key in or out using different curves for each of red, green and
+ blue.  One colour and alpha is always linear, and the other two can be set using the
+ colour profile selection.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RGBdrifter_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -60,8 +64,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int SetTechnique
@@ -76,6 +80,11 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
+
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -92,13 +101,13 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if (Ttype == 0) {
+   if (Ftype && (Ttype == 0)) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
    else {
-      Fgd = tex2D (s_Background, xy2).rgb;
       Bgd = tex2D (s_Foreground, xy1).rgb;
+      Fgd = tex2D (s_Background, xy2).rgb;
    }
 
    float kDiff = distance (Bgd.g, Fgd.g);
@@ -117,7 +126,7 @@ float4 ps_main_R_B (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       amount = Amount;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       amount = 1.0 - Amount;
@@ -146,7 +155,7 @@ float4 ps_main_B_R (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       amount = Amount;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       amount = 1.0 - Amount;
@@ -175,7 +184,7 @@ float4 ps_main_R_G (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       amount = Amount;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       amount = 1.0 - Amount;
@@ -204,7 +213,7 @@ float4 ps_main_G_R (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       amount = Amount;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       amount = 1.0 - Amount;
@@ -233,7 +242,7 @@ float4 ps_main_G_B (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       amount = Amount;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       amount = 1.0 - Amount;
@@ -262,7 +271,7 @@ float4 ps_main_B_G (float2 uv : TEXCOORD1) : COLOR
 
    if (Ttype == 0) {
       amount = Amount;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       amount = 1.0 - Amount;
@@ -346,4 +355,3 @@ technique Adx_RGBdrifter_B_G
    pass P_2
    { PixelShader = compile PROFILE ps_main_B_G (); }
 }
-

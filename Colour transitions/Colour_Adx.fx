@@ -1,22 +1,26 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour.mp4
 
 /**
-This effect fades a delta key in or out through a user-selected colour gradient.  The
-gradient can be a single flat colour, a vertical gradient, a horizontal gradient or a
-four corner gradient.  The colour is at its maximum strength half way through the
-transition.
+ This effect fades a delta key in or out through a user-selected colour gradient.  The
+ gradient can be a single flat colour, a vertical gradient, a horizontal gradient or a
+ four corner gradient.  The colour is at its maximum strength half way through the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Colour_Adx.fx
 //
-// Modified 23 December 2018 jwrl.
+// Modified jwrl 2018-12-23
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -61,8 +65,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float cAmount
@@ -121,6 +125,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -161,12 +170,18 @@ float4 ps_colour (float2 uv : TEXCOORD0) : COLOR
 
 float4 ps_main_I (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 gradient = tex2D (s_Blend, xy0);
+   float4 Bgnd, Fgnd, gradient = tex2D (s_Blend, xy0);
 
    if (gradSetup) return gradient;
 
-   float4 Bgnd = tex2D (s_Foreground, xy1);
-   float4 Fgnd = tex2D (s_Background, xy2);
+   if (Ftype) {
+      Bgnd = tex2D (s_Foreground, xy1);
+      Fgnd = tex2D (s_Background, xy2);
+   }
+   else {
+      Fgnd = tex2D (s_Foreground, xy1);
+      Bgnd = tex2D (s_Background, xy2);
+   }
 
    float kDiff = distance (Fgnd.g, Bgnd.g);
 
@@ -230,4 +245,3 @@ technique Adx_Colour_O
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

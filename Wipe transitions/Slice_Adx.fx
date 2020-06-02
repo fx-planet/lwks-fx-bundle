@@ -1,20 +1,24 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-06-02
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Slice_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Slice.mp4
 
 /**
-This transition splits a delta key into strips which then move off either horizontally
-or vertically to reveal the incoming image.
+ This transition splits a delta key into strips which then move off either horizontally
+ or vertically to reveal the incoming image.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Slice_Adx.fx
 //
-// Modified 28 Dec 2018 by user jwrl:
+// Modified jwrl 2018-12-28
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2020-06-02
+// Added support for unfolded effects.
+// Reworded transition mode to read "Transition position".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -67,8 +71,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition mode";
-   string Enum = "Delta key in,Delta key out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int SetTechnique
@@ -97,6 +101,11 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
+bool Ftype
+<
+   string Description = "Folded effect";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -123,13 +132,13 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if (Ttype == 0) {
+   if (Ftype && (Ttype == 0)) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
    else {
-      Fgd = tex2D (s_Background, xy2).rgb;
       Bgd = tex2D (s_Foreground, xy1).rgb;
+      Fgd = tex2D (s_Background, xy2).rgb;
    }
 
    float kDiff = distance (Bgd.g, Fgd.g);
@@ -155,7 +164,7 @@ float4 ps_left (float2 uv : TEXCOORD1) : COLOR
       amount_1 = pow (amount_1, 3.0);
       xy.x -= (Mode == 1) ? (ceil (xy.y * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.y) * strips) * amount_2) + amount_1;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       float amount_1 = pow (Amount, 3.0);
@@ -186,7 +195,7 @@ float4 ps_right (float2 uv : TEXCOORD1) : COLOR
       amount_1 = pow (amount_1, 3.0);
       xy.x += (Mode == 1) ? (ceil (xy.y * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.y) * strips) * amount_2) + amount_1;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       float amount_1 = pow (Amount, 3.0);
@@ -217,7 +226,7 @@ float4 ps_top (float2 uv : TEXCOORD1) : COLOR
       amount_1 = pow (amount_1, 3.0);
       xy.y += (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       float amount_1 = pow (Amount, 3.0);
@@ -248,7 +257,7 @@ float4 ps_bottom (float2 uv : TEXCOORD1) : COLOR
       amount_1 = pow (amount_1, 3.0);
       xy.y -= (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = tex2D (s_Foreground, uv);
+      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
    }
    else {
       float amount_1 = pow (Amount, 3.0);
@@ -307,4 +316,3 @@ technique Slice_Adx_Bottom
    pass P_2
    { PixelShader = compile PROFILE ps_bottom (); }
 }
-

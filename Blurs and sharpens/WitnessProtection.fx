@@ -7,7 +7,9 @@
 /**
  This is a witness protection-style blurred or mosaic image obscuring pattern.  It can be
  adjusted in area and position and can be keyframed.  The blur amount can be varied using
- the strength control, and the mosaic size can also be varied with that same control.
+ the "Blur strength" control, and the mosaic size can be independently varied with the
+ "Mosaic size" control.  This gives you the ability to have any mixture of the two that
+ you could want.  The "Master pattern" control simultaneously adjusts both.
 
  Because the crop and position adjustment is done before the blur or mosaic generation,
  the edges of the blur will always blend smoothly into the background image.  For the same
@@ -34,6 +36,7 @@ int _LwksEffectInfo
 texture Inp;
 
 texture Crop : RenderColorTarget;
+texture Mos  : RenderColorTarget;
 texture Blur : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
@@ -60,6 +63,16 @@ sampler s_Cropped = sampler_state
    MipFilter = Linear;
 };
 
+sampler s_Mosaic = sampler_state
+{
+   Texture   = <Mos>;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
 sampler s_Blurred = sampler_state
 {
    Texture   = <Blur>;
@@ -74,15 +87,26 @@ sampler s_Blurred = sampler_state
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
+float Mosaic
 <
-   string Description = "Protection style";
-   string Enum = "Blur,Mosaic"; 
-> = 1;
+   string Group = "Protection mask";
+   string Description = "Mosaic size";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
 
-float Strength
+float Blurriness
 <
-   string Description = "Strength";
+   string Group = "Protection mask";
+   string Description = "Blur strength";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float Master
+<
+   string Group = "Protection mask";
+   string Description = "Master pattern";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
@@ -166,92 +190,95 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
+float4 ps_mosaic (float2 uv : TEXCOORD1) : COLOR
+{
+   float amount = Master * Mosaic;
+
+   float2 xy;
+
+   if (amount > 0.0) {
+      xy = amount * float2 (1.0, _OutputAspectRatio) * 0.03;
+      xy = (floor ((uv - 0.5.xx) / xy) * xy) + 0.5.xx;
+   }
+   else xy = uv;
+
+   return tex2D (s_Cropped, xy);
+}
+
 float4 ps_blur_sub (float2 uv : TEXCOORD1) : COLOR
 {
-   if (Strength <= 0.0) return EMPTY;
+   float amount = Master * Blurriness * 0.00772;
 
-   float4 retval = tex2D (s_Cropped, uv);
+   if (amount <= 0.0) return EMPTY;
 
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * Strength * 0.00386;
+   float4 retval = tex2D (s_Mosaic, uv);
+
+   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * amount;
 
    for (int i = 0; i < 12; i++) {
       sincos ((i * 0.2617993878), xy.x, xy.y);
       xy *= radius;
-      retval += fn_tex2D (s_Cropped, uv + xy);
-      retval += fn_tex2D (s_Cropped, uv - xy);
+      retval += fn_tex2D (s_Mosaic, uv + xy);
+      retval += fn_tex2D (s_Mosaic, uv - xy);
       xy += xy;
-      retval += fn_tex2D (s_Cropped, uv + xy);
-      retval += fn_tex2D (s_Cropped, uv - xy);
+      retval += fn_tex2D (s_Mosaic, uv + xy);
+      retval += fn_tex2D (s_Mosaic, uv - xy);
    }
 
    return retval / 49.0;
 }
 
-float4 ps_blur_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Bgd = tex2D (s_Input, uv);
+   float4 retval;
 
-   if (Strength <= 0.0) return Bgd;
+   float amount = Master * Blurriness * 0.0193;
 
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * Strength * 0.00965;
+   if (amount <= 0.0) {
+      if  ((Master * Mosaic) <= 0.0) return Bgd;
 
-   float4 retval = tex2D (s_Blurred, uv);
+      retval = fn_tex2D (s_Mosaic, uv);
+   }
+   else {
+      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * amount;
 
-   for (int i = 0; i < 12; i++) {
-      sincos ((i * 0.2617993878), xy.x, xy.y);
-      xy *= radius;
-      retval += fn_tex2D (s_Blurred, uv + xy);
-      retval += fn_tex2D (s_Blurred, uv - xy);
-      xy += xy;
-      retval += fn_tex2D (s_Blurred, uv + xy);
-      retval += fn_tex2D (s_Blurred, uv - xy);
+      retval = tex2D (s_Blurred, uv);
+
+      for (int i = 0; i < 12; i++) {
+         sincos ((i * 0.2617993878), xy.x, xy.y);
+         xy *= radius;
+         retval += fn_tex2D (s_Blurred, uv + xy);
+         retval += fn_tex2D (s_Blurred, uv - xy);
+         xy += xy;
+         retval += fn_tex2D (s_Blurred, uv + xy);
+         retval += fn_tex2D (s_Blurred, uv - xy);
+      }
+
+      retval /= 49.0;
    }
 
-   retval /= 49.0;
-
    return lerp (Bgd, retval, retval.a);
-}
-
-float4 ps_mosaic_main (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 Bgd = tex2D (s_Input, uv);
-
-   if (Strength <= 0.0) return Bgd;
-
-   float2 xy = Strength * float2 (1.0, _OutputAspectRatio) * 0.015;
-
-   xy = (floor ((uv - 0.5.xx) / xy) * xy) + 0.5.xx;
-
-   float4 Fgd = tex2D (s_Cropped, xy);
-
-   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique WitnessProtection_1
+technique WitnessProtection
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Crop;"; > 
    { PixelShader = compile PROFILE ps_crop (); }
 
    pass P_2
+   < string Script = "RenderColorTarget0 = Mos;"; > 
+   { PixelShader = compile PROFILE ps_mosaic (); }
+
+   pass P_3
    < string Script = "RenderColorTarget0 = Blur;"; > 
    { PixelShader = compile PROFILE ps_blur_sub (); }
 
-   pass P_3
-   { PixelShader = compile PROFILE ps_blur_main (); }
+   pass P_4
+   { PixelShader = compile PROFILE ps_main (); }
 }
-
-technique WitnessProtection_2
-{
-   pass P_1
-   < string Script = "RenderColorTarget0 = Crop;"; > 
-   { PixelShader = compile PROFILE ps_crop (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_mosaic_main (); }
-}
-

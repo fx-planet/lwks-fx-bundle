@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-22
+// @Released 2020-06-23
 // @Author jwrl
 // @Created 2020-06-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadSplitPlus_640.png
@@ -29,6 +29,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuadSplitPlus.fx
+//
+// Version history:
+//
+// Modified 2020-06-23 jwrl:
+// Extended position parameter ranges from 0% - 100% to -50% - 150%.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -111,18 +116,18 @@ float Pos_A_X
 <
    string Group = "Source A";
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 0.0;
 
 float Pos_A_Y
 <
    string Group = "Source A";
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 1.0;
 
 float Amt_B
@@ -163,18 +168,18 @@ float Pos_B_X
 <
    string Group = "Source B";
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 0.25;
 
 float Pos_B_Y
 <
    string Group = "Source B";
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 1.0;
 
 float Amt_C
@@ -215,18 +220,18 @@ float Pos_C_X
 <
    string Group = "Source C";
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 0.5;
 
 float Pos_C_Y
 <
    string Group = "Source C";
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 1.0;
 
 float Amt_D
@@ -267,18 +272,18 @@ float Pos_D_X
 <
    string Group = "Source D";
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 0.75;
 
 float Pos_D_Y
 <
    string Group = "Source D";
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
+   float MinVal = -0.5;
+   float MaxVal = 1.5;
 > = 1.0;
 
 float BorderWidth
@@ -415,4 +420,3 @@ technique QuadSplitPlus_1
    pass P_1
    { PixelShader = compile PROFILE ps_main_1 (); }
 }
-

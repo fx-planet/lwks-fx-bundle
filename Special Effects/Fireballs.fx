@@ -1,9 +1,10 @@
 // @Maintainer jwrl
-// @Released 2020-01-23
+// @Released 2020-06-29
 // @Author jwrl
 // @Author Unknown
-// @Created 2019-01-28
-// @see https://www.lwks.com/media/kunena/attachments/6375/Fireball_640.png
+// @Created 2020-06-28
+// @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay.mp4
 // @see https://www.lwks.com/media/kunena/attachments/6375/Fireball.mp4
 
 /**
@@ -12,52 +13,81 @@
  the size can fill the frame or reduce to zero, and it can be positioned in frame by
  dragging the centre point of the effect.
 
+ The result can then optionally be blended with a video background layer.  This function
+ has the ability to be disabled because with some display cards leaving it enabled when
+ using the fireball alone can give unpredictable results.
+
  NOTE: THIS EFFECT WILL ONLY COMPILE ON VERSIONS OF LIGHTWORKS LATER THAN 14.0.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Fireball.fx
+// Lightworks user effect Fireballs.fx
 //
-// Author's note by jwrl 2019-01-28:
+// Author's note 2020-06-28:
 // This effect is based on a matchbook fireball effect called CPGP_Fireball.glsl found
 // at https://logik-matchbook.org and designed for Autodesk applications.  I don't know
 // the original author to credit them properly but I am very grateful to them.
 //
 // I have added an intensity and hue adjustment, and position and scaling adjustments to
-// increase the flexibility.
+// increase the flexibility.  I have also enhanced it so that the result can be composited
+// over a background image.  This has meant adding an opacity adjustment, and the key can
+// also be inverted to use the flames as a variable bordered vignette.
 //
-// Modified jwrl 2019-01-29:
-// Cleaned up the code slightly to improve efficiency.
-// Removed input to allow this to be generated as a matte.
+// Version history:
 //
-// Modified jwrl 2019-01-30:
-// Changed the intensity so that as it's reduced below unity the flame yellows.
-// Removed a one pixel wide anomalous line that appeared in the top half of frame when
-// using TEXCOORD0 coordinates on some GPUs.  It seems to have been caused by the half
-// texel offset that this mode produces.  The fix is to limit the x and y values to a
-// predetermined minimum value as they approach zero with either positive or negative
-// values.  This will potentially add a little extra flicker around the centre X axis
-// with the higher resolution formats.
-//
-// Modified jwrl 2020-01-23:
-// Added "DisplayAsPercentage" flag to "Speed" and increased range from 100% to 200%.
+// Built jwrl 2020-06-28:
+// Combined two earlier effects, "Fireball" and "Fireball overlay".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Fireball";
-   string Category    = "Matte";
+   string Description = "Fireballs";
+   string Category    = "Stylize";
    string SubCategory = "Special Effects";
-   string Notes       = "Produces a hot fireball for positioning over other images";
+   string Notes       = "Produces a hot fireball and optionally blends it with a background image";
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+texture Inp;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler s_Input = sampler_state { Texture = <Inp>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
+int Standalone
+<
+   string Group = "Overlay settings";
+   string Description = "Fireball mode";
+   string Enum = "Overlay over input,Standalone (ignore overlay settings)";
+> = false;
+
+float Amount
+<
+   string Group = "Overlay settings";
+   string Description = "Fireball opacity";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
+
+bool InvertAlpha
+<
+   string Group = "Overlay settings";
+   string Description = "Invert key";
+> = false;
+
 float Speed
 <
+   string Group = "Fireball settings";
    string Description = "Flicker rate";
    string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
@@ -66,6 +96,7 @@ float Speed
 
 float Hue
 <
+   string Group = "Fireball settings";
    string Description = "Flame hue";
    float MinVal = -180.0;
    float MaxVal = 180.0;
@@ -73,6 +104,7 @@ float Hue
 
 float Intensity
 <
+   string Group = "Fireball settings";
    string Description = "Flame intensity";
    float MinVal = 0.5;
    float MaxVal = 1.5;
@@ -80,6 +112,7 @@ float Intensity
 
 float Size
 <
+   string Group = "Fireball settings";
    string Description = "Fireball size";
    float MinVal = 0.0;
    float MaxVal = 1.0;
@@ -185,8 +218,10 @@ float4 fn_hueShift (float4 rgb)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD0) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
+   float4 Bgnd = tex2D (s_Input, uv);
+
    float2 xy = float2 ((uv.x - PosX) * _OutputAspectRatio, 1.0 - uv.y - PosY);
 
    xy /= max (Size * 5.0, MINIMUM);
@@ -209,21 +244,27 @@ float4 ps_main (float2 uv : TEXCOORD0) : COLOR
 
    fire = max (fire, 0.0);
 
-   float fire_blu = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
-   float fire_grn = fire * fire;
+   float fire_blue = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
+   float fire_base = fire * fire;
 
-   fire_blu = min (fire_blu, fire_grn * fire * 0.15);
+   fire_blue = min (fire_blue, fire_base * fire * 0.15);
 
-   float4 Fgnd = float4 (fire, fire_grn * 0.4, fire_blu, fire_grn);
+   float4 Fgnd = float4 (fire, fire_base * 0.4, fire_blue, fire_base);
 
-   return fn_hueShift (saturate (Fgnd * Intensity));
+   Fgnd = fn_hueShift (saturate (Fgnd * Intensity));
+
+   if (Standalone == 1) return Fgnd;
+
+   fire = Fgnd.a * Amount;
+
+   return (InvertAlpha) ? lerp (Fgnd, Bgnd, fire) : lerp (Bgnd, Fgnd, fire);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Fireball
+technique Fireballs
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }

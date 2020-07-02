@@ -1,22 +1,37 @@
 // @Maintainer jwrl
-// @Released 2020-06-27
+// @Released 2020-07-02
 // @Author jwrl
 // @Created 2020-06-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rainbow__640.png
 
 /**
- This is a special effect that simply generates rainbows.  You can use it to create standard
- single rainbows, so-called moon dogs and sun dogs, and even double rainbows, the second
- rainbow inverted and outside the primary one.  The blue end of the spectrum has adjustable
- falloff.
+ This is a special effect that simply generates rainbows.  You can use it to create single
+ rainbows, so-called moon dogs and even double rainbows and moondogs.  Cropping is disabled
+ in moondog mode.  The blue end of the spectrum has adjustable falloff to give a fade out
+ that is more like what happens in nature.  The second rainbow is inverted and positioned
+ outside of the primary one by an adjustable offset amount.  It is also reduced in level.
 
  The rainbow is blended with the background image using a screen blend and can be varied
- in intensity.  The default settings produce a 90 degree arch (plus and minus 45 degrees),
- but that can be adjusted to whatever angle that you need.
+ in intensity.  The default crop settings will produce a 90 degree arc (plus and minus 45
+ degrees), but that can be adjusted to whatever angle that you need over a 180 degree span.
+ The secondary rainbow if used inherits most settings from the primary one, but the crop
+ angle can be independently adjusted.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Rainbow.fx
+//
+// Version history:
+//
+// Modified jwrl 2020-07-02:
+// Added radius and level adjustment for moonglow.
+// Split mask generation core code into a function to avoid needless duplication.
+//
+// Modified jwrl 2020-06-30:
+// Added offset and crops for second rainbow.
+// Added a second outer moondog layer.
+// Added moonglow to moondog.
+// Deleted reference to sundog.  At the moment I can't simulate that to my satisfaction.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,8 +63,8 @@ sampler s_Rainbow = sampler_state { Texture = <Bow>; };
 sampler s_Mask = sampler_state
 {
    Texture   = <Msk>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
+   AddressU  = Clamp;
+   AddressV  = Clamp;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -62,7 +77,7 @@ sampler s_Mask = sampler_state
 int SetTechnique
 <
    string Description = "Mode";
-   string Enum = "Standard rainbow,Double rainbow,Moon/sun dog";
+   string Enum = "Single rainbow,Double rainbow,Single moondog,Double moondog";
 > = 0;
 
 float Amount
@@ -75,7 +90,7 @@ float Amount
 float Radius
 <
    string Description = "Radius";
-   float MinVal = 0.2;
+   float MinVal = 0.1;
    float MaxVal = 2.0;
 > = 0.6666666666;
 
@@ -111,137 +126,119 @@ float Pos_Y
 
 float L_angle
 <
-   string Group = "Crop angle";
-   string Description = "Left side";
-   float MinVal = -90.0;
-   float MaxVal = 90.0;
-> = -45.0;
+   string Group = "Crop angle / moondog glow";
+   string Description = "Left / amount";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.25;
 
 float L_softness
 <
-   string Group = "Crop angle";
+   string Group = "Crop angle / moondog glow";
    string Description = "Left softness";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 30.0;
-> = 10.0;
+   float MaxVal = 0.525;
+> = 0.175;
 
 float R_angle
 <
-   string Group = "Crop angle";
-   string Description = "Right side";
-   float MinVal = -90.0;
-   float MaxVal = 90.0;
-> = 45.0;
+   string Group = "Crop angle / moondog glow";
+   string Description = "Right / radius";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.75;
 
 float R_softness
 <
-   string Group = "Crop angle";
+   string Group = "Crop angle / moondog glow";
    string Description = "Right softness";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 30.0;
-> = 10.0;
+   float MaxVal = 0.525;
+> = 0.175;
+
+float Offset
+<
+   string Group = "Double rainbow";
+   string Description = "Offset";
+   float MinVal = 0.2;
+   float MaxVal = 0.8;
+> = 0.2;
+
+float L_angle_2
+<
+   string Group = "Double rainbow";
+   string Description = "Left crop";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.25;
+
+float R_angle_2
+<
+   string Group = "Double rainbow";
+   string Description = "Right crop";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.75;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define CIRCLE  0.7927904259
-#define RADIUS  1.6666666667
-#define SUNDOG  0.2642634753
-#define FEATHER 0.002
+#define CIRCLE     0.7927904259
+#define RADIUS     1.6666666667
+#define MOONDOG    0.2642634753
 
-#define WHITE   1.0.xxxx
-#define EMPTY   0.0.xxxx
+#define EMPTY      0.0.xxxx
 
-#define HUE     float3(1.0, 2.0 / 3.0, 1.0 / 3.0)
+#define PIplusHALF 4.7123889804
+#define PI         3.1415926536
+#define HALF_PI    1.5707963268
+
+#define HUE        float3(1.0, 2.0 / 3.0, 1.0 / 3.0)
 
 float _OutputAspectRatio;
-
-float2 _rotate [] = { { 0.1305261922, 0.9914448614 }, { 0.3826834324, 0.9238795325 },
-                      { 0.6087614290, 0.7933533403 }, { 0.7933533403, 0.6087614290 },
-                      { 0.9238795325, 0.3826834324 }, { 0.9914448614, 0.1305261922 } };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_mask (float2 uv : TEXCOORD0) : COLOR
+float fn_mask (float2 uv1, float2 uv2, float angle, float softness, bool bad)
 {
-   float4 retval = WHITE;
+   float2 border, edge, shading, xy1, xy2;
 
-   float2 xy1, xy2, xy = float2 (uv.x - Pos_X, 1.0 - uv.y - Pos_Y);
-   float2 shadow, inv = float2 (xy.y, -xy.x);
+   sincos (angle, xy1.y, xy1.x);
+   sincos (angle + softness, xy2.y, xy2.x);
 
-   float shading, angle = L_angle - 90.0;
+   uv2 *= _OutputAspectRatio;
 
-   sincos (radians (angle), xy1.y, xy1.x);
-   angle += L_softness;
-   sincos (radians (angle), xy2.y, xy2.x);
+   edge = (uv1 * xy1.x) - (uv2 * xy1.y);
+   border = (uv1 * xy2.x) - (uv2 * xy2.y);
 
-   xy1.y *= _OutputAspectRatio;
-   xy2.y *= _OutputAspectRatio;
+   shading = ((border.x <= 0.0) || (border.y <= 0.0)) ? 0.0.xx
+           : saturate (border / distance (border, edge));
 
-   float2 edg = (xy * xy1.x) - (inv * xy1.y);
-   float2 bdr = (xy * xy2.x) - (inv * xy2.y);
-
-   if ((bdr.x <= 0.0) || (bdr.y <= 0.0)) { shading = 1.0;}
-   else {
-      shadow  = saturate (bdr / distance (bdr, edg));
-      shading = 1.0 - min (shadow.x, shadow.y);
-   }
-
-   retval = (edg.x < 0.0) || (edg.y < 0.0)
-          ? (xy.x < 0.0) && (L_angle > 0.0) ? EMPTY : shading.xxxx : EMPTY;
-
-   angle = 270.0 - R_angle;
-   inv = xy.yx;
-   xy.x = -xy.x;
-
-   sincos (radians (angle), xy1.y, xy1.x);
-   angle += R_softness;
-   sincos (radians (angle), xy2.y, xy2.x);
-
-   xy1.y *= _OutputAspectRatio;
-   xy2.y *= _OutputAspectRatio;
-
-   edg = (xy * xy1.x) - (inv * xy1.y);
-   bdr = (xy * xy2.x) - (inv * xy2.y);
-
-   if ((bdr.x <= 0.0) || (bdr.y <= 0.0)) { shading = 1.0;}
-   else {
-      shadow  = saturate (bdr / distance (bdr, edg));
-      shading = 1.0 - min (shadow.x, shadow.y);
-   }
-
-   retval.g = (edg.x < 0.0) || (edg.y < 0.0)
-            ? (xy.x < 0.0) && (R_angle < 0.0) ? 0.0 : shading : 0.0;
-
-   return (xy.y < 0.0) ? EMPTY : (retval.g * retval.a).xxxx;
+   return (edge.x < 0.0) || (edge.y < 0.0) ? 
+          (uv1.x < 0.0) && bad ? 0.0 : 1.0 - min (shading.x, shading.y) : 0.0;
 }
 
-float4 ps_sundog (float2 uv : TEXCOORD0) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
+float4 ps_mask (float2 uv : TEXCOORD0, uniform float left, uniform float right) : COLOR
 {
-   float radius = max (0.2, Radius);
-   float width  = Width * radius;
-   float inner  = radius * SUNDOG;
-   float outer  = inner + (width * 17.0);
-   float alpha;
+   float2 xy = float2 (uv.x - Pos_X, 1.0 - uv.y - Pos_Y);
 
-   float2 posXY = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
+   float range = (left - 0.5) * PI;
+   float mask = fn_mask (xy, float2 (xy.y, -xy.x), range - HALF_PI, L_softness, range > 0.0);
 
-   radius = length (float2 (posXY.x, posXY.y / _OutputAspectRatio)) * RADIUS;
+   range = (right - 0.5) * PI;
+   xy.x = -xy.x;
+   mask *= fn_mask (xy, float2 (xy.y, -xy.x), PIplusHALF - range, R_softness, range < 0.0);
 
-   if ((radius < inner) || (radius > outer)) return EMPTY;
-
-   float4 Fgnd = saturate ((radius - inner) / width).xxxx;
-
-   Fgnd.rgb = 1.0.xxx - Fgnd.aaa;
-   Fgnd.rgb = saturate ((Fgnd.rgb * 1.2) - 0.1.xxx);
-   Fgnd.rgb = saturate (abs (frac ((Fgnd.rgb * 0.8) + HUE) * 6.0 - 3.0) - 1.0.xxx);
-   alpha    = 3.0 - (abs (Fgnd.a - 0.5) * 6.0);
-   Fgnd.a   = lerp (alpha, alpha * (Fgnd.a - (Fgnd.g / 3.0)), Falloff);
-
-   return saturate (Fgnd);
+   return (xy.y < 0.0) ? EMPTY : mask.xxxx;
 }
 
 float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
@@ -249,7 +246,7 @@ float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
    float4 Bgnd = tex2D (s_Input, uv);
    float4 Mask = tex2D (s_Mask, uv);
 
-   float radius = max (0.2, Radius);
+   float radius = max (0.1, Radius);
    float width  = Width * radius;
    float inner  = radius * CIRCLE;
    float outer  = inner + (width * 17.0);
@@ -280,7 +277,7 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    float4 Bgnd = tex2D (s_Rainbow, uv);
    float4 Mask = tex2D (s_Mask, uv);
 
-   float radius = max (0.2, Radius) * 1.2;
+   float radius = max (0.1, Radius) * (1.0 + Offset);
    float width  = Width * radius;
    float inner  = radius * CIRCLE;
    float outer  = inner + (width * 17.0);
@@ -307,24 +304,71 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd = tex2D (s_Rainbow, uv);
-   float4 Bgnd = tex2D (s_Input, uv);
+   float radius = max (0.1, Radius);
+   float width  = Width * radius * 4.0;
+   float inner  = radius * MOONDOG;
+   float outer  = inner + (width * 35.0);
+   float alpha  = 0.0;
 
-   float2 xy, feather = float2 (1.0, _OutputAspectRatio) * FEATHER;
+   float2 posXY = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
 
-   for (int i = 0; i < 6; i++) {
-      xy = feather * _rotate [i];
-      Fgnd += tex2D (s_Rainbow, uv + xy);
-      Fgnd += tex2D (s_Rainbow, uv - xy);
-      xy.y = -xy.y;
-      Fgnd += tex2D (s_Rainbow, uv + xy);
-      Fgnd += tex2D (s_Rainbow, uv - xy);
+   radius = length (float2 (posXY.x, posXY.y / _OutputAspectRatio)) * RADIUS;
+
+   float4 Fgnd, Bgnd = tex2D (s_Input, uv);
+
+   if (radius > outer) { Fgnd = EMPTY; }
+   else {
+      if (radius < inner) { Fgnd = EMPTY; }
+      else {
+         Fgnd = saturate ((radius - inner) / width).xxxx;
+
+         Fgnd.rgb = saturate ((Fgnd.rgb * 1.2) - 0.1.xxx);
+         Fgnd.rgb = saturate (abs (frac ((Fgnd.rgb * 0.8) + HUE) * 6.0 - 3.0) - 1.0.xxx);
+         alpha  = 3.0 - (abs (Fgnd.a - 0.5) * 6.0);
+         Fgnd.a = lerp (alpha, alpha * (1.0 - Fgnd.a - (Fgnd.g / 3.0)), Falloff);
+         Fgnd.a = saturate (Fgnd.a);
+         Fgnd.rgb *= saturate (Fgnd.a * 10.0);
+      }
+
+      alpha = (1.0 - smoothstep (0.0, R_angle * Radius * 2.5, radius)) * L_angle;
    }
 
-   Fgnd /= 25.0;
+   Bgnd.rgb = saturate (Bgnd.rgb + alpha.xxx - (Bgnd.rgb * alpha));
    Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb));
 
    return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+}
+
+float4 ps_main_3 (float2 uv : TEXCOORD1) : COLOR
+{
+   float radius = max (0.1, Radius) * (1.35 + Offset);
+   float width  = Width * radius * 2.0;
+   float inner  = radius * MOONDOG;
+   float outer  = inner + (width * 35.0);
+
+   float2 posXY = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
+
+   radius = length (float2 (posXY.x, posXY.y / _OutputAspectRatio)) * RADIUS;
+
+   float4 Fgnd, Bgnd = tex2D (s_Rainbow, uv);
+
+   if ((radius < inner) || (radius > outer)) { Fgnd = EMPTY; }
+   else {
+      Fgnd = saturate ((radius - inner) / width).xxxx;
+
+      Fgnd.rgb = 1.0.xxx - Fgnd.aaa;
+      Fgnd.rgb = saturate ((Fgnd.rgb * 1.2) - 0.1.xxx);
+      Fgnd.rgb = saturate (abs (frac ((Fgnd.rgb * 0.8) + HUE) * 6.0 - 3.0) - 1.0.xxx);
+
+      float alpha = 3.0 - (abs (Fgnd.a - 0.5) * 6.0);
+
+      Fgnd.a = saturate (lerp (alpha, alpha * (Fgnd.a - (Fgnd.g / 3.0)), Falloff));
+      Fgnd.rgb *= saturate (Fgnd.a * 10.0);
+   }
+
+   Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * Amount * 0.25);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -335,7 +379,7 @@ technique Rainbow_0
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Msk;"; > 
-   { PixelShader = compile PROFILE ps_mask (); }
+   { PixelShader = compile PROFILE ps_mask (L_angle, R_angle); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_0 (); }
@@ -345,23 +389,32 @@ technique Rainbow_1
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Msk;"; > 
-   { PixelShader = compile PROFILE ps_mask (); }
+   { PixelShader = compile PROFILE ps_mask (L_angle, R_angle); }
 
    pass P_2
    < string Script = "RenderColorTarget0 = Bow;"; > 
    { PixelShader = compile PROFILE ps_main_0 (); }
 
    pass P_3
+   < string Script = "RenderColorTarget0 = Msk;"; > 
+   { PixelShader = compile PROFILE ps_mask (L_angle_2, R_angle_2); }
+
+   pass P_4
    { PixelShader = compile PROFILE ps_main_1 (); }
 }
 
 technique Rainbow_2
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Bow;"; > 
-   { PixelShader = compile PROFILE ps_sundog (); }
-
-   pass P_2
    { PixelShader = compile PROFILE ps_main_2 (); }
 }
 
+technique Rainbow_3
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Bow;"; > 
+   { PixelShader = compile PROFILE ps_main_2 (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_3 (); }
+}

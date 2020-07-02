@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-03-07
+// @Released 2020-07-02
 // @Author jwrl
 // @Created 2019-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/TitleFix_640.png
@@ -14,12 +14,18 @@
  title effect.
 
  It also has the ability to smooth and antialias text produced by any Lightworks text effect.
- This can be particularly useful when moving or zooming on a title.  The default setting of
- 10% is subjective, and will almost certainly vary depending on text size and style.
+ This can be particularly useful when moving or zooming on a title.  A suggested start point
+ setting of 10% is completely subjective, and will almost certainly vary depending on text
+ size and style.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TitleFix.fx
+//
+// Version history:
+//
+// Modified 2020-07-02 jwrl:
+// Changed the gaussian blur default to zero to bypass the gaussian blur.
 //
 // Modified 2020-03-07 jwrl:
 // Added a gaussian blur to smooth and antialias text edges.
@@ -59,7 +65,7 @@ float Smoothing
    string Description = "Smooth edges";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.1;
+> = 0.0;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -69,7 +75,8 @@ float Smoothing
 
 float _OutputAspectRatio;
 
-float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
+float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375,
+                      0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -77,15 +84,13 @@ float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval;
+   float4 retval = tex2D (s_Input, uv);
 
-   if (Smoothing == 0.0) { retval = tex2D (s_Input, uv); }
-   else {
-      retval = tex2D (s_Input, uv) * _gaussian [0];
-
+   if (Smoothing > 0.0) {
       float2 xy1 = float2 (1.0, _OutputAspectRatio) * Smoothing * STRENGTH;
       float2 xy2 = uv + xy1;
 
+      retval *= _gaussian [0];
       retval += tex2D (s_Input, xy2) * _gaussian [1];
       xy2 += xy1;
       retval += tex2D (s_Input, xy2) * _gaussian [2];

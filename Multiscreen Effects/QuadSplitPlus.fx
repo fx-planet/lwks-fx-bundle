@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-23
+// @Released 2020-07-04
 // @Author jwrl
 // @Created 2020-06-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadSplitPlus_640.png
@@ -31,6 +31,9 @@
 // Lightworks user effect QuadSplitPlus.fx
 //
 // Version history:
+//
+// Modified 2020-07-04 jwrl:
+// Allow individual crop/size settings to be ungrouped from A group settings.
 //
 // Modified 2020-06-23 jwrl:
 // Extended position parameter ranges from 0% - 100% to -50% - 150%.
@@ -71,7 +74,7 @@ sampler s_Background = sampler_state { Texture = <X>; };
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amt_A
+float A_Opacity
 <
    string Group = "Source A";
    string Description = "Opacity";
@@ -79,14 +82,14 @@ float Amt_A
    float MaxVal = 1.0;
 > = 1.0;
 
-int SetTechnique
+int A_Group
 <
    string Group = "Source A";
-   string Description = "Crop / size";
+   string Description = "Crop / size grouping";
    string Enum = "Set each input individually,Use source A settings for all";
-> = 0.25;
+> = 0;
 
-float Size_A
+float A_Size
 <
    string Group = "Source A";
    string Description = "Size";
@@ -94,7 +97,7 @@ float Size_A
    float MaxVal = 1.0;
 > = 0.25;
 
-float Crop_A_X
+float A_Crop_X
 <
    string Group = "Source A";
    string Description = "Symmetrical crop";
@@ -103,7 +106,7 @@ float Crop_A_X
    float MaxVal = 1.0;
 > = 1.0;
 
-float Crop_A_Y
+float A_Crop_Y
 <
    string Group = "Source A";
    string Description = "Symmetrical crop";
@@ -112,7 +115,7 @@ float Crop_A_Y
    float MaxVal = 1.0;
 > = 1.0;
 
-float Pos_A_X
+float A_Position_X
 <
    string Group = "Source A";
    string Description = "Position";
@@ -121,7 +124,7 @@ float Pos_A_X
    float MaxVal = 1.5;
 > = 0.0;
 
-float Pos_A_Y
+float A_Position_Y
 <
    string Group = "Source A";
    string Description = "Position";
@@ -130,7 +133,7 @@ float Pos_A_Y
    float MaxVal = 1.5;
 > = 1.0;
 
-float Amt_B
+float B_Opacity
 <
    string Group = "Source B";
    string Description = "Opacity";
@@ -138,7 +141,14 @@ float Amt_B
    float MaxVal = 1.0;
 > = 1.0;
 
-float Size_B
+int B_Group
+<
+   string Group = "Source B";
+   string Description = "Crop / size grouping";
+   string Enum = "Only use B settings,Follow source A group settings";
+> = 1;
+
+float B_Size
 <
    string Group = "Source B";
    string Description = "Size";
@@ -146,7 +156,7 @@ float Size_B
    float MaxVal = 1.0;
 > = 0.25;
 
-float Crop_B_X
+float B_Crop_X
 <
    string Group = "Source B";
    string Description = "Symmetrical crop";
@@ -155,7 +165,7 @@ float Crop_B_X
    float MaxVal = 1.0;
 > = 1.0;
 
-float Crop_B_Y
+float B_Crop_Y
 <
    string Group = "Source B";
    string Description = "Symmetrical crop";
@@ -164,7 +174,7 @@ float Crop_B_Y
    float MaxVal = 1.0;
 > = 1.0;
 
-float Pos_B_X
+float B_Position_X
 <
    string Group = "Source B";
    string Description = "Position";
@@ -173,7 +183,7 @@ float Pos_B_X
    float MaxVal = 1.5;
 > = 0.25;
 
-float Pos_B_Y
+float B_Position_Y
 <
    string Group = "Source B";
    string Description = "Position";
@@ -182,7 +192,7 @@ float Pos_B_Y
    float MaxVal = 1.5;
 > = 1.0;
 
-float Amt_C
+float C_Opacity
 <
    string Group = "Source C";
    string Description = "Opacity";
@@ -190,7 +200,14 @@ float Amt_C
    float MaxVal = 1.0;
 > = 1.0;
 
-float Size_C
+int C_Group
+<
+   string Group = "Source C";
+   string Description = "Crop / size grouping";
+   string Enum = "Only use C settings,Follow source A group settings";
+> = 1;
+
+float C_Size
 <
    string Group = "Source C";
    string Description = "Size";
@@ -198,7 +215,7 @@ float Size_C
    float MaxVal = 1.0;
 > = 0.25;
 
-float Crop_C_X
+float C_Crop_X
 <
    string Group = "Source C";
    string Description = "Symmetrical crop";
@@ -207,7 +224,7 @@ float Crop_C_X
    float MaxVal = 1.0;
 > = 1.0;
 
-float Crop_C_Y
+float C_Crop_Y
 <
    string Group = "Source C";
    string Description = "Symmetrical crop";
@@ -216,7 +233,7 @@ float Crop_C_Y
    float MaxVal = 1.0;
 > = 1.0;
 
-float Pos_C_X
+float C_Position_X
 <
    string Group = "Source C";
    string Description = "Position";
@@ -225,7 +242,7 @@ float Pos_C_X
    float MaxVal = 1.5;
 > = 0.5;
 
-float Pos_C_Y
+float C_Position_Y
 <
    string Group = "Source C";
    string Description = "Position";
@@ -234,7 +251,7 @@ float Pos_C_Y
    float MaxVal = 1.5;
 > = 1.0;
 
-float Amt_D
+float D_Opacity
 <
    string Group = "Source D";
    string Description = "Opacity";
@@ -242,7 +259,14 @@ float Amt_D
    float MaxVal = 1.0;
 > = 1.0;
 
-float Size_D
+int D_Group
+<
+   string Group = "Source D";
+   string Description = "Crop / size grouping";
+   string Enum = "Only use D settings,Follow source A group settings";
+> = 1;
+
+float D_Size
 <
    string Group = "Source D";
    string Description = "Size";
@@ -250,7 +274,7 @@ float Size_D
    float MaxVal = 1.0;
 > = 0.25;
 
-float Crop_D_X
+float D_Crop_X
 <
    string Group = "Source D";
    string Description = "Symmetrical crop";
@@ -259,7 +283,7 @@ float Crop_D_X
    float MaxVal = 1.0;
 > = 1.0;
 
-float Crop_D_Y
+float D_Crop_Y
 <
    string Group = "Source D";
    string Description = "Symmetrical crop";
@@ -268,7 +292,7 @@ float Crop_D_Y
    float MaxVal = 1.0;
 > = 1.0;
 
-float Pos_D_X
+float D_Position_X
 <
    string Group = "Source D";
    string Description = "Position";
@@ -277,7 +301,7 @@ float Pos_D_X
    float MaxVal = 1.5;
 > = 0.75;
 
-float Pos_D_Y
+float D_Position_Y
 <
    string Group = "Source D";
    string Description = "Position";
@@ -306,6 +330,14 @@ float4 BorderColour
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
+#ifndef _LENGTH   // Only available in version 14.5 and up
+Bad_LW_version    // Forces a compiler error if the Lightworks version is bad.
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
 #define BLANK  0.0.xxxx
 
 float _OutputAspectRatio;
@@ -314,109 +346,77 @@ float _OutputAspectRatio;
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D_multi (sampler s_Input, float2 xy1, float2 xy2, float2 xy3)
+float4 fn_miniDVE (sampler s_Input, float2 uv, float3 group, float4 vid, float a, float b)
 {
-   float2 uv1 = abs (xy1 - 0.5.xx) * 2.0;
+   float2 xy1 = uv / group.z;
+   float2 xy2 = abs (xy1 - 0.5.xx) * 2.0;
+   float2 border = group.xy - float2 (b, b * _OutputAspectRatio) / group.z;
 
-   return (uv1.x <= xy3.x) && (uv1.y <= xy3.y) ? tex2D (s_Input, xy1) :
-          (uv1.x <= xy2.x) && (uv1.y <= xy2.y) ? BorderColour : BLANK;
-}
+   float4 retval = (xy2.x <= border.x) && (xy2.y <= border.y) ? tex2D (s_Input, xy1) :
+                   (xy2.x <= group.x)  && (xy2.y <= group.y)  ? BorderColour : BLANK;
 
-float4 fn_tex2D_one (sampler s_Input, float2 xy1, float2 xy2)
-{
-   float2 uv = abs (xy1 - 0.5.xx) * 2.0;
-
-   return (uv.x <= xy2.x) && (uv.y <= xy2.y) ? tex2D (s_Input, xy1) :
-          (uv.x <= Crop_A_X) && (uv.y <= Crop_A_Y) ? BorderColour : BLANK;
+   return lerp (vid, retval, retval.a * a);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float size = max (Size_D, 1e-6);
-   float border = BorderWidth * 0.25 / size;
+   float4 retval = tex2D (s_Background, uv);
 
-   float2 xy1 = (uv - float2 (Pos_D_X, 1.0 - Pos_D_Y)) / size;
-   float2 xy2 = float2 (Crop_D_X, Crop_D_Y);
-   float2 xy3 = xy2 - float2 (border, border * _OutputAspectRatio);
+   // First build an array of the four crop and size settings
 
-   float4 Fgnd = fn_tex2D_multi (s_Input_D, xy1, xy2, xy3);
-   float4 Bgnd = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * Amt_D);
+   float3 group [4] = { float3 (A_Crop_X, A_Crop_Y, max (A_Size, 1e-6)),
+                        float3 (B_Crop_X, B_Crop_Y, max (B_Size, 1e-6)),
+                        float3 (C_Crop_X, C_Crop_Y, max (C_Size, 1e-6)),
+                        float3 (D_Crop_X, D_Crop_Y, max (D_Size, 1e-6)), };
 
-   size = max (Size_C, 1e-6);
-   border = BorderWidth * 0.25 / size;
+   // Now generate an index into that array.  In the D case the index will be either 0 or 3.
 
-   xy1 = (uv - float2 (Pos_C_X, 1.0 - Pos_C_Y)) / size;
-   xy2 = float2 (Crop_C_X, Crop_C_Y);
-   xy3 = xy2 - float2 (border, border * _OutputAspectRatio);
+   int idx = int (saturate (2.0 - A_Group - D_Group)); idx += idx + idx;
 
-   Fgnd = fn_tex2D_multi (s_Input_C, xy1, xy2, xy3);
-   Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amt_C);
+   // Scale the border width
 
-   size = max (Size_B, 1e-6);
-   border = BorderWidth * 0.25 / size;
+   float border = BorderWidth * 0.25;
 
-   xy1 = (uv - float2 (Pos_B_X, 1.0 - Pos_B_Y)) / size;
-   xy2 = float2 (Crop_B_X, Crop_B_Y);
-   xy3 = xy2 - float2 (border, border * _OutputAspectRatio);
+   // Get the adjusted image position.
 
-   Fgnd = fn_tex2D_multi (s_Input_B, xy1, xy2, xy3);
-   Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amt_B);
+   float2 xy = uv - float2 (D_Position_X, 1.0 - D_Position_Y);
 
-   size = max (Size_A, 1e-6);
-   border = BorderWidth * 0.25 / size;
+   // Recover the D video, scaled, cropped, bordered and mixed with the background.
 
-   xy1 = (uv - float2 (Pos_A_X, 1.0 - Pos_A_Y)) / size;
-   xy2 = float2 (Crop_A_X, Crop_A_Y);
-   xy3 = xy2 - float2 (border, border * _OutputAspectRatio);
+   retval = fn_miniDVE (s_Input_D, xy, group [idx], retval, D_Opacity, border);
 
-   Fgnd = fn_tex2D_multi (s_Input_A, xy1, xy2, xy3);
+   // Generate the C index into the crop and size array.  In this case it will be either 0 or 2.
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amt_A);
-}
+   idx = int (saturate (2.0 - A_Group - C_Group)); idx += idx;
+   xy = uv - float2 (C_Position_X, 1.0 - C_Position_Y);
 
-float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
-{
-   float size = max (Size_A, 1e-6);
-   float border = BorderWidth * 0.25 / size;
+   retval = fn_miniDVE (s_Input_C, xy, group [idx], retval, C_Opacity, border);
 
-   float2 xy1 = (uv - float2 (Pos_D_X, 1.0 - Pos_D_Y)) / size;
-   float2 xy2 = float2 (Crop_A_X - border, Crop_A_Y - (border * _OutputAspectRatio));
+   // Generate the B index into the crop and size array which will be either 0 or 1.
 
-   float4 Fgnd = fn_tex2D_one (s_Input_D, xy1, xy2);
-   float4 Bgnd = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * Amt_D);
+   idx = int (saturate (2.0 - A_Group - B_Group));
+   xy = uv - float2 (B_Position_X, 1.0 - B_Position_Y);
 
-   xy1 = (uv - float2 (Pos_C_X, 1.0 - Pos_C_Y)) / size;
-   Fgnd = fn_tex2D_one (s_Input_C, xy1, xy2);
+   retval = fn_miniDVE (s_Input_B, xy, group [idx], retval, B_Opacity, border);
 
-   Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amt_C);
+   // The A index can only ever be zero, so we can explicitly declare it.
 
-   xy1 = (uv - float2 (Pos_B_X, 1.0 - Pos_B_Y)) / size;
-   Fgnd = fn_tex2D_one (s_Input_B, xy1, xy2);
+   idx = 0;
+   xy = uv - float2 (A_Position_X, 1.0 - A_Position_Y);
 
-   Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amt_B);
-
-   xy1 = (uv - float2 (Pos_A_X, 1.0 - Pos_A_Y)) / size;
-   Fgnd = fn_tex2D_one (s_Input_A, xy1, xy2);
-
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amt_A);
+   return fn_miniDVE (s_Input_A, xy, group [idx], retval, A_Opacity, border);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique QuadSplitPlus_0
+technique QuadSplitPlus
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_0 (); }
-}
-
-technique QuadSplitPlus_1
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_1 (); }
+   { PixelShader = compile PROFILE ps_main (); }
 }

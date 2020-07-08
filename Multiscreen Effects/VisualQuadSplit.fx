@@ -1,15 +1,17 @@
 // @Maintainer jwrl
-// @Released 2020-07-05
+// @Released 2020-07-08
 // @Author jwrl
 // @Created 2020-07-05
-// @see https://www.lwks.com/media/kunena/attachments/6375/VisualQuadSplit_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/VisualQuad_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Visualquadsettings.mp4
 
 /**
  This simple effect produces individually sized, cropped and positioned images of up to four
  sources at a time from the inputs A, B, C and D.  Input X (for eXternal) is a background
- source that can be used to daisy chain other instances of this effect to produce much more
- than four images on screen.  The order of the various parameters in the user interface is
- the order in which the images are layered, so images will be overlaid with that priority.
+ source that can be used for video or to daisy chain other instances of this effect to
+ produce much more than four images on screen.  The order of the various parameters in the
+ user interface is the order in which the images are layered, so images will be overlaid
+ with that priority.
 
  The images can be individually cropped to create differing aspect ratios of the source
  media.  To make sizing, cropping and position adjustment simpler for the user, those
@@ -36,7 +38,10 @@
 //
 // Version history:
 //
-// Created 2020-07-05 jwrl.
+// Modified 2020-07-08 jwrl.
+// Placed the border settings immediately under the opacity settings.  This was done to
+// give the channel settings the lowest priority in the UI.
+// Commented the source code.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -101,6 +106,22 @@ float D_Opacity
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
+
+float BorderWidth
+<
+   string Group = "Border";
+   string Description = "Width";
+   string Flags = "DisplayAsPercentage";
+   float MinVal = 0.0;
+   float MaxVal = 0.1;
+> = 0.025;
+
+float4 BorderColour
+<
+   string Group = "Border";
+   string Description = "Colour";
+   bool SupportsAlpha = false;
+> = { 0.694, 0.255, 0.710, 1.0 };
 
 bool A_Lock_AR
 <
@@ -414,28 +435,12 @@ float D_Position_Y
    float MaxVal = 1.5;
 > = 0.25;
 
-float BorderWidth
-<
-   string Group = "Border";
-   string Description = "Width";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.0;
-   float MaxVal = 0.1;
-> = 0.025;
-
-float4 BorderColour
-<
-   string Group = "Border";
-   string Description = "Colour";
-   bool SupportsAlpha = false;
-> = { 0.694, 0.255, 0.710, 1.0 };
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH   // Only available in version 14.5 and up
-Bad_LW_version    // Forces a compiler error if the Lightworks version is bad.
+#ifndef _LENGTH   // This parameter is only available in version 14.5 and up.
+Bad_LW_version    // Forces a compiler error if the Lightworks version is 14.0 or less.
 #endif
 
 #ifdef WINDOWS
@@ -452,13 +457,15 @@ float _OutputAspectRatio;
 
 float4 fn_DVE (sampler s, float2 uv, float2 z, float2 p, float2 u, float2 l, float2 b)
 {
-   float2 size = max (z, 1e-6);
-   float2 xy = ((uv - p) / size) + 0.5.xx;
+   float2 size = max (z, 1e-6);              // Minimum size is limited to a low positive value
+   float2 xy = ((uv - p) / size) + 0.5.xx;   // The pixel coordinates are scaled and positioned
+   float2 border = b / size;                 // The border is scaled by the size
+   float2 U = u - border;                    // The upper left border is calculated and...
+   float2 L = l + border;                    // so is the lower right border
 
-   b /= size;
-
-   float2 U = u - b;
-   float2 L = l + b;
+   // If the pixel coordinates fall outside the crop boundaries in u and l zero (transparent
+   // black) is returned in RGBA.  If they fall outside the border a flat colour is returned,
+   // otherwise the scaled video is returned to the caller.
 
    return ((xy.x > u.x) || (xy.y < u.y) || (xy.x < l.x) || (xy.y > l.y)) ? EMPTY :
           ((xy.x > U.x) || (xy.y < U.y) || (xy.x < L.x) || (xy.y > L.y)) ? BorderColour
@@ -471,44 +478,61 @@ float4 fn_DVE (sampler s, float2 uv, float2 z, float2 p, float2 u, float2 l, flo
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float X_size = ((2.0 * D_Size_X) - 1.0) * 4.0 / 3.0;
+   // The master size setting is determined from the X position of the selected input
+
+   float size = ((2.0 * D_Size_X) - 1.0) * 4.0 / 3.0;
+
+   // The main parameters are now set up.  The border is set once and used throughout.
+   // The video scaling, V-size is set to either size or by the X and Y position and is
+   // set for each input.  In this case we're setting the values for D.  Because each
+   // channel is unique they must be set up outside fn_DVE().
 
    float2 border = float2 (1.0, -_OutputAspectRatio) * BorderWidth * 0.25;
-   float2 size = D_Lock_AR ? X_size.xx : float2 (X_size, (1.0 - (2.0 * D_Size_Y)) * 4.0 / 3.0);
+   float2 V_size = D_Lock_AR ? size.xx : float2 (size, (1.0 - (2.0 * D_Size_Y)) * 4.0 / 3.0);
    float2 crop_U = saturate (float2 (D_Crop_UX - 0.55, 0.45 - D_Crop_UY) * 2.5);
    float2 crop_L = saturate (float2 (D_Crop_LX - 0.55, 0.45 - D_Crop_LY) * 2.5);
    float2 position = float2 (D_Position_X, 1.0 - D_Position_Y);
 
-   float4 Fgnd = fn_DVE (s_Input_D, uv, size, position, crop_U, crop_L, border);
+   // We now recover the D input, scaled, positioned and cropped as required.  That is
+   // then combined with the background layer from the X input and placed in retval.
+
+   float4 Fgnd = fn_DVE (s_Input_D, uv, V_size, position, crop_U, crop_L, border);
    float4 retval = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * D_Opacity);
 
-   X_size = (1.0 - (2.0 * C_Size_X)) * 4.0 / 3.0;
-   size = C_Lock_AR ? X_size.xx : float2 (X_size, (1.0 - (2.0 * C_Size_Y)) * 4.0 / 3.0);
+   // Now the C channel settings are derived and applied to retval as in the D input.
+
+   size = (1.0 - (2.0 * C_Size_X)) * 4.0 / 3.0;
+   V_size = C_Lock_AR ? size.xx : float2 (size, (1.0 - (2.0 * C_Size_Y)) * 4.0 / 3.0);
    crop_U = saturate (float2 (C_Crop_LX - 0.05, 0.45 - C_Crop_UY) * 2.5);
    crop_L = saturate (float2 (C_Crop_UX - 0.05, 0.45 - C_Crop_LY) * 2.5);
    position = float2 (C_Position_X, 1.0 - C_Position_Y);
 
-   Fgnd = fn_DVE (s_Input_C, uv, size, position, crop_U, crop_L, border);
+   Fgnd = fn_DVE (s_Input_C, uv, V_size, position, crop_U, crop_L, border);
 
    retval = lerp (retval, Fgnd, Fgnd.a * C_Opacity);
 
-   X_size = ((2.0 * B_Size_X) - 1.0) * 4.0 / 3.0;
-   size = B_Lock_AR ? X_size.xx : float2 (X_size, ((2.0 * B_Size_Y) - 1.0) * 4.0 / 3.0);
+   // B channel
+
+   size = ((2.0 * B_Size_X) - 1.0) * 4.0 / 3.0;
+   V_size = B_Lock_AR ? size.xx : float2 (size, ((2.0 * B_Size_Y) - 1.0) * 4.0 / 3.0);
    crop_U = saturate (float2 (B_Crop_LX - 0.55, 0.95 - B_Crop_UY) * 2.5);
    crop_L = saturate (float2 (B_Crop_UX - 0.55, 0.95 - B_Crop_LY) * 2.5);
    position = float2 (B_Position_X, 1.0 - B_Position_Y);
 
-   Fgnd = fn_DVE (s_Input_B, uv, size, position, crop_U, crop_L, border);
+   Fgnd = fn_DVE (s_Input_B, uv, V_size, position, crop_U, crop_L, border);
 
    retval = lerp (retval, Fgnd, Fgnd.a * B_Opacity);
 
-   X_size = (1.0 - (2.0 * A_Size_X)) * 4.0 / 3.0;
-   size = A_Lock_AR ? X_size.xx : float2 (X_size, ((2.0 * A_Size_Y) - 1.0) * 4.0 / 3.0);
+   // The A channel is the last.  By doing it in this order A will be on top of B,
+   // B will be over C, and C will be on top of D which overlays the X channel.
+
+   size = (1.0 - (2.0 * A_Size_X)) * 4.0 / 3.0;
+   V_size = A_Lock_AR ? size.xx : float2 (size, ((2.0 * A_Size_Y) - 1.0) * 4.0 / 3.0);
    crop_U = saturate (float2 (A_Crop_UX - 0.05, 0.95 - A_Crop_UY) * 2.5);
    crop_L = saturate (float2 (A_Crop_LX - 0.05, 0.95 - A_Crop_LY) * 2.5);
    position = float2 (A_Position_X, 1.0 - A_Position_Y);
 
-   Fgnd = fn_DVE (s_Input_A, uv, size, position, crop_U, crop_L, border);
+   Fgnd = fn_DVE (s_Input_A, uv, V_size, position, crop_U, crop_L, border);
 
    return lerp (retval, Fgnd, Fgnd.a * A_Opacity);
 }
@@ -522,4 +546,3 @@ technique VisualQuadSplit
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

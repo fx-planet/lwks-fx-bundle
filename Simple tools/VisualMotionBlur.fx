@@ -2,7 +2,7 @@
 // @Released 2020-07-09
 // @Author jwrl
 // @Created 2020-07-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/VisualMotionBlur_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/VisMotionBlur_640.png
 
 /**
  A directional blur that can be used to simulate fast motion, whip pans and the like.  This
@@ -48,7 +48,7 @@ sampler s_Input = sampler_state {
 
 float Amount
 <
-    string Description = "Blur mount";
+    string Description = "Blur amount";
     float MinVal = 0.0;
     float MaxVal = 1.0;
 > = 1.0;
@@ -87,41 +87,42 @@ Lightworks version must be 14.5 or better
 float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// fUNCTIONS
+// Functions
 //-----------------------------------------------------------------------------------------//
 
 float4 fn_tex2D (sampler s, float2 uv)
 {
    // This is necessary because mirroring alone can result in wrap around.  It cannot
-   // simply replace mirroring because clamping can give unpredictable results too.
+   // simply be replaced by clamping because that can give unpredictable results too.
 
    return tex2D (s, saturate (uv));
 }
 
 //-----------------------------------------------------------------------------------------//
-// ShaderS
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Fgnd = tex2D (s_Input, uv);
 
-   float2 xy0 = float2 (Blur_X - 0.5, (0.5 - Blur_Y) * _OutputAspectRatio);
+   float2 xy0 = float2 (0.5 - Blur_X, (Blur_Y - 0.5) * _OutputAspectRatio);
 
    if ((Amount <= 0.0) || (distance (0.0, xy0) == 0.0)) return Fgnd;
 
-   xy0 *= 0.01;
+   xy0 *= 0.005;
 
    float2 xy1 = uv - xy0;
 
-   float4 Blur = fn_tex2D (s_Input, xy1);
+   float scale = 0.0327868852;
+
+   float4 Blur = fn_tex2D (s_Input, xy1) * scale;
 
    for (int i = 0; i < 60; i++) {
-      xy1 -= xy0;
-      Blur += fn_tex2D (s_Input, xy1);
+      scale -= 0.0005464481;
+      xy1 += xy0;
+      Blur += fn_tex2D (s_Input, xy1) * scale;
    }
-
-   Blur /= 61.0;
 
    return lerp (Fgnd, Blur, Amount);
 }
@@ -133,7 +134,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique VisualMotionBlur
 {
    pass P_1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   { PixelShader = compile PROFILE ps_main (); }
 }

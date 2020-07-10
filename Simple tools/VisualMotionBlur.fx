@@ -16,7 +16,8 @@
 // Version history:
 //
 // Modified 2020-07-10 jwrl.
-// Corrected cross-platform discrepancy in float/float2 assignment in distance().
+// Corrected cross-platform discrepancy in float/float2 calculation in distance().
+// Fully commented the effect (finally!!!)
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -93,8 +94,9 @@ float _OutputAspectRatio;
 
 float4 fn_tex2D (sampler s, float2 uv)
 {
-   // This is necessary because mirroring alone can result in wrap around.  It cannot
-   // simply be replaced by clamping because that can give unpredictable results too.
+   // This in conjunction with Mirror addressing guarantees that edge pixels repeat.
+   // This is necessary because Mirror addressing alone can result in wrap around.
+   // Clamp/ClampToEdge UV addressing can create unpredictable edge artefacts too.
 
    return tex2D (s, saturate (uv));
 }
@@ -107,23 +109,34 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Fgnd = tex2D (s_Input, uv);
 
+   // Centre the cursor X-Y coordiantes around zero.
+
    float2 xy0 = float2 (0.5 - Blur_X, (Blur_Y - 0.5) * _OutputAspectRatio);
+
+   // If the amount is zero or less, or if xy0 is zero quit without doing anything.
 
    if ((Amount <= 0.0) || (distance (0.0.xx, xy0) == 0.0)) return Fgnd;
 
+   // Initialise the mix value, initial pixel address and blur sample.
+
+   float mix = 0.0327868852;
+   float2 xy1 = uv;
+   float4 Blur = Fgnd * mix;
+
+   // Scale xy0 so that the derived blur length is reasonable and easily controlled.
+
    xy0 *= 0.005;
 
-   float2 xy1 = uv - xy0;
-
-   float scale = 0.0327868852;
-
-   float4 Blur = fn_tex2D (s_Input, xy1) * scale;
+   // Do a directional blur by progressively sampling pixels at 60 deep, offset more
+   // and more, and reducing their mix amount to zero linearly to fade the blur out.
 
    for (int i = 0; i < 60; i++) {
-      scale -= 0.0005464481;
+      mix -= 0.0005464481;
       xy1 += xy0;
-      Blur += fn_tex2D (s_Input, xy1) * scale;
+      Blur += fn_tex2D (s_Input, xy1) * mix;
    }
+
+   // Finally mix the blur back into the original foreground video.
 
    return lerp (Fgnd, Blur, Amount);
 }

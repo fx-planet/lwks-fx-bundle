@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-09
+// @Released 2020-07-10
 // @Author jwrl
 // @Created 2020-07-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/VisMotionBlur_640.png
@@ -15,7 +15,8 @@
 //
 // Version history:
 //
-// Created 2020-07-09 by jwrl.
+// Modified 2020-07-10 jwrl.
+// Corrected cross-platform discrepancy in float/float2 assignment in distance().
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -108,7 +109,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy0 = float2 (0.5 - Blur_X, (Blur_Y - 0.5) * _OutputAspectRatio);
 
-   if ((Amount <= 0.0) || (distance (0.0, xy0) == 0.0)) return Fgnd;
+   if ((Amount <= 0.0) || (distance (0.0.xx, xy0) == 0.0)) return Fgnd;
 
    xy0 *= 0.005;
 

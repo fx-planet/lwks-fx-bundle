@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-11
 // @Author jwrl
 // @Created 2017-02-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/TheDarkSide_640.png
 
 /**
-The dark side (DarkSide.fx) gives a dark "glow" (don't know what else to call it) to an
-image.  All parameters are minimum range limited to prevent manual entry of illegal or
-negative values.  There is no such limit to the maximum values possible.  The alpha
-channel is fully preserved throughout.
+ The dark side (DarkSide.fx) gives a dark "glow" (don't know what else to call it) to an
+ image.  All parameters are minimum range limited to prevent manual entry of illegal or
+ negative values.  There is no such limit to the maximum values possible.  The alpha
+ channel is fully preserved throughout.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -41,19 +41,24 @@ channel is fully preserved throughout.
 // glowFeather, glowSpread then Colour.  You should be able to work out what the user would
 // have seen from the parameter names.
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Version history:
+//
+// Modified 11 July 2020 jwrl.
+// Explicitly set SupportsAlpha boolean value in colour parameter to false.
+//
+// Modified 23 December 2018 jwrl.
+// Changed subcategory.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 6 July 2018 jwrl.
+// Calculate glow related to frame size not pixel size.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 6 July 2018 jwrl.
-// Calculate glow related to frame size not pixel size.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -141,6 +146,7 @@ float glowAmount
 float4 Colour
 <
    string Description = "Colour difference";
+   bool SupportsAlpha = false;
 > = { 0.0, 0.0, 0.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//

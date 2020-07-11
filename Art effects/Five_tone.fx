@@ -1,39 +1,44 @@
 // @Maintainer jwrl
-// @Released 2019-08-13
+// @Released 2020-07-11
 // @Author idealsceneprod (Val Gameiro)
 // @Created 2014-12-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/FiveTone_640.png
 
 /**
-Five tone (FivetoneFx.fx) is a posterization effect that extends the existing Lightworks
-Two Tone and Tri-Tone effects.  It reduces input video to five tonal values.  Blending and
-colour values are all adjustable.
+ Five tone (FivetoneFx.fx) is a posterization effect that extends the existing Lightworks
+ Two Tone and Tri-Tone effects.  It reduces input video to five tonal values.  Blending and
+ colour values are all adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Five_tone.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in Lightworks effects.
+// Modified 11 July 2020 jwrl.
+// Explicitly declared SupportsAlpha flag to be false in each colour parameter.
 //
-// Cross platform compatibility check 27 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Modified 13 August 2019 jwrl.
+// Changed incorrect second "Threshold Three" parameter to "Threshold Four".
+// Removed explicit declaration of clamp addressing to deal with the ClampToEdge cross
+// platform bug.  The effect now defaults to the correct addressing mode.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Added creation date.
 // Formatted the descriptive block so that it can automatically be read.
 //
-// Modified 13 August 2019 jwrl.
-// Changed incorrect second "Threshold Three" parameter to "Threshold Four".
-// Removed explicit declaration of clamp addressing to deal with the ClampToEdge cross
-// platform bug.  The effect now defaults to the correct addressing mode.
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//
+// Cross platform compatibility check 27 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Bug fix 26 February 2017 by jwrl:
+// Added workaround for the interlaced media height bug in Lightworks effects.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -87,61 +92,66 @@ sampler BlurSampler = sampler_state
 float Level1
 <
    string Description = "Threshold One";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.20;
 
 float Level2
 <
    string Description = "Threshold Two";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.40;
 
 float Level3
 <
    string Description = "Threshold Three";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.60;
 
 float Level4
 <
    string Description = "Threshold Four";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.80;
 
 float BlendOpacity
 <
-	string Description = "Blend";
-	float MinVal       = 0.0;
-	float MaxVal       = 1.0;
+   string Description = "Blend";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 1.0;
 
 float4 DarkColour
 <
    string Description = "Dark Colour";
+   bool SupportsAlpha = false;
 > = { 0.0, 0.0, 0.0, 1.0 };
 
 float4 MidColour
 <
    string Description = "Mid Dark Colour";
+   bool SupportsAlpha = false;
 > = { 0.3, 0.3, 0.3, 1.0 };
 
 float4 MidColour2
 <
    string Description = "Mid Colour";
+   bool SupportsAlpha = false;
 > = { 0.5, 0.5, 0.5, 1.0 };
 
 float4 MidColour3
 <
    string Description = "Mid Light Colour";
+   bool SupportsAlpha = false;
 > = { 0.7, 0.7, 0.7, 1.0 };
 
 float4 LightColour
 <
    string Description = "Light Colour";
+   bool SupportsAlpha = false;
 > = { 1.0, 1.0, 1.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
@@ -151,7 +161,7 @@ float4 LightColour
 float _OutputAspectRatio;
 float _OutputWidth = 1.0;
 
-/* const */ float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // See Pascals Triangle
+float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // See Pascals Triangle
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

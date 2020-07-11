@@ -1,27 +1,50 @@
 // @Maintainer jwrl
-// @Released 2019-04-30
+// @Released 2020-07-11
 // @Author jwrl
 // @Created 2018-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowPlus_640.png
 
 /**
-"Drop shadow plus blend" is a complex drop shadow and border generator.  It provides drop
-shadow blur softness control, and independent colour settings for border and shadow.  Two
-border generation modes and optional border anti-aliassing are also provided.  The border
-centering, width and height can also be independently adjusted.
+ "Drop shadow plus blend" is a complex drop shadow and border generator.  It provides drop
+ shadow blur softness control, and independent colour settings for border and shadow.  Two
+ border generation modes and optional border anti-aliassing are also provided.  The border
+ centering, width and height can also be independently adjusted.
 
-The effect can also output the foreground, border and drop shadow alone, along with the
-appropriate alpha channel.  When doing so any background input to the effect will not be
-displayed.
+ The effect can also output the foreground, border and drop shadow alone, along with the
+ appropriate alpha channel.  When doing so any background input to the effect will not be
+ displayed.
 
-The blend mode of the drop shadow and/or border and/or foreground can also be adjusted.
-This section of the effect attempts to match as closely as possible Photoshop's blends.
-Because that is built around an entirely different colour model and I have no definite
-knowledge of the algorithms used, absolute accuracy isn't claimed or guaranteed.
+ The blend mode of the drop shadow and/or border and/or foreground can also be adjusted.
+ This section of the effect attempts to match as closely as possible Photoshop's blends.
+ Because that is built around an entirely different colour model and I have no definite
+ knowledge of the algorithms used, absolute accuracy isn't claimed or guaranteed.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DropShadowBlend.fx
+//
+// Version history:
+//
+// Update 11 July 2020 jwrl.
+// Added a delta key to separate blended effects from the background.  THIS MAY BREAK
+// BACKWARD COMPATIBILITY (BUT SHOULDN'T)!!!!!
+//
+// Update 30 April 2019 jwrl.
+// Removed a duplicate windows ps 3.0 declaration.
+// Added a fade mode to the foreground so it can be dropped out leaving just the border
+// and/or drop shadow.
+// The extra parameter required has broken backward compatibility so "Add" has also been
+// removed since it was just a duplicate of "Linear dodge" (see rewrite notes above).
+//
+// Update 23 December 2018 jwrl.
+// Converted to version 14.5 and up.
+// Modified Windows version to compile as ps_3_0.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Update 25 November 2018 jwrl.
+// Added alpha boost function for Lightworks titles.
+// Changed category to "Mix".
+// Changed subcategory to "Blend Effects".
 //
 // Rewrite 22 October 2018 jwrl.
 // Like DropShadow.fx, this effect had a heap of additional code and code modifications to
@@ -37,23 +60,6 @@ knowledge of the algorithms used, absolute accuracy isn't claimed or guaranteed.
 // "Exclusion" has been fixed.  Previously it was functionally identical to "Normal".
 // "Add" has been retained as a selection for backward compatibility reasons, although
 // it is now (correctly) identical to "Linear Dodge" and uses the same code.
-//
-// Update 25 November 2018 jwrl.
-// Added alpha boost function for Lightworks titles.
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Update 30 April 2019 jwrl.
-// Removed a duplicate windows ps 3.0 declaration.
-// Added a fade mode to the foreground so it can be dropped out leaving just the border
-// and/or drop shadow.
-// The extra parameter required has broken backward compatibility so "Add" has also been
-// removed since it was just a duplicate of "Linear dodge" (see rewrite notes above).
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -272,10 +278,10 @@ bool alphaMode
    string Description = "Don't export background alpha";
 > = false;
 
-int Boost
+int Source
 <
-   string Description = "Set this first and if using a Lightworks text effect disconnect its input.";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Source selection (disconnect input to text effects first)";
+   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
@@ -430,14 +436,27 @@ float4 fn_hsv2rgb (float4 hsv)
 
 float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
-   float4 retval = tex2D (s_Sampler, uv);
+   float4 Fgd = tex2D (s_Sampler, uv);
 
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      if (Fgd.a == 0.0) return 0.0.xxxx;
+
+      float4 Bgd = tex2D (s_Background, uv);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
    }
 
-   return retval;
+   return Fgd;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -1167,4 +1186,3 @@ technique negate
    pass P_5 < string Script = "RenderColorTarget0 = Blended;"; > { PixelShader = compile PROFILE ps_negate (); }
    pass P_6 { PixelShader = compile PROFILE ps_main (); }
 }
-

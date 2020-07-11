@@ -1,38 +1,43 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-11
 // @Author khaver
 // @Created 2011-07-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Edge_640.png
 
 /**
-Edge (EdgeFx.fx) detects edges to give a similar result to the well known art program
-effect.  The edge detection is fully adjustable.  Invert and add a little blur over it
-to make the video look as if it's been sketched.
+ Edge (EdgeFx.fx) detects edges to give a similar result to the well known art program
+ effect.  The edge detection is fully adjustable.  Invert and add a little blur over it
+ to make the video look as if it's been sketched.
 
-It also provides a checkbox to move the generated edge to the alpha channel to allow
-the effect to be overlaid over the video and only affect the edges.  This allows masking
-of the Gaussian Blur effect to blur overly sharpened edges, to give just one example of
-the flexibility that this technique provides.
+ It also provides a checkbox to move the generated edge to the alpha channel to allow
+ the effect to be overlaid over the video and only affect the edges.  This allows masking
+ of the Gaussian Blur effect to blur overly sharpened edges, to give just one example of
+ the flexibility that this technique provides.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect EdgeFx.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
+//
+// Modified by LW user jwrl 11 July 2020.
+// Added "DisplayAsPercentage" flag to threshold for LW 2020.1 and higher.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Added Notes.
+// Formatted the descriptive block so that it can be used for markdown purposes.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
 // Explicitly defined samplers to correct for cross-platform sampler state defaults.
 // Explicitly defined float2, float3 and float4 variables to address the behavioural
 // difference between the D3D and Cg compilers when this is not done.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Added Notes.
-// Formatted the descriptive block so that it can be used for markdown purposes.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -67,56 +72,57 @@ sampler TexSampler = sampler_state
 float Threshold
 <
    string Description = "Threshold";
-   float MinVal       = 0.00;
-   float MaxVal       = 2.00;
+   string Flags       = "DisplayAsPercentage";
+   float MinVal       = 0.0;
+   float MaxVal       = 2.0;
 > = 0.5; // Default value
 
 float K00
 <
    string Description = "Kernel 0";
    string Group       = "Kernel"; // Causes this parameter to be displayed in a group called 'Kernel'
-   float MinVal       = -10.00;
-   float MaxVal       = 10.00;
+   float MinVal       = -10.0;
+   float MaxVal       = 10.0;
 > = 2.0; // Default value
 
 float K01
 <
    string Description = "Kernel 1";
    string Group       = "Kernel"; // Causes this parameter to be displayed in a group called 'Kernel'
-   float MinVal       = -10.00;
-   float MaxVal       = 10.00;
+   float MinVal       = -10.0;
+   float MaxVal       = 10.0;
 > = 2.0; // Default value
 
 float K02
 <
    string Description = "Kernel 2";
    string Group       = "Kernel"; // Causes this parameter to be displayed in a group called 'Kernel'
-   float MinVal       = -10.00;
-   float MaxVal       = 10.00;
+   float MinVal       = -10.0;
+   float MaxVal       = 10.0;
 > = 1.0; // Default value
 
 float TextureSizeX
 <
    string Description = "Size X";
-   float MinVal       = 1.0f;
-   float MaxVal       = 2048.0f;
-> = 512.0f; // Default value
+   float MinVal       = 1.0;
+   float MaxVal       = 2048.0;
+> = 512.0; // Default value
 
 float TextureSizeY
 <
    string Description = "Size Y";
-   float MinVal       = 1.0f;
-   float MaxVal       = 2048.0f;
-> = 512.0f; // Default value
+   float MinVal       = 1.0;
+   float MaxVal       = 2048.0;
+> = 512.0; // Default value
 
 bool Invert
 <
-	string Description = "Invert";
+   string Description = "Invert";
 > = false;
 
 bool Alpha
 <
-	string Description = "Edge to alpha";
+   string Description = "Edge to alpha";
 > = false;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,4 +1,4 @@
-# Lightworks user Fx library, July 9, 2020.
+# Lightworks user Fx library, July 11, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -57,7 +57,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Drop shadow plus blend        |DropShadowBlend.fx      |
 |Enhanced blend                |EnhancedBlend.fx        |
 |Extrusion blend               |ExtrusionBlend.fx       |
-|Flexible Blend                |FlexibleBlend.fx        |
 |Floating images               |FloatingImages.fx       |
 |Glittery edges                |GlitteryEdges.fx        |
 |Light ray blend               |LightRayBlend.fx        |

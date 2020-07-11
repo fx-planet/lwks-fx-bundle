@@ -1,55 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-11
 // @Author jwrl
 // @Created 2016-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
 
 /**
-This effect adds directional blurs to a key or any image with an alpha channel.  The
-default is to apply a radial blur away from the effect centre.  That centre can be put
-up to one frame height and/or frame width outside the frame.  Optionally it can  also
-produce a blur that points to the centre, or a linear directional blur.
+ This effect adds directional blurs to a key or any image with an alpha channel.  The
+ default is to apply a radial blur away from the effect centre.  That centre can be put
+ up to one frame height and/or frame width outside the frame.  Optionally it can  also
+ produce a blur that points to the centre, or a linear directional blur.
 
-The angle of the linear (directional) blur is set by dragging the effect centre away
-from the frame centre.  The angle of displacement is all that's used in this mode, and
-the amount of that displacement is ignored.  It can help in setting up, because moving
-the effect centre further away from the frame centre in linear mode will enhance the
-angular precision.
+ The angle of the linear (directional) blur is set by dragging the effect centre away
+ from the frame centre.  The angle of displacement is all that's used in this mode, and
+ the amount of that displacement is ignored.  It can help in setting up, because moving
+ the effect centre further away from the frame centre in linear mode will enhance the
+ angular precision.
 
-If there is no alpha channel available this can be used to apply an overall blur to
-an image.
+ If there is no alpha channel available this can be used to apply an overall blur to
+ an image.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LightRayBlend.fx
 //
-// Modified April 3 2016
-// Added the ability to set the foreground blend to solid, screen, darken, or none, and
-// to make the rays darken or lighter the background.
+// Version history:
 //
-// Modified May 7 2016
-// Extended the foreground blend mdoes to include add and subtract, and changed the ray
-// blend modes to be add, screen, darken and subtract.  "Add" effectively replaces the
-// original "lighten" mode.  Also added the ability to independently fade out the
-// foreground image and improved the linear fall-off.
+// Update 11 July 2020 jwrl.
+// Added a delta key to separate blended effects from the background.
+// THIS MAY (BUT SHOULDN'T) BREAK BACKWARDS COMPATIBILITY!!!
 //
-// LW 14+ version 11 January 2017
-// Subcategory "Edge Effects" added.
-//
-// Bug fix 26 July 2017
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
-// have now been explicitly declared.
-//
-// Modified 5 December 2017
-// Corrected an addressing mode bug which could have effected the way that transitions
-// behaved with this effect on Linux and OS-X.
-//
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 30 August 2018 jwrl.
-// Added notes to header.
+// Update 23 December 2018 jwrl.
+// Converted to version 14.5 and up.
+// Modified Windows version to compile as ps_3_0.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified 25 November 2018 jwrl.
 // Renamed effect from "Light ray keys" to "Light ray blend".
@@ -57,10 +40,33 @@ an image.
 // Changed subcategory from "Edge Effects" to "Blend Effects".
 // Added alpha boost for Lightworks titles.
 //
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified 30 August 2018 jwrl.
+// Added notes to header.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// LW 14+ version 11 January 2018
+// Subcategory "Edge Effects" added.
+//
+// Modified 5 December 2017
+// Corrected an addressing mode bug which could have effected the way that transitions
+// behaved with this effect on Linux and OS-X.
+//
+// Bug fix 26 July 2017
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
+// have now been explicitly declared.
+//
+// Modified May 7 2016
+// Extended the foreground blend mdoes to include add and subtract, and changed the ray
+// blend modes to be add, screen, darken and subtract.  "Add" effectively replaces the
+// original "lighten" mode.  Also added the ability to independently fade out the
+// foreground image and improved the linear fall-off.
+//
+// Modified April 3 2016
+// Added the ability to set the foreground blend to solid, screen, darken, or none, and
+// to make the rays darken or lighter the background.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -187,10 +193,10 @@ float Ycentre
    float MaxVal = 1.00;
 > = 0.5;
 
-int Boost
+int Source
 <
-   string Description = "Set this first and if using a Lightworks text effect disconnect its input.";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Source selection (disconnect input to text effects first)";
+   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
@@ -226,14 +232,27 @@ float _OutputAspectRatio;
 
 float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
-   float4 retval = tex2D (s_Sampler, uv);
+   float4 Fgd = tex2D (s_Sampler, uv);
 
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      if (Fgd.a == 0.0) return 0.0.xxxx;
+
+      float4 Bgd = tex2D (s_Background, uv);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
    }
 
-   return retval;
+   return Fgd;
 }
 
 //-----------------------------------------------------------------------------------------//

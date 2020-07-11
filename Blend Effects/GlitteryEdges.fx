@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-11
 // @Author jwrl
 // @Created 2016-05-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/GlitterEdge_640.png
 
 /**
-This effect generates a border from a title or graphic with an alpha channel.  It then adds
-noise generated four pointed stars to that border to create a sparkle/glitter effect to the
-edges of the title or graphic.  Star colour, density, length and rotation are adjustable.
+ This effect generates a border from a title or graphic with an alpha channel.  It then adds
+ noise generated four pointed stars to that border to create a sparkle/glitter effect to the
+ edges of the title or graphic.  Star colour, density, length and rotation are adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,20 +18,21 @@ edges of the title or graphic.  Star colour, density, length and rotation are ad
 // to compile and run under the default Lightworks shader profile.  A different means of
 // setting and calculating rotation is also used.  Apart from that it's identical.
 //
-// LW 14+ version 11 January 2017
-// Subcategory "Edge Effects" added.
+// Version history:
 //
-// Bug fix 26 February 2017
-// This corrects for a bug in the way that Lightworks handles interlaced media.  It
-// returns only half the actual frame height when interlaced media is stationary.
+// Update 11 July 2020 jwrl.
+// Added a delta key to separate blended effects from the background.
+// THIS MAY (BUT SHOULDN'T) BREAK BACKWARDS COMPATIBILITY!!!
 //
-// Bug fix 26 July 2017 by jwrl:
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
-// have now been explicitly declared.
+// Update 23 December 2018 jwrl.
+// Converted to version 14.5 and up.
+// Modified Windows version to compile as ps_3_0.
+// Formatted the descriptive block so that it can automatically be read.
 //
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 25 November 2018 jwrl.
+// Changed category to "Mix".
+// Changed subcategory to "Blend Effects".
+// Added alpha boost for Lightworks titles.
 //
 // Modified 5 July 2018 jwrl.
 // Changed edge generation to be frame based rather than pixel based.
@@ -40,15 +41,20 @@ edges of the title or graphic.  Star colour, density, length and rotation are ad
 // Halved the rotation gamut from 360 to 180 degrees.
 // Re-ordered some parameters.
 //
-// Update 25 November 2018 jwrl.
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-// Added alpha boost for Lightworks titles.
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
+// Bug fix 26 July 2017 by jwrl:
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
+// have now been explicitly declared.
+//
+// Bug fix 26 February 2017
+// This corrects for a bug in the way that Lightworks handles interlaced media.  It
+// returns only half the actual frame height when interlaced media is stationary.
+//
+// LW 14+ version 11 January 2017
+// Subcategory "Edge Effects" added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -223,10 +229,10 @@ float4 Colour
    bool SupportsAlpha = true;
 > = { 1.0, 0.8, 0.0, 1.0 };
 
-int Boost
+int Source
 <
-   string Description = "Set this first and if using a Lightworks text effect disconnect its input.";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Source selection (disconnect input to text effects first)";
+   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
@@ -250,14 +256,27 @@ float _OutputAspectRatio;
 
 float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
-   float4 retval = tex2D (s_Sampler, uv);
+   float4 Fgd = tex2D (s_Sampler, uv);
 
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      if (Fgd.a == 0.0) return 0.0.xxxx;
+
+      float4 Bgd = tex2D (s_Background, uv);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
    }
 
-   return retval;
+   return Fgd;
 }
 
 //-----------------------------------------------------------------------------------------//

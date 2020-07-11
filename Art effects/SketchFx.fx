@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-11
 // @Author khaver
 // @Created 2012-08-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Sketch_640.png
 
 /**
-Sketch (SketchFx.fx) simulates a sketch from a standard video source.  An extremely wide
-range of adjustment parameters have been provided which should meet most needs.  Border
-line colour is adjustable, as are the individual thresholds for each RGB channel.
+ Sketch (SketchFx.fx) simulates a sketch from a standard video source.  An extremely wide
+ range of adjustment parameters have been provided which should meet most needs.  Border
+ line colour is adjustable, as are the individual thresholds for each RGB channel.
 
-Shadow area colour can also be adjusted for best effect.
+ Shadow area colour can also be adjusted for best effect.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SketchFx.fx
 //
-// Cross platform conversion by jwrl May 2 2016.
-// Explicit profile declaration changed to generic PROFILE.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Modified by LW user jwrl 11 July 2020.
+// Changed addressing from Clamp to ClampToEdge for cross-platform compatibility. I'm
+// not sure whether this is absolutely necessary because the documentation about this
+// problem is somewhat ambiguous, but the change doesn't seem to hurt anything.
 //
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in Lightworks effects.
+// Modified by LW user jwrl 23 December 2018.
+// Corrected creation date.
+// Reformatted the descriptive block slightly.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
 // Explicitly defined samplers to fix cross-platform default sampler state differences.
@@ -33,12 +38,14 @@ Shadow area colour can also be adjusted for best effect.
 // Removed the arguments being passed to the RenderColorTarget declarations.  They
 // seemed to do nothing in either OS.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Bug fix 26 February 2017 by jwrl:
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Corrected creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// Cross platform conversion by jwrl May 2 2016.
+// Explicit profile declaration changed to generic PROFILE.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -68,8 +75,8 @@ texture Target : RenderColorTarget;
 sampler SourceTextureSampler = sampler_state
 {
    Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -78,8 +85,8 @@ sampler SourceTextureSampler = sampler_state
 sampler ThresholdSampler = sampler_state
 {
    Texture = <ThresholdTexture>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -88,8 +95,8 @@ sampler ThresholdSampler = sampler_state
 sampler BlurSampler = sampler_state
 {
    Texture = <Blur1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -98,8 +105,8 @@ sampler BlurSampler = sampler_state
 sampler BlurSampler2 = sampler_state
 {
    Texture = <Blur2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -107,8 +114,8 @@ sampler BlurSampler2 = sampler_state
 
 sampler TarSamp = sampler_state {
    Texture = <Target>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

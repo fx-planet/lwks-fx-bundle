@@ -1,33 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-11
 // @Author jwrl
 // @Created 2018-06-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/EnhancedBlend_640.png
 
 /**
-"Enhanced blend" is a variant of the Lightworks blend effect with the option to boost the
-alpha channel (transparency) to match the blending used by title effects.  It can help
-when using titles with their inputs disconnected and used with other effects such as DVEs.
-It also closely emulates most of the Photoshop blend modes.
+ "Enhanced blend" is a variant of the Lightworks blend effect with the option to boost the
+ alpha channel (transparency) to match the blending used by title effects.  It can help
+ when using titles with their inputs disconnected and used with other effects such as DVEs.
+ It also closely emulates most of the Photoshop blend modes.
 */
 
 //-----------------------------------------------------------------------------------------//
 // User effect EnhancedBlend.fx
 //
-// Modified 28 October 2018 jwrl:
-// Several effects rewritten to streamline code and improve cross-platform performance.
-// "Colour" and "Luminosity" rewritten to better match Photoshop.
+// Version history:
 //
-// Update 25 November 2018 jwrl.
-// Changed subcategory to "Blend Effects".
-//
-// Update 8 December 2018 jwrl.
-// Replaced blend thumbnail.
+// Update 11 July 2020 jwrl.
+// Added a delta key to separate blended effects from the background.
+// THIS MAY (BUT SHOULDN'T) BREAK BACKWARD COMPATIBILITY!!!
 //
 // Update 23 December 2018 jwrl.
 // Converted to version 14.5 and up.
 // Modified Windows version to compile as ps_3_0.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Update 8 December 2018 jwrl.
+// Replaced blend thumbnail.
+//
+// Update 25 November 2018 jwrl.
+// Changed subcategory to "Blend Effects".
+//
+// Modified 28 October 2018 jwrl:
+// Several effects rewritten to streamline code and improve cross-platform performance.
+// "Colour" and "Luminosity" rewritten to better match Photoshop.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -61,10 +67,10 @@ sampler s_Background = sampler_state { Texture = <bg>; };
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int Boost
+int Source
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/Stills/Image effects";
+   string Description = "Source selection (disconnect input to text effects first)";
+   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
 > = 1;
 
 float Amount
@@ -147,16 +153,29 @@ float4 fn_hsv2rgb (float4 hsv)
    return float4 (hsv.z, p, q, hsv.w);
 }
 
-float4 fn_tex2D (sampler Vsample, float2 uv)
+float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
-   float4 retval = tex2D (Vsample, uv);
+   float4 Fgd = tex2D (s_Sampler, uv);
 
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      if (Fgd.a == 0.0) return 0.0.xxxx;
+
+      float4 Bgd = tex2D (s_Background, uv);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
    }
 
-   return retval;
+   return Fgd;
 }
 
 //-----------------------------------------------------------------------------------------//

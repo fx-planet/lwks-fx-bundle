@@ -1,22 +1,41 @@
 // @Maintainer jwrl
-// @Released 2019-04-30
+// @Released 2020-07-11
 // @Author jwrl
 // @Created 2018-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
 
 /**
-"Drop shadow and border" is a drop shadow and border generator.  It provides drop shadow
-softness and independent colour settings for border and shadow.  Two border generation
-modes and full border anti-aliassing are provided.  The border centering can be offset
-to make the border assymetrical (thanks Igor for the suggestion).
+ "Drop shadow and border" is a drop shadow and border generator.  It provides drop shadow
+ softness and independent colour settings for border and shadow.  Two border generation
+ modes and full border anti-aliassing are provided.  The border centering can be offset
+ to make the border assymetrical (thanks Igor for the suggestion).
 
-The effect can also output the foreground, border and/or drop shadow alone, with the
-appropriate alpha channel.  When doing so any background input to the effect will not
-be displayed.  This allows it to be used with downstream alpha handling effects.
+ The effect can also output the foreground, border and/or drop shadow alone, with the
+ appropriate alpha channel.  When doing so any background input to the effect will not
+ be displayed.  This allows it to be used with downstream alpha handling effects.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks effect DropShadowBdr.fx
+//
+// Version history:
+//
+// Update 11 July 2020 jwrl.
+// Added a delta key to separate blended effects from the background.
+//
+// Update 30 April 2019 jwrl.
+// Added a fade mode to the foreground so it can be dropped out leaving just the border
+// and/or drop shadow.
+//
+// Update 23 December 2018 jwrl.
+// Converted to version 14.5 and up.
+// Modified Windows version to compile as ps_3_0.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Update 25 November 2018 jwrl.
+// Added alpha boost function for Lightworks titles.
+// Changed category to "Mix".
+// Changed subcategory to "Blend Effects".
 //
 // Rewritten 21 October 2018 jwrl.
 // In the previous version of this effect there had been quite a lot of bug fixes and so
@@ -28,20 +47,6 @@ be displayed.  This allows it to be used with downstream alpha handling effects.
 //
 // This version is functionally identical to the version of 4 July 2018.  That was the
 // last release of the original effect.
-//
-// Update 25 November 2018 jwrl.
-// Added alpha boost function for Lightworks titles.
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Update 30 April 2019 jwrl.
-// Added a fade mode to the foreground so it can be dropped out leaving just the border
-// and/or drop shadow.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -235,10 +240,10 @@ int AlphaMode
    string Enum = "Normal (no alpha),Foreground with alpha";
 > = 0;
 
-int Boost
+int Source
 <
-   string Description = "Set this first and if using a Lightworks text effect disconnect its input.";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Source selection (disconnect input to text effects first)";
+   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
@@ -271,14 +276,27 @@ float2 _rot_1 [] = { { 0.001305261922, 0.009914448614 }, { 0.003826834324, 0.009
 
 float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
-   float4 retval = tex2D (s_Sampler, uv);
+   float4 Fgd = tex2D (s_Sampler, uv);
 
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      if (Fgd.a == 0.0) return 0.0.xxxx;
+
+      float4 Bgd = tex2D (s_Background, uv);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
    }
 
-   return retval;
+   return Fgd;
 }
 
 //-----------------------------------------------------------------------------------------//

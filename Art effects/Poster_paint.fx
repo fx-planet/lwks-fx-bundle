@@ -1,25 +1,34 @@
 // @Maintainer jwrl
-// @Released 2019-08-16
+// @Released 2019-07-11
 // @Author jwrl
 // @Created 2018-11-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/PosterPaint_640.png
 
 /**
  Poster paint (PosterPaintFx) is an effect that posterizes the image.  The adjustment runs
- from 0 to 20, with zero providing two steps of posterization (black and white) and twenty
- giving normal video.  The input video can be graded prior to the posterization process.
- The posterized colours can be set to either switch on giving a hard edge, or smoothly blend.
+ from 2 to 16, with two providing two steps of posterization (black and white) and sixteen
+ giving almost normal video.  The input video can be graded before the posterization process.
+ The input image can be used as-is giving the posterisation a hard edge, or blurred to allow
+ it to blend more smoothly.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PosterPaint.fx
 //
-// Modified 23 December 2018 jwrl.
-// Formatted the descriptive block so that it can automatically be read.
+// Version history:
+//
+// Modified 11 July 2020 jwrl.
+// Removed pointless settings bypass.
+// Changed amount setting to be an enumeration.
+// Added a simple box blur so that noisy inputs will look cleaner after posterization.
+// Reordered the parameters into a major and a minor group according to end result impact.
 //
 // Modified 16 August 2019 jwrl.
 // Corrected cross-platform bug which broke the effect in the Linux/OS-X world.
-// Changed inpput adjustment settings to always on or affected by posterization.
+// Changed input adjustment settings to always on or affected by posterization.
+//
+// Modified 23 December 2018 jwrl.
+// Formatted the descriptive block so that it can automatically be read.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -32,27 +41,73 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Input and Sampler
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
-sampler s_Foreground = sampler_state { Texture = <Inp>; };
+texture Pre : RenderColorTarget;
+
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+sampler s_Input = sampler_state {
+   Texture   = <Inp>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler s_PreBlur = sampler_state
+{
+   Texture   = <Pre>;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
+int Amount
 <
    string Description = "Posterize amount";
+   string Enum = "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16";
+> = 3;
+
+float Smoothness
+<
+   string Group = "Major input adjustment";
+   string Description = "Preblur";
    float MinVal = 0.0;
-   float MaxVal = 20.0;
-> = 20.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float Saturation
+<
+   string Group = "Major input adjustment";
+   string Flags = "DisplayAsPercentage";
+   string Description = "Saturation";
+   float MinVal = 0.0;
+   float MaxVal = 4.0;
+> = 1.0;
+
+float Gamma
+<
+   string Group = "Major input adjustment";
+   string Description = "Gamma";
+   float MinVal = 0.1;
+   float MaxVal = 4.0;
+> = 1.0;
 
 float Brightness
 <
-   string Group = "Input adjustment";
+   string Group = "Minor input adjustment";
+   string Flags = "DisplayAsPercentage";
    string Description = "Brightness";
    float MinVal = -1.0;
    float MaxVal = 1.0;
@@ -60,23 +115,17 @@ float Brightness
 
 float Contrast
 <
-   string Group = "Input adjustment";
+   string Group = "Minor input adjustment";
+   string Flags = "DisplayAsPercentage";
    string Description = "Contrast";
    float MinVal = 0.0;
    float MaxVal = 5.0;
 > = 1.0;
 
-float Gamma
-<
-   string Group = "Input adjustment";
-   string Description = "Gamma";
-   float MinVal = 0.1;
-   float MaxVal = 4.0;
-> = 1.0;
-
 float Gain
 <
-   string Group = "Input adjustment";
+   string Group = "Minor input adjustment";
+   string Flags = "DisplayAsPercentage";
    string Description = "Gain";
    float MinVal = 0.0;
    float MaxVal = 4.0;
@@ -84,32 +133,20 @@ float Gain
 
 float HueAngle
 <
-   string Group = "Input adjustment";
+   string Group = "Minor input adjustment";
    string Description = "Hue (degrees)";
    float MinVal = -180.0;
    float MaxVal = 180.0;
 > = 0.0;
-
-float Saturation
-<
-   string Group = "Input adjustment";
-   string Description = "Saturation";
-   float MinVal = 0.0;
-   float MaxVal = 4.0;
-> = 1.0;
-
-int RampGrade
-<
-   string Group = "Input adjustment";
-   string Description = "Input settings";
-   string Enum = "Are always active,Increase from zero as poster steps reduce";
-> = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
 #define ONE_THIRD  0.3333333333
+
+float _OutputWidth;
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -173,33 +210,87 @@ float3 fn_RGBtoHSL (float3 RGB)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+float4 ps_preblur (float2 uv : TEXCOORD1 ) : COLOR
+{
+   float4 retval = tex2D (s_Input, uv);
+
+   // What follows is the horizontal component of a standard box blur.  The maths used
+   // takes advantage of the fact that the shader language can do float2 operations as
+   // efficiently as floats.  This way we save on having to manufacture a new float2
+   // every time that we need a new address for the next tap.
+
+   float2 xy0 = float2 (Smoothness / _OutputWidth, 0.0);
+   float2 xy1 = uv + xy0;
+   float2 xy2 = uv - xy0;
+
+   retval += tex2D (s_Input, xy1); xy1 += xy0;
+   retval += tex2D (s_Input, xy1); xy1 += xy0;
+   retval += tex2D (s_Input, xy1); xy1 += xy0;
+   retval += tex2D (s_Input, xy1); xy1 += xy0;
+   retval += tex2D (s_Input, xy1); xy1 += xy0;
+   retval += tex2D (s_Input, xy1);
+   retval += tex2D (s_Input, xy2); xy2 -= xy0;
+   retval += tex2D (s_Input, xy2); xy2 -= xy0;
+   retval += tex2D (s_Input, xy2); xy2 -= xy0;
+   retval += tex2D (s_Input, xy2); xy2 -= xy0;
+   retval += tex2D (s_Input, xy2); xy2 -= xy0;
+   retval += tex2D (s_Input, xy2);
+
+   // Divide retval by 13 because there are 12 sampling taps plus the original image
+
+   return retval / 13.0;
+}
+
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 RGB = tex2D (s_Foreground, uv);
+   float4 RGB = tex2D (s_PreBlur, uv);
+
+   // This is the vertical component of the box blur.
+
+   float2 xy0 = float2 (0.0, Smoothness / _OutputHeight);
+   float2 xy1 = uv + xy0;
+   float2 xy2 = uv - xy0;
+
+   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
+   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
+   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
+   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
+   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
+   RGB += tex2D (s_PreBlur, xy1);
+   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
+   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
+   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
+   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
+   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
+   RGB += tex2D (s_PreBlur, xy2);
+
+   RGB /= 13.0;
+
+   float posterize = Amount + 2.0;
+
+   // We now adjust the brightness, contrast, gamma and gain of the preblurred image.
 
    float3 proc = (((pow (RGB.rgb, 1.0 / Gamma) * Gain) + (Brightness - 0.5).xxx) * Contrast) + 0.5.xxx;
+   float3 HSL = fn_RGBtoHSL (proc);
 
-   float posterize = max (floor (Amount + 2.0), 1.0) * 0.5;
-   float A = (RampGrade == 1) ? saturate (2.75 - (posterize * 0.25)) : 1.0;
+   HSL.y = saturate (HSL.y * Saturation);
+   HSL.x = HSL.x + frac (HueAngle / 360.0);
 
-   float3 HSL = fn_RGBtoHSL (lerp (RGB.rgb, proc, A));
+   if (HSL.x < 0.0) HSL.x += 1.0;
+   if (HSL.x > 1.0) HSL.x -= 1.0;
 
-   HSL.y = saturate (HSL.y * lerp (1.0, Saturation, A));
-   HSL.x = frac (HSL.x + (A * HueAngle / 360.0));
+   HSL.yz = saturate (round (HSL.yz * posterize) / posterize);
 
-   if (Amount < 20.0) {
-      HSL.yz = saturate (round (HSL.yz * posterize) / posterize);
+   if (HSL.y == 0.0) return float4 (HSL.zzz, RGB.a);
 
-      if (HSL.y == 0.0) return float4 (HSL.zzz, RGB.a);
-
-      posterize *= 6.0;
-      HSL.x = saturate (round (HSL.x * posterize) / posterize);
-   }
+   posterize *= 6.0;
+   HSL.x = saturate (round (HSL.x * posterize) / posterize);
 
    float S = HSL.y * HSL.z;
 
    HSL.y = (HSL.z < 0.5) ? HSL.z + S : (HSL.y + HSL.z) - S;
    HSL.z = (2.0 * HSL.z) - HSL.y;
+
    RGB.rgb = fn_HSLtoRGB (HSL);
 
    return RGB;
@@ -212,5 +303,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique PosterPaint
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Pre;"; >
+   { PixelShader = compile PROFILE ps_preblur (); }
+
+   pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }

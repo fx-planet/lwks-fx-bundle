@@ -1,42 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-11
 // @Author jwrl
 // @Created 2016-04-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/ExtrusionMatte_640.png
 
 /**
-"Extrusion blend", as the name suggests, extrudes a foreground image either linearly or
-radially towards a centre point.  The extruded section can be shaded by the foreground
-image, colour shaded, or flat colour filled.  The edge shading can be inverted if desired.
-It is also possible to export the alpha channel for use in downstream effects.
+ "Extrusion blend", as the name suggests, extrudes a foreground image either linearly or
+ radially towards a centre point.  The extruded section can be shaded by the foreground
+ image, colour shaded, or flat colour filled.  The edge shading can be inverted if desired.
+ It is also possible to export the alpha channel for use in downstream effects.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ExtrusionBlend.fx
 //
-// Modified 6 May 2016.
-// Extrusion anti-ailasing added.
+// Version history:
 //
-// LW 14+ version 11 January 2017
-// Subcategory "Edge Effects" added.
+// Update 11 July 2020 jwrl.
+// Added a delta key to separate blended effects from the background.
+// THIS MAY (BUT SHOULDN'T) BREAK BACKWARD COMPATIBILITY!!!
 //
-// Bug fix 26 February 2017
-// This corrects for a bug in the way that Lightworks handles interlaced media.  It
-// returns only half the actual frame height when interlaced media is stationary.
-//
-// Bug fix 26 July 2017
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers
-// they have now been explicitly declared.
-//
-// Bug fix 26 March 2018
-// Corrected a hue problem with the extrusion generation.
-//
-// Modified 5 April 2018
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 30 August 2018 jwrl.
-// Added notes to header.
+// Update 23 December 2018 jwrl.
+// Converted to version 14.5 and up.
+// Modified Windows version to compile as ps_3_0.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Update 25 November 2018 jwrl.
 // Changed name to "Extrusion blend".
@@ -44,10 +31,29 @@ It is also possible to export the alpha channel for use in downstream effects.
 // Changed subcategory to "Blend Effects".
 // Added alpha boost for Lightworks titles.
 //
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified 30 August 2018 jwrl.
+// Added notes to header.
+//
+// Modified 5 April 2018
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix 26 March 2018
+// Corrected a hue problem with the extrusion generation.
+//
+// Bug fix 26 July 2017
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers
+// they have now been explicitly declared.
+//
+// Bug fix 26 February 2017
+// This corrects for a bug in the way that Lightworks handles interlaced media.  It
+// returns only half the actual frame height when interlaced media is stationary.
+//
+// LW 14+ version 11 January 2017
+// Subcategory "Edge Effects" added.
+//
+// Modified 6 May 2016.
+// Extrusion anti-ailasing added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -192,10 +198,10 @@ bool expAlpha
    string Description = "Export alpha channel";
 > = false;
 
-int Boost
+int Source
 <
-   string Description = "Set this first and if using a Lightworks text effect disconnect its input.";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Source selection (disconnect input to text effects first)";
+   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
@@ -208,7 +214,7 @@ int Boost
 
 #define DELTANG  25
 #define ALIASFIX 50              // DELTANG * 2
-#define ANGLE    0.125664        // 0.1309
+#define ANGLE    0.125664
 
 #define B_SCALE  0.0075
 #define L_SCALE  0.05
@@ -229,14 +235,27 @@ float _OutputWidth;
 
 float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
-   float4 retval = tex2D (s_Sampler, uv);
+   float4 Fgd = tex2D (s_Sampler, uv);
 
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      if (Fgd.a == 0.0) return 0.0.xxxx;
+
+      float4 Bgd = tex2D (s_Background, uv);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
    }
 
-   return retval;
+   return Fgd;
 }
 
 //-----------------------------------------------------------------------------------------//

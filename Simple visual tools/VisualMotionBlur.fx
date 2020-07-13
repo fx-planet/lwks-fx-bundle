@@ -25,7 +25,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Visual motion blur";
    string Category    = "Stylize";
-   string SubCategory = "Simple tools";
+   string SubCategory = "Simple visual tools";
    string Notes       = "A directional blur that can be quickly set up by visually dragging a central pin point.";
 > = 0;
 

@@ -49,7 +49,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Visual quad split";
    string Category    = "DVE";
-   string SubCategory = "Multiscreen Effects";
+   string SubCategory = "Ss";
    string Notes       = "Produces four split screen images with borders using visual dragging to set size, crop and position";
 > = 0;
 

@@ -191,7 +191,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Quad split plus                 |QuadSplitPlus.fx        |
 |Quad split screen, simply       |QuadScreenS.fx          |
 |Quad split screen, dynamic zoom |QuadScreenZ.fx          |
-|Visual quad split               |VisualQuadSplit.fx      |
 
 ## CATEGORY FOLDER: Polymasks
 |EFFECT                        |FILE NAME               |
@@ -260,9 +259,15 @@ If you need to use two effects that have the same name, simply open one of them 
 |Smooth roll                   |SmoothRoll.fx           |
 |Title blend fix               |TitleFix.fx             |
 |Vibrance                      |Vibrance.fx             |
-|Visual crop                   |VisualCrop.fx           |
-|Visual motion blur            |VisualMotionBlur.fx     |
 |White and black balance       |WhiteBalance.fx         |
+
+## CATEGORY FOLDER: Simple Visual Tools
+|EFFECT                        |FILE NAME               |
+|:---------------------------- |:---------------------- |
+|Visual crop                   |VisualCrop.fx           |
+|Visual matte                  |VisualMatte.fx          |
+|Visual motion blur            |VisualMotionBlur.fx     |
+|Visual quad split             |VisualQuadSplit.fx      |
 
 ## CATEGORY FOLDER: Special Effects
 |EFFECT                        |FILE NAME               |

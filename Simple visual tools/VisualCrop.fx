@@ -41,7 +41,7 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Visual crop";
    string Category    = "DVE";
-   string SubCategory = "Simple tools";
+   string SubCategory = "Simple visual tools";
    string Notes       = "This is a quick simple cropping tool that you can set up by dragging corner pins around on the screen";
 > = 0;
 

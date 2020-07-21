@@ -6,9 +6,9 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhipPan_AxAdx.mp4
 
 /**
- This effect performs a whip pan style transition between to bring a title onto the screen
- or off the screen.  Unlike the blur dissolve effect, this pans the title.  It is limited
- to producing vertical and horizontal whips only.
+ This effect performs a whip pan style transition to bring a title onto or off the screen.
+ Unlike the blur dissolve effect, this pans the title.  It is limited to producing vertical
+ and horizontal whips only.
 */
 
 //-----------------------------------------------------------------------------------------//

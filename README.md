@@ -1,4 +1,4 @@
-# Lightworks user Fx library, July 19, 2020.
+# Lightworks user Fx library, July 21, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -395,7 +395,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Blur dissolve             |Blurs_Dx.fx             |Blurs_Ax.fx             |Blurs_Adx.fx             |
 |Spin dissolve             |Spin_Dx.fx              |Spin_Ax.fx              |Spin_Adx.fx              |
 |Swirl mix                 |SwirlMix_Dx.fx          |                        |                         |
-|Whip pan                  |WhipPan_Dx.fx           |                        |                         |
+|Whip pan                  |WhipPan_Dx.fx           |WhipPan_Ax.fx           |WhipPan_Adx.fx           |
 |Zoom dissolve             |Zoom_Dx.fx              |Zoom_Ax.fx              |Zoom_Adx.fx              |
 
 ## CATEGORY FOLDER: Colour transitions

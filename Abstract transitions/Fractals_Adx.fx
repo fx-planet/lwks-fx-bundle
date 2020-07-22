@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-22
 // @Author jwrl
 // @OriginalAuthor "Robert Schütze"
 // @Created 2018-11-10
@@ -16,12 +16,17 @@
 // The fractal component is a conversion of GLSL sandbox effect #308888 created by Robert
 // Schütze (trirop) 07.12.2015.
 //
-// Modified jwrl 201-12-23
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified jwrl 2020-07-22
+// Improved support for unfolded effects.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 201-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -40,8 +45,8 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
-texture Frctl : RenderColorTarget;
+texture Key : RenderColorTarget;
+texture Frc : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -50,11 +55,11 @@ texture Frctl : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state { Texture = <Title>; };
+sampler s_Key = sampler_state { Texture = <Key>; };
 
 sampler s_Fractal = sampler_state
 {
-   Texture   = <Frctl>;
+   Texture   = <Frc>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -78,31 +83,31 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float fractalOffset
 <
    string Group = "Fractal";
    string Description = "Offset";   
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Rate
 <
    string Group = "Fractal";
    string Description = "Rate";   
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Border
 <
    string Group = "Fractal";
    string Description = "Edge size";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 float KeyGain
@@ -111,11 +116,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -130,7 +130,7 @@ float _Progress;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -140,11 +140,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -171,11 +170,11 @@ float4 ps_fractal (float2 xy : TEXCOORD0) : COLOR
    return float4 (fractal, 1.0);
 }
 
-float4 ps_main_I (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_F (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Ovly = tex2D (s_Fractal, xy0);
-   float4 Fgnd = tex2D (s_Title, xy1);
-   float4 Bgnd = Ftype ? tex2D (s_Foreground, xy2) : tex2D (s_Background, xy2);
+   float4 Fgnd = tex2D (s_Key, xy1);
+   float4 Bgnd = tex2D (s_Foreground, xy2);
 
    float amount  = (Amount + 3.0) / 4.0;
    float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));
@@ -195,7 +194,7 @@ float4 ps_main_I (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : T
 float4 ps_main_O (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Ovly = tex2D (s_Fractal, xy0);
-   float4 Fgnd = tex2D (s_Title, xy1);
+   float4 Fgnd = tex2D (s_Key, xy1);
    float4 Bgnd = tex2D (s_Background, xy2);
 
    float amount = (Amount + 3.0) / 4.0;
@@ -213,34 +212,69 @@ float4 ps_main_O (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : T
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
+float4 ps_main_I (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+{
+   float4 Ovly = tex2D (s_Fractal, xy0);
+   float4 Fgnd = tex2D (s_Key, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
+
+   float amount  = (Amount + 3.0) / 4.0;
+   float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));
+
+   if (fractal > (amount + FEATHER)) return Bgnd;
+
+   float bdWidth = Border * 0.1;
+   float fracAmt = (fractal - amount) / FEATHER;
+
+   float4 retval = (fractal <= (Amount - bdWidth)) ? Fgnd : lerp (Fgnd, Ovly, fracAmt);
+
+   if (fractal > (Amount + bdWidth)) { retval = lerp (retval, Bgnd, fracAmt); }
+
+   return lerp (Bgnd, retval, Fgnd.a);
+}
+
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_Fractals_I
+technique Adx_Fractals_0
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Frctl;"; >
+   < string Script = "RenderColorTarget0 = Frc;"; >
    { PixelShader = compile PROFILE ps_fractal (); }
 
    pass P_3
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
-technique Adx_Fractals_O
+technique Adx_Fractals_1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Frctl;"; >
+   < string Script = "RenderColorTarget0 = Frc;"; >
    { PixelShader = compile PROFILE ps_fractal (); }
 
    pass P_3
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Adx_Fractals_2
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   < string Script = "RenderColorTarget0 = Frc;"; >
+   { PixelShader = compile PROFILE ps_fractal (); }
+
+   pass P_3
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

@@ -76,7 +76,7 @@ sampler s_Key = sampler_state
 int Boost
 <
    string Description = "Lightworks effects: Disconnect the input and select";
-   string Enum = "Crawl/Roll/Key/Image key,Video/External image";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-22
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Warp_640.png
@@ -14,12 +14,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Warped_Adx.fx
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified jwrl 2020-07-22
+// Improved support for unfolded effects.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,7 +43,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Key : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -47,9 +52,9 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Key = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Key>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -73,7 +78,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float Distortion
@@ -89,11 +94,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -118,7 +118,7 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgnd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgnd = tex2D (s_Background, xy2).rgb;
@@ -128,11 +128,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Fgnd.r, Bgnd.r));
    kDiff = max (kDiff, distance (Fgnd.b, Bgnd.b));
 
-   return Ftype ? float4 (Bgnd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgnd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgnd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgnd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgnd = tex2D (s_Background, xy2).rgb;
@@ -145,9 +144,9 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (Fgnd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_F (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 Bgnd = tex2D (s_Foreground, uv);
 
    float3 warp = (Bgnd.rgb - 0.5.xxx) * Distortion * 4.0;
 
@@ -159,7 +158,7 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
    Amt *= 2.0;
    xy.y = saturate (uv.y + (warp.z - warp.x) * Amt);
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Key, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
@@ -178,31 +177,60 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
    Amt *= 2.0;
    xy.x = saturate (uv.x + (warp.y - warp.z) * Amt);
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Key, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - Amount));
+}
+
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Bgnd = tex2D (s_Background, uv);
+
+   float3 warp = (Bgnd.rgb - 0.5.xxx) * Distortion * 4.0;
+
+   float2 xy;
+
+   float Amt = 1.0 - sin (Amount * HALF_PI);
+
+   xy.x = saturate (uv.x + (warp.y - 0.5) * Amt);
+   Amt *= 2.0;
+   xy.y = saturate (uv.y + (warp.z - warp.x) * Amt);
+
+   float4 Fgnd = fn_tex2D (s_Key, xy);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Warped_Adx_I
+technique Warped_Adx_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique Warped_Adx_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Warped_Adx_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

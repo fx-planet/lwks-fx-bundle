@@ -1,19 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-06-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Blur_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Blur.mp4
 
 /**
-This effect is used to transition into or out of a title and composite the result over
-a background layer.
+ This effect is used to transition into or out of a title and composite the result over
+ a background layer.  During the process it also applies a directional blur, the angle
+ and strength of which can be adjusted.
 
-During the process it also applies a directional blur, the angle and strength of which
-can be independently set for both the incoming and outgoing vision sources.  A setting
-to tie both incoming and outgoing blurs together is also provided.
-
-Alpha levels are boosted to support Lightworks titles, which is the default setting.
+ Alpha levels are boosted to support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,13 +20,18 @@ Alpha levels are boosted to support Lightworks titles, which is the default sett
 // dissolve between two titles.  That added needless complexity, when the same result
 // can be obtained by overlaying two effects.
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-23:
+// Reworded Boost text to match requirements for 2020.1 and up.
 //
 // Modified 23 December 2018 jwrl.
 // Fixed bug which caused only foreground to show when blur spread was set to zero.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -70,8 +72,8 @@ sampler s_Super = sampler_state
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -85,8 +87,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Blur in,Blur out,";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float BlurAngle

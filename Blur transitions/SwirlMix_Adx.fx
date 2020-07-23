@@ -1,5 +1,5 @@
 // @maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-23
 // @author jwrl
 // @created 2019-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_SwirlMix_640.png
@@ -17,6 +17,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SwirlMix_Adx.fx
+//
+// Version history:
+//
+// Modified 2020-07-23 jwrl
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
@@ -39,7 +44,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Key : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -48,7 +53,15 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state { Texture = <Title>; };
+sampler s_Key = sampler_state
+{
+   Texture   = <Key>;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -66,7 +79,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float Amplitude
@@ -116,11 +129,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -139,7 +147,7 @@ float _Length;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -149,11 +157,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -166,7 +173,7 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_F (float2 uv : TEXCOORD1) : COLOR
 {
    float2 centre = float2 (CentreX, 1.0 - CentreY);
    float2 xy, xy1 = uv - centre;
@@ -180,10 +187,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
    sincos (angle + (spin.z * _Length * PI), scale90, scale0);
    xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
 
-   float4 Fgnd = tex2D (s_Title, xy);
-   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 Fgnd = tex2D (s_Key, xy);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * amount);
+   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * amount);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
@@ -200,7 +206,26 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
    sincos (angle + (spin.z * _Length * PI), scale90, scale0);
    xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
 
-   float4 Fgnd = tex2D (s_Title, xy);
+   float4 Fgnd = tex2D (s_Key, xy);
+
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
+}
+
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+{
+   float2 centre = float2 (CentreX, 1.0 - CentreY);
+   float2 xy, xy1 = uv - centre;
+
+   float3 spin = float3 (Amplitude, Start, Rate) * (1.0 - Amount);
+
+   float amount = sin (Amount * HALF_PI);
+   float angle = (length (xy1) * spin.x * TWO_PI) + radians (spin.y);
+   float scale0, scale90;
+
+   sincos (angle + (spin.z * _Length * PI), scale90, scale0);
+   xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
+
+   float4 Fgnd = tex2D (s_Key, xy);
 
    return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
 }
@@ -212,19 +237,29 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 technique SwirlMix_Adx_0
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique SwirlMix_Adx_1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique SwirlMix_Adx_2
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

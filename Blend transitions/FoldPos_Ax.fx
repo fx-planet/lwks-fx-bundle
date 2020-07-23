@@ -1,26 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-06-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_FoldPos_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_FoldPos.mp4
 
 /**
-This effect transitions by adding the title to the background.  The overflowed result is
-then folded back into the legal video range.
+ This effect transitions by adding the title to the background.  The overflowed result is
+ then folded back into the legal video range.
 
-Alpha levels are boosted to support Lightworks titles, which is the default setting.
+ Alpha levels are boosted to support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FoldPos_Ax.fx
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 23 July 2020 by user jwrl:
+// Changed "Transition" to "Transition position".
+// Changed Boost dialogue.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -52,8 +58,8 @@ sampler s_Video = sampler_state { Texture = <Vid>; };
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -67,8 +73,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

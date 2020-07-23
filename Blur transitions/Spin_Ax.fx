@@ -1,17 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-23
+// @Author rakusan
 // @Author jwrl
 // @Created 2018-06-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Spin_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Spin.mp4
 
 /**
-The effect applies a rotary blur to transition into or out of a title or between titles
-and is based on original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).
-The direction, aspect ratio, centring and strength of the blur can all be adjusted.  It
-then composites the result over the background layer.
+ The effect applies a rotary blur to transition into or out of a title or between titles
+ and is based on original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).
+ The direction, aspect ratio, centring and strength of the blur can all be adjusted.  It
+ then composites the result over the background layer.
 
-Alpha levels are boosted to support Lightworks titles, which is the default setting.
+ Alpha levels are boosted to support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,6 +21,11 @@ Alpha levels are boosted to support Lightworks titles, which is the default sett
 // This is a revision of an earlier effect, Adx_Spin.fx, which also had the ability to
 // dissolve between two titles.  That added needless complexity, when the same result
 // can be obtained by overlaying two effects.
+//
+// Version history:
+//
+// Modified 2020-07-23 jwrl
+// Reworded Boost text to match requirements for 2020.1 and up.
 //
 // Modified 23 December 2018 jwrl.
 // Changed effect name.
@@ -88,8 +94,8 @@ sampler s_Spin = sampler_state {
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -103,8 +109,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int CW_CCW
@@ -167,7 +173,7 @@ float redux_idx [] = { 1.0, 0.8125, 0.625, 0.4375, 0.25 };
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_fixAlpha (float2 uv : TEXCOORD1) : COLOR
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Overlay, uv);
 
@@ -270,7 +276,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 technique Ax_Spin_in
 {
    pass P_1 < string Script = "RenderColorTarget0 = Proc;"; >
-   { PixelShader = compile PROFILE ps_fixAlpha (); }
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Fgnd;"; >
    { PixelShader = compile PROFILE ps_spinBlur_in (0); }
@@ -294,7 +300,7 @@ technique Ax_Spin_in
 technique Ax_Spin_out
 {
    pass P_1 < string Script = "RenderColorTarget0 = Proc;"; >
-   { PixelShader = compile PROFILE ps_fixAlpha (); }
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Fgnd;"; >
    { PixelShader = compile PROFILE ps_spinBlur_out (0); }
@@ -314,4 +320,3 @@ technique Ax_Spin_out
    pass P_7
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-06-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Optical_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Optical.mp4
 
 /**
-An alpha transition that simulates the burn effect of the classic film optical.  Alpha
-levels are boosted to support Lightworks titles, which is the default setting.
+ An alpha transition that simulates the burn effect of the classic film optical.  Alpha
+ levels are boosted to support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,12 +17,18 @@ levels are boosted to support Lightworks titles, which is the default setting.
 // to wipe between two titles.  That added needless complexity, when the same result
 // can be obtained by overlaying two effects.
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 23 July 2020 by user jwrl:
+// Changed "Transition" to "Transition position".
+// Changed Boost dialogue.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,8 +60,8 @@ sampler s_Video = sampler_state { Texture = <Vid>; };
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -69,8 +75,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -146,4 +152,3 @@ technique Optical_Ax_out
    pass P_1
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

@@ -1,5 +1,5 @@
 // @maintainer jwrl
-// @released 2019-07-30
+// @Released 2020-07-23
 // @author jwrl
 // @created 2019-02-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_SwirlMix_640.png
@@ -22,6 +22,15 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SwirlMix.fx
+//
+// Version history:
+//
+// Modified 2020-07-23 jwrl
+// Reworded Boost text to match requirements for 2020.1 and up.
+// Implemented Boost code as a shader rather than a function.
+//
+// Update 2019-08-13 jwrl:
+// No biggie: cosmetic change to the software in the name of efficiency.
 //
 // Update 2019-07-30 jwrl:
 // Fixed a major bug which meant that this could never have worked.
@@ -48,6 +57,8 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
+texture Key : RenderColorTarget;
+
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
@@ -55,14 +66,24 @@ texture Bg;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
+sampler s_Key = sampler_state
+{
+   Texture   = <Key>;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Background/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Key/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -74,10 +95,10 @@ float Amount
    float KF1    = 1.0;
 > = 0.5;
 
-int Direction
+int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Whirl in,Whirl out,";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Amplitude
@@ -133,15 +154,14 @@ Bad_LW_version    // Forces a compiler error if the Lightworks version is less.
 #define HALF_PI 1.5707963268
 
 float _Length;
-float _Progress;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s_Input, float2 uv)
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = tex2D (s_Foreground, uv);
 
    if (Boost == 0) {
       retval.a    = pow (retval.a, 0.5);
@@ -151,36 +171,40 @@ float4 fn_tex2D (sampler s_Input, float2 uv)
    return retval;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
 {
    float2 centre = float2 (CentreX, 1.0 - CentreY);
    float2 xy, xy1 = uv - centre;
 
-   float amount, prgrss;
+   float3 spin = float3 (Amplitude, Start, Rate) * (1.0 - Amount);
 
-   if (Direction == 0) {
-      amount = Amount;
-      prgrss = 1.0 - Amount;
-   }
-   else {
-      amount = 1.0 - Amount;
-      prgrss = Amount;
-   }
-
-   float3 spin = float3 (Amplitude, Start, Rate) * prgrss;
-
-   float angle = (length (xy1) * spin.x * TWO_PI) + radians (spin.y);
+   float amount = sin (Amount * HALF_PI);
+   float angle  = (length (xy1) * spin.x * TWO_PI) + radians (spin.y);
    float scale0, scale90;
 
    sincos (angle + (spin.z * _Length * PI), scale90, scale0);
    xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
-   amount = sin (amount * HALF_PI);
 
-   float4 Fgnd = fn_tex2D (s_Foreground, xy);
+   float4 Fgnd = tex2D (s_Key, xy);
+
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
+}
+
+float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
+{
+   float3 spin = float3 (Amplitude, Start, Rate) * Amount;
+
+   float2 centre = float2 (CentreX, 1.0 - CentreY);
+   float2 xy, xy1 = uv - centre;
+
+   float amount = sin ((1.0 - Amount) * HALF_PI);
+   float angle  = (length (xy1) * spin.x * TWO_PI) + radians (spin.y);
+   float scale0, scale90;
+
+   sincos (angle + (spin.z * _Length * PI), scale90, scale0);
+   xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
+
+   float4 Fgnd = tex2D (s_Key, xy);
 
    return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
 }
@@ -189,9 +213,22 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique SwirlMix
+technique SwirlMix_Ax_0
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }
 
+technique SwirlMix_Ax_1
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_O (); }
+}

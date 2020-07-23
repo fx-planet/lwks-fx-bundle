@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-06-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Scurve-640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Scurve.mp4
 
 /**
-This is essentially the same as the S dissolve but extended to support alpha channels.
-A trigonometric curve is applied to the "Amount" parameter and the linearity of the
-curve can be adjusted.  Alpha levels are boosted to support Lightworks titles, which
-is the default setting.
+ This is essentially the same as the S dissolve but extended to support alpha channels.
+ A trigonometric curve is applied to the "Amount" parameter and the linearity of the
+ curve can be adjusted.  Alpha levels are boosted to support Lightworks titles, which
+ is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,12 +19,18 @@ is the default setting.
 // dissolve between two titles.  That added needless complexity, when the same result
 // can be obtained by overlaying two effects.
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 23 July 2020 by user jwrl:
+// Changed "Transition" to "Transition position".
+// Changed Boost dialogue.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -56,8 +62,8 @@ sampler s_Video = sampler_state { Texture = <Vid>; };
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -71,8 +77,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Linearity
@@ -149,4 +155,3 @@ technique Sdissolve_Ax_out
    pass P_1
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

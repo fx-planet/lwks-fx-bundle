@@ -1,21 +1,21 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_DissolveX_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_DissolveX.mp4
 
 /**
-This expanded delta dissolve allows blend modes to be applied during the transition
-using a drop down menu to select different dissolve methods.  The intention behind
-this effect was to get as close as possible visually to the standard Photoshop blend
-modes.
+ This expanded delta dissolve allows blend modes to be applied during the transition
+ using a drop down menu to select different dissolve methods.  The intention behind
+ this effect was to get as close as possible visually to the standard Photoshop blend
+ modes.
 
-In addition to the Lightworks blends, this effect provides Linear burn, Darker colour,
-Vivid light, Linear light, Pin light, Hard mix, Divide, Hue and Saturation.  The
-Lightworks effect Add has been replaced by Linear Dodge which is functionally identical,
-Burn has been replaced by Colour burn, and Dodge by Colour dodge.  "In Front" has been
-replaced by "Normal" to better match the Photoshop model.
+ In addition to the Lightworks blends, this effect provides Linear burn, Darker colour,
+ Vivid light, Linear light, Pin light, Hard mix, Divide, Hue and Saturation.  The
+ Lightworks effect Add has been replaced by Linear Dodge which is functionally identical,
+ Burn has been replaced by Colour burn, and Dodge by Colour dodge.  "In Front" has been
+ replaced by "Normal" to better match the Photoshop model.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -42,12 +42,17 @@ replaced by "Normal" to better match the Photoshop model.
 // get the effect popping on or off.  I have also not implemented an effect bypass.  That
 // is possible in the standard Lightworks effect settings in any case.
 //
-// Modified jwrl 2018-12-23
-// Reformatted the effect description for markup purposes.
+// Revision history:
+//
+// Modified jwrl 2020-07-23
+// Rolled fold/unfold into transition position.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -89,7 +94,7 @@ float Amount
 int Ttype
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 int SetTechnique
@@ -111,11 +116,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -186,7 +186,7 @@ float4 fn_hsv2rgb (float4 hsv)
 
 float2 fn_amount ()
 {
-   float amount = Ttype == 0 ? Amount : 1.0 - Amount;
+   float amount = Ttype == 1 ? 1.0 - Amount : Amount;
    float timeRef = (saturate (Timing) * 0.8) + 0.1;
    float timing  = saturate (amount / timeRef);
 
@@ -201,7 +201,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -229,7 +229,7 @@ float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -255,7 +255,7 @@ float4 ps_multiply (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -281,7 +281,7 @@ float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -313,7 +313,7 @@ float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -339,7 +339,7 @@ float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -371,7 +371,7 @@ float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -397,7 +397,7 @@ float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -423,7 +423,7 @@ float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -455,7 +455,7 @@ float4 ps_linearDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -481,7 +481,7 @@ float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -513,7 +513,7 @@ float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -548,7 +548,7 @@ float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -586,7 +586,7 @@ float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -621,7 +621,7 @@ float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -666,7 +666,7 @@ float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -700,7 +700,7 @@ float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -735,7 +735,7 @@ float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -771,7 +771,7 @@ float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -797,7 +797,7 @@ float4 ps_exclusion (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -823,7 +823,7 @@ float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -849,7 +849,7 @@ float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -883,7 +883,7 @@ float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -913,7 +913,7 @@ float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -943,7 +943,7 @@ float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }
@@ -973,7 +973,7 @@ float4 ps_luminosity (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd, Bgnd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgnd = tex2D (s_Background, xy2);
       Bgnd = tex2D (s_Foreground, xy1);
    }

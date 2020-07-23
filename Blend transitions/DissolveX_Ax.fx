@@ -1,21 +1,21 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-06-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_DissolveX_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_DissolveX.mp4
 
 /**
-This expanded alpha dissolve allows blend modes to be applied during the transition
-using a drop down menu to select different dissolve methods.  The intention behind
-this effect was to get as close as possible visually to the standard Photoshop blend
-modes.
+ This expanded alpha dissolve allows blend modes to be applied during the transition
+ using a drop down menu to select different dissolve methods.  The intention behind
+ this effect was to get as close as possible visually to the standard Photoshop blend
+ modes.
 
-In addition to the Lightworks blends, this effect provides Linear burn, Darker colour,
-Vivid light, Linear light, Pin light, Hard mix, Divide, Hue and Saturation.  The
-Lightworks effect Add has been replaced by Linear Dodge which is functionally identical,
-Burn has been replaced by Colour burn, and Dodge by Colour dodge.  "In Front" has been
-replaced by "Normal" to better match the Photoshop model.
+ In addition to the Lightworks blends, this effect provides Linear burn, Darker colour,
+ Vivid light, Linear light, Pin light, Hard mix, Divide, Hue and Saturation.  The
+ Lightworks effect Add has been replaced by Linear Dodge which is functionally identical,
+ Burn has been replaced by Colour burn, and Dodge by Colour dodge.  "In Front" has been
+ replaced by "Normal" to better match the Photoshop model.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -44,12 +44,18 @@ replaced by "Normal" to better match the Photoshop model.
 // get the effect popping on or off.  I have also not implemented an effect bypass.  That
 // is possible in the standard Lightworks effect settings in any case.
 //
-// Modified 13 December 2018 jwrl.
-// Changed name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 23 July 2020 jwrl.
+// Changed "Transition" to "Transition position".
+// Changed Boost dialogue.
 //
 // Modified 23 December 2018 jwrl.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -81,8 +87,8 @@ sampler s_Video = sampler_state { Texture = <Vid>; };
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -96,8 +102,8 @@ float Amount
 
 int Ttype
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 int SetTechnique
@@ -182,7 +188,7 @@ float4 fn_hsv2rgb (float4 hsv)
 
 float2 fn_amount ()
 {
-   float amount  = (Ttype == 0) ? Amount : 1.0 - Amount;
+   float amount  = (Ttype == 1) ? 1.0 - Amount : Amount;
    float timeRef = (saturate (Timing) * 0.8) + 0.1;
    float timing  = saturate (amount / timeRef);
 
@@ -668,4 +674,3 @@ technique Hue           { pass P_1 { PixelShader = compile PROFILE ps_hue (); } 
 technique Saturation    { pass P_1 { PixelShader = compile PROFILE ps_saturation (); } }
 technique Colour        { pass P_1 { PixelShader = compile PROFILE ps_colour (); } }
 technique Luminosity    { pass P_1 { PixelShader = compile PROFILE ps_luminosity (); } }
-

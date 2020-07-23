@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2020-07-21
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2020-07-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhipPanAx_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhipPan_AxAdx.mp4
 
 /**
- This effect performs a whip pan style transition to bring a title onto or off the screen.
- Unlike the blur dissolve effect, this pans the title.  It is limited to producing vertical
- and horizontal whips only.
+ This effect performs a whip pan style transition to bring a foreground image onto or off
+ the screen.  Unlike the blur dissolve effect, this effect also pans the foreground.  It
+ is limited to producing vertical and horizontal whips only.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +16,8 @@
 //
 // Version history:
 //
-// Built 2020-07-21 jwrl.
+// Modified 2020-07-23:
+// Slight code restructure - cosmetic only.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,7 +36,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Sup : RenderColorTarget;
+texture Key : RenderColorTarget;
 texture Inp : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
@@ -45,9 +46,9 @@ texture Inp : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Super = sampler_state
+sampler s_Key = sampler_state
 { 
-   Texture   = <Sup>;
+   Texture   = <Key>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -162,7 +163,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_blur_I (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Super, uv);
+   float4 retval = tex2D (s_Key, uv);
 
    float amount = 1.0 - cos (saturate ((1.0 - Amount) * 2.0) * HALF_PI);
 
@@ -175,7 +176,7 @@ float4 ps_blur_I (float2 uv : TEXCOORD1) : COLOR
    xy2 *= Strength * STRENGTH;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += tex2D (s_Super, xy1);
+      retval += tex2D (s_Key, xy1);
       xy1 -= xy2;
    }
 
@@ -184,7 +185,7 @@ float4 ps_blur_I (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_blur_O (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Super, uv);
+   float4 retval = tex2D (s_Key, uv);
 
    float amount = 1.0 - cos (saturate (Amount * 2.0) * HALF_PI);
 
@@ -197,7 +198,7 @@ float4 ps_blur_O (float2 uv : TEXCOORD1) : COLOR
    xy2 *= Strength * STRENGTH;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += tex2D (s_Super, xy1);
+      retval += tex2D (s_Key, xy1);
       xy1 -= xy2;
    }
 
@@ -250,7 +251,7 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 technique WhipPan_Adx_0
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Sup;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
@@ -264,7 +265,7 @@ technique WhipPan_Adx_0
 technique WhipPan_Adx_1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Sup;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
@@ -278,7 +279,7 @@ technique WhipPan_Adx_1
 technique WhipPan_Adx_2
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Sup;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
@@ -288,4 +289,3 @@ technique WhipPan_Adx_2
    pass P_3
    { PixelShader = compile PROFILE ps_main_I (); }
 }
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Granular_640.png
@@ -12,12 +12,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Granular_Adx.fx
 //
-// Modified jwrl 2020-12-23
-// Reformatted the effect description for markup purposes.
+// Version history:
 //
-// Modified  jwrl 2020-06-02
+// Modified jwrl 2020-07-23
+// Improved support for unfolded effects.
+//
+// Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2020-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,7 +41,8 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title    : RenderColorTarget;
+texture Key : RenderColorTarget;
+
 texture Buffer_1 : RenderColorTarget;
 texture Buffer_2 : RenderColorTarget;
 
@@ -47,12 +53,12 @@ texture Buffer_2 : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state { Texture = <Title>; };
+sampler s_Key = sampler_state { Texture = <Key>; };
 
 sampler s_Buffer_1 = sampler_state {
    Texture   = <Buffer_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -60,8 +66,8 @@ sampler s_Buffer_1 = sampler_state {
 
 sampler s_Buffer_2 = sampler_state {
    Texture   = <Buffer_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -83,7 +89,7 @@ float Amount
 int Ttype
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 int SetTechnique
@@ -147,11 +153,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -160,10 +161,7 @@ bool Ftype
 
 // Pascal's triangle magic numbers for blur
 
-#define BLUR_0  0.3125
-#define BLUR_1  0.2344
-#define BLUR_2  0.09375
-#define BLUR_3  0.01563
+float _pascal [] = { 0.3125, 0.2344, 0.09375, 0.01563 };
 
 float _OutputAspectRatio;
 
@@ -175,7 +173,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd, Bgd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Bgd = tex2D (s_Foreground, xy1).rgb;
       Fgd = tex2D (s_Background, xy2).rgb;
    }
@@ -208,38 +206,36 @@ float4 ps_noise (float2 uv : TEXCOORD0) : COLOR
 
 float4 ps_blur_1 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Buffer_1, uv);
-
    float2 offset_X1 = float2 (pSoftness * B_SCALE, 0.0);
    float2 offset_X2 = offset_X1 * 2.0;
    float2 offset_X3 = offset_X1 * 3.0;
 
-   retval *= BLUR_0;
-   retval += tex2D (s_Buffer_1, uv + offset_X1) * BLUR_1;
-   retval += tex2D (s_Buffer_1, uv - offset_X1) * BLUR_1;
-   retval += tex2D (s_Buffer_1, uv + offset_X2) * BLUR_2;
-   retval += tex2D (s_Buffer_1, uv - offset_X2) * BLUR_2;
-   retval += tex2D (s_Buffer_1, uv + offset_X3) * BLUR_3;
-   retval += tex2D (s_Buffer_1, uv - offset_X3) * BLUR_3;
+   float4 retval = tex2D (s_Buffer_1, uv) * _pascal [0];
+
+   retval += tex2D (s_Buffer_1, uv + offset_X1) * _pascal [1];
+   retval += tex2D (s_Buffer_1, uv - offset_X1) * _pascal [1];
+   retval += tex2D (s_Buffer_1, uv + offset_X2) * _pascal [2];
+   retval += tex2D (s_Buffer_1, uv - offset_X2) * _pascal [2];
+   retval += tex2D (s_Buffer_1, uv + offset_X3) * _pascal [3];
+   retval += tex2D (s_Buffer_1, uv - offset_X3) * _pascal [3];
 
    return retval;
 }
 
 float4 ps_blur_2 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Buffer_2, uv);
-
    float2 offset_Y1 = float2 (0.0, pSoftness * _OutputAspectRatio * B_SCALE);
    float2 offset_Y2 = offset_Y1 * 2.0;
    float2 offset_Y3 = offset_Y1 * 3.0;
 
-   retval *= BLUR_0;
-   retval += tex2D (s_Buffer_2, uv + offset_Y1) * BLUR_1;
-   retval += tex2D (s_Buffer_2, uv - offset_Y1) * BLUR_1;
-   retval += tex2D (s_Buffer_2, uv + offset_Y2) * BLUR_2;
-   retval += tex2D (s_Buffer_2, uv - offset_Y2) * BLUR_2;
-   retval += tex2D (s_Buffer_2, uv + offset_Y3) * BLUR_3;
-   retval += tex2D (s_Buffer_2, uv - offset_Y3) * BLUR_3;
+   float4 retval = tex2D (s_Buffer_2, uv) * _pascal [0];
+
+   retval += tex2D (s_Buffer_2, uv + offset_Y1) * _pascal [1];
+   retval += tex2D (s_Buffer_2, uv - offset_Y1) * _pascal [1];
+   retval += tex2D (s_Buffer_2, uv + offset_Y2) * _pascal [2];
+   retval += tex2D (s_Buffer_2, uv - offset_Y2) * _pascal [2];
+   retval += tex2D (s_Buffer_2, uv + offset_Y3) * _pascal [3];
+   retval += tex2D (s_Buffer_2, uv - offset_Y3) * _pascal [3];
 
    return retval;
 }
@@ -273,18 +269,17 @@ float4 ps_radial (float2 uv : TEXCOORD0) : COLOR
    return retval.xxxx;
 }
 
-float4 ps_flat (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float noise  = tex2D (s_Buffer_1, ((uv - 0.5) / pSize) + 0.5).x;
-   float amount = saturate (((Amount - 0.5) * 2.0) + noise);
+   float grad   = tex2D (s_Buffer_2, uv).x;
+   float amount = saturate (((0.5 - grad) * 2) + noise);
 
-   float4 retval, Fgnd = tex2D (s_Title, uv);
+   float4 Fgnd = tex2D (s_Key, uv);
 
-   if (Ttype == 0) {
-      retval = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-      retval = lerp (retval, Fgnd, Fgnd.a * amount);
-   }
-   else retval = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount));
+   float4 retval = (Ttype == 0) ? lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * amount)
+                 : (Ttype == 1) ? lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount))
+                                : lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
 
    if (!Sparkling) return retval;
 
@@ -295,20 +290,15 @@ float4 ps_flat (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, starColour, stars * Fgnd.a);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_flat (float2 uv : TEXCOORD1) : COLOR
 {
    float noise  = tex2D (s_Buffer_1, ((uv - 0.5) / pSize) + 0.5).x;
-   float grad   = tex2D (s_Buffer_2, uv).x;
-   float amount = saturate (((0.5 - grad) * 2) + noise);
+   float amount = saturate (((Amount - 0.5) * 2.0) + noise);
 
-   float4 retval, Fgnd = tex2D (s_Title, uv);
-
-   if (Ttype == 0) {
-      float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-
-      retval = lerp (Bgnd, Fgnd, Fgnd.a * amount);
-   }
-   else retval = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount));
+   float4 Fgnd = tex2D (s_Key, uv);
+   float4 retval = (Ttype == 0) ? lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * amount)
+                 : (Ttype == 1) ? lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * (1.0 - amount))
+                                : lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
 
    if (!Sparkling) return retval;
 
@@ -325,7 +315,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique TopToBottom
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; >
@@ -346,7 +336,7 @@ technique TopToBottom
 
 technique LeftToRight
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; >
@@ -367,7 +357,7 @@ technique LeftToRight
 
 technique Radial
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; >
@@ -388,7 +378,7 @@ technique Radial
 
 technique Flat
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; >

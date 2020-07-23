@@ -1,5 +1,6 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-23
+// @Author rakusan
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Spin_640.png
@@ -8,18 +9,23 @@
 /**
  The effect applies a rotary blur to transition into or out of a delta key and is based on
  original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).  The direction,
- aspect ratio, centring and strength of the blur can all be set.
+ aspect ratio, centring and strength of the blur can all be adjusted.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Adx.fx
 //
-// Modified jwrl 2018-12-23
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-23 jwrl
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -93,7 +99,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 int CW_CCW
@@ -143,11 +149,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -161,14 +162,14 @@ bool Ftype
 
 float _OutputAspectRatio;
 
-float blur_idx []  = { 0, 20, 40, 60, 80 };
-float redux_idx [] = { 1.0, 0.8125, 0.625, 0.4375, 0.25 };
+float blur_idx []  = { 0, 20, 40, 60, 80 , 80 };
+float redux_idx [] = { 1.0, 0.8125, 0.625, 0.4375, 0.25 , 0.25 };
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -178,11 +179,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -227,9 +227,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1, uniform int passNum) : COLOR
    if ((passNum == 1) || (passNum == 3)) { retval = max (retval, tex2D (s_Title, uv)); }
    else if (passNum != 0) retval = max (retval, tex2D (s_Spin, uv));
 
-   if (passNum != 4) { return retval; }
+   if (passNum < 4) return retval;
 
-   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 Bgnd = (passNum == 4) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
 
    return lerp (Bgnd, retval, retval.a * Amount);
 }
@@ -275,10 +275,10 @@ float4 ps_main_O (float2 uv : TEXCOORD1, uniform int passNum) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_Spin_I
+technique Adx_Spin_F
 {
    pass P_1 < string Script = "RenderColorTarget0 = Delta;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Title;"; >
    { PixelShader = compile PROFILE ps_main_I (0); }
@@ -299,7 +299,7 @@ technique Adx_Spin_I
 technique Adx_Spin_O
 {
    pass P_1 < string Script = "RenderColorTarget0 = Delta;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = Title;"; >
    { PixelShader = compile PROFILE ps_main_O (0); }
@@ -315,4 +315,25 @@ technique Adx_Spin_O
 
    pass P_6
    { PixelShader = compile PROFILE ps_main_O (4); }
+}
+
+technique Adx_Spin_I
+{
+   pass P_1 < string Script = "RenderColorTarget0 = Delta;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_main_I (0); }
+
+   pass P_3 < string Script = "RenderColorTarget0 = Spin;"; >
+   { PixelShader = compile PROFILE ps_main_I (1); }
+
+   pass P_4 < string Script = "RenderColorTarget0 = Title;"; >
+   { PixelShader = compile PROFILE ps_main_I (2); }
+
+   pass P_5 < string Script = "RenderColorTarget0 = Spin;"; >
+   { PixelShader = compile PROFILE ps_main_I (3); }
+
+   pass P_6
+   { PixelShader = compile PROFILE ps_main_I (5); }
 }

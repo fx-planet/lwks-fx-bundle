@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-06-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Borders_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Borders.mp4
 
 /**
-An alpha transition that generates borders from the title(s) then blows them apart in
-four directions.  Each quadrant can be individually coloured.
+ An alpha transition that generates borders from the title(s) then blows them apart in
+ four directions.  Each quadrant can be individually coloured.
 
-Alpha levels are boosted to support Lightworks titles, which is the default setting.
+ Alpha levels are boosted to support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,12 +19,20 @@ Alpha levels are boosted to support Lightworks titles, which is the default sett
 // wipe between two titles.  That added needless complexity, when the same functionality
 // can be obtained by overlaying two effects.
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-23 jwrl:
+// Changed Transition to Transition position.
+// Reworded Boost text to match requirements for 2020.1 and up.
+// Implemented Boost as a separate pass ahead of the main code to avoid the function call
+// overhead while building the border.
 //
 // Modified 23 December 2018 jwrl.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,6 +51,7 @@ int _LwksEffectInfo
 texture Sup;
 texture Vid;
 
+texture Key : RenderColorTarget;
 texture border_1 : RenderColorTarget;
 texture border_2 : RenderColorTarget;
 
@@ -50,11 +59,12 @@ texture border_2 : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Video = sampler_state { Texture = <Vid>; };
+sampler s_Foreground = sampler_state { Texture = <Sup>; };
+sampler s_Background = sampler_state { Texture = <Vid>; };
 
-sampler s_Super = sampler_state
+sampler s_Key = sampler_state
 {
-   Texture   = <Sup>;
+   Texture   = <Key>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -86,8 +96,8 @@ sampler s_Border_2 = sampler_state {
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -101,8 +111,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Radius
@@ -180,14 +190,7 @@ float4 fn_tex2D (sampler Vsample, float2 uv)
 {
    if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
 
-   float4 retval = tex2D (Vsample, uv);
-
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
-   }
-
-   return retval;
+   return tex2D (Vsample, uv);
 }
 
 bool fn_equals (float2 xy1, float2 xy2)
@@ -199,7 +202,19 @@ bool fn_equals (float2 xy1, float2 xy2)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_border_1_in (float2 uv : TEXCOORD1) : COLOR
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 retval = tex2D (s_Foreground, uv);
+
+   if (Boost == 0) {
+      retval.a    = pow (retval.a, 0.5);
+      retval.rgb /= retval.a;
+   }
+
+   return retval;
+}
+
+float4 ps_border_I_1 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = EMPTY;
 
@@ -213,14 +228,14 @@ float4 ps_border_1_in (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < LOOP_1; i++) {
       sincos ((i * ANGLE_1), xy.x, xy.y);
       xy *= radius;
-      retval = max (retval, tex2D (s_Super, uv + xy));
-      retval = max (retval, tex2D (s_Super, uv - xy));
+      retval = max (retval, tex2D (s_Key, uv + xy));
+      retval = max (retval, tex2D (s_Key, uv - xy));
    }
 
    return retval;
 }
 
-float4 ps_border_1_out (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_O_1 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = EMPTY;
 
@@ -234,21 +249,21 @@ float4 ps_border_1_out (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < LOOP_1; i++) {
       sincos ((i * ANGLE_1), xy.x, xy.y);
       xy *= radius;
-      retval = max (retval, tex2D (s_Super, uv + xy));
-      retval = max (retval, tex2D (s_Super, uv - xy));
+      retval = max (retval, tex2D (s_Key, uv + xy));
+      retval = max (retval, tex2D (s_Key, uv - xy));
    }
 
    return retval;
 }
 
-float4 ps_border_2_in (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_I_2 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Border_1, uv);
 
    if (Radius == 0.0) return retval;
 
    float radScale = cos (Amount * HALF_PI);
-   float alpha = saturate (tex2D (s_Super, uv).a * 2.0);
+   float alpha = saturate (tex2D (s_Key, uv).a * 2.0);
 
    float2 radius = float2 (_OutputPixelWidth, _OutputPixelHeight) * Radius * radScale * RADIUS_2;
    float2 xy;
@@ -263,14 +278,14 @@ float4 ps_border_2_in (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, EMPTY, alpha);
 }
 
-float4 ps_border_2_out (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_O_2 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 retval = tex2D (s_Border_1, uv);
 
    if (Radius == 0.0) return retval;
 
    float radScale = sin (Amount * HALF_PI);
-   float alpha = saturate (tex2D (s_Super, uv).a * 2.0);
+   float alpha = saturate (tex2D (s_Key, uv).a * 2.0);
 
    float2 radius = float2 (_OutputPixelWidth, _OutputPixelHeight) * Radius * radScale * RADIUS_2;
    float2 xy;
@@ -285,7 +300,7 @@ float4 ps_border_2_out (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, EMPTY, alpha);
 }
 
-float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
 {
    float Offset = (1.0 - Amount) * Displace * OFFSET;
    float Outline = 0.0, Opacity = 1.0;
@@ -298,13 +313,13 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
    xy1  = uv - xy2;
    xy2 += uv;
 
-   float4 Fgnd = fn_tex2D (s_Super, xy1);
+   float4 Fgnd = fn_tex2D (s_Key, xy1);
    float4 retval = EMPTY;
 
    if (!fn_equals (xy1, xy2)) {
-      retval = fn_tex2D (s_Super, xy2); Fgnd = lerp (Fgnd, retval, retval.a);
-      retval = fn_tex2D (s_Super, xy3); Fgnd = lerp (Fgnd, retval, retval.a);
-      retval = fn_tex2D (s_Super, xy4); Fgnd = lerp (Fgnd, retval, retval.a);
+      retval = fn_tex2D (s_Key, xy2); Fgnd = lerp (Fgnd, retval, retval.a);
+      retval = fn_tex2D (s_Key, xy3); Fgnd = lerp (Fgnd, retval, retval.a);
+      retval = fn_tex2D (s_Key, xy4); Fgnd = lerp (Fgnd, retval, retval.a);
 
       retval = Colour_1 * fn_tex2D (s_Border_2, xy1).a;
       retval = lerp (retval, Colour_2, fn_tex2D (s_Border_2, xy2).a);
@@ -315,12 +330,12 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
       Opacity = 1.0 - sin (Opacity * HALF_PI);
    }
 
-   float4 Bgnd = lerp (tex2D (s_Video, uv), Fgnd, Fgnd.a * Opacity);
+   float4 Bgnd = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * Opacity);
 
    return lerp (Bgnd, retval, retval.a * Outline);
 }
 
-float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 {
    float Offset = Amount * Displace * OFFSET;
    float Outline = 0.0, Opacity = 1.0;
@@ -333,13 +348,13 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
    xy1  = uv - xy2;
    xy2 += uv;
 
-   float4 Fgnd = fn_tex2D (s_Super, xy1);
+   float4 Fgnd = fn_tex2D (s_Key, xy1);
    float4 retval = EMPTY;
 
    if (!fn_equals (xy1, xy2)) {
-      retval = fn_tex2D (s_Super, xy2); Fgnd = lerp (Fgnd, retval, retval.a);
-      retval = fn_tex2D (s_Super, xy3); Fgnd = lerp (Fgnd, retval, retval.a);
-      retval = fn_tex2D (s_Super, xy4); Fgnd = lerp (Fgnd, retval, retval.a);
+      retval = fn_tex2D (s_Key, xy2); Fgnd = lerp (Fgnd, retval, retval.a);
+      retval = fn_tex2D (s_Key, xy3); Fgnd = lerp (Fgnd, retval, retval.a);
+      retval = fn_tex2D (s_Key, xy4); Fgnd = lerp (Fgnd, retval, retval.a);
 
       retval = Colour_1 * fn_tex2D (s_Border_2, xy1).a;
       retval = lerp (retval, Colour_2, fn_tex2D (s_Border_2, xy2).a);
@@ -350,7 +365,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
       Opacity = 1.0 - sin (Opacity * HALF_PI);
    }
 
-   float4 Bgnd = lerp (tex2D (s_Video, uv), Fgnd, Fgnd.a * Opacity);
+   float4 Bgnd = lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * Opacity);
 
    return lerp (Bgnd, retval, retval.a * Outline);
 }
@@ -361,25 +376,30 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
 technique Ax_Borders_in
 {
+   pass P_0 < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
    pass P_1 < string Script = "RenderColorTarget0 = border_1;"; >
-   { PixelShader = compile PROFILE ps_border_1_in (); }
+   { PixelShader = compile PROFILE ps_border_I_1 (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = border_2;"; >
-   { PixelShader = compile PROFILE ps_border_2_in (); }
+   { PixelShader = compile PROFILE ps_border_I_2 (); }
 
    pass P_3
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_I (); }
 }
 
 technique Ax_Borders_out
 {
+   pass P_0 < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
    pass P_1 < string Script = "RenderColorTarget0 = border_1;"; >
-   { PixelShader = compile PROFILE ps_border_1_out (); }
+   { PixelShader = compile PROFILE ps_border_O_1 (); }
 
    pass P_2 < string Script = "RenderColorTarget0 = border_2;"; >
-   { PixelShader = compile PROFILE ps_border_2_out (); }
+   { PixelShader = compile PROFILE ps_border_O_2 (); }
 
    pass P_3
-   { PixelShader = compile PROFILE ps_main_out (); }
+   { PixelShader = compile PROFILE ps_main_O (); }
 }
-

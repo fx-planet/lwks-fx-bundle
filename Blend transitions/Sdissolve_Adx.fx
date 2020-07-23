@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Scurve-640.png
@@ -14,12 +14,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Sdissolve_Adx.fx
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified jwrl 2020-07-23
+// Rolled fold/unfold into transition position.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -61,7 +66,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float Linearity
@@ -78,11 +83,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -95,32 +95,24 @@ bool Ftype
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Bgnd, Fgnd;
+   float4 Fgnd = tex2D (s_Foreground, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
 
-   if (Ftype) {
-      Bgnd = tex2D (s_Foreground, xy1);
-      Fgnd = tex2D (s_Background, xy2);
-   }
-   else {
-      Fgnd = tex2D (s_Foreground, xy1);
-      Bgnd = tex2D (s_Background, xy2);
-   }
+   float kDiff = distance (Fgnd.g, Bgnd.g);
 
-   float kDiff = distance (Bgnd.g, Fgnd.g);
+   kDiff = max (kDiff, distance (Fgnd.r, Bgnd.r));
+   kDiff = max (kDiff, distance (Fgnd.b, Bgnd.b));
 
-   kDiff = max (kDiff, distance (Bgnd.r, Fgnd.r));
-   kDiff = max (kDiff, distance (Bgnd.b, Fgnd.b));
-
-   Fgnd.a = smoothstep (0.0, KeyGain, kDiff);
+   Bgnd.a = smoothstep (0.0, KeyGain, kDiff);
 
    float amount = (1.0 - sin ((cos (Amount * PI)) * HALF_PI)) / 2.0;
    float curve  = Amount - amount;
 
    amount = saturate (amount + (curve * Linearity));
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * amount);
+   return lerp (Fgnd, Bgnd, Bgnd.a * amount);
 }
 
 float4 ps_main_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
@@ -143,18 +135,44 @@ float4 ps_main_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a * amount);
 }
 
+float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+{
+   float4 Fgnd = tex2D (s_Foreground, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
+
+   float kDiff = distance (Bgnd.g, Fgnd.g);
+
+   kDiff = max (kDiff, distance (Bgnd.r, Fgnd.r));
+   kDiff = max (kDiff, distance (Bgnd.b, Fgnd.b));
+
+   Fgnd.a = smoothstep (0.0, KeyGain, kDiff);
+
+   float amount = (1.0 - sin ((cos (Amount * PI)) * HALF_PI)) / 2.0;
+   float curve  = Amount - amount;
+
+   amount = saturate (amount + (curve * Linearity));
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * amount);
+}
+
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Sdissolve_Adx_I
+technique Sdissolve_Adx_F
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique Sdissolve_Adx_O
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Sdissolve_Adx_I
+{
+   pass P_1
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

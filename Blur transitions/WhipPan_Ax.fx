@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2020-07-21
+// @Released 2020-07-23
 // @Author jwrl
 // @Created 2020-07-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhipPanAx_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhipPan_AxAdx.mp4
 
 /**
- This effect performs a whip pan style transition to bring a title onto or off the screen.
- Unlike the blur dissolve effect, this pans the title.  It is limited to producing vertical
- and horizontal whips only.
+ This effect performs a whip pan style transition to bring an alpha image onto or off the
+ screen.  Unlike the blur dissolve effect, this effect also pans the alpha image.  It is
+ limited to producing vertical and horizontal whips only.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +16,11 @@
 //
 // Version history:
 //
-// Built 2020-07-21 jwrl.
+// Modified 2020-07-23:
+// Reworded Boost text to match requirements for 2020.1 and up.
+// Implemented Boost as a separate pass ahead of the main code to avoid the function call
+// overhead while applying the blur.
+// Removed fn_tex2D(), which is now redundant.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,15 +39,17 @@ int _LwksEffectInfo
 texture Sup;
 texture Vid;
 
+texture Key : RenderColorTarget;
 texture Inp : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
+sampler s_Foreground = sampler_state { Texture = <Sup>; };
 sampler s_Background = sampler_state { Texture = <Vid>; };
 
-sampler s_Super = sampler_state
+sampler s_Key = sampler_state
 {
    Texture   = <Sup>;
    AddressU  = Mirror;
@@ -69,8 +75,8 @@ sampler s_Input = sampler_state
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -128,12 +134,12 @@ Bad_LW_version    // Forces a compiler error if the Lightworks version is less.
 float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s, float2 uv : TEXCOORD1) : COLOR
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s, uv);
+   float4 retval = tex2D (s_Foreground, uv);
 
    if (Boost == 0) {
       retval.a    = pow (retval.a, 0.5);
@@ -143,13 +149,9 @@ float4 fn_tex2D (sampler s, float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
 float4 ps_blur_I (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = fn_tex2D (s_Super, uv);
+   float4 retval = tex2D (s_Key, uv);
 
    float amount = 1.0 - cos (saturate ((1.0 - Amount) * 2.0) * HALF_PI);
 
@@ -162,7 +164,7 @@ float4 ps_blur_I (float2 uv : TEXCOORD1) : COLOR
    xy2 *= Strength * STRENGTH;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += fn_tex2D (s_Super, xy1);
+      retval += tex2D (s_Key, xy1);
       xy1 -= xy2;
    }
 
@@ -171,7 +173,7 @@ float4 ps_blur_I (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_blur_O (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = fn_tex2D (s_Super, uv);
+   float4 retval = tex2D (s_Key, uv);
 
    float amount = 1.0 - cos (saturate (Amount * 2.0) * HALF_PI);
 
@@ -184,7 +186,7 @@ float4 ps_blur_O (float2 uv : TEXCOORD1) : COLOR
    xy2 *= Strength * STRENGTH;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += fn_tex2D (s_Super, xy1);
+      retval += tex2D (s_Key, xy1);
       xy1 -= xy2;
    }
 
@@ -221,23 +223,30 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique WhipPan_Dx_0
+technique WhipPan_Ax_0
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
    < string Script = "RenderColorTarget0 = Inp;"; >
    { PixelShader = compile PROFILE ps_blur_I (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main_I (); }
 }
 
-technique WhipPan_Dx_1
+technique WhipPan_Ax_1
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
    < string Script = "RenderColorTarget0 = Inp;"; >
    { PixelShader = compile PROFILE ps_blur_O (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main_O (); }
 }
-

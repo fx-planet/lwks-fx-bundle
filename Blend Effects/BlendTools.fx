@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-08-02
+// @Released 2020-07-25
 // @Author jwrl
 // @Created 2018-07-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blend_Tools_640.png
@@ -26,14 +26,19 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BlendTools.fx
 //
-// Modified 23 December 2018 jwrl.
-// Renamed effect from "Key tools" to "Blend tools".
-// Changed subcategory to "Blend Effects".
-// Formatted the descriptive block so that it can automatically be read.
+// Revision history:
+//
+// Modified 2020-07-25 jwrl.
+// Added the ability to unpremultiply after feathering.
 //
 // Modified 2 August 2019 jwrl.
 // Added the ability to generate the alpha channel from luminance.
 // Added the ability to export just the foreground with the processed alpha.
+//
+// Modified 23 December 2018 jwrl.
+// Renamed effect from "Key tools" to "Blend tools".
+// Changed subcategory to "Blend Effects".
+// Formatted the descriptive block so that it can automatically be read.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -92,7 +97,7 @@ int a_Premul
 <
    string Group = "Alpha fine tuning";
    string Description = "Unpremultiply";
-   string Enum = "None,Before level adjustment,After level adjustment"; 
+   string Enum = "None,Before level adjustment,After level adjustment,After feathering"; 
 > = 0;
 
 float a_Amount
@@ -178,7 +183,7 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
    if (KeyMode > 1) {
       K.a = saturate ((K.r + K.g + K.b) * 2.0);
 
-      if (a_Premul == 1) unpremul++;
+      if (unpremul == 1) unpremul++;
    }
    else K.a += 0.5;
 
@@ -219,6 +224,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
       alpha = min (saturate (alpha), Fgd.a);
    }
+
+   if (a_Premul == 3) Fgd.rgb /= alpha;
 
    Fgd.a = alpha * Opacity;
 

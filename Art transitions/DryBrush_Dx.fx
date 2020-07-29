@@ -1,26 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-05-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_DryBrush_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_DryBrush.mp4
 
 /**
-This mimics the Photoshop angled brush stroke effect to transition between two shots.
-The stroke length and angle can be independently adjusted, and can be keyframed while
-the transition happens to make the effect more dynamic.  To minimise edge of frame
-problems mirror addressing has been used for both sources.
+ This mimics the Photoshop angled brush stroke effect to transition between two shots.
+ The stroke length and angle can be independently adjusted, and can be keyframed while
+ the transition happens to make the effect more dynamic.  To minimise edge of frame
+ problems mirror addressing has been used for both sources.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DryBrush_Dx.fx
 //
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -136,4 +141,3 @@ technique Dx_DryBrush
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_RGBdrift_640.png
@@ -14,12 +14,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RGBdrifter_Adx.fx
 //
-// Modified jwrl 2018-12-23
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-29 jwrl:
+// Rolled unfolded effects into transition position.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,7 +43,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Key : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -47,7 +52,7 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state { Texture = <Title>; };
+sampler s_Key = sampler_state { Texture = <Key>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -65,7 +70,7 @@ float Amount
 int Ttype
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 int SetTechnique
@@ -80,11 +85,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -101,7 +101,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
@@ -120,174 +120,108 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_main_R_B (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd, Fgnd = tex2D (s_Title, uv);
-
-   float amount;
-
-   if (Ttype == 0) {
-      amount = Amount;
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-   }
-   else {
-      amount = 1.0 - Amount;
-      Bgnd = tex2D (s_Background, uv);
-   }
-
-   float4 vidIn = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 retval;
-
+   float amount = (Ttype == 1) ? 1.0 - Amount : Amount;
    float amt_R  = pow (1.0 - amount, CURVE);
    float amt_B  = pow (amount, CURVE);
 
-   retval.ga = lerp (Bgnd.ga, vidIn.ga, amount);
+   float4 Fgnd   = tex2D (s_Key, uv);
+   float4 Bgnd   = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 vidIn  = lerp (Bgnd, Fgnd, Fgnd.a);
+   float4 retval = lerp (Bgnd, vidIn, amount);
+
    retval.r  = lerp (vidIn.r, Bgnd.r, amt_R);
    retval.b  = lerp (Bgnd.b, vidIn.b, amt_B);
-   Fgnd.a    = Fgnd.a > 0.0 ? lerp (Fgnd.a, 1.0, amount) : 0.0;
+   Fgnd.a    = (Fgnd.a > 0.0) ? lerp (Fgnd.a, 1.0, amount) : 0.0;
 
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
 float4 ps_main_B_R (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd, Fgnd = tex2D (s_Title, uv);
-
-   float amount;
-
-   if (Ttype == 0) {
-      amount = Amount;
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-   }
-   else {
-      amount = 1.0 - Amount;
-      Bgnd = tex2D (s_Background, uv);
-   }
-
-   float4 vidIn = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 retval;
-
+   float amount = (Ttype == 1) ? 1.0 - Amount : Amount;
    float amt_R  = pow (amount, CURVE);
    float amt_B  = pow (1.0 - amount, CURVE);
 
-   retval.ga = lerp (Bgnd.ga, vidIn.ga, amount);
-   retval.r  = lerp (Bgnd.r, vidIn.r, amt_R);
-   retval.b  = lerp (vidIn.b, Bgnd.b, amt_B);
-   Fgnd.a    = Fgnd.a > 0.0 ? lerp (Fgnd.a, 1.0, amount) : 0.0;
+   float4 Fgnd   = tex2D (s_Key, uv);
+   float4 Bgnd   = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 vidIn  = lerp (Bgnd, Fgnd, Fgnd.a);
+   float4 retval = lerp (Bgnd, vidIn, amount);
+
+   retval.r = lerp (Bgnd.r, vidIn.r, amt_R);
+   retval.b = lerp (vidIn.b, Bgnd.b, amt_B);
+   Fgnd.a   = (Fgnd.a > 0.0) ? lerp (Fgnd.a, 1.0, amount) : 0.0;
 
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
 float4 ps_main_R_G (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd, Fgnd = tex2D (s_Title, uv);
-
-   float amount;
-
-   if (Ttype == 0) {
-      amount = Amount;
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-   }
-   else {
-      amount = 1.0 - Amount;
-      Bgnd = tex2D (s_Background, uv);
-   }
-
-   float4 vidIn = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 retval;
-
+   float amount = (Ttype == 1) ? 1.0 - Amount : Amount;
    float amt_R  = pow (1.0 - amount, CURVE);
    float amt_G  = pow (amount, CURVE);
 
-   retval.ba = lerp (Bgnd.ba, vidIn.ba, amount);
-   retval.r  = lerp (vidIn.r, Bgnd.r, amt_R);
-   retval.g  = lerp (Bgnd.g, vidIn.g, amt_G);
-   Fgnd.a    = Fgnd.a > 0.0 ? lerp (Fgnd.a, 1.0, amount) : 0.0;
+   float4 Fgnd   = tex2D (s_Key, uv);
+   float4 Bgnd   = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 vidIn  = lerp (Bgnd, Fgnd, Fgnd.a);
+   float4 retval = lerp (Bgnd, vidIn, amount);
+
+   retval.r = lerp (vidIn.r, Bgnd.r, amt_R);
+   retval.g = lerp (Bgnd.g, vidIn.g, amt_G);
+   Fgnd.a   = (Fgnd.a > 0.0) ? lerp (Fgnd.a, 1.0, amount) : 0.0;
 
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
 float4 ps_main_G_R (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd, Fgnd = tex2D (s_Title, uv);
-
-   float amount;
-
-   if (Ttype == 0) {
-      amount = Amount;
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-   }
-   else {
-      amount = 1.0 - Amount;
-      Bgnd = tex2D (s_Background, uv);
-   }
-
-   float4 vidIn = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 retval;
-
+   float amount = (Ttype == 1) ? 1.0 - Amount : Amount;
    float amt_R  = pow (amount, CURVE);
    float amt_G  = pow (1.0 - amount, CURVE);
 
-   retval.ba = lerp (Bgnd.ba, vidIn.ba, amount);
-   retval.r  = lerp (Bgnd.r, vidIn.r, amt_R);
-   retval.g  = lerp (vidIn.g, Bgnd.g, amt_G);
-   Fgnd.a    = Fgnd.a > 0.0 ? lerp (Fgnd.a, 1.0, amount) : 0.0;
+   float4 Fgnd   = tex2D (s_Key, uv);
+   float4 Bgnd   = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 vidIn  = lerp (Bgnd, Fgnd, Fgnd.a);
+   float4 retval = lerp (Bgnd, vidIn, amount);
+
+   retval.r = lerp (Bgnd.r, vidIn.r, amt_R);
+   retval.g = lerp (vidIn.g, Bgnd.g, amt_G);
+   Fgnd.a   = (Fgnd.a > 0.0) ? lerp (Fgnd.a, 1.0, amount) : 0.0;
 
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
 float4 ps_main_G_B (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd, Fgnd = tex2D (s_Title, uv);
-
-   float amount;
-
-   if (Ttype == 0) {
-      amount = Amount;
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-   }
-   else {
-      amount = 1.0 - Amount;
-      Bgnd = tex2D (s_Background, uv);
-   }
-
-   float4 vidIn = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 retval;
-
+   float amount = (Ttype == 1) ? 1.0 - Amount : Amount;
    float amt_G  = pow (1.0 - amount, CURVE);
    float amt_B  = pow (amount, CURVE);
 
-   retval.ra = lerp (Bgnd.ra, vidIn.ra, amount);
-   retval.g  = lerp (vidIn.g, Bgnd.g, amt_G);
-   retval.b  = lerp (Bgnd.b, vidIn.b, amt_B);
-   Fgnd.a    = Fgnd.a > 0.0 ? lerp (Fgnd.a, 1.0, amount) : 0.0;
+   float4 Fgnd   = tex2D (s_Key, uv);
+   float4 Bgnd   = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 vidIn  = lerp (Bgnd, Fgnd, Fgnd.a);
+   float4 retval = lerp (Bgnd, vidIn, amount);
+
+   retval.g = lerp (vidIn.g, Bgnd.g, amt_G);
+   retval.b = lerp (Bgnd.b, vidIn.b, amt_B);
+   Fgnd.a   = (Fgnd.a > 0.0) ? lerp (Fgnd.a, 1.0, amount) : 0.0;
 
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
 float4 ps_main_B_G (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd, Fgnd = tex2D (s_Title, uv);
-
-   float amount;
-
-   if (Ttype == 0) {
-      amount = Amount;
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-   }
-   else {
-      amount = 1.0 - Amount;
-      Bgnd = tex2D (s_Background, uv);
-   }
-
-   float4 vidIn = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 retval;
-
+   float amount = (Ttype == 1) ? 1.0 - Amount : Amount;
    float amt_G  = pow (amount, CURVE);
    float amt_B  = pow (1.0 - amount, CURVE);
 
-   retval.ra = lerp (Bgnd.ra, vidIn.ra, amount);
-   retval.g  = lerp (Bgnd.g, vidIn.g, amt_G);
-   retval.b  = lerp (vidIn.b, Bgnd.b, amt_B);
-   Fgnd.a    = Fgnd.a > 0.0 ? lerp (Fgnd.a, 1.0, amount) : 0.0;
+   float4 Fgnd   = tex2D (s_Key, uv);
+   float4 Bgnd   = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 vidIn  = lerp (Bgnd, Fgnd, Fgnd.a);
+   float4 retval = lerp (Bgnd, vidIn, amount);
+
+   retval.g = lerp (Bgnd.g, vidIn.g, amt_G);
+   retval.b = lerp (vidIn.b, Bgnd.b, amt_B);
+   Fgnd.a   = (Fgnd.a > 0.0) ? lerp (Fgnd.a, 1.0, amount) : 0.0;
 
    return lerp (Bgnd, retval, Fgnd.a);
 }
@@ -296,60 +230,60 @@ float4 ps_main_B_G (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_RGBdrifter_R_B
+technique RGBdrifter_Adx_R_B
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_R_B (); }
 }
 
-technique Adx_RGBdrifter_B_R
+technique RGBdrifter_Adx_B_R
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_B_R (); }
 }
 
-technique Adx_RGBdrifter_R_G
+technique RGBdrifter_Adx_R_G
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_R_G (); }
 }
 
-technique Adx_RGBdrifter_G_R
+technique RGBdrifter_Adx_G_R
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_G_R (); }
 }
 
-technique Adx_RGBdrifter_G_B
+technique RGBdrifter_Adx_G_B
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_G_B (); }
 }
 
-technique Adx_RGBdrifter_B_G
+technique RGBdrifter_Adx_B_G
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2

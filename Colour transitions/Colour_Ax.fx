@@ -1,18 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-06-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour.mp4
 
 /**
-This effect fades a title to or from through a user-selected colour gradient.  The
-gradient can be a single flat colour, a vertical gradient, a horizontal gradient or
-a four corner gradient.  It can also composite the result over a background layer.
-When fading the title in or out it uses non-linear transitions to reveal the colour
-at its maximum strength midway through the transition.
+ This effect fades to or from a title through a user-selected colour gradient.  The
+ gradient can be a single flat colour, a vertical gradient, a horizontal gradient or
+ a four corner gradient.  It can also composite the result over a background layer.
+ When fading the title in or out it uses non-linear transitions to reveal the colour
+ at its maximum strength midway through the transition.
 
-Alpha levels are boosted to support Lightworks titles, which is the default setting.
+ Alpha levels are boosted to support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,12 +22,18 @@ Alpha levels are boosted to support Lightworks titles, which is the default sett
 // dissolve between two titles.  That added needless complexity, when the same result
 // can be obtained by overlaying two effects.
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reworded Boost text to match requirements for 2020.1 and up.
+// Changed "Transition" to "Transition position".
 //
 // Modified 23 December 2018 jwrl.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,16 +52,16 @@ int _LwksEffectInfo
 texture Sup;
 texture Vid;
 
-texture colourFrame : RenderColorTarget;
+texture Key : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Super = sampler_state { Texture = <Sup>; };
-sampler s_Video = sampler_state { Texture = <Vid>; };
+sampler s_Foreground = sampler_state { Texture = <Sup>; };
+sampler s_Background = sampler_state { Texture = <Vid>; };
 
-sampler s_Gradient = sampler_state { Texture = <colourFrame>; };
+sampler s_Key = sampler_state { Texture = <Key>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -63,8 +69,8 @@ sampler s_Gradient = sampler_state { Texture = <colourFrame>; };
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -78,8 +84,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float cAmount
@@ -176,9 +182,9 @@ float4 ps_colour (float2 uv : TEXCOORD0) : COLOR
    return lerp (topRow, botRow, uv.y);
 }
 
-float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 gradient = tex2D (s_Gradient, uv);
+   float4 gradient = tex2D (s_Key, uv);
 
    if (gradSetup) return gradient;
 
@@ -187,16 +193,16 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    level = sin (Amount * HALF_PI);
 
-   float4 Fgnd = fn_tex2D (s_Super, uv);
+   float4 Fgnd = fn_tex2D (s_Foreground, uv);
 
    Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
 
-   return lerp (tex2D (s_Video, uv), Fgnd, Fgnd.a * level);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * level);
 }
 
-float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 gradient = tex2D (s_Gradient, uv);
+   float4 gradient = tex2D (s_Key, uv);
 
    if (gradSetup) return gradient;
 
@@ -205,32 +211,31 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    level = cos (Amount * HALF_PI);
 
-   float4 Fgnd = fn_tex2D (s_Super, uv);
+   float4 Fgnd = fn_tex2D (s_Foreground, uv);
 
    Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
 
-   return lerp (tex2D (s_Video, uv), Fgnd, Fgnd.a * level);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * level);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Ax_Colour_in
+technique Colour_Ax_I
 {
-   pass P_1 < string Script = "RenderColorTarget0 = colourFrame;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_colour (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_in (); }
+   { PixelShader = compile PROFILE ps_main_I (); }
 }
 
-technique Ax_Colour_out
+technique Colour_Ax_O
 {
-   pass P_1 < string Script = "RenderColorTarget0 = colourFrame;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_colour (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_out (); }
+   { PixelShader = compile PROFILE ps_main_O (); }
 }
-

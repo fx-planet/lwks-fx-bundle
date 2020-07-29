@@ -1,44 +1,49 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2015-10-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Blurs_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/BlurDissolve.mp4
 
 /**
-This effect performs a transition between two sources.  During the process it also applies
-a directional blur, the angle and strength of which can be independently set for both the
-incoming and outgoing vision sources.
+ This effect performs a transition between two sources.  During the process it also applies
+ a directional blur, the angle and strength of which can be independently set for both the
+ incoming and outgoing vision sources.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BlurDissolve_Dx.fx
 //
-// Modified May 6 2016 by jwrl.
-// Changed the blur engine and offset the incoming blur by 180 degrees so that the
-// incoming and outgoing blurs are perceived to match direction.  A setting to tie both
-// incoming and outgoing blurs together has also been added.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their default states between
-// Windows and Linux/Mac compilers.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from BlurDissolve.fx for consistency across the dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 23 December 2018 jwrl.
+// Fixed bug which caused spread to do very little.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 23 December 2018 jwrl.
-// Fixed bug which caused spread to do very little.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from BlurDissolve.fx for consistency across the dissolve range.
+//
+// Update August 4 2017 by jwrl.
+// All samplers fully defined to avoid differences in their default states between
+// Windows and Linux/Mac compilers.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+//
+// Modified May 6 2016 by jwrl.
+// Changed the blur engine and offset the incoming blur by 180 degrees so that the
+// incoming and outgoing blurs are perceived to match direction.  A setting to tie both
+// incoming and outgoing blurs together has also been added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -172,8 +177,6 @@ float i_Strength
 #define SAMPSCALE 61
 
 #define STRENGTH  0.01
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

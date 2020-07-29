@@ -1,38 +1,43 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2017-03-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Scurve_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dissolve_S.mp4
 
 /**
-This is essentially the same as Editshare's "Mix", with a trigonometric curve applied
-to the "Amount" parameter.  If you need to you can vary the linearity of the curve.
+ This is essentially the same as Editshare's "Mix", with a trigonometric curve applied
+ to the "Amount" parameter.  If you need to you can vary the linearity of the curve.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Sdissolve_Dx.fx
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Version history:
 //
-// Update August 10 2017 by jwrl.
-// Renamed from S_mix.fx for consistency across the dissolve range.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
 //
 // Modified 13 August 2018 jwrl.
 // Added quadratic (power) curve option to the trigonometric one.
 // Changed the linearity adjustment to a curve amount adjustment.
 // Added support for inverse curves by allowing negative values of curve amount.
 //
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Update August 10 2017 by jwrl.
+// Renamed from S_mix.fx for consistency across the dissolve range.
+//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -136,4 +141,3 @@ technique Sdissolve_Dx_power
    pass P_1
    { PixelShader = compile PROFILE ps_power_main (); }
 }
-

@@ -1,46 +1,51 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2016-07-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Colour_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DissolveThruColour.mp4
 
 /**
-This effect dissolves through a user-selected colour field from one clip to another.
-The colour percentage can be adjusted from 0% when the effect perform as a standard
-dissolve, to 100% which fades to the colour field then to the second video stream.
-Values between 100% and 0% will make the colour more or less opaque, giving quite
-subtle colour blends through the transition.  Transition centering can also be adjusted.
+ This effect dissolves through a user-selected colour field from one clip to another.
+ The colour percentage can be adjusted from 0% when the effect perform as a standard
+ dissolve, to 100% which fades to the colour field then to the second video stream.
+ Values between 100% and 0% will make the colour more or less opaque, giving quite
+ subtle colour blends through the transition.  Transition centering can also be adjusted.
 
-The colour field can be set up to be a single flat colour or a wide range of gradients.
-In the gradients that blend to the centre, the centre point is also fully adjustable.
-Asymmetrical colour transitions can be created by changing keyframing of the effect
-centre, opacity, transition curve, gradient centre and colour values.
+ The colour field can be set up to be a single flat colour or a wide range of gradients.
+ In the gradients that blend to the centre, the centre point is also fully adjustable.
+ Asymmetrical colour transitions can be created by changing keyframing of the effect
+ centre, opacity, transition curve, gradient centre and colour values.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Colour_Dx.fx
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their default states between
-// Windows and Linux/Mac compilers.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Update August 10 2017 by jwrl.
-// Renamed from DissThruColour.fx for consistency across the dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed effect name.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from DissThruColour.fx for consistency across the dissolve range.
+//
+// Update August 4 2017 by jwrl.
+// All samplers fully defined to avoid differences in their default states between
+// Windows and Linux/Mac compilers.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -66,8 +71,8 @@ texture Bg;
 sampler FgSampler = sampler_state
 { 
    Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -76,8 +81,8 @@ sampler FgSampler = sampler_state
 sampler BgSampler = sampler_state
 {
    Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

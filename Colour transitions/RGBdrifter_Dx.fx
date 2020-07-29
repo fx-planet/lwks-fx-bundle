@@ -1,25 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-04-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_RGBdrift_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_RGBdrifter.mp4
 
 /**
-This transitions between the two images using different curves for each of red, green
-and blue.  One colour and alpha is always linear, and the other two can be set using
-the colour profile selection.
+ This transitions between the two images using different curves for each of red, green
+ and blue.  One colour and alpha is always linear, and the other two can be set using
+ the colour profile selection.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RGBdrifter_Dx.fx
 //
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,8 +50,8 @@ texture Bg;
 sampler s_Outgoing = sampler_state
 {
    Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -55,8 +60,8 @@ sampler s_Outgoing = sampler_state
 sampler s_Incoming = sampler_state
 {
    Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -222,4 +227,3 @@ technique Dx_RGBdrifter_B_G
 {
    pass P_1 { PixelShader = compile PROFILE ps_main_B_G (); }
 }
-

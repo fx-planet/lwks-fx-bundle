@@ -1,42 +1,47 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2016-02-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Spin_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/SpinDissolve.mp4
 
 /**
-This effect performs a transition between two sources.  During the process it applies a
-rotational blur, the direction, aspect ratio, centring and strength of which can be
-adjusted.
+ This effect performs a transition between two sources.  During the process it applies a
+ rotational blur, the direction, aspect ratio, centring and strength of which can be
+ adjusted.
 
-The blur section is based on a rotational blur converted by Lightworks user windsturm
-from original code created by rakusan - http://kuramo.ch/webgl/videoeffects/
+ The blur section is based on a rotational blur converted by Lightworks user windsturm
+ from original code created by rakusan - http://kuramo.ch/webgl/videoeffects/
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Dx.fx
 //
-// This cross-platform version by jwrl 4 May 2016.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from SpinDissolve.fx for consistency across the dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from SpinDissolve.fx for consistency across the dissolve range.
+//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+//
+// This cross-platform version by jwrl 4 May 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -214,8 +219,6 @@ float centreY
 #define RETSCALE   60.5          // (SAMPLES + 1) / 2
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

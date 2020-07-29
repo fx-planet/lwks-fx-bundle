@@ -1,17 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction2_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction2.mp4
 
 /**
-This is based on an earlier effect Abstraction #1.  It uses the same pattern but applies
-the first half symmetrically into and out of the effect.
+ This is based on an earlier effect Abstraction #1.  It uses the same pattern but applies
+ the first half symmetrically into and out of the effect.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Abstraction2_Dx.fx
+//
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Added "Notes" section to _LwksEffectInfo.
@@ -128,4 +133,3 @@ technique Dx_Abstraction2_1
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

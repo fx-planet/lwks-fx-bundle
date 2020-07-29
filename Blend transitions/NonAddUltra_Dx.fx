@@ -1,38 +1,43 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2017-05-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_NonAddUltra_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/NonAddUltraDx.mp4
 
 /**
-This is an extreme non-additive mix.  The incoming video is faded in to full value at
-the 50% point, at which stage the outgoing video starts to fade out.  The two images
-are mixed by giving the source with the maximum level priority.
+ This is an extreme non-additive mix.  The incoming video is faded in to full value at
+ the 50% point, at which stage the outgoing video starts to fade out.  The two images
+ are mixed by giving the source with the maximum level priority.
 
-The result is extreme, but can be interesting.
+ The result is extreme, but can be interesting.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect NonAddUltra_Dx.fx
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Version history:
 //
-// Update August 10 2017 by jwrl.
-// Renamed from NonAddUltraDx.fx for consistency across the dissolve range.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes".
 // Changed "Fgd" input to "Fg" and "Bgd" input to "Bg".
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from NonAddUltraDx.fx for consistency across the dissolve range.
+//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

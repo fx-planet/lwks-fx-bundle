@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-02-16
+// @Released 2020-07-29
 // @Author schrauber
 // @Created 2017-11-13
 // @see https://www.lwks.com/media/kunena/attachments/6375/SwirlMix_Dx_640.png
@@ -31,25 +31,30 @@
 //  -Progress 0.5  to 0.75 : constant zoom
 //  -Progress 0.75 to 1    : Positive zoom (geyser), oscillating zoom, subside
 //  -Progress 0.78 to 0.95 : Mixing the inputs, starting in the center
-// 
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+//
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
+//
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 5 December 2017 by jwrl.
 // Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
 // those platforms.  It will now function correctly when used with Lightworks versions
 // 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
 // with transitions on those platforms.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// 
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -295,7 +300,7 @@ float4 ps_zoom (float2 uvFg : TEXCOORD1, float2 uvBg : TEXCOORD2, uniform int te
    float distortion2;  // Compensation distortion to avoid edge distortion.
 
    #define FREQ              20.0                             // Frequency of the zoom oscillation
-   #define PHASE              0.5                             // 90 ° phase shift of the zoom oscillation. Valid from progress 0.75
+   #define PHASE              0.5                             // 90 Â° phase shift of the zoom oscillation. Valid from progress 0.75
    #define AREA            100.0                              // Area of the regional zoom
    #define ZOOMPOWER        12.0
 
@@ -371,4 +376,3 @@ technique main
    pass P_5 { PixelShader = compile PROFILE ps_mix (); }
 
 }
-

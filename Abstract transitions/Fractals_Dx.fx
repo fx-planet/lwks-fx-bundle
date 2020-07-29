@@ -1,37 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
-// @OriginalAuthor "Robert Schütze"
+// @Author "Robert SchÃ¼tze"
 // @Created 2016-05-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Fractals_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FractalDissolve.mp4
 
 /**
-This effect uses a fractal-like pattern to transition between two sources.
+ This effect uses a fractal-like pattern to transition between two sources.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Fractals_Dx.fx
 //
 // The fractal component is a conversion of GLSL sandbox effect #308888 created by Robert
-// Schütze (trirop) 07.12.2015.
+// SchÃ¼tze (trirop) 07.12.2015.
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from FractalDiss.fx for consistency across the dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
+// Softened transition in and out.
+// Improved fractal clipping so that it establishes sooner.
 //
 // Modified 23 December 2018 jwrl.
 // Added "Notes" section to _LwksEffectInfo.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from FractalDiss.fx for consistency across the dissolve range.
+//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,8 +66,8 @@ texture FracOut : RenderColorTarget;
 sampler s_Foreground = sampler_state
 {
    Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -69,8 +76,8 @@ sampler s_Foreground = sampler_state
 sampler s_Background = sampler_state
 {
    Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -79,8 +86,8 @@ sampler s_Background = sampler_state
 sampler s_Fractals = sampler_state
 {
    Texture   = <FracOut>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -132,43 +139,46 @@ float Feather
 //-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
-float _Progress;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_fractal (float2 xy : TEXCOORD1) : COLOR
+float4 ps_fractal (float2 uv : TEXCOORD0) : COLOR
 {
-   float speed = _Progress * Rate;
-   float3 fractal = float3 (xy.x / _OutputAspectRatio, xy.y, fractalOffset);
+   float3 offset  = float3 (1.0.xx, Amount * Rate * 0.5);
+   float3 fractal = float3 (uv.x / _OutputAspectRatio, uv.y, fractalOffset);
 
    for (int i = 0; i < 75; i++) {
-      fractal.xzy = float3 (1.3, 0.999, 0.7) * (abs ((abs (fractal) / dot (fractal, fractal) - float3 (1.0, 1.0, speed * 0.5))));
+      fractal.xzy = float3 (1.3, 0.999, 0.7) * (abs ((abs (fractal) / dot (fractal, fractal) - offset)));
    }
 
-   return float4 (fractal, 1.0);
+   return float4 (saturate (fractal), 1.0);
 }
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (s_Foreground, xy);
-   float4 Bgd = tex2D (s_Background, xy);
-   float4 retval = tex2D (s_Fractals, xy);
+   float amt_in   = min (1.0, Amount * 20.0);
+   float amt_body = (Amount * 0.5) + 0.5;
+   float amt_out  = max (0.0, (Amount * 20.0) - 19.0);
+
+   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 Bgd = tex2D (s_Background, uv);
+   float4 retval = tex2D (s_Fractals, uv);
 
    float fractal = max (retval.g, max (retval.r, retval.b));
    float bdWidth = Border * 0.1;
-   float FthrRng = Amount + Feather;
+   float FthrRng = amt_body + Feather;
 
    if (fractal <= FthrRng) {
-      if (fractal > (Amount - bdWidth)) { retval = lerp (Bgd, retval, (fractal - Amount) / Feather); }
+      if (fractal > (amt_body - bdWidth)) { retval = lerp (Bgd, retval, (fractal - amt_body) / Feather); }
       else retval = Bgd;
    }
 
    if (fractal > FthrRng) { retval = Fgd; }
-   else if (fractal > (Amount + bdWidth)) { retval = lerp (retval, Fgd, (fractal - Amount) / Feather); }
+   else if (fractal > (amt_body + bdWidth)) { retval = lerp (retval, Fgd, (fractal - amt_body) / Feather); }
 
-   return retval;
+   return lerp (lerp (Fgd, retval, amt_in), Bgd, amt_out);
 }
 
 //-----------------------------------------------------------------------------------------//

@@ -1,46 +1,51 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2016-02-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Granular_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/GranularDissolve.mp4
 
 /**
-This effect was created to provide a granular noise driven dissolve.  It is fully
-cross-platform compatible.  The noise component is based on work by users khaver and
-windsturm.  The radial gradient generator is from an effect created by Editshare.
+ This effect was created to provide a granular noise driven dissolve.  It is fully
+ cross-platform compatible.  The noise component is based on work by users khaver and
+ windsturm.  The radial gradient generator is from an effect created by Editshare.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Granular_Dx.fx
 //
-// Modified February 10 2016 by jwrl - altered transition linearity.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Update August 10 2017 by jwrl - renamed from Gran_mix.fx for consistency across the
-// dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 2018-07-09 jwrl.
-// Removed dependence on pixel size.  It makes the bug fix of 2017-02-18 redundant, so
-// that has been removed also.
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 2018-07-09 jwrl.
+// Removed dependence on pixel size.  It makes the bug fix of 2017-02-17 redundant, so
+// that has been removed also.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl - renamed from Gran_mix.fx for consistency across the
+// dissolve range.
+//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+//
+// Modified February 10 2016 by jwrl - altered transition linearity.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

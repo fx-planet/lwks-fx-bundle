@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour_640.png
@@ -15,12 +15,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Colour_Adx.fx
 //
-// Modified jwrl 2018-12-23
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-29 jwrl:
+// Rolled unfolded effects into transition position.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,7 +44,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Blend : RenderColorTarget;
+texture Key : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -48,7 +53,7 @@ texture Blend : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Blend = sampler_state { Texture = <Blend>; };
+sampler s_Key = sampler_state { Texture = <Key>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -66,7 +71,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float cAmount
@@ -125,11 +130,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -168,39 +168,33 @@ float4 ps_colour (float2 uv : TEXCOORD0) : COLOR
    return lerp (topRow, botRow, uv.y);
 }
 
-float4 ps_main_I (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_F (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Bgnd, Fgnd, gradient = tex2D (s_Blend, xy0);
+   float4 gradient = tex2D (s_Key, xy0);
 
    if (gradSetup) return gradient;
 
-   if (Ftype) {
-      Bgnd = tex2D (s_Foreground, xy1);
-      Fgnd = tex2D (s_Background, xy2);
-   }
-   else {
-      Fgnd = tex2D (s_Foreground, xy1);
-      Bgnd = tex2D (s_Background, xy2);
-   }
+   float4 Fgnd = tex2D (s_Foreground, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
 
-   float kDiff = distance (Fgnd.g, Bgnd.g);
+   float kDiff = distance (Bgnd.g, Fgnd.g);
 
-   kDiff = max (kDiff, distance (Fgnd.r, Bgnd.r));
-   kDiff = max (kDiff, distance (Fgnd.b, Bgnd.b));
-   Fgnd.a = smoothstep (0.0, KeyGain, kDiff);
+   kDiff = max (kDiff, distance (Bgnd.r, Fgnd.r));
+   kDiff = max (kDiff, distance (Bgnd.b, Fgnd.b));
+   Bgnd.a = smoothstep (0.0, KeyGain, kDiff);
 
    float level = min (1.0, cAmount * 2.0);
    float c_Amt = cos (saturate (level * Amount) * HALF_PI);
 
    level = sin (Amount * HALF_PI);
-   Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
+   Bgnd.rgb = lerp (Bgnd.rgb, gradient.rgb, c_Amt);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * level);
+   return lerp (Fgnd, Bgnd, Bgnd.a * level);
 }
 
 float4 ps_main_O (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 gradient = tex2D (s_Blend, xy1);
+   float4 gradient = tex2D (s_Key, xy0);
 
    if (gradSetup) return gradient;
 
@@ -222,26 +216,60 @@ float4 ps_main_O (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : T
    return lerp (Bgnd, Fgnd, Fgnd.a * level);
 }
 
+float4 ps_main_I (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+{
+   float4 gradient = tex2D (s_Key, xy0);
+
+   if (gradSetup) return gradient;
+
+   float4 Fgnd = tex2D (s_Foreground, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
+
+   float kDiff = distance (Fgnd.g, Bgnd.g);
+
+   kDiff = max (kDiff, distance (Fgnd.r, Bgnd.r));
+   kDiff = max (kDiff, distance (Fgnd.b, Bgnd.b));
+   Fgnd.a = smoothstep (0.0, KeyGain, kDiff);
+
+   float level = min (1.0, cAmount * 2.0);
+   float c_Amt = cos (saturate (level * Amount) * HALF_PI);
+
+   level = sin (Amount * HALF_PI);
+   Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * level);
+}
+
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_Colour_I
+technique Colour_Adx_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Blend;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_colour (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
-technique Adx_Colour_O
+technique Colour_Adx_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Blend;"; >
+   < string Script = "RenderColorTarget0 = Key;"; >
    { PixelShader = compile PROFILE ps_colour (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Colour_Adx_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_colour (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

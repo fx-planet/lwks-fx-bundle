@@ -1,30 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2016-12-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Erosion_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Erosion.mp4
 
 /**
-This effect transitions between two video sources using a mixed key.  The result is
-that one image appears to "erode" into the other as if being eaten away by acid.
+ This effect transitions between two video sources using a mixed key.  The result is
+ that one image appears to "erode" into the other as if being eaten away by acid.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Erosion_Dx.fx
+//
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
+//
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
 //
 // Modified 2018-04-19 by jwrl.
 // The creation date is correct:  this was developed in its present form in late 2016,
 // but not released until this date.  The addition of a subcategory and cosmetic changes
 // to match my current formatting and naming practices are the only changes made prior
 // to this release.  I have no idea why I originally chose to withold it.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -91,4 +96,3 @@ technique Erosion
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

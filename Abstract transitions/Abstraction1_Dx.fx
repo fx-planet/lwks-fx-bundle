@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction1_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Abstraction1.mp4
 
 /**
-Abstraction #1 uses a pattern that developed from my attempt to create a series of
-radiating or collapsing circles to transition between two sources.  Initially I
-rather unexpectedly produced a simple X wipe and while plugging in different values
-to try and track down the error, stumbled across this.  I liked it so I kept it.
+ Abstraction #1 uses a pattern that developed from my attempt to create a series of
+ radiating or collapsing circles to transition between two sources.  Initially I
+ rather unexpectedly produced a simple X wipe and while plugging in different values
+ to try and track down the error, stumbled across this.  I liked it so I kept it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,6 +18,11 @@ to try and track down the error, stumbled across this.  I liked it so I kept it.
 // I have absolutely no idea how this works.  I tried to set up borders and broke the
 // effect in the process, so I quit while I was ahead.  I'm still trying to get the
 // radiating circles happening, but it will have to be in another effect.
+//
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Added "Notes" section to _LwksEffectInfo.
@@ -173,4 +178,3 @@ technique Dx_Abstraction1_2
    pass P_1
    { PixelShader = compile PROFILE ps_reverse (); }
 }
-

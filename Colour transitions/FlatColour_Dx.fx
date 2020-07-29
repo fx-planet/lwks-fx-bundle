@@ -1,26 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-09-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourFlat_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourFlat.mp4
 
 /**
-This is a modified version of my "Dissolve through colour" but is very much simpler to
-use.  Apply it as you would a dissolve, adjust the percentage of the dissolve that you
-want to be colour and set the colour to what you want.  It defaults to white colour
-with a colour duration of 10% of the total effect duration.
+ This is a modified version of my "Dissolve through colour" but is very much simpler to
+ use.  Apply it as you would a dissolve, adjust the percentage of the dissolve that you
+ want to be colour and set the colour to what you want.  It defaults to white colour
+ with a colour duration of 10% of the total effect duration.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FlatColour_Dx.fx
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

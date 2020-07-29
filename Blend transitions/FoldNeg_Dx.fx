@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-03-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_FoldNeg_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DX_FoldNeg.mp4
 
 /**
-This dissolves through a negative mix of the two inputs.  The result is a sort of ghostly
-double transition.
+ This dissolves through a negative mix of the two inputs.  The result is a sort of ghostly
+ double transition.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FoldNeg_Dx.fx
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

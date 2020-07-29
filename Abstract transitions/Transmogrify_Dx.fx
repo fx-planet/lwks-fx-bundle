@@ -1,40 +1,45 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2016-05-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Transmogrify_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify.mp4
 
 /**
-This is is a truly bizarre transition.  Sort of a stripy blurry dissolve, I guess.
+ This is is a truly bizarre transition.  Sort of a stripy blurry dissolve, I guess.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Transmogrify_Dx.fx
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Swizzled two float variables to float2.  This addresses the behavioural differences
-// between D3D and Cg compilers.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from Transmogrify.fx for consistency across the dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 2018-07-09 jwrl:
-// Removed dependence on pixel size.  The bug fix of 2017-02-26 is now redundant.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Added "Notes" section to _LwksEffectInfo.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 2018-07-09 jwrl:
+// Removed dependence on pixel size.  The bug fix of 2017-02-26 is now redundant.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from Transmogrify.fx for consistency across the dissolve range.
+//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Swizzled two float variables to float2.  This addresses the behavioural differences
+// between D3D and Cg compilers.
+//
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

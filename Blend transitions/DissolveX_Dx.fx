@@ -1,39 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author khaver
 // @Created 2014-08-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/dissolveX_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DissolveX.mp4
 
 /**
-This expanded dissolve allows optional blend modes to be applied during the transition
-by adding a drop down menu to select different dissolve methods.  A timing slider has
-also been added that adjusts where the 50% mix point happens in the dissolve (slider
-to the left and the 50% mix point happens before the mid-point of the dissolve, slider
-to the right and it happens after the mid-point), a layer swap option (some dissolve
-methods are affected by which layer is on top or bottom), and a bypass option.
+ This expanded dissolve allows optional blend modes to be applied during the transition
+ by adding a drop down menu to select different dissolve methods.  A timing slider has
+ also been added that adjusts where the 50% mix point happens in the dissolve (slider
+ to the left and the 50% mix point happens before the mid-point of the dissolve, slider
+ to the right and it happens after the mid-point), a layer swap option (some dissolve
+ methods are affected by which layer is on top or bottom), and a bypass option.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DissolveX_Dx.fx
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their default states between Windows
-// and Linux/Mac compilers.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Added "Notes".
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 4 2017 by jwrl.
+// All samplers fully defined to avoid differences in their default states between Windows
+// and Linux/Mac compilers.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

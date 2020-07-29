@@ -1,35 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2017-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Sizzler_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/SizzlerDx.mp4
 
 /**
-This effect dissolves through a complex colour translation while performing what is
-essentially a non-additive mix.
+ This effect dissolves through a complex colour translation while performing what is
+ essentially a non-additive mix.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ColourSizzler_Dx.fx
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Version history:
 //
-// Update August 10 2017 by jwrl.
-// Renamed from SizzlerDx.fx for consistency across the dissolve range.
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 // Changed "Fgd" input to "Fg" and "Bgd" input to "Bg".
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from SizzlerDx.fx for consistency across the dissolve range.
+//
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,8 +60,8 @@ texture Bg;
 sampler s_Foreground = sampler_state
 {
    Texture =   <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -65,8 +70,8 @@ sampler s_Foreground = sampler_state
 sampler s_Background = sampler_state
 {
    Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

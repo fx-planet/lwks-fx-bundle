@@ -1,33 +1,40 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2018-11-10
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Sizzler_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Sizzler.mp4
+// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour.mp4
 
 /**
- This effect dissolves a delta key in or out through a complex colour translation while
- performing what is essentially a non-additive mix.
+ This effect fades a delta key in or out through a user-selected colour gradient.  The
+ gradient can be a single flat colour, a vertical gradient, a horizontal gradient or a
+ four corner gradient.  The colour is at its maximum strength half way through the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect ColourSizzler_Adx.fx
+// Lightworks user effect Colour_Adx.fx
 //
-// Modified jwrl 2018-12-23
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-29 jwrl:
+// Rolled unfolded effects into transition position.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Colour sizzler (delta)";
+   string Description = "Dissolve thru colour (delta)";
    string Category    = "Mix";
    string SubCategory = "Colour transitions";
-   string Notes       = "Separates foreground from background then transitions in or out using a complex colour translation";
+   string Notes       = "Separates foreground from background and fades it in or out through a colour gradient";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -37,7 +44,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Key : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -46,15 +53,7 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
-{
-   Texture   = <Title>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Key = sampler_state { Texture = <Key>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -72,22 +71,57 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
-float Saturation
+float cAmount
 <
-   string Description = "Saturation";
+   string Group = "Colour setup";
+   string Description = "Colour mix";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
 
-float HueCycle
+bool gradSetup
 <
-   string Description = "Cycle rate";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+   string Group = "Colour setup";
+   string Description = "Show gradient full screen";
+> = false;
+
+int colourGrad
+<
+   string Group = "Colour setup";
+   string Description = "Colour gradient";
+   string Enum = "Top left flat colour,Top to bottom left,Top left to top right,Four way gradient";
+> = 0;
+
+float4 topLeft
+<
+   string Description = "Top Left";
+   string Group = "Colour setup";
+   bool SupportsAlpha = true;
+> = { 0.0, 1.0, 1.0, 1.0 };
+
+float4 topRight
+<
+   string Description = "Top Right";
+   string Group = "Colour setup";
+   bool SupportsAlpha = true;
+> = { 1.0, 1.0, 0.0, 1.0 };
+
+float4 botLeft
+<
+   string Description = "Bottom Left";
+   string Group = "Colour setup";
+   bool SupportsAlpha = true;
+> = { 0.0, 0.0, 1.0, 1.0 };
+
+float4 botRight
+<
+   string Description = "Bottom Right";
+   string Group = "Colour setup";
+   bool SupportsAlpha = true;
+> = { 1.0, 0.0, 1.0, 1.0 };
 
 float KeyGain
 <
@@ -96,137 +130,146 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define SQRT_3  1.7320508076
-#define TWO_PI  6.2831853072
+#define HALF_PI 1.5707963268
+
+#define EMPTY   (0.0).xxxx
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_tex2D (sampler s_Sampler, float2 uv)
+{
+   if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
+
+   return tex2D (s_Sampler, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_colour (float2 uv : TEXCOORD0) : COLOR
 {
-   float3 Fgd = tex2D (s_Foreground, xy1).rgb;
-   float3 Bgd = tex2D (s_Background, xy2).rgb;
+   if (colourGrad == 0) return topLeft;
 
-   float kDiff = distance (Bgd.g, Fgd.g);
+   if (colourGrad == 1) return lerp (topLeft, botLeft, uv.y);
 
-   kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
-   kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
+   float4 topRow = lerp (topLeft, topRight, uv.x);
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   if (colourGrad == 2) return topRow;
+
+   float4 botRow = lerp (botLeft, botRight, uv.x);
+
+   return lerp (topRow, botRow, uv.y);
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_F (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float3 Fgd = tex2D (s_Foreground, xy1).rgb;
-   float3 Bgd = tex2D (s_Background, xy2).rgb;
+   float4 gradient = tex2D (s_Key, xy0);
 
-   float kDiff = distance (Bgd.g, Fgd.g);
+   if (gradSetup) return gradient;
 
-   kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
-   kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
-
-   return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
-}
-
-float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
-{
-   float amount = 1.0 - Amount;
-
-   float4 Fgnd = tex2D (s_Title, xy1);
-   float4 Bgnd = Ftype ? tex2D (s_Foreground, xy2) : tex2D (s_Background, xy2);
-   float4 Svid = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 Temp = max (Svid * min (1.0, 2.0 * (1.0 - amount)), Bgnd * min (1.0, 2.0 * amount));
-
-   Svid = max (Svid, Bgnd);
-
-   float Luma  = 0.1 + (0.5 * Svid.x);
-   float Satn  = Svid.y * Saturation;
-   float Hue   = frac (Svid.z + (amount * HueCycle));
-   float HueX3 = 3.0 * Hue;
-
-   Hue = SQRT_3 * tan ((Hue - ((floor (HueX3) + 0.5) / 3.0)) * TWO_PI);
-
-   float Red   = (1.0 - Satn) * Luma;
-   float Blue  = ((3.0 + Hue) * Luma - (1.0 + Hue) * Red) / 2.0;
-   float Green = 3.0 * Luma - Blue - Red;
-
-   Svid.rgb = (HueX3 < 1.0) ? float3 (Green, Blue, Red)
-            : (HueX3 < 2.0) ? float3 (Red, Green, Blue)
-                            : float3 (Blue, Red, Green);
-
-   float mixval = abs (2.0 * (0.5 - amount));
-
-   mixval *= mixval;
-   Temp    = lerp (Svid, Temp, mixval);
-   Fgnd.a  = Fgnd.a > 0.0 ? lerp (1.0, Fgnd.a, amount) : 0.0;
-
-   return lerp (Bgnd, Temp, Fgnd.a);
-}
-
-float4 ps_main_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
-{
-   float4 Fgnd = tex2D (s_Title, xy1);
+   float4 Fgnd = tex2D (s_Foreground, xy1);
    float4 Bgnd = tex2D (s_Background, xy2);
-   float4 Svid = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 Temp = max (Svid * min (1.0, 2.0 * (1.0 - Amount)), Bgnd * min (1.0, 2.0 * Amount));
 
-   Svid = max (Svid, Bgnd);
+   float kDiff = distance (Bgnd.g, Fgnd.g);
 
-   float Luma  = 0.1 + (0.5 * Svid.x);
-   float Satn  = Svid.y * Saturation;
-   float Hue   = frac (Svid.z + (Amount * HueCycle));
-   float HueX3 = 3.0 * Hue;
+   kDiff = max (kDiff, distance (Bgnd.r, Fgnd.r));
+   kDiff = max (kDiff, distance (Bgnd.b, Fgnd.b));
+   Bgnd.a = smoothstep (0.0, KeyGain, kDiff);
 
-   Hue = SQRT_3 * tan ((Hue - ((floor (HueX3) + 0.5) / 3.0)) * TWO_PI);
+   float level = min (1.0, cAmount * 2.0);
+   float c_Amt = cos (saturate (level * Amount) * HALF_PI);
 
-   float Red   = (1.0 - Satn) * Luma;
-   float Blue  = ((3.0 + Hue) * Luma - (1.0 + Hue) * Red) / 2.0;
-   float Green = 3.0 * Luma - Blue - Red;
+   level = sin (Amount * HALF_PI);
+   Bgnd.rgb = lerp (Bgnd.rgb, gradient.rgb, c_Amt);
 
-   Svid.rgb = (HueX3 < 1.0) ? float3 (Green, Blue, Red)
-            : (HueX3 < 2.0) ? float3 (Red, Green, Blue)
-                            : float3 (Blue, Red, Green);
+   return lerp (Fgnd, Bgnd, Bgnd.a * level);
+}
 
-   float mixval = abs (2.0 * (0.5 - Amount));
+float4 ps_main_O (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+{
+   float4 gradient = tex2D (s_Key, xy0);
 
-   mixval *= mixval;
-   Temp    = lerp (Svid, Temp, mixval);
-   Fgnd.a  = Fgnd.a > 0.0 ? lerp (1.0, Fgnd.a, Amount) : 0.0;
+   if (gradSetup) return gradient;
 
-   return lerp (Bgnd, Temp, Fgnd.a);
+   float4 Fgnd = tex2D (s_Foreground, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
+
+   float kDiff = distance (Bgnd.g, Fgnd.g);
+
+   kDiff = max (kDiff, distance (Bgnd.r, Fgnd.r));
+   kDiff = max (kDiff, distance (Bgnd.b, Fgnd.b));
+   Fgnd.a = smoothstep (0.0, KeyGain, kDiff);
+
+   float level = min (1.0, cAmount * 2.0);
+   float c_Amt = sin (saturate (level * Amount) * HALF_PI);
+
+   level = cos (Amount * HALF_PI);
+   Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * level);
+}
+
+float4 ps_main_I (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+{
+   float4 gradient = tex2D (s_Key, xy0);
+
+   if (gradSetup) return gradient;
+
+   float4 Fgnd = tex2D (s_Foreground, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
+
+   float kDiff = distance (Fgnd.g, Bgnd.g);
+
+   kDiff = max (kDiff, distance (Fgnd.r, Bgnd.r));
+   kDiff = max (kDiff, distance (Fgnd.b, Bgnd.b));
+   Fgnd.a = smoothstep (0.0, KeyGain, kDiff);
+
+   float level = min (1.0, cAmount * 2.0);
+   float c_Amt = cos (saturate (level * Amount) * HALF_PI);
+
+   level = sin (Amount * HALF_PI);
+   Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * level);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_ColourSizzler_I
+technique Colour_Adx_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_colour (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
-technique Adx_ColourSizzler_O
+technique Colour_Adx_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_colour (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Colour_Adx_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Key;"; >
+   { PixelShader = compile PROFILE ps_colour (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

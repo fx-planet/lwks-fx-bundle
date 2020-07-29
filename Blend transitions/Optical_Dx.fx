@@ -1,39 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-29
 // @Author jwrl
 // @Created 2016-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Optical_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/OpticalDissolve.mp4
 
 /**
-This is an attempt to simulate the look of the classic film optical dissolve.  To do this
-it applies a non-linear curve to the transition, and at the centre mixes in a stretched
-blend with a touch of black crush.
+ This is an attempt to simulate the look of the classic film optical dissolve.  To do this
+ it applies a non-linear curve to the transition, and at the centre mixes in a stretched
+ blend with a touch of black crush.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Optical_Dx.fx
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
+//
+// Modified 2020-07-29 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from OpticalDx.fx for consistency across the dissolve range.
 //
 // Cross platform compatibility check 5 August 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
 // Explicitly defined float4 variable to address the differing behaviours of the D3D
 // and Cg compilers.
 //
-// Update August 10 2017 by jwrl.
-// Renamed from OpticalDx.fx for consistency across the dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,38 +1,43 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2017-09-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_xPinch_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_xPinch.mp4
 
 /**
-This effect pinches the outgoing video to a user-defined point to reveal the incoming
-shot, while zooming out of the pinched image.  It can also reverse the process to bring
-in the incoming video.
+ This effect pinches the outgoing video to a user-defined point to reveal the incoming
+ shot, while zooming out of the pinched image.  It can also reverse the process to bring
+ in the incoming video.
 
-The direction swap has been deliberately made asymmetric.  Subjectively it looked better
-to have the pinch established before the zoom out started, but to run the zoom in through
-the entire un-pinch process.  Trig functions are used on the effect progress to make the
-acceleration smoother.
+ The direction swap has been deliberately made asymmetric.  Subjectively it looked better
+ to have the pinch established before the zoom out started, but to run the zoom in through
+ the entire un-pinch process.  Trig functions are used on the effect progress to make the
+ acceleration smoother.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect xPinch_Dx.fx
 //
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.
+// Version history:
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 2020-07-30 jwrl.
+// Reformatted the effect header.
+//
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

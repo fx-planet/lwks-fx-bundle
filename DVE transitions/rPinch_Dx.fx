@@ -1,29 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2017-09-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_rPinch_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_xPinch.mp4
 
 /**
-This effect pinches the outgoing video to a user-defined point to reveal the incoming
-shot.  It can also reverse the process to bring in the incoming video.  Unlike "Pinch",
-this version compresses to the diagonal radii of the images.
+ This effect pinches the outgoing video to a user-defined point to reveal the incoming
+ shot.  It can also reverse the process to bring in the incoming video.  Unlike "Pinch",
+ this version compresses to the diagonal radii of the images.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect rPinch_Dx.fx
 //
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.
+// Version history:
+//
+// Modified 2020-07-30 jwrl.
+// Reformatted the effect header.
+//
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 9 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

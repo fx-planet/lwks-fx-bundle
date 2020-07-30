@@ -1,20 +1,25 @@
 // @Maintainer jwrl
-// @Released 2018-12-31
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2018-12-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/FadeUpDown_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FadeUpDown.mp4
 
 /**
-This simple effect fades any video to which it's applied up from black.  It isn't a
-standard dissolve, since it requires one input only.  It must be applied in the same
-way as a title effect, i.e., by marking the region that the fade out is to occupy.
+ This simple effect fades any video to which it's applied up from black.  It isn't a
+ standard dissolve, since it requires one input only.  It must be applied in the same
+ way as a title effect, i.e., by marking the region that the fade out is to occupy.
 
-There is companion effect called FadeDown.fx which does the opposite.
+ There is companion effect called FadeDown.fx which does the opposite.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FadeUp.fx
+//
+// Version history:
+//
+// Modified 2020-07-30 jwrl.
+// Reformatted the effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -70,4 +75,3 @@ technique FadeUp
 {
    pass P_1 { PixelShader = compile PROFILE ps_main (); }
 }
-

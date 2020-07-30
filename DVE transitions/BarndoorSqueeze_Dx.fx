@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2017-08-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_SplitSqueeze_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_SplitSqueeze.mp4
 
 /**
-This is based on the barn door split effect, modified to squeeze or expand the divided
-section of the frame.
+ This is based on the barn door split effect, modified to squeeze or expand the divided
+ section of the frame.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BarndoorSqueeze_Dx.fx
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Modified 2020-07-30 jwrl.
+// Reformatted the effect header.
+//
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

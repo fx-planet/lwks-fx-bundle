@@ -1,17 +1,22 @@
 // @Maintainer jwrl
-// @Released 2019-01-01
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2019-01-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/OpticalFade_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/OpticalFade.mp4
 
 /**
-This simulates the look of the classic film optical fade to black.  It applies a gamma shift
-and a degree of black crush to the transition the way early optical printers did.
+ This simulates the look of the classic film optical fade to black.  It applies a gamma shift
+ and a degree of black crush to the transition the way early optical printers did.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect OpticalFadeDown.fx
+//
+// Version history:
+//
+// Modified 2020-07-30 jwrl.
+// Reformatted the effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -77,4 +82,3 @@ technique OpticalFadeDown
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

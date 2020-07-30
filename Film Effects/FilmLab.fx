@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-27
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2020-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmLab_640.png
@@ -45,7 +45,9 @@
 //
 // Version history:
 //
-// Created 2020-07-28 jwrl.
+// Modified 2020-07-30 jwrl.
+// Rolled both HSL functions into in-line code in shader.
+// Added range limiting to the hue.  Theoretically an issue, it's probably unnecessary.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -130,10 +132,10 @@ float Bypass
    float MaxVal = 1.0;
 > = 0.0;
 
-float Aging
+float Ageing
 <
    string Group = "Lab operations";
-   string Description = "Film aging";
+   string Description = "Film ageing";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.3;
@@ -210,55 +212,6 @@ float BlueGamma
 #define PROFILE ps_3_0
 #endif
 
-#define LUMA    float3(0.2989,  0.5866, 0.1145)
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_rgb2hsv (float4 rgb)
-{
-   float Cmin  = min (rgb.r, min (rgb.g, rgb.b));
-   float Cmax  = max (rgb.r, max (rgb.g, rgb.b));
-   float delta = Cmax - Cmin;
-
-   float4 hsv  = float3 (0.0, Cmax, rgb.a).xxyz;
-
-   if (Cmax != 0.0) {
-      hsv.x = (rgb.r == Cmax) ? (rgb.g - rgb.b) / delta
-            : (rgb.g == Cmax) ? 2.0 + (rgb.b - rgb.r) / delta
-                              : 4.0 + (rgb.r - rgb.g) / delta;
-      hsv.x = frac (hsv.x / 6.0);
-      hsv.y = 1.0 - (Cmin / Cmax);
-   }
-
-   return hsv;
-}
-
-float4 fn_hsv2rgb (float4 hsv)
-{
-   hsv.yz = min (1.0.xx, hsv.yz);
-
-   if (hsv.y == 0.0) return hsv.zzzw;
-
-   hsv.x *= 6.0;
-
-   int i = (int) floor (hsv.x);
-
-   float f = hsv.x - (float) i;
-   float p = hsv.z * (1.0 - hsv.y);
-   float q = hsv.z * (1.0 - hsv.y * f);
-   float r = hsv.z * (1.0 - hsv.y * (1.0 - f));
-
-   if (i == 0) return float4 (hsv.z, r, p, hsv.w);
-   if (i == 1) return float4 (q, hsv.z, p, hsv.w);
-   if (i == 2) return float4 (p, hsv.z, r, hsv.w);
-   if (i == 3) return float4 (p, q, hsv.zw);
-   if (i == 4) return float4 (r, p, hsv.zw);
-
-   return float4 (hsv.z, p, q, hsv.w);
-}
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
@@ -267,16 +220,16 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float lin = (Linearity * 1.5) + 1.0;
 
-   float4 Inp = saturate (tex2D (s_Input, uv)); // Clamp RGB to limit superwhites in floating point
+   float4 Inp = saturate (tex2D (s_Input, uv)); // Clamp RGB to prevent superwhites
    float4 lab = lerp (0.01.xxxx, pow (Inp, lin), Contrast);
 
    float3 print = pow (lab.rgb, 1.0 / LumaGamma);
    float3 grade = dot ((1.0 / 3.0).xxx, lab.rgb).xxx;
-   float3 curve = float3 (RedCurve, GreenCurve, BlueCurve);
-   float3 bath  = 1.0.xxx / (1.0.xxx + exp (curve / 2.0));
+   float3 flash = float3 (RedCurve, GreenCurve, BlueCurve);
+   float3 light = 1.0.xxx / (1.0.xxx + exp (flash / 2.0));
 
    grade = 0.5.xxx - grade;
-   grade = (1.0.xxx / (1.0.xxx + exp (curve * grade)) - bath) / (1.0.xxx - (2.0 * bath));
+   grade = (1.0.xxx / (1.0.xxx + exp (flash * grade)) - light) / (1.0.xxx - (2.0 * light));
    grade = pow (grade, 1.0 / Gamma);
    grade = lerp (grade, 1.0.xxx - grade, Bypass);
 
@@ -292,25 +245,52 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
                            : grade.y * (sqrt (print.g) - print.g) + print.g;
    lab.b = (grade.z < 0.0) ? print.b * (grade.z * (1.0 - print.b) + 1.0)
                            : grade.z * (sqrt (print.b) - print.b) + print.b;
-
-   curve.x = LumaCurve;
-   curve.y = 1.0 / (1.0 + exp (LumaCurve / 2.0));
-   curve.z  = 1.0 - (2.0 * curve.y);
+   flash.x = LumaCurve;
+   flash.y = 1.0 / (1.0 + exp (LumaCurve / 2.0));
+   flash.z  = 1.0 - (2.0 * flash.y);
 
    grade   = 0.5.xxx - lab.rgb;
-   lab.rgb = (1.0.xxx / (1.0.xxx + exp (curve.x * grade)) - curve.yyy) / curve.z;
-   lab.gb  = lerp (lab.gb, lab.bg, Aging * 0.495);
+   lab.rgb = (1.0.xxx / (1.0.xxx + exp (flash.x * grade)) - flash.yyy) / flash.z;
+   lab.gb  = lerp (lab.gb, lab.bg, Ageing * 0.495);
 
    float adjust = dot (2.0.xxx / 3.0, lab.rgb) - 1.0;
 
    lab = (adjust < 0.0) ? lab * (adjust * (1.0.xxxx - lab) + 1.0.xxxx)
                         : adjust * (sqrt (lab) - lab) + lab;
 
-   grade   = fn_rgb2hsv (lab).rgb;
-   grade.y = grade.y * Saturation;
-   lab     = fn_hsv2rgb (float4 (grade, Inp.a));
+   float Cmin = min (lab.r, min (lab.g, lab.b));
+   float Cmax = max (lab.r, max (lab.g, lab.b));
 
-   lab.rgb = pow (lab.rgb, 1.0 / lin);
+   grade = float3 (0.0.xx, saturate (Cmax));
+
+   if (Cmax > 0.0) {
+      grade.x = (lab.r == Cmax) ? (lab.g - lab.b) / (Cmax - Cmin)
+            : (lab.g == Cmax) ? 2.0 + (lab.b - lab.r) / (Cmax - Cmin)
+                              : 4.0 + (lab.r - lab.g) / (Cmax - Cmin);
+      grade.x = frac ((grade.x / 6.0) + 1.0);
+      grade.y = saturate ((1.0 - (Cmin / Cmax)) * Saturation);
+   }
+
+   if (grade.y == 0.0) { print = grade.zzz; }
+   else {
+      grade.x *= 6.0;
+
+      int i = (int) floor (grade.x);
+
+      float f = grade.x - (float) i;
+      float p = grade.z * (1.0 - grade.y);
+      float q = grade.z * (1.0 - grade.y * f);
+      float r = grade.z * (1.0 - grade.y * (1.0 - f));
+
+      if (i == 0) { print = float3 (grade.z, r, p); }
+      else if (i == 1) { print = float3 (q, grade.z, p); }
+      else if (i == 2) { print = float3 (p, grade.z, r); }
+      else if (i == 3) { print = float3 (p, q, grade.z); }
+      else if (i == 4) { print = float3 (r, p, grade.z); }
+      else print = float3 (grade.z, p, q);
+   }
+
+   lab = float4 (pow (print, 1.0 / lin), Inp.a);
 
    return lerp (Inp, lab, Amount);
 }

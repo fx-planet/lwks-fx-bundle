@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_CnrSqueeze_640.png
@@ -13,12 +13,17 @@
 //-----------------------------------------------------------------------------------------//
 // User effect CornerSqueeze_Adx.fx
 //
-// Modified jwrl 2018-1223
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-30 jwrl.
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-1223
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,7 +42,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Super : RenderColorTarget;
 texture Horiz : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
@@ -47,9 +52,9 @@ texture Horiz : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -83,7 +88,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float KeyGain
@@ -92,11 +97,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -119,7 +119,7 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -129,11 +129,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -154,8 +153,8 @@ float4 ps_horiz_I (float2 uv : TEXCOORD1) : COLOR
    float2 xy1 = float2 ((uv.x + Amount - 1.0) / Amount, uv.y);
    float2 xy2 = float2 (uv.x / Amount, uv.y);
 
-   float4 retval = (uv.x > posAmt) ? fn_tex2D (s_Title, xy1)
-                 : (uv.x < negAmt) ? fn_tex2D (s_Title, xy2) : EMPTY;
+   float4 retval = (uv.x > posAmt) ? fn_tex2D (s_Super, xy1)
+                 : (uv.x < negAmt) ? fn_tex2D (s_Super, xy2) : EMPTY;
 
    return retval;
 }
@@ -170,13 +169,13 @@ float4 ps_horiz_O (float2 uv : TEXCOORD1) : COLOR
 
    negAmt *= 0.5;
 
-   float4 retval = (uv.x > posAmt) ? fn_tex2D (s_Title, xy1)
-                 : (uv.x < negAmt) ? fn_tex2D (s_Title, xy2) : EMPTY;
+   float4 retval = (uv.x > posAmt) ? fn_tex2D (s_Super, xy1)
+                 : (uv.x < negAmt) ? fn_tex2D (s_Super, xy2) : EMPTY;
 
    return retval;
 }
 
-float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float negAmt = Amount * 0.5;
    float posAmt = 1.0 - negAmt;
@@ -186,9 +185,8 @@ float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
    float4 Fgd = (uv1.y > posAmt) ? fn_tex2D (s_Horizontal, xy1)
               : (uv1.y < negAmt) ? fn_tex2D (s_Horizontal, xy2) : EMPTY;
-   float4 Bgd = Ftype ? tex2D (s_Foreground, uv2) : tex2D (s_Background, uv2);
 
-   return lerp (Bgd, Fgd, Fgd.a);
+   return lerp (tex2D (s_Foreground, uv2), Fgd, Fgd.a);
 }
 
 float4 ps_main_O (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
@@ -207,29 +205,43 @@ float4 ps_main_O (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return lerp (tex2D (s_Background, uv2), Fgd, Fgd.a);
 }
 
+float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+{
+   float negAmt = Amount * 0.5;
+   float posAmt = 1.0 - negAmt;
+
+   float2 xy1 = float2 (uv1.x, (uv1.y + Amount - 1.0) / Amount);
+   float2 xy2 = float2 (uv1.x, uv1.y / Amount);
+
+   float4 Fgd = (uv1.y > posAmt) ? fn_tex2D (s_Horizontal, xy1)
+              : (uv1.y < negAmt) ? fn_tex2D (s_Horizontal, xy2) : EMPTY;
+
+   return lerp (tex2D (s_Background, uv2), Fgd, Fgd.a);
+}
+
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_CornerSqueeze_I
+technique Adx_CornerSqueeze_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
    < string Script = "RenderColorTarget0 = Horiz;"; >
    { PixelShader = compile PROFILE ps_horiz_I (); }
 
    pass P_3
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique Adx_CornerSqueeze_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    < string Script = "RenderColorTarget0 = Horiz;"; >
@@ -237,4 +249,18 @@ technique Adx_CornerSqueeze_O
 
    pass P_3
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Adx_CornerSqueeze_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   < string Script = "RenderColorTarget0 = Horiz;"; >
+   { PixelShader = compile PROFILE ps_horiz_I (); }
+
+   pass P_3
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

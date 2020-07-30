@@ -1,40 +1,45 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2017-03-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Chinagraph_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Chinagraph.mp4
 
 /**
-This "dissolve" simulates the chinagraph marks used by film editors to mark up optical
-effects on film rushes.
+ This "dissolve" simulates the chinagraph marks used by film editors to mark up optical
+ effects on film rushes.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks effect Chinagraph_Dx.fx
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their default states between Windows
-// and Linux/Mac compilers.
+// Modified 2020-07-30 jwrl.
+// Reformatted the effect header.
 //
-// Update August 10 2017 by jwrl - renamed from Chinagraph.fx for consistency across the
-// dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 2018-07-09 jwrl:
-// Removed reliance on pixel size.
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
+// Modified 2018-07-09 jwrl:
+// Removed reliance on pixel size.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl - renamed from Chinagraph.fx for consistency across the
+// dissolve range.
+//
+// Update August 4 2017 by jwrl.
+// All samplers fully defined to avoid differences in their default states between Windows
+// and Linux/Mac compilers.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

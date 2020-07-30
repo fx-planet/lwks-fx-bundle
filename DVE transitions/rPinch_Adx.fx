@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-30
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_PinchR_640.png
@@ -15,12 +15,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect rPinch_Adx.fx
 //
-// Modified jwrl 2018-12-23
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-30 jwrl.
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-23
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,7 +44,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Super : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -48,9 +53,9 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -74,7 +79,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float KeyGain
@@ -83,11 +88,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -112,7 +112,7 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -122,11 +122,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -139,7 +138,7 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_F (float2 uv : TEXCOORD1) : COLOR
 {
    float progress = (1.0 - Amount) / 2.14;
 
@@ -151,10 +150,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
    xy *= scale;
    xy += MID_PT;
 
-   float4 Fgd = fn_tex2D (s_Title, xy);
+   float4 Fgd = fn_tex2D (s_Super, xy);
 
-   return Ftype ? lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a)
-                : lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
+   return lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
@@ -169,7 +167,24 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
    xy *= scale;
    xy += MID_PT;
 
-   float4 Fgd = fn_tex2D (s_Title, xy);
+   float4 Fgd = fn_tex2D (s_Super, xy);
+
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
+}
+
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+{
+   float progress = (1.0 - Amount) / 2.14;
+
+   float rfrnc = (distance (uv, MID_PT) * 32.0) + 1.0;
+   float scale = lerp (1.0, pow (rfrnc, -1.0) * 24.0, progress);
+
+   float2 xy = (uv - MID_PT) * scale;
+
+   xy *= scale;
+   xy += MID_PT;
+
+   float4 Fgd = fn_tex2D (s_Super, xy);
 
    return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
 }
@@ -178,22 +193,32 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Adx_rPinch_I
+technique Adx_rPinch_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique Adx_rPinch_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Adx_rPinch_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

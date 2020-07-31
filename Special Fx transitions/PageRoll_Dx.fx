@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author khaver
 // @Author Eduardo Castineyra
 // @Created 2018-06-01
@@ -7,7 +7,7 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/PageRoll.mp4
 
 /**
-This is the classic page turn transition.
+ This is the classic page turn transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,12 +24,18 @@ This is the classic page turn transition.
 // used for commercial purposes.
 //
 // note: code comments are from the original author(s).
+//-----------------------------------------------------------------------------------------//
 //
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

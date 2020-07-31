@@ -1,30 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author schrauber
 // @Created 2016-08-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/KaleidoTurbine_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido.mp4
 
 /**
-This effect is based on the user effect Kaleido, converted to function as a transition.
+ This effect is based on the user effect Kaleido, converted to function as a transition.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect KaleidoTurbineMix_Dx.fx
 //
 // From Schrauber revised for transitions.  The transition effect is based on baopao's
-// (and/or nouanda?)  "Kaleido".  In  "Kaleido" - file were the following listed:
+// (and/or nouanda?)  "Kaleido".  In the "Kaleido" file was the following:
 // Quote: ...................
-// Kaleido   http://www.alessandrodallafontana.com/ 
-// based on the pixel shader of: http://pixelshaders.com/ 
-// corrected for HLSL by Lightworks user nouanda
+// Kaleido   http://www.alessandrodallafontana.com/ based on the pixel shader of:
+// http://pixelshaders.com/ corrected for HLSL by Lightworks user nouanda
 // ..........................
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Added creation date.
@@ -32,8 +33,11 @@ This effect is based on the user effect Kaleido, converted to function as a tran
 // Added "Notes" to _LwksEffectInfo.
 // Changed "FG" to "Fg" and "BG" to "Bg".
 //
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -184,6 +188,3 @@ pass MainPass
    }
 
 }
-
-
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Ripples_640.png
@@ -12,12 +12,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dreams_Adx.fx
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,9 +41,9 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
-texture BlurXinput : RenderColorTarget;
-texture BlurYinput : RenderColorTarget;
+texture Super : RenderColorTarget;
+texture BlurX : RenderColorTarget;
+texture BlurY : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -47,9 +52,9 @@ texture BlurYinput : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -58,7 +63,7 @@ sampler s_Title = sampler_state
 };
 
 sampler s_Blur_X = sampler_state {
-   Texture   = <BlurXinput>;
+   Texture   = <BlurX>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -67,7 +72,7 @@ sampler s_Blur_X = sampler_state {
 };
 
 sampler s_Blur_Y = sampler_state {
-   Texture   = <BlurYinput>;
+   Texture   = <BlurY>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -91,7 +96,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 int WaveType
@@ -149,11 +154,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -197,7 +197,7 @@ float2 fn_wave (float2 uv, float2 waves, float levels)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -207,11 +207,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -226,18 +225,20 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_dissolve_I (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 waves = float (Frequency * 200.0).xx;
-   float2 xy = fn_wave (uv, waves, cos (Amount * HALF_PI));
+   float waves = float (Frequency * 200.0);
 
-   return fn_tex2D (s_Title, xy) * Amount;
+   float2 xy = fn_wave (uv, waves.xx, cos (Amount * HALF_PI));
+
+   return tex2D (s_Super, xy) * Amount;
 }
 
 float4 ps_dissolve_O (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 waves = float (Frequency * 200.0).xx;
-   float2 xy = fn_wave (uv, waves, sin (Amount * HALF_PI));
+   float waves = float (Frequency * 200.0);
 
-   return fn_tex2D (s_Title, xy) * (1.0 - Amount);
+   float2 xy = fn_wave (uv, waves.xx, sin (Amount * HALF_PI));
+
+   return tex2D (s_Super, xy) * (1.0 - Amount);
 }
 
 float4 ps_blur_I (float2 uv : TEXCOORD1) : COLOR
@@ -286,18 +287,10 @@ float4 ps_blur_O (float2 uv : TEXCOORD1) : COLOR
    return lerp (Inp, retval, Amount);
 }
 
-float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_F (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd, Fgnd, retval = EMPTY;
-
-   if (Ftype) {
-      Bgnd = tex2D (s_Foreground, uv);
-      Fgnd = tex2D (s_Blur_Y, uv);
-   }
-   else {
-      Bgnd = tex2D (s_Background, uv);
-      Fgnd = tex2D (s_Blur_Y, uv);
-   }
+   float4 Fgnd   = tex2D (s_Blur_Y, uv);
+   float4 retval = EMPTY;
 
    float BlurY = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
                                          : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
@@ -316,12 +309,11 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
       Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
    }
 
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd   = tex2D (s_Background, uv);
    float4 Fgnd   = tex2D (s_Blur_Y, uv);
    float4 retval = EMPTY;
 
@@ -342,39 +334,82 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
       Fgnd = lerp (Fgnd, retval, Amount);
    }
 
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
+}
+
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Fgnd   = tex2D (s_Blur_Y, uv);
+   float4 retval = EMPTY;
+
+   float BlurY = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
+                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
+   if (BlurY > 0.0) {
+      float2 offset = float2 (0.0, BlurY) * OFFSET;
+      float2 blurriness = 0.0.xx;
+
+      for (int i = 0; i < SAMPLE; i++) {
+         retval += tex2D (s_Blur_Y, uv + blurriness);
+         retval += tex2D (s_Blur_Y, uv - blurriness);
+         blurriness += offset;
+      }
+
+      retval /= SAMPLES;
+
+      Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
+   }
+
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Dreams_Adx_I
+technique Dreams_Adx_F
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   pass P_0
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
-   pass P_1 < string Script = "RenderColorTarget0 = BlurXinput;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = BlurX;"; >
    { PixelShader = compile PROFILE ps_dissolve_I (); }
 
-   pass P_2 < string Script = "RenderColorTarget0 = BlurYinput;"; >
+   pass P_2 < string Script = "RenderColorTarget0 = BlurY;"; >
    { PixelShader = compile PROFILE ps_blur_I (); }
 
    pass P_3
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique Dreams_Adx_O
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   pass P_0
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
-   pass P_1 < string Script = "RenderColorTarget0 = BlurXinput;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = BlurX;"; >
    { PixelShader = compile PROFILE ps_dissolve_O (); }
 
-   pass P_2 < string Script = "RenderColorTarget0 = BlurYinput;"; >
+   pass P_2 < string Script = "RenderColorTarget0 = BlurY;"; >
    { PixelShader = compile PROFILE ps_blur_O (); }
 
    pass P_3
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Dreams_Adx_I
+{
+   pass P_0
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_1 < string Script = "RenderColorTarget0 = BlurX;"; >
+   { PixelShader = compile PROFILE ps_dissolve_I (); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = BlurY;"; >
+   { PixelShader = compile PROFILE ps_blur_I (); }
+
+   pass P_3
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

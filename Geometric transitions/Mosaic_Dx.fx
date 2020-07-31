@@ -1,24 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2016-02-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic.mp4
 
 /**
-This obliterates the outgoing image with a mosaic pattern that progressively fills the
-screen to halfway through the effect.  It then removes the mosaic progressively to show
-the incoming image.  The mosaic build and the incoming reveal are both from the darkest
-to the brightest sections of a 50 percent mix of the two images, making the progression
-in and out reasonably logical.
+ This obliterates the outgoing image with a mosaic pattern that progressively fills the
+ screen to halfway through the effect.  It then removes the mosaic progressively to show
+ the incoming image.  The mosaic build and the incoming reveal are both from the darkest
+ to the brightest sections of a 50 percent mix of the two images, making the progression
+ in and out reasonably logical.
 
-The linearity of this effect is highly dependant on the black/white balance between the
-two images used.  If this is important to you, you can adjust it by adding intermediate
-keyframes within the transition.
+ The linearity of this effect is highly dependant on the black/white balance between the
+ two images used.  If this is important to you, you can adjust it by adding intermediate
+ keyframes within the transition.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Mosaic_Dx.fx
+//
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Removed redundant technique producing the mosaic.
+//
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
 //
 // Modified 2018-04-21 by jwrl.
 // This effect was originally developed not long after Dx_Blocks.fx, but never released.
@@ -27,13 +39,6 @@ keyframes within the transition.
 // However I found it while going through my development history, did some code cleanup,
 // changed the mix section to the more efficient one used in Dx_Erosion.fx, and this is
 // the result.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -52,18 +57,23 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Premix : RenderColorTarget;
-
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Outgoing = sampler_state { Texture = <Fg>; };
-sampler s_Incoming = sampler_state { Texture = <Bg>; };
-
-sampler s_Mix = sampler_state
+sampler s_Outgoing = sampler_state
 {
-   Texture   = <Premix>;
+   Texture   = <Fg>;
+   AddressU  = Mirror;
+   AddressV  = Mirror;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
+
+sampler s_Incoming = sampler_state
+{
+   Texture   = <Bg>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -101,15 +111,6 @@ float _OutputAspectRatio;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-// This sets up a 50% mix between the two sources, which will be used in the main shader
-// code to develop the mosaics.  It would be possible to do this entirely within the
-// main shader code, at the cost of increased complexity of the mosaic building.
-
-float4 ps_mix (float2 uv : TEXCOORD1) : COLOR
-{
-   return (tex2D (s_Incoming, uv) + tex2D (s_Outgoing, uv)) * 0.5;
-}
-
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float Tscale  = TileSize * 0.2;                    // Prescale the tile size by 1/5
@@ -133,11 +134,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    range_1 = min (range_1, 1.0);
 
-   // This recovers the 50% mixed mosaic then does a level dependant mix from Fg to
+   // This produces the 50% mixed mosaic then does a level dependant mix from Fg to
    // the mosaic for the first half of the transition, followed by a level dependant
    // mix from the mosaic to Bg for the second half of the transition.
 
-   float4 m_1 = tex2D (s_Mix, xy);
+   float4 m_1 = (tex2D (s_Incoming, xy) + tex2D (s_Outgoing, xy)) * 0.5;
    float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= range_1 ? tex2D (s_Outgoing, uv) : m_1;
 
    return max (m_2.r, max (m_2.g, m_2.b)) >= range_2 ? m_2 : tex2D (s_Incoming, uv);
@@ -150,10 +151,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique mosaic
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Premix;"; > 
-   { PixelShader = compile PROFILE ps_mix (); }
-
-   pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

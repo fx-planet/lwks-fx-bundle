@@ -1,22 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2016-02-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourTile_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourTile.mp4
 
 /**
-This obliterates the outgoing image with a mosaic pattern of highly coloured tiles that
-progressively fill the screen to halfway through the effect.  It then removes the tiles
-progressively to show the incoming image.  The tile build and "un-build" are from the
-brightest to the darkest sections of a dissolve between the two images and back again.
-This makes the linearity of this effect highly dependant on the black/white balance
-between the two images used.  If this is important to you, you can adjust it by adding
-intermediate keyframes within the transition.
+ This obliterates the outgoing image with a mosaic pattern of highly coloured tiles that
+ progressively fill the screen to halfway through the effect.  It then removes the tiles
+ progressively to show the incoming image.  The tile build and "un-build" are from the
+ brightest to the darkest sections of a dissolve between the two images and back again.
+ This makes the linearity of this effect highly dependant on the black/white balance
+ between the two images used.  If this is important to you, you can adjust it by adding
+ intermediate keyframes within the transition.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ColourTile_Dx.fx
+//
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Changed sampling profile generation.
+//
+// Modified 23 December 2018 jwrl.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
 //
 // Modified 2018-04-28 by jwrl.
 // This effect was originally developed not long after Dx_Blocks.fx, but never released.
@@ -24,13 +36,6 @@ intermediate keyframes within the transition.
 // never happy with the result.  There was way too much white for my liking.  However I
 // found it while going through my development history, did some code cleanup, changed
 // the noise generation shader to the one I now use here, and this is the result.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -84,7 +89,9 @@ float TileSize
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
+#define TWO_PI  6.2831853072
 #define HALF_PI 1.5707963268
+
 #define SCALE   float3(1.2, 0.8, 1.0)     // According to my made-up theory this should be
                                           // 0.8, 1.2, 1.0, but that doesn't look as good
 float _OutputAspectRatio;
@@ -154,10 +161,10 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    }
 
    // The reference tile level depending on the luminance value of the gated source is now
-   // calculated, and a range value that ramps from 1.0 to 0.0 to 1.0 again is produced.
+   // calculated, and a range value that curves from 1.0 to 0.0 to 1.0 again is produced.
 
-   float level = (gating.r + gating.g + gating.b + gating.b) * 0.25;
-   float range = abs ((2.0 * Amount) - 1.0);
+   float level = max (gating.r, max (gating.g, gating.b));
+   float range = (cos (Amount * TWO_PI) + 1.0) * 0.5;
 
    // Finally if the gating level exceeds the expected range we show the tile colour.
 
@@ -177,4 +184,3 @@ technique ColourMod
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

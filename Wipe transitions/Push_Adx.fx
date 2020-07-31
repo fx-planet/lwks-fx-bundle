@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Push_640.png
@@ -12,12 +12,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Push_Adx.fx
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,7 +41,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Super : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -45,9 +50,9 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -71,7 +76,7 @@ float Amount
 int Ttype
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 int SetTechnique
@@ -86,11 +91,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -122,7 +122,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if (Ftype && (Ttype == 0)) {
+   if (Ttype == 0) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
@@ -145,16 +145,16 @@ float4 ps_push_right (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy;
 
-   if (Ttype == 0) {
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-      xy = float2 (saturate (uv.x - sin (HALF_PI * Amount) + 1.0), uv.y);
-   }
-   else {
+   if (Ttype == 1) {
       Bgnd = tex2D (s_Background, uv);
       xy = float2 (saturate (uv.x + cos (HALF_PI * Amount) - 1.0), uv.y);
    }
+   else {
+      Bgnd = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+      xy = float2 (saturate (uv.x - sin (HALF_PI * Amount) + 1.0), uv.y);
+   }
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -165,16 +165,16 @@ float4 ps_push_left (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy;
 
-   if (Ttype == 0) {
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-      xy = float2 (saturate (uv.x + sin (HALF_PI * Amount) - 1.0), uv.y);
-   }
-   else {
+   if (Ttype == 1) {
       Bgnd = tex2D (s_Background, uv);
       xy = float2 (saturate (uv.x - cos (HALF_PI * Amount) + 1.0), uv.y);
    }
+   else {
+      Bgnd = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+      xy = float2 (saturate (uv.x + sin (HALF_PI * Amount) - 1.0), uv.y);
+   }
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -185,16 +185,16 @@ float4 ps_push_down (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy;
 
-   if (Ttype == 0) {
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-      xy = float2 (uv.x, saturate (uv.y - sin (HALF_PI * Amount) + 1.0));
-   }
-   else {
+   if (Ttype == 1) {
       Bgnd = tex2D (s_Background, uv);
       xy = float2 (uv.x, saturate (uv.y + cos (HALF_PI * Amount) - 1.0));
    }
+   else {
+      Bgnd = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+      xy = float2 (uv.x, saturate (uv.y - sin (HALF_PI * Amount) + 1.0));
+   }
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -205,16 +205,16 @@ float4 ps_push_up (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy;
 
-   if (Ttype == 0) {
-      Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
-      xy = float2 (uv.x, saturate (uv.y + sin (HALF_PI * Amount) - 1.0));
-   }
-   else {
+   if (Ttype == 1) {
       Bgnd = tex2D (s_Background, uv);
       xy = float2 (uv.x, saturate (uv.y - cos (HALF_PI * Amount) + 1.0));
    }
+   else {
+      Bgnd = (Ttype == 0) ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+      xy = float2 (uv.x, saturate (uv.y + sin (HALF_PI * Amount) - 1.0));
+   }
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -226,7 +226,7 @@ float4 ps_push_up (float2 uv : TEXCOORD1) : COLOR
 technique Push_right
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Super;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
@@ -236,7 +236,7 @@ technique Push_right
 technique Push_down
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Super;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
@@ -246,7 +246,7 @@ technique Push_down
 technique Push_left
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Super;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
@@ -256,7 +256,7 @@ technique Push_left
 technique Push_up
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Super;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2

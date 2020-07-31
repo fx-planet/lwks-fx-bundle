@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-06-13
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Split_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Split.mp4
 
 /**
-This is really the classic barn door effect, but since a wipe with that name already exists
-in Lightworks another name had to be found.  This version moves the separated image halves
-apart rather than just wipe them off.  Alpha levels can be boosted to support Lightworks
-titles, which is the default setting.
+ This is really the classic barn door effect, but since a wipe with that name already
+ exists in Lightworks another name had to be found.  This version moves the separated
+ image halves apart rather than just wipe them off.  Alpha levels can be boosted to
+ support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,12 +19,19 @@ titles, which is the default setting.
 // wipe between two titles.  That added needless complexity, when the same functionality
 // can be obtained by overlaying two effects.
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reworded Boost text to match requirements for 2020.1 and up.
+// Reworded Transition text to match requirements for 2020.1 and up.
+// Move Boost code into separate shader so that the foreground is always correct.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,15 +50,18 @@ int _LwksEffectInfo
 texture Sup;
 texture Vid;
 
+texture Super : RenderColorTarget;
+
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Video = sampler_state { Texture = <Vid>; };
+sampler s_Foreground = sampler_state { Texture = <Sup>; };
+sampler s_Background = sampler_state { Texture = <Vid>; };
 
 sampler s_Super = sampler_state
 {
-   Texture   = <Sup>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -65,13 +75,13 @@ sampler s_Super = sampler_state
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
 <
-   string Description = "Progress";
+   string Description = "Amount";
    float MinVal = 0.0;
    float MaxVal = 1.0;
    float KF0    = 0.0;
@@ -80,8 +90,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Horizontal join in,Horizontal split out,Vertical join in,Vertical split out";
+   string Description = "Transition position";
+   string Enum = "At start (horizontal),At end (horizontal),At start (vertical),At end (vertical)";
 > = 0;
 
 float Split
@@ -105,19 +115,24 @@ float4 fn_tex2D (sampler Vsample, float2 uv)
 {
    if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
 
-   float4 retval = tex2D (Vsample, uv);
-
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
-   }
-
-   return retval;
+   return tex2D (Vsample, uv);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 retval = tex2D (s_Foreground, uv);
+
+   if (Boost == 0) {
+      retval.a = pow (retval.a, 0.5);
+      retval.rgb /= retval.a;
+   }
+
+   return retval;
+}
 
 float4 ps_horiz_in (float2 uv : TEXCOORD1) : COLOR
 {
@@ -131,7 +146,7 @@ float4 ps_horiz_in (float2 uv : TEXCOORD1) : COLOR
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? EMPTY
               : (uv.x > Split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
 
-   return lerp (tex2D (s_Video, uv), Fgd, Fgd.a);
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
 }
 
 float4 ps_horiz_out (float2 uv : TEXCOORD1) : COLOR
@@ -146,7 +161,7 @@ float4 ps_horiz_out (float2 uv : TEXCOORD1) : COLOR
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? EMPTY
               : (uv.x > Split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
 
-   return lerp (tex2D (s_Video, uv), Fgd, Fgd.a);
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
 }
 
 float4 ps_vert_in (float2 uv : TEXCOORD1) : COLOR
@@ -162,7 +177,7 @@ float4 ps_vert_in (float2 uv : TEXCOORD1) : COLOR
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? EMPTY
               : (uv.y > split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
 
-   return lerp (tex2D (s_Video, uv), Fgd, Fgd.a);
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
 }
 
 float4 ps_vert_out (float2 uv : TEXCOORD1) : COLOR
@@ -178,7 +193,7 @@ float4 ps_vert_out (float2 uv : TEXCOORD1) : COLOR
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? EMPTY
               : (uv.y > split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
 
-   return lerp (tex2D (s_Video, uv), Fgd, Fgd.a);
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -188,24 +203,39 @@ float4 ps_vert_out (float2 uv : TEXCOORD1) : COLOR
 technique Hsplit_in
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
    { PixelShader = compile PROFILE ps_horiz_in (); }
 }
 
 technique Hsplit_out
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
    { PixelShader = compile PROFILE ps_horiz_out (); }
 }
 
 technique Vsplit_in
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
    { PixelShader = compile PROFILE ps_vert_in (); }
 }
 
 technique Vsplit_out
 {
    pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
    { PixelShader = compile PROFILE ps_vert_out (); }
 }
-

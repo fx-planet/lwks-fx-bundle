@@ -1,31 +1,37 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2017-10-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Sine_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DX_Sine.mp4
 
-/**This is a dissolve/wipe that uses a sine distortion to do a left-right or right-left
-transition between the inputs.  The phase can also be offset by 180 degrees.
+/**
+ This is a dissolve/wipe that uses a sine distortion to do a left-right or right-left
+ transition between the inputs.  The phase can also be offset by 180 degrees.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Sine_Dx.fx
 //
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.
+// Version history:
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-06-13
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Tiles_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Tiles.mp4
 
 /**
-This is an alpha transition that splits title(s) into tiles then blows them apart.  Alpha
-levels can be boosted to support Lightworks titles, which is the default setting.
+ This is an alpha transition that splits title(s) into tiles then blows them apart.  Alpha
+ levels can be boosted to support Lightworks titles, which is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,12 +17,19 @@ levels can be boosted to support Lightworks titles, which is the default setting
 // wipe between two titles.  That added needless complexity, when the same functionality
 // can be obtained by overlaying two effects.
 //
-// Modified 14 December 2018 jwrl.
-// Changed title from "Tiles" to "Tile split (alpha)".
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reworded Boost text to match requirements for 2020.1 and up.
+// Reworded Transition text to match requirements for 2020.1 and up.
+// Move Boost code into separate shader so that the foreground is always correct.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 14 December 2018 jwrl.
+// Changed title from "Tiles" to "Tile split (alpha)".
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,17 +48,19 @@ int _LwksEffectInfo
 texture Sup;
 texture Vid;
 
+texture Super : RenderColorTarget;
 texture Tiles : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Video = sampler_state { Texture = <Vid>; };
+sampler s_Foreground = sampler_state { Texture = <Sup>; };
+sampler s_Background = sampler_state { Texture = <Vid>; };
 
 sampler s_Super = sampler_state
 {
-   Texture   = <Sup>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -75,8 +84,8 @@ sampler s_Tiles = sampler_state
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
@@ -90,8 +99,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Tiles > in,Tiles > out";
+   string Description = "Transition position";
+   string Enum = "At start of clip,At end of clip";
 > = 0;
 
 float Width
@@ -130,26 +139,24 @@ float4 fn_tex2D (sampler Vsample, float2 uv)
 {
    if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
 
-   float4 retval = tex2D (Vsample, uv);
-
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
-   }
-
-   return retval;
-}
-
-float4 fn_test2D (sampler Vsample, float2 uv)
-{
-   if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
-
    return tex2D (Vsample, uv);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 retval = tex2D (s_Foreground, uv);
+
+   if (Boost == 0) {
+      retval.a = pow (retval.a, 0.5);
+      retval.rgb /= retval.a;
+   }
+
+   return retval;
+}
 
 float4 ps_horiz_in (float2 uv : TEXCOORD1) : COLOR
 {
@@ -180,9 +187,9 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 
    offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
 
-   float4 Fgnd = fn_test2D (s_Tiles, uv + float2 (0.0, offset / _OutputAspectRatio));
+   float4 Fgnd = fn_tex2D (s_Tiles, uv + float2 (0.0, offset / _OutputAspectRatio));
 
-   return lerp (tex2D (s_Video, uv), Fgnd, Fgnd.a);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
@@ -192,9 +199,9 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
    offset  = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
 
-   float4 Fgnd = fn_test2D (s_Tiles, uv + float2 (0.0, offset / _OutputAspectRatio));
+   float4 Fgnd = fn_tex2D (s_Tiles, uv + float2 (0.0, offset / _OutputAspectRatio));
 
-   return lerp (tex2D (s_Video, uv), Fgnd, Fgnd.a);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -203,19 +210,24 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
 technique TileSplit_Ax_in
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Tiles;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = Tiles;"; >
    { PixelShader = compile PROFILE ps_horiz_in (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main_in (); }
 }
 
 technique TileSplit_Ax_out
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Tiles;"; >
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2 < string Script = "RenderColorTarget0 = Tiles;"; >
    { PixelShader = compile PROFILE ps_horiz_out (); }
 
-   pass P_2
+   pass P_3
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

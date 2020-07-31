@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Split_640.png
@@ -14,12 +14,17 @@
 //-----------------------------------------------------------------------------------------//
 // User effect BarnDoorSplit_Adx.fx
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,7 +43,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Super : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -47,9 +52,9 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -73,7 +78,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start (horizontal),At end (horizontal),At start (vertical),At end (vertical)";
+   string Enum = "At start (horizontal),At end (horizontal),At start (vertical),At end (vertical),H start (unfolded),V start (unfolded)";
 > = 0;
 
 float Split
@@ -89,11 +94,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -116,7 +116,7 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -126,11 +126,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -143,7 +142,7 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_horiz_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_horiz_F (float2 uv : TEXCOORD1) : COLOR
 {
    float range = (1.0 - Amount) * max (Split, 1.0 - Split);
 
@@ -153,10 +152,9 @@ float4 ps_horiz_I (float2 uv : TEXCOORD1) : COLOR
    xy2 += uv;
 
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? EMPTY
-              : (uv.x > Split) ? fn_tex2D (s_Title, xy1) : fn_tex2D (s_Title, xy2);
+              : (uv.x > Split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
 
-   return Ftype ? lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a)
-                : lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
+   return lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a);
 }
 
 float4 ps_horiz_O (float2 uv : TEXCOORD1) : COLOR
@@ -169,7 +167,54 @@ float4 ps_horiz_O (float2 uv : TEXCOORD1) : COLOR
    xy2 += uv;
 
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? EMPTY
-              : (uv.x > Split) ? fn_tex2D (s_Title, xy1) : fn_tex2D (s_Title, xy2);
+              : (uv.x > Split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
+
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
+}
+
+float4 ps_vert_F (float2 uv : TEXCOORD1) : COLOR
+{
+   float split = 1.0 - Split;
+   float range = (1.0 - Amount) * max (Split, split);
+
+   float2 xy2 = float2 (0.0, range);
+   float2 xy1 = uv - xy2;
+
+   xy2 += uv;
+
+   float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? EMPTY
+              : (uv.y > split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
+
+   return lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a);
+}
+
+float4 ps_vert_O (float2 uv : TEXCOORD1) : COLOR
+{
+   float split = 1.0 - Split;
+   float range = Amount * max (Split, split);
+
+   float2 xy2 = float2 (0.0, range);
+   float2 xy1 = uv - xy2;
+
+   xy2 += uv;
+
+   float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? EMPTY
+              : (uv.y > split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
+
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
+}
+
+float4 ps_horiz_I (float2 uv : TEXCOORD1) : COLOR
+{
+   float range = (1.0 - Amount) * max (Split, 1.0 - Split);
+
+   float2 xy2 = float2 (range, 0.0);
+   float2 xy1 = uv - xy2;
+
+   xy2 += uv;
+
+   float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? EMPTY
+              : (uv.x > Split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
 
    return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
 }
@@ -185,24 +230,7 @@ float4 ps_vert_I (float2 uv : TEXCOORD1) : COLOR
    xy2 += uv;
 
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? EMPTY
-              : (uv.y > split) ? fn_tex2D (s_Title, xy1) : fn_tex2D (s_Title, xy2);
-
-   return Ftype ? lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a)
-                : lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
-}
-
-float4 ps_vert_O (float2 uv : TEXCOORD1) : COLOR
-{
-   float split = 1.0 - Split;
-   float range = Amount * max (Split, split);
-
-   float2 xy2 = float2 (0.0, range);
-   float2 xy1 = uv - xy2;
-
-   xy2 += uv;
-
-   float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? EMPTY
-              : (uv.y > split) ? fn_tex2D (s_Title, xy1) : fn_tex2D (s_Title, xy2);
+              : (uv.y > split) ? fn_tex2D (s_Super, xy1) : fn_tex2D (s_Super, xy2);
 
    return lerp (tex2D (s_Background, uv), Fgd, Fgd.a);
 }
@@ -211,42 +239,62 @@ float4 ps_vert_O (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Hsplit_I
+technique Hsplit_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_horiz_I (); }
+   { PixelShader = compile PROFILE ps_horiz_F (); }
 }
 
 technique Hsplit_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_horiz_O (); }
 }
 
-technique Vsplit_I
+technique Vsplit_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_vert_I (); }
+   { PixelShader = compile PROFILE ps_vert_F (); }
 }
 
 technique Vsplit_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_vert_O (); }
+}
+
+technique Hsplit_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_horiz_I (); }
+}
+
+technique Vsplit_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_vert_I (); }
 }

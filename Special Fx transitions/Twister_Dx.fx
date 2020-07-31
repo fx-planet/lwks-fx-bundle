@@ -1,39 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2017-11-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister.mp4
 
 /**
-This is a dissolve/wipe that uses sine & cos distortions to perform a rippling twist to
-transition between two images.  This does not preserve the alpha channels, so if you need
-that use Twister_Ax.fx.
+ This is a dissolve/wipe that uses sine & cos distortions to perform a rippling twist to
+ transition between two images.  This does not preserve the alpha channels, so if you need
+ that use Twister_Ax.fx.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Twister_Dx.fx
+//
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
+//
+// Bugfix 1 June 2018 jwrl.
+// Fixed implicit int to float conversion in fmod() which broke this effect in Linux and
+// Mac.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.1 update 5 December 2017 by jwrl.
 // Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
 // those platforms.  It will now function correctly when used with Lightworks versions
 // 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
 // as part of other transitions on those platforms.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Bugfix 1 June 2018 jwrl.
-// Fixed implicit int to float conversion in fmod() which broke this effect in Linux and
-// Mac.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

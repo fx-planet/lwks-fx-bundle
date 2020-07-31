@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-06-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Ripples_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Ripples.mp4
 
 /**
-This effect starts off by rippling the outgoing title as it dissolves to the new one,
-on which it progressively loses the ripple.  By default alpha levels are boosted to
-better support Lightworks titles, but this may be disabled.
+ This effect starts off by rippling the outgoing title as it dissolves to the new one,
+ on which it progressively loses the ripple.  By default alpha levels are boosted to
+ better support Lightworks titles, but this may be disabled.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,12 +18,19 @@ better support Lightworks titles, but this may be disabled.
 // transition between two titles.  That adds needless complexity since the same result
 // can be obtained by overlaying two effects.
 //
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reworded Boost text to match requirements for 2020.1 and up.
+// Reworded Transition text to match requirements for 2020.1 and up.
+// Move Boost code into dissolve shader so that the foreground is always correct.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 13 December 2018 jwrl.
+// Changed effect name.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,18 +49,20 @@ int _LwksEffectInfo
 texture Sup;
 texture Vid;
 
-texture BlurXinput : RenderColorTarget;
-texture BlurYinput : RenderColorTarget;
+texture Super : RenderColorTarget;
+texture BlurX : RenderColorTarget;
+texture BlurY : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Video = sampler_state { Texture = <Vid>; };
+sampler s_Foreground = sampler_state { Texture = <Sup>; };
+sampler s_Background = sampler_state { Texture = <Vid>; };
 
 sampler s_Super = sampler_state
 {
-   Texture   = <Sup>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -62,7 +71,7 @@ sampler s_Super = sampler_state
 };
 
 sampler s_Blur_X = sampler_state {
-   Texture   = <BlurXinput>;
+   Texture   = <BlurX>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -71,7 +80,7 @@ sampler s_Blur_X = sampler_state {
 };
 
 sampler s_Blur_Y = sampler_state {
-   Texture   = <BlurYinput>;
+   Texture   = <BlurY>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -85,13 +94,13 @@ sampler s_Blur_Y = sampler_state {
 
 int Boost
 <
-   string Description = "If using a Lightworks text effect disconnect its input and set this first";
-   string Enum = "Crawl/Roll/Titles,Video/External image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 0;
 
 float Amount
 <
-   string Description = "Amount";
+   string Description = "Progress";
    float MinVal = 0.0;
    float MaxVal = 1.0;
    float KF0    = 0.0;
@@ -100,8 +109,8 @@ float Amount
 
 int SetTechnique
 <
-   string Description = "Transition";
-   string Enum = "Fade in,Fade out";
+   string Description = "Transition position";
+   string Enum = "At start,At end";
 > = 0;
 
 int WaveType
@@ -176,14 +185,7 @@ float4 fn_tex2D (sampler Vsample, float2 uv)
 {
    if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
 
-   float4 retval = tex2D (Vsample, uv);
-
-   if (Boost == 0) {
-      retval.a    = pow (retval.a, 0.5);
-      retval.rgb /= retval.a;
-   }
-
-   return retval;
+   return tex2D (Vsample, uv);
 }
 
 float2 fn_wave (float2 uv, float2 waves, float levels)
@@ -202,20 +204,34 @@ float2 fn_wave (float2 uv, float2 waves, float levels)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 retval = tex2D (s_Foreground, uv);
+
+   if (Boost == 0) {
+      retval.a = pow (retval.a, 0.5);
+      retval.rgb /= retval.a;
+   }
+
+   return retval;
+}
+
 float4 ps_dissolve_in (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 waves = float (Frequency * 200.0).xx;
-   float2 xy = fn_wave (uv, waves, cos (Amount * HALF_PI));
+   float waves = float (Frequency * 200.0);
 
-   return fn_tex2D (s_Super, xy) * Amount;
+   float2 xy = fn_wave (uv, waves.xx, cos (Amount * HALF_PI));
+
+   return tex2D (s_Super, xy) * Amount;
 }
 
 float4 ps_dissolve_out (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 waves = float (Frequency * 200.0).xx;
-   float2 xy = fn_wave (uv, waves, sin (Amount * HALF_PI));
+   float waves = float (Frequency * 200.0);
 
-   return fn_tex2D (s_Super, xy) * (1.0 - Amount);
+   float2 xy = fn_wave (uv, waves.xx, sin (Amount * HALF_PI));
+
+   return tex2D (s_Super, xy) * (1.0 - Amount);
 }
 
 float4 ps_blur_in (float2 uv : TEXCOORD1) : COLOR
@@ -266,7 +282,6 @@ float4 ps_blur_out (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd   = tex2D (s_Video, uv);
    float4 Fgnd   = tex2D (s_Blur_Y, uv);
    float4 retval = EMPTY;
 
@@ -287,12 +302,11 @@ float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
       Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
    }
 
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgnd   = tex2D (s_Video, uv);
    float4 Fgnd   = tex2D (s_Blur_Y, uv);
    float4 retval = EMPTY;
 
@@ -313,7 +327,7 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
       Fgnd = lerp (Fgnd, retval, Amount);
    }
 
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -322,10 +336,14 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
 technique Dreams_Ax_in
 {
-   pass P_1 < string Script = "RenderColorTarget0 = BlurXinput;"; >
+   pass P_0
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_1 < string Script = "RenderColorTarget0 = BlurX;"; >
    { PixelShader = compile PROFILE ps_dissolve_in (); }
 
-   pass P_2 < string Script = "RenderColorTarget0 = BlurYinput;"; >
+   pass P_2 < string Script = "RenderColorTarget0 = BlurY;"; >
    { PixelShader = compile PROFILE ps_blur_in (); }
 
    pass P_3
@@ -334,13 +352,16 @@ technique Dreams_Ax_in
 
 technique Dreams_Ax_out
 {
-   pass P_1 < string Script = "RenderColorTarget0 = BlurXinput;"; >
+   pass P_0
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_1 < string Script = "RenderColorTarget0 = BlurX;"; >
    { PixelShader = compile PROFILE ps_dissolve_out (); }
 
-   pass P_2 < string Script = "RenderColorTarget0 = BlurYinput;"; >
+   pass P_2 < string Script = "RenderColorTarget0 = BlurY;"; >
    { PixelShader = compile PROFILE ps_blur_out (); }
 
    pass P_3
    { PixelShader = compile PROFILE ps_main_out (); }
 }
-

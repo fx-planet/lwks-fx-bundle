@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Kaleido_640.png
@@ -20,12 +20,17 @@
 // nouanda.  This effect has been built from that original.  In the process some further
 // code optimisation has been done, mainly to address potential divide by zero errors.
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Changed code to that used in Ax version.
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -44,7 +49,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Super : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -53,9 +58,9 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -79,7 +84,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float Sides
@@ -131,11 +136,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -161,7 +161,7 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -171,11 +171,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -188,71 +187,110 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_main_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_F (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 PosXY = float2 (PosX, 1.0 - PosY);
-   float2 uv = PosXY - xy1;
-
+   float mixval = sin (Amount * HALF_PI);
    float amount = 1.0 - Amount;
-   float sides  = TWO_PI / (1.0 + (amount * Sides));
-   float radius = length (uv) / (1.0 + (amount * zoomFactor));
-   float angle  = amount < 0.1 ? atan (uv.x / uv.y) : atan2 (uv.x, uv.y);
+   float Scale = 1.0 + (amount * (1.2 - scaleAmt));
+   float sideval = 1.0 + (amount * Sides);
+   float Zoom = 1.0 + (amount * zoomFactor);
 
-   angle -= sides * (floor (angle / sides) + 0.5);
+   float2 xy1 = 1.0.xx - float2 (PosX, PosY);
+   float2 xy2 = float2 (1.0 - uv.x, uv.y) - xy1;
 
-   if (amount < 0.05) sincos (abs (angle), uv.x, uv.y);
-   else sincos (abs (angle), uv.y, uv.x);
+   float radius = length (xy2) / Zoom;
+   float angle  = atan2 (xy2.y, xy2.x);
 
-   uv = ((uv * radius) + PosXY) / ((amount * (1.2 - scaleAmt)) + 1.0);
+   angle = fmod (angle, TWO_PI / sideval);
+   angle = abs (angle - (PI / sideval));
 
-   float4 Fgd = fn_tex2D (s_Title, uv);
+   sincos (angle, xy2.y, xy2.x);
+   xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   return Ftype ? lerp (tex2D (s_Foreground, xy2), Fgd, Fgd.a * cos (amount * HALF_PI))
-                : lerp (tex2D (s_Background, xy2), Fgd, Fgd.a * cos (amount * HALF_PI));
+   float4 Fgd = fn_tex2D (s_Super, xy2);
+
+   return lerp (tex2D (s_Foreground, uv), Fgd, Fgd.a * mixval);
 }
 
-float4 ps_main_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 PosXY = float2 (PosX, 1.0 - PosY);
-   float2 uv = PosXY - xy1;
+   float Scale = 1.0 + (Amount * (1.2 - scaleAmt));
+   float mixval = cos (Amount * HALF_PI);
+   float sideval = 1.0 + (Amount * Sides);
+   float Zoom = 1.0 + (Amount * zoomFactor);
 
-   float amount = Amount + 0.002;
-   float sides  = TWO_PI / (1.0 + (amount * Sides));
-   float radius = length (uv) / (1.0 + (amount * zoomFactor));
-   float angle  = amount < 0.1 ? atan (uv.x / uv.y) : atan2 (uv.x, uv.y);
+   float2 xy1 = 1.0.xx - float2 (PosX, PosY);
+   float2 xy2 = float2 (1.0 - uv.x, uv.y) - xy1;
 
-   angle -= sides * (floor (angle / sides) + 0.5);
+   float radius = length (xy2) / Zoom;
+   float angle  = atan2 (xy2.y, xy2.x);
 
-   if (amount < 0.05) sincos (abs (angle), uv.x, uv.y);
-   else sincos (abs (angle), uv.y, uv.x);
+   angle = fmod (angle, TWO_PI / sideval);
+   angle = abs (angle - (PI / sideval));
 
-   uv = ((uv * radius) + PosXY) / ((amount * (1.2 - scaleAmt)) + 1.0);
+   sincos (angle, xy2.y, xy2.x);
+   xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   float4 Fgd = fn_tex2D (s_Title, uv);
+   float4 Fgd = fn_tex2D (s_Super, xy2);
 
-   return lerp (tex2D (s_Background, xy2), Fgd, Fgd.a * cos (amount * HALF_PI));
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a * mixval);
+}
+
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+{
+   float mixval = sin (Amount * HALF_PI);
+   float amount = 1.0 - Amount;
+   float Scale = 1.0 + (amount * (1.2 - scaleAmt));
+   float sideval = 1.0 + (amount * Sides);
+   float Zoom = 1.0 + (amount * zoomFactor);
+
+   float2 xy1 = 1.0.xx - float2 (PosX, PosY);
+   float2 xy2 = float2 (1.0 - uv.x, uv.y) - xy1;
+
+   float radius = length (xy2) / Zoom;
+   float angle  = atan2 (xy2.y, xy2.x);
+
+   angle = fmod (angle, TWO_PI / sideval);
+   angle = abs (angle - (PI / sideval));
+
+   sincos (angle, xy2.y, xy2.x);
+   xy2 = ((xy2 * radius) / Scale) + xy1;
+
+   float4 Fgd = fn_tex2D (s_Super, xy2);
+
+   return lerp (tex2D (s_Background, uv), Fgd, Fgd.a * mixval);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique KaleidoTurbineMix_Adx_I
+technique KaleidoTurbineMix_Adx_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique KaleidoTurbineMix_Adx_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique KaleidoTurbineMix_Adx_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

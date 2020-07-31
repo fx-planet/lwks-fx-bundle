@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2017-08-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Corners_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Corners.mp4
 
 /**
-This is a four-way split which moves the image to or from the corners of the frame.
+ This is a four-way split which moves the image to or from the corners of the frame.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CornerSplit_Dx.fx
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed effect name.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 //
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,8 +55,8 @@ texture Halfway : RenderColorTarget;
 sampler s_Foreground = sampler_state
 {
    Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -60,8 +65,8 @@ sampler s_Foreground = sampler_state
 sampler s_Background = sampler_state
 {
    Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -70,8 +75,8 @@ sampler s_Background = sampler_state
 sampler s_Halfway = sampler_state
 {
    Texture   = <Halfway>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

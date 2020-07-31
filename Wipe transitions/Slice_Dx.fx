@@ -1,29 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-04-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Slice_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Slice.mp4
 
 /**
-This transition splits the outgoing image into strips which then move off either
-horizontally or vertically to reveal the incoming image.
+ This transition splits the outgoing image into strips which then move off either
+ horizontally or vertically to reveal the incoming image.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Slice_Dx.fx
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 14 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 // Changed "Fgd" input to "Fg" and "Bgd" input to "Bg".
 //
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -208,4 +213,3 @@ technique Slice_Dx_Bottom
    pass P_1
    { PixelShader = compile PROFILE ps_bottom (); }
 }
-

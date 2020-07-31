@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-01-24
+// @Released 2020-07-31
 // @Author jwrl
 // @Author Unknown
 // @Created 2020-01-24
@@ -29,6 +29,11 @@
 // I have used the result to transition between two sources.  I have also added position
 // adjustment, but the most likely use will not require that.  The hue of the flames can
 // be adjusted as can the flame intensity.
+//
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -261,4 +266,3 @@ technique Fireball_B_Dx
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

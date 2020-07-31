@@ -1,26 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author schrauber
 // @Released 2016-08-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flyaway_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlyAway.mp4
 
 /**
-This cute transition effect "flies" the image off to reveal the new image.  The
-process is divided into 2 phases in order to always ensure a clean transition at
-different effect positions.  The first phase transforms the outgoing image into the
-centre of the frame as a butterfly shape.  In this part of the transition the
-position is fixed. The second part is the actual flight phase.  Adjustment of the
-final destination is possible, but the default is a destination outside of the screen.
+ This cute transition effect "flies" the image off to reveal the new image.  The
+ process is divided into 2 phases in order to always ensure a clean transition at
+ different effect positions.  The first phase transforms the outgoing image into the
+ centre of the frame as a butterfly shape.  In this part of the transition the
+ position is fixed. The second part is the actual flight phase.  Adjustment of the
+ final destination is possible, but the default is a destination outside of the screen.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FlyAway_Dx.fx
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
+//
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 19 December 2018 jwrl.
+// Added creation date.
+//
+// Modified 13 December 2018 jwrl.
+// Changed subcategory.
+// Added "Notes" to _LwksEffectInfo.
+//
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 5 December 2017 by jwrl.
 // Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
@@ -28,19 +42,10 @@ final destination is possible, but the default is a destination outside of the s
 // 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
 // with transitions on those platforms.
 //
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Cross platform compatibility check 5 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 19 December 2018 jwrl.
-// Added creation date.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

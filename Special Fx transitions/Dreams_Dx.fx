@@ -1,20 +1,20 @@
 // @Maintainer jwrl
-// @Released 2018-12-28
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2015-11-26
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Dreams_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DreamSequence.mp4
 
 /**
-This effect starts off by rippling the outgoing image for the first third of the effect,
-then dissolves to the new image for the next third, then loses the ripple over the
-remainder of the effect.  It simulates Hollywood's classic dream effect.  The default
-settings give exactly that result.
+ This effect starts off by rippling the outgoing image for the first third of the effect,
+ then dissolves to the new image for the next third, then loses the ripple over the
+ remainder of the effect.  It simulates Hollywood's classic dream effect.  The default
+ settings give exactly that result.
 
-It's based on khaver's water effect, but some parameters have been changed to better
-mimic the original film effect.  Two directional blurs have also been added, one very
-much weaker than the other.  Their comparative strengths depend on the predominant
-direction of the wave effect.
+ It's based on khaver's water effect, but some parameters have been changed to better
+ mimic the original film effect.  Two directional blurs have also been added, one very
+ much weaker than the other.  Their comparative strengths depend on the predominant
+ direction of the wave effect.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,26 +23,31 @@ direction of the wave effect.
 // This has been written to be compatible with both D3D and Cg shader versions.  It
 // should therefore be fully cross platform compliant.
 //
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Version history:
 //
-// Update August 4 2017 by jwrl.
-// All samplers fully defined to avoid differences in their default states between
-// Windows and Linux/Mac compilers.
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
 //
-// Update August 10 2017 by jwrl.
-// Renamed from Dreaming.fx for consistency across the dissolve range.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 28 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 13 December 2018 jwrl.
 // Changed subcategory.
 // Added "Notes" to _LwksEffectInfo.
 // Changed "Fgd" to "Fg" and "Bgd" to "Bg".
 //
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 9 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Update August 10 2017 by jwrl.
+// Renamed from Dreaming.fx for consistency across the dissolve range.
+//
+// Update August 4 2017 by jwrl.
+// All samplers fully defined to avoid differences in their default states between
+// Windows and Linux/Mac compilers.
+//
+// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

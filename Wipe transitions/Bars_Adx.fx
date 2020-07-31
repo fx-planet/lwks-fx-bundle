@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Bars_640.png
@@ -14,12 +14,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Bars_Adx.fx
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,7 +43,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Super : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -47,9 +52,9 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -73,7 +78,7 @@ float Amount
 int Ttype
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 int SetTechnique
@@ -95,11 +100,6 @@ float KeyGain
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
-
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -130,7 +130,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float3 Fgd;
    float3 Bgd;
 
-   if ((Ttype == 0) && Ftype) {
+   if (Ttype == 0) {
       Fgd = tex2D (s_Foreground, xy1).rgb;
       Bgd = tex2D (s_Background, xy2).rgb;
    }
@@ -149,46 +149,28 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_horiz (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Bgnd;
-
-   float2 xy = xy1;
-
    float dsplc  = (OFFSET - Width) * WIDTH;
-   float offset = floor (xy1.y * dsplc);
 
-   if (Ttype == 0) {
-      xy.x += (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
-      Bgnd = Ftype ? fn_tex2D (s_Foreground, xy2) : fn_tex2D (s_Background, xy2);
-   }
-   else {
-      xy.x += ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
-      Bgnd = fn_tex2D (s_Background, xy2);
-   }
+   float2 offset = float2 (0.0, floor (xy1.y * dsplc));
+   float2 xy = (Ttype == 1) ? xy1 + ((ceil (frac (offset / 2.0)) * 2.0) - 1.0.xx) * Amount
+                            : xy1 + (1.0.xx - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
+   float4 Bgnd = (Ttype == 0) ? fn_tex2D (s_Foreground, xy2) : fn_tex2D (s_Background, xy2);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
 float4 ps_vert (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Bgnd;
-
-   float2 xy = xy1;
-
    float dsplc  = (OFFSET - Width) * WIDTH;
-   float offset = floor (xy1.x * dsplc);
 
-   if (Ttype == 0) {
-      xy.y += (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
-      Bgnd = Ftype ? fn_tex2D (s_Foreground, xy2) : fn_tex2D (s_Background, xy2);
-   }
-   else {
-      xy.y += ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
-      Bgnd = fn_tex2D (s_Background, xy2);
-   }
+   float2 offset = float2 (floor (xy1.x * dsplc), 0.0);
+   float2 xy = (Ttype == 1) ? xy1 + ((ceil (frac (offset / 2.0)) * 2.0) - 1.0.xx) * Amount
+                            : xy1 + (1.0.xx - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
+   float4 Bgnd = (Ttype == 0) ? fn_tex2D (s_Foreground, xy2) : fn_tex2D (s_Background, xy2);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -200,7 +182,7 @@ float4 ps_vert (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 technique Bars_Adx_H
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Super;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
@@ -210,7 +192,7 @@ technique Bars_Adx_H
 technique Bars_Adx_V
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
+   < string Script = "RenderColorTarget0 = Super;"; >
    { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2

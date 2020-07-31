@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-02
+// @Released 2020-07-31
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Strips_640.png
@@ -13,12 +13,17 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Strips_Adx.fx
 //
-// Modified jwrl 2018-12-28
-// Reformatted the effect description for markup purposes.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Moved folded effect support into "Transition position".
 //
 // Modified jwrl 2020-06-02
 // Added support for unfolded effects.
 // Reworded transition mode to read "Transition position".
+//
+// Modified jwrl 2018-12-28
+// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,7 +42,7 @@ int _LwksEffectInfo
 texture Fg;
 texture Bg;
 
-texture Title : RenderColorTarget;
+texture Super : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
@@ -46,9 +51,9 @@ texture Title : RenderColorTarget;
 sampler s_Foreground = sampler_state { Texture = <Fg>; };
 sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Title = sampler_state
+sampler s_Super = sampler_state
 {
-   Texture   = <Title>;
+   Texture   = <Super>;
    AddressU  = Mirror;
    AddressV  = Mirror;
    MinFilter = Linear;
@@ -72,7 +77,7 @@ float Amount
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip";
+   string Enum = "At start of clip,At end of clip,At start (unfolded)";
 > = 0;
 
 float Spacing
@@ -116,11 +121,6 @@ float KeyGain
    float MaxVal = 1.0;
 > = 0.25;
 
-bool Ftype
-<
-   string Description = "Folded effect";
-> = true;
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -149,7 +149,7 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen_F (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -159,11 +159,10 @@ float4 ps_keygen_I (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
    kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
 
-   return Ftype ? float4 (Bgd, smoothstep (0.0, KeyGain, kDiff))
-                : float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
+   return float4 (Bgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
    float3 Fgd = tex2D (s_Foreground, xy1).rgb;
    float3 Bgd = tex2D (s_Background, xy2).rgb;
@@ -176,7 +175,7 @@ float4 ps_keygen_O (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (Fgd, smoothstep (0.0, KeyGain, kDiff));
 }
 
-float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_F (float2 uv : TEXCOORD1) : COLOR
 {
    float amount   = 1.0 - Amount;
    float Width    = 10.0 + (Spacing * 40.0);
@@ -194,10 +193,9 @@ float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
    offset *= 2.0 * Spread;
    xy.y = (xy.y * Height) + offset + centre_Y;
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
-   float4 Bgnd = Ftype ? tex2D (s_Foreground, uv) : tex2D (s_Background, uv);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return lerp (tex2D (s_Foreground, uv), Fgnd, Fgnd.a * Amount);
 }
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
@@ -218,31 +216,64 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
    offset *= 2.0 * Spread;
    xy.y = (xy.y * Height) + offset + centre_Y;
 
-   float4 Fgnd = fn_tex2D (s_Title, xy);
+   float4 Fgnd = fn_tex2D (s_Super, xy);
 
    return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * amount);
+}
+
+float4 ps_main_I (float2 uv : TEXCOORD1) : COLOR
+{
+   float amount   = 1.0 - Amount;
+   float Width    = 10.0 + (Spacing * 40.0);
+   float centre_X = 1.0 - (2.0 * centreX);
+   float centre_Y = 1.0 - centreY;
+   float offset   = sin (Width * uv.y * PI);
+   float Height   = 1.0 + ((1.0 - cos (amount * HALF_PI)) * HEIGHT);
+
+   if (abs (offset) > 0.5) offset = -offset;
+
+   offset = ((floor (offset * 5.2) / 5.0) + centre_X) * amount;
+
+   float2 xy = uv + float2 (offset, -centre_Y);
+
+   offset *= 2.0 * Spread;
+   xy.y = (xy.y * Height) + offset + centre_Y;
+
+   float4 Fgnd = fn_tex2D (s_Super, xy);
+
+   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Strips_Adx_I
+technique Strips_Adx_F
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_I (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen_F (); }
 
    pass P_2
-   { PixelShader = compile PROFILE ps_main_I (); }
+   { PixelShader = compile PROFILE ps_main_F (); }
 }
 
 technique Strips_Adx_O
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_keygen_O (); }
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_O (); }
+}
+
+technique Strips_Adx_I
+{
+   pass P_1
+   < string Script = "RenderColorTarget0 = Super;"; >
+   { PixelShader = compile PROFILE ps_keygen (); }
+
+   pass P_2
+   { PixelShader = compile PROFILE ps_main_I (); }
 }

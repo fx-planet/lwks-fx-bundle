@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-01-24
+// @Released 2020-07-31
 // @Author jwrl
 // @Author Unknown
 // @Created 2019-03-22
@@ -26,12 +26,17 @@
 // I have used the result to transition between two sources.  I have also added position
 // adjustment.  The hue of the flames can be adjusted as can the flame intensity.
 //
-// Modified jwrl 2020-01-23:
-// Added "DisplayAsPercentage" flag to "Speed" and increased range from 100% to 200%.
-// Added a centre circle wipe to clear the final streaks more convincingly.
+// Version history:
+//
+// Modified 2020-07-31 jwrl.
+// Reformatted the effect header.
 //
 // Modified jwrl 2020-01-24:
 // Added "DisplayAsPercentage" flag to "Intensity".
+//
+// Modified jwrl 2020-01-23:
+// Added "DisplayAsPercentage" flag to "Speed" and increased range from 100% to 200%.
+// Added a centre circle wipe to clear the final streaks more convincingly.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

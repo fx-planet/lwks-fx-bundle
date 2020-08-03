@@ -1,4 +1,4 @@
-# Lightworks user Fx library, August 2, 2020.
+# Lightworks user Fx library, August 3, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -153,6 +153,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Film exposure                 |FilmExposure.fx         |
 |Film lab                      |FilmLab.fx              |
 |Filmic look                   |FilmLook.fx             |
+|Multi toner                   |MultiToner.fx           |
 |Old film look                 |OldFilmLookFx.fx        |
 |Technicolor                   |TechnicolorFx.fx        |
 |Vintage look                  |VintageLook.fx          |

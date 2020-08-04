@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-03-22
+// @Released 2020-08-04
 // @Author jwrl
 // @Created 2019-05-30
-// @see https://www.lwks.com/media/kunena/attachments/6375/FastBleachBypass_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/FastBleachBypassRev_640.png
 
 /**
  This is another effect that emulates the altered contrast and saturation produced when the
@@ -14,6 +14,13 @@
 //
 // MSI's earlier bleach bypass effect was based on sample code provided by Nvidia.  This
 // version is all original and designed from first principles.
+//
+// Rewrite jwrl 2020-08-04:
+// Never very happy with any of the previous attempts, this is yet another rewrite of the
+// bleach bypass effect.  The negative version has the S-curve biassed towards the blacks
+// and averages the RGB components to create the desaturated image.  The print version
+// biasses the S-curve towards whites, and uses an empirically derived conversion profile
+// to create the desaturated image.  As it is now it feels pretty right.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -40,7 +47,7 @@ sampler InpSampler = sampler_state { Texture = <Inp>; };
 int SetTechnique
 <
    string Description = "Process stage";
-   string Enum = "Negative, Print";
+   string Enum = "Negative,Print";
 > = 0;
 
 float Amount
@@ -48,13 +55,15 @@ float Amount
    string Description = "Bypass level";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 1.0;
+> = 0.5;
 
 //-----------------------------------------------------------------------------------------//
 // Declarations and definitions
 //-----------------------------------------------------------------------------------------//
 
-#define RGB_VAL 0.33333333.xxx
+#define NEG    0.33333333.xxx
+
+#define POS    float3(0.217, 0.265, 0.518)
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -64,31 +73,30 @@ float4 main_neg (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Input = tex2D (InpSampler, uv);
 
-   Input.rgb = 1.0.xxx - Input.rgb;
+   float amnt = Amount * 0.75;
+   float prof = 1.0 / (1.0 + amnt);
+   float luma = pow (dot (NEG, Input.rgb), 1.0 + (Amount * 0.15));
+   float mono = abs ((luma * 2.0) - 1.0);
 
-   float4 retval = Input;
+   mono = pow (mono, prof) / 2.0;
+   luma = (luma > 0.5) ? 0.5 + mono : 0.5 - mono;
 
-   float mono  = dot (RGB_VAL, retval.rgb);
-   float level = (1.0 - mono) * Amount * 2.0;
-
-   retval.rgb = pow (retval.rgb, 0.5);
-   retval.rgb = 1.0.xxx - lerp (Input.rgb, retval.rgb * mono, level);
-
-   return retval;
+   return float4 (lerp (Input.rgb, luma.xxx, amnt), Input.a);
 }
 
 float4 main_pos (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Input  = tex2D (InpSampler, uv);
-   float4 retval = Input;
+   float4 Input = tex2D (InpSampler, uv);
 
-   float mono  = dot (RGB_VAL, retval.rgb);
-   float level = (1.0 - mono) * Amount * 2.0;
+   float amnt = Amount * 0.75;
+   float prof = 1.0 / (1.0 + amnt);
+   float luma = pow (dot (POS, Input.rgb), 1.0 - (Amount * 0.15));
+   float mono = abs ((luma * 2.0) - 1.0);
 
-   retval.rgb = pow (retval.rgb, 0.5);
-   retval.rgb = lerp (Input.rgb, retval.rgb * mono, level);
+   mono = pow (mono, prof) / 2.0;
+   luma = (luma > 0.5) ? 0.5 + mono : 0.5 - mono;
 
-   return retval;
+   return float4 (lerp (Input.rgb, luma.xxx, amnt), Input.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -104,4 +112,3 @@ technique FastBleachBypass_2
 {
    pass P1 { PixelShader = compile PROFILE main_pos (); }
 }
-

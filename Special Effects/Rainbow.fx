@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-02
+// @Released 2020-08-10
 // @Author jwrl
 // @Created 2020-06-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rainbow__640.png
@@ -23,6 +23,11 @@
 //
 // Version history:
 //
+// Modified jwrl 2020-08-10:
+// Rewrote the mask generation so that the mask shader is very much simpler and only
+// need be executed once, even in double rainbow mode.
+// As a result of the above, only the mask angle calculation is now done in fn_mask().
+//
 // Modified jwrl 2020-07-02:
 // Added radius and level adjustment for moonglow.
 // Split mask generation core code into a function to avoid needless duplication.
@@ -31,7 +36,7 @@
 // Added offset and crops for second rainbow.
 // Added a second outer moondog layer.
 // Added moonglow to moondog.
-// Deleted reference to sundog.  At the moment I can't simulate that to my satisfaction.
+// Dropped references to sundog.  At the moment I can't simulate that to my satisfaction.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -192,59 +197,64 @@ float R_angle_2
 
 #define EMPTY      0.0.xxxx
 
-#define PIplusHALF 4.7123889804
 #define PI         3.1415926536
-#define HALF_PI    1.5707963268
 
 #define HUE        float3(1.0, 2.0 / 3.0, 1.0 / 3.0)
+#define LUMA       float3(0.2989, 0.5866, 0.1145)
 
 float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-float fn_mask (float2 uv1, float2 uv2, float angle, float softness, bool bad)
+float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
-   float2 border, edge, shading, xy1, xy2;
+   float2 xy = abs (uv - 0.5.xx);
 
-   sincos (angle, xy1.y, xy1.x);
-   sincos (angle + softness, xy2.y, xy2.x);
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s_Sampler, uv);
+}
 
-   uv2 *= _OutputAspectRatio;
+float4 fn_mask (float angL, float angR, float2 uv)
+{
+   float c, s;
 
-   edge = (uv1 * xy1.x) - (uv2 * xy1.y);
-   border = (uv1 * xy2.x) - (uv2 * xy2.y);
+   sincos (PI * angL, s, c);
 
-   shading = ((border.x <= 0.0) || (border.y <= 0.0)) ? 0.0.xx
-           : saturate (border / distance (border, edge));
+   float2 edges = float2 (angL * L_softness, angR * R_softness) * 0.762;
+   float3 xyz = float3 (-uv.x, (edges - uv.yy) / _OutputAspectRatio) * 0.25;
+   float2 xy = mul (float2x2 (c, -s, s, c), xyz.xy);
 
-   return (edge.x < 0.0) || (edge.y < 0.0) ? 
-          (uv1.x < 0.0) && bad ? 0.0 : 1.0 - min (shading.x, shading.y) : 0.0;
+   xy.x += 0.5;
+   xy.y *= _OutputAspectRatio;
+
+   float mask = fn_tex2D (s_Mask, xy).w;
+
+   sincos (PI * angR, s, c);
+   xy = mul (float2x2 (c, -s, s, c), xyz.xz);
+   xy.x += 0.5;
+   xy.y *= _OutputAspectRatio;
+
+   return 1.0 - max (mask, fn_tex2D (s_Mask, xy).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_mask (float2 uv : TEXCOORD0, uniform float left, uniform float right) : COLOR
+float4 ps_mask (float2 uv : TEXCOORD0) : COLOR
 {
-   float2 xy = float2 (uv.x - Pos_X, 1.0 - uv.y - Pos_Y);
+   float range = uv.y * 19.05;
 
-   float range = (left - 0.5) * PI;
-   float mask = fn_mask (xy, float2 (xy.y, -xy.x), range - HALF_PI, L_softness, range > 0.0);
+   float L = (range > L_softness) ? 1.0 : range / max (1e-10, L_softness);
+   float R = (range > R_softness) ? 1.0 : range / max (1e-10, R_softness);
 
-   range = (right - 0.5) * PI;
-   xy.x = -xy.x;
-   mask *= fn_mask (xy, float2 (xy.y, -xy.x), PIplusHALF - range, R_softness, range < 0.0);
-
-   return (xy.y < 0.0) ? EMPTY : mask.xxxx;
+   return float4 (R, L, R, L);
 }
 
 float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Bgnd = tex2D (s_Input, uv);
-   float4 Mask = tex2D (s_Mask, uv);
 
    float radius = max (0.1, Radius);
    float width  = Width * radius;
@@ -252,11 +262,11 @@ float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
    float outer  = inner + (width * 17.0);
    float alpha;
 
-   float2 posXY = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
+   float2 xy = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
 
-   radius = length (float2 (posXY.x, posXY.y / _OutputAspectRatio)) * RADIUS;
+   radius = length (float2 (xy.x, xy.y / _OutputAspectRatio)) * RADIUS;
 
-   if ((radius < inner) || (radius > outer)) return Bgnd;
+   if ((xy.y < 0.0) || (radius < inner) || (radius > outer)) return Bgnd;
 
    float4 Fgnd = saturate ((radius - inner) / width).xxxx;
 
@@ -268,14 +278,14 @@ float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
    Fgnd.rgb = Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb);
 
    Fgnd = saturate (Fgnd);
+   Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 
-   return lerp (Bgnd, lerp (Bgnd, Fgnd, Fgnd.a * Amount), Mask.a);
+   return lerp (Bgnd, Fgnd, fn_mask (-L_angle, 1.0 - R_angle, xy));
 }
 
 float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Bgnd = tex2D (s_Rainbow, uv);
-   float4 Mask = tex2D (s_Mask, uv);
 
    float radius = max (0.1, Radius) * (1.0 + Offset);
    float width  = Width * radius;
@@ -283,11 +293,11 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    float outer  = inner + (width * 17.0);
    float alpha;
 
-   float2 posXY = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
+   float2 xy = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
 
-   radius = length (float2 (posXY.x, posXY.y / _OutputAspectRatio)) * RADIUS;
+   radius = length (float2 (xy.x, xy.y / _OutputAspectRatio)) * RADIUS;
 
-   if ((radius < inner) || (radius > outer)) return Bgnd;
+   if ((xy.y < 0.0) || (radius < inner) || (radius > outer)) return Bgnd;
 
    float4 Fgnd = saturate ((radius - inner) / width).xxxx;
 
@@ -298,8 +308,9 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    Fgnd.rgb = Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb);
 
    Fgnd = saturate (Fgnd);
+   Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amount * 0.25);
 
-   return lerp (Bgnd, lerp (Bgnd, Fgnd, Fgnd.a * Amount * 0.25), Mask.a);
+   return lerp (Bgnd, Fgnd, fn_mask (-L_angle_2, 1.0 - R_angle_2, xy));
 }
 
 float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
@@ -379,7 +390,7 @@ technique Rainbow_0
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Msk;"; > 
-   { PixelShader = compile PROFILE ps_mask (L_angle, R_angle); }
+   { PixelShader = compile PROFILE ps_mask (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main_0 (); }
@@ -389,17 +400,13 @@ technique Rainbow_1
 {
    pass P_1
    < string Script = "RenderColorTarget0 = Msk;"; > 
-   { PixelShader = compile PROFILE ps_mask (L_angle, R_angle); }
+   { PixelShader = compile PROFILE ps_mask (); }
 
    pass P_2
    < string Script = "RenderColorTarget0 = Bow;"; > 
    { PixelShader = compile PROFILE ps_main_0 (); }
 
    pass P_3
-   < string Script = "RenderColorTarget0 = Msk;"; > 
-   { PixelShader = compile PROFILE ps_mask (L_angle_2, R_angle_2); }
-
-   pass P_4
    { PixelShader = compile PROFILE ps_main_1 (); }
 }
 

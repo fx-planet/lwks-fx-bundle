@@ -1,17 +1,17 @@
 // @Maintainer jwrl
-// @Released 2020-08-08
+// @Released 2020-08-12
 // @Author jwrl
 // @Created 2020-08-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/RainbowV2_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Rainbow_v2_640.png
 
 /**
  This is a special effect that generates single and double rainbows.  The blue end of the
  spectrum has adjustable falloff to give a fade out that is more like what happens in
  nature.   The rainbow is blended with the background image using a modified screen blend
- that varies in strength according to the inverse of the background brightness.  It can
- also be varied in intensity.  The default crop settings will produce a 90 degree arc
- (plus and minus 45 degrees), but can be adjusted to whatever angle you need over a 180
- degree range.
+ that can be adjusted in strength according to the inverse of the background brightness.
+ It can also be varied in blend softness.  The default crop settings will produce a 90
+ degree arc (plus and minus 45 degrees), but can be adjusted to whatever angle you need
+ over a 180 degree range.
 
  The secondary rainbow is inverted and inherits Amount, Radius, Width, Falloff and Origin
  from the primary rainbow.  The master Amount is modified by the secondary rainbow Amount,
@@ -26,18 +26,20 @@
 // be all things to all people, and in my opinion, failed dismally.  This was written with
 // a new user interface and re-engineered mask generation.  The previous version produced
 // unexpected hard edges under the right conditions as the masks were rotated.  This uses
-// a more brute force method of generating the masks.
+// a more direct method of generating the masks.
 //
 // However this means that the now pointless extra pass used to generate a second mask for
 // the double rainbow could be dropped.  Another side effect was that providing independent
-// mask softness adjustment for the outer rainbow was possible.  Because the moondog effect
-// was dropped it is now possible to specify the crop angles in degrees because we were no
-// longer sharing glow parameters with crop angles.  Finally, we have improved the mask edge
-// softness and opacity falloff over brighter backgrounds.
+// mask softness adjustment for the outer rainbow became possible.  Because the moondog
+// effect was dropped it is also now possible to specify the crop angles in degrees.  We
+// have also improved the mask edge softness and opacity falloff over brighter backgrounds.
 //
 // Version history:
 //
-// Built jwrl 2020-08-08.
+// Modified jwrl 2020-08-12:
+// Improved width and falloff calculations for the secondary rainbow.
+// Tightened mask recovery code.
+// Added background breakthrough controls - really just a feathered, inverted luma key.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,7 +48,7 @@ int _LwksEffectInfo
    string Description = "Rainbow v2";
    string Category    = "Stylize";
    string SubCategory = "Special Effects";
-   string Notes       = "Red and yellow and pink and green, purple and orange and blue ...";
+   string Notes       = "Here's why there are so many songs about rainbows, frog";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -201,6 +203,22 @@ float R_soft_2
    float MaxVal = 1.0;
 > = 0.175;
 
+float Clip
+<
+   string Group = "Background breakthrough";
+   string Description = "Amount";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
+
+float Range
+<
+   string Group = "Background breakthrough";
+   string Description = "Softness";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.2;
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
@@ -230,49 +248,33 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
    float2 xy = abs (uv - 0.5.xx);
 
-   if (max (xy.x, xy.y) > 0.5) return EMPTY;
-
-   return tex2D (s_Sampler, uv);
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s_Sampler, uv);
 }
 
-float fn_get_mask (float2 xy, bool inner)
+float fn_get_mask (float4 m_rng, float2 xy, bool inner)
 {
-   if (xy.y >= 1.0 - Pos_Y) return 0.0;
+   if (xy.y < 0.0) return 0.0;
 
-   float c, l, r, s, L, R;
+   float c, s;
 
-   if (inner) {
-      L = -L_angle;
-      R = -R_angle;
-      l = L_soft;
-      r = -R_soft;
-   }
-   else {
-      L = -L_angle_2;
-      R = -R_angle_2;
-      l = L_soft_2;
-      r = -R_soft_2;
-   }
+   sincos (radians (-m_rng.w), s, c);
 
-   float a = radians (L);
-   float b = radians (R - 180.0);
+   float2 edges = float2 (-m_rng.w * m_rng.x, m_rng.y * m_rng.z) / 450.0;
+   float3 xyz = float3 (-xy.x, (edges - xy.yy) / _OutputAspectRatio) * 0.25;
+   float2 uv = mul (float2x2 (c, -s, s, c), xyz.xy);
 
-   float2 uv  = float2 (xy.x - Pos_X, xy.y + Pos_Y - 1.0);
-   float2 xy1 = float2 (uv.x, (uv.y + (l * L / 450.0)) / _OutputAspectRatio) * 0.25;
-   float2 xy2 = float2 (uv.x, (uv.y + (r * R / 450.0)) / _OutputAspectRatio) * 0.25;
+   uv.x += 0.5;
+   uv.y *= _OutputAspectRatio;
 
-   sincos (a, s, c);
-   xy1 = mul (float2x2 (c, -s, s, c), xy1);
-   sincos (b, s, c);
-   xy2 = mul (float2x2 (-c, s, -s, -c), xy2);
+   float mask = inner ? fn_tex2D (s_Mask, uv).w : fn_tex2D (s_Mask, uv).y;
 
-   xy1.x += 0.5;
-   xy2.x += 0.5;
-   xy1.y *= _OutputAspectRatio;
-   xy2.y *= _OutputAspectRatio;
+   sincos (radians (-m_rng.y), s, c);
+   uv = mul (float2x2 (c, -s, s, c), xyz.xz);
+   uv.x += 0.5;
+   uv.y *= _OutputAspectRatio;
 
-   return inner ? 1.0 - max (fn_tex2D (s_Mask, xy1).g, fn_tex2D (s_Mask, xy2).a)
-                : 1.0 - max (fn_tex2D (s_Mask, xy1).r, fn_tex2D (s_Mask, xy2).b);
+   return inner ? 1.0 - max (mask, fn_tex2D (s_Mask, uv).x)
+                : 1.0 - max (mask, fn_tex2D (s_Mask, uv).z);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -281,70 +283,69 @@ float fn_get_mask (float2 xy, bool inner)
 
 float4 ps_mask (float2 uv : TEXCOORD0) : COLOR
 {
-   float Ls = L_soft * 0.1;
-   float Ld = max (1e-10, Ls);
-   float Rs = R_soft * 0.1;
-   float Rd = max (1e-10, Rs);
+   float rng = uv.y * 10.0;
+   float L_1 = (rng > L_soft) ? 1.0 : rng / max (1e-10, L_soft);
+   float R_1 = (rng > R_soft) ? 1.0 : rng / max (1e-10, R_soft);
+   float L_2 = (rng > L_soft_2) ? 1.0 : rng / max (1e-10, L_soft_2);
+   float R_2 = (rng > R_soft_2) ? 1.0 : rng / max (1e-10, R_soft_2);
 
-   float4 retval = (uv.y >= Ls) ? 1.0.xxxx : uv.yyyy / Ld;
-
-   retval.a = (uv.y >= Rs) ? 1.0 : uv.y / Rd;
-
-   Ls = L_soft_2 * 0.1;
-   Ld = max (1e-10, Ls);
-   Rs = R_soft_2 * 0.1;
-   Rd = max (1e-10, Rs);
-
-   retval.r = (uv.y >= Ls) ? 1.0 : uv.y / Ld;
-   retval.b = (uv.y >= Rs) ? 1.0 : uv.y / Rd;
-
-   return retval;
+   return float4 (R_1, L_2, R_2, L_1);
 }
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Bgnd = tex2D (s_Input, uv);
+   float4 Mask = float4 (L_soft, R_angle, R_soft, L_angle);
 
    float2 xy = float2 (Pos_X - uv.x, 1.0 - uv.y - Pos_Y);
 
-   float radius = max (1.0e-6, Radius);
-   float width  = Width * radius;
-   float inner  = radius * CIRCLE;
-   float outer  = length (float2 (xy.x, xy.y / _OutputAspectRatio)) * RADIUS;
-   float rainbw = saturate ((outer - inner) / width);
-   float alpha  = saturate (2.0 - abs ((rainbw * 4.0) - 2.0));
+   float radius  = max (1.0e-6, Radius);
+   float outer   = length (float2 (xy.x, xy.y / _OutputAspectRatio)) * RADIUS;
+   float inner   = radius * CIRCLE;
+   float width   = radius * Width;
+   float rainbow = saturate ((outer - inner) / width);
+   float alpha   = saturate (2.0 - abs ((rainbow * 4.0) - 2.0));
+   float bg_vis  = dot (Bgnd.rgb, LUMA);
 
-   float4 Fgnd = saturate (((1.0 - rainbw) * 4.0 / 3.0) - 1.0 / 6.0).xxxx;
+   bg_vis = saturate ((bg_vis - (Range * 0.25) + Clip - 1.0) / max (1.0e-6, Range));
+
+   float4 Fgnd = saturate (((1.0 - rainbow) * 4.0 / 3.0) - 1.0 / 6.0).xxxx;
+
+   rainbow *= alpha;
 
    Fgnd.rgb = saturate (abs (frac (saturate (Fgnd.g - 0.1).xxx + HUE) * 6.0 - 3.0) - 1.0.xxx);
-   Fgnd.a   = lerp (alpha, alpha * rainbw, Falloff);
+   Fgnd.a   = lerp (alpha, rainbow, Falloff);
    Fgnd.rgb = Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb);
-   Fgnd.a  -= 1.5 * dot (Bgnd.rgb, LUMA);
+   Fgnd.a  -= bg_vis;
 
    Fgnd = saturate (Fgnd);
    Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amount);
-   Bgnd = lerp (Bgnd, Fgnd, fn_get_mask (uv, INNER));
+   Bgnd = lerp (Bgnd, Fgnd, fn_get_mask (Mask, xy, INNER));
 
    if (Amount_2 <= 0.0) return Bgnd;
 
+   Mask   = float4 (L_soft_2, R_angle_2, R_soft_2, L_angle_2);
    radius = (Offset * 0.8) + 1.2;
-   width *= radius;
    inner *= radius;
+   width *= sqrt (radius);
 
-   rainbw = saturate ((outer - inner) / width);
-   alpha  = saturate (2.0 - abs ((rainbw * 4.0) - 2.0));
+   rainbow = saturate ((outer - inner) / width);
+   alpha   = saturate (2.0 - abs ((rainbow * 4.0) - 2.0));
 
-   Fgnd = saturate ((rainbw * 4.0 / 3.0) - 1.0 / 6.0).xxxx;
+   Fgnd = saturate ((rainbow * 4.0 / 3.0) - 1.0 / 6.0).xxxx;
+
+   rainbow  = (1.0 - rainbow);
+   rainbow *= rainbow * alpha;
 
    Fgnd.rgb = saturate (abs (frac (saturate (Fgnd.g - 0.1).xxx + HUE) * 6.0 - 3.0) - 1.0.xxx);
-   Fgnd.a   = lerp (alpha, alpha * (1.0 - rainbw), Falloff);
+   Fgnd.a   = lerp (alpha, rainbow, Falloff);
    Fgnd.rgb = Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb);
-   Fgnd.a  -= 1.5 * dot (Bgnd.rgb, LUMA);
+   Fgnd.a  -= bg_vis;
 
    Fgnd = saturate (Fgnd);
    Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amount * Amount_2);
 
-   return lerp (Bgnd, Fgnd, fn_get_mask (uv, OUTER));
+   return lerp (Bgnd, Fgnd, fn_get_mask (Mask, xy, OUTER));
 }
 
 //-----------------------------------------------------------------------------------------//;
@@ -360,4 +361,3 @@ technique Rainbow_v2
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

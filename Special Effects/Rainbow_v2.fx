@@ -2,7 +2,7 @@
 // @Released 2020-08-12
 // @Author jwrl
 // @Created 2020-08-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/Rainbow_v2_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Rainbow_v_2_640.png
 
 /**
  This is a special effect that generates single and double rainbows.  The blue end of the

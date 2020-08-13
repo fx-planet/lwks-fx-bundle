@@ -1,4 +1,4 @@
-# Lightworks user Fx library, August 8, 2020.
+# Lightworks user Fx library, August 14, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -252,6 +252,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Auto mask                     |AutoMask.fx             |
 |Boolean blend                 |BooleanBlend.fx         |
 |Fast bleach bypass            |FastBleachBypass.fx     |
+|Fast film masks               |FastFilmMasks.fx        |
 |Flip flop                     |FlipFlop.fx             |
 |INK                           |InkFx.fx                |
 |Key out black                 |KeyOutBlack.fx          |

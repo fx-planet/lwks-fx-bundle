@@ -1,4 +1,4 @@
-# Lightworks user Fx library, August 24, 2020.
+# Lightworks user Fx library, August 26, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -27,6 +27,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |:---------------------------- |:---------------------- |
 |70s psychedelia               |70sPsychedelia.fx       |
 |Blended glow                  |BlendedGlow.fx          |
+|Delta glow                    |DeltaGlow.fx            |
 |Edge                          |EdgeFx.fx               |
 |Edge glow                     |EdgeGlowFx.fx           |
 |Five tone                     |Five_tone.fx            |

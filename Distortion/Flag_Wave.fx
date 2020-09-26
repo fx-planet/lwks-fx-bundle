@@ -1,33 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2018-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlagWave_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flag_Wave.mp4
 
 /**
-This effect simulates a flag waving.  It incorporates a 3D DVE to allow the flag to be
-scaled, rotated and positioned.
+ This effect simulates a flag waving.  It incorporates a 3D DVE to allow the flag to be
+ scaled, rotated and positioned.
 
-Note that the depth setting interacts with the scaling.  This is a side effect of the
-way that the waveform tracks the DVE settings.  An accident originally, it was found
-to be useful since it shows the effect works.  For that reason it has been retained,
-but it can easily be trimmed out by adjusting the image scaling if necessary.
+ Note that the depth setting interacts with the scaling.  This is a side effect of the
+ way that the waveform tracks the DVE settings.  An accident originally, it was found
+ to be useful since it shows the effect works.  For that reason it has been retained,
+ but it can easily be trimmed out by adjusting the image scaling if necessary.
 
-***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
+ ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Flag_Wave.fx
 //
-// Modified 2018-08-11 jwrl:
-// Added a slight vertical ripple to the wave generation to improve realism somewhat.
-// Added a new parameter, "Orientation", to allow either edge to flutter.
-// Modified the wave generation component to support right or left edge fluttering.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
 //
 // Modified 2018-12-23 jwrl:
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 2018-08-11 jwrl:
+// Added a slight vertical ripple to the wave generation to improve realism somewhat.
+// Added a new parameter, "Orientation", to allow either edge to flutter.
+// Modified the wave generation component to support right or left edge fluttering.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -352,4 +357,3 @@ technique Flag_Wave
 
    pass P_2 { PixelShader = compile PROFILE ps_main (); }
 }
-

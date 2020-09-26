@@ -1,27 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author schrauber
 // @Created 2016-03-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ripples_automatic_expansion_640.png
 
 /**
-This is one of two related effects, "Ripples (manual expansion)" and this version "Ripples
-(automatic expansion)".  This version automatically controls the waves.
+ This is one of two related effects, "Ripples (manual expansion)" and this version "Ripples
+ (automatic expansion)".  This version automatically controls the waves.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RipplesAuto.fx
 //
-// Added subcatgory for LW14 - jwrl 18 Feb 2017.
+// Version history:
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-26 jwrl.
+// Updated header block.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed category.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Added subcatgory for LW14 - jwrl 18 Feb 2017.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -200,7 +205,7 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
  float duration;
  float phase = 0;
  float freq = Frequency;
- if ((pulsing) || (pulse_negative)) freq = Frequency /2;							// Frequency adjustment, when the waveform was changed. ___________German: Frequenzanpassung, wenn die Wellenfom geändert wurde.
+ if ((pulsing) || (pulse_negative)) freq = Frequency /2;							// Frequency adjustment, when the waveform was changed. ___________German: Frequenzanpassung, wenn die Wellenfom geÃ¤ndert wurde.
  float zoom;
   
  float progress = _Progress - start_time - (start_fine * 0.001); if (progress < 0) progress = 0;			// set start time of the first wave. ___________German: Startzeitpunkt der 1. Welle festlegen
@@ -209,7 +214,7 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
  float progress_cycles = cycles - cycles_int;										// Position on the timeline in the current wave cycle ___________German: Position auf der zeitleiste im aktuellen Wellenzyklus
 
  if (enable_cycles) {
-  damping = (expansion_Rate * progress_cycles) + 0.696;								// Attenuation of the wave height. The number 0696 adjusts the wave start to the time 0 to (was determined attempts). ___________German: Dämpfung der Wellhöhe. Die Zahl 0.696 passt den Wellenstart an den Zeitpunkt 0 an (wurde durch Versuche ermittelt).
+  damping = (expansion_Rate * progress_cycles) + 0.696;								// Attenuation of the wave height. The number 0696 adjusts the wave start to the time 0 to (was determined attempts). ___________German: DÃ¤mpfung der WellhÃ¶he. Die Zahl 0.696 passt den Wellenstart an den Zeitpunkt 0 an (wurde durch Versuche ermittelt).
  }else{
   damping = (expansion_Rate * 20 * progress) + 0.696;									
  }
@@ -222,13 +227,13 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
  phase = (sin (phase_shift +  (_Progress * (speed*-1)) + (freq * _distance))) ;					// Create a wave.
 
 	
- distortion = zoom * phase / (1 + _distance);								// Wave height  ___________German: Wellenhöhe 
+ distortion = zoom * phase / (1 + _distance);								// Wave height  ___________German: WellenhÃ¶he 
 
  duration = pow(_distance , damping); 									// Time behavior of the wave ___________German: Zeitverhalten des Wellenlaufes
- distortion = distortion / (pow(duration,4) + 28561E-12);						//	  Wave height, time-dependent attenuation. (Mainly through experiments determined) ___________German:  Wellenhöhe, zeitabhängige Dämpfung. (überwiegend durch Versuche ermittelt)
+ distortion = distortion / (pow(duration,4) + 28561E-12);						//	  Wave height, time-dependent attenuation. (Mainly through experiments determined) ___________German:  WellenhÃ¶he, zeitabhÃ¤ngige DÃ¤mpfung. (Ã¼berwiegend durch Versuche ermittelt)
 
- if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom ändern (ggf. auch für Druckwelle geeignet?)
- if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom ändern (ggf. auch für Druckwelle geeignet?)
+ if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
+ if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
  
  xy1 = distortion * xy1 + xy;
 

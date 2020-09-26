@@ -1,24 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2018-11-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Framed_DVE_640.png
 
 /**
-This is a combination of two 2D DVEs designed to provide a drop shadow and vignette
-effect while matching Editshare's 2D DVE parameters.  Because of the way that the DVEs
-are created and applied they have exactly the same quality impact on the final result
-as a single DVE would.  The main DVE adjusts the foreground, crop, frame and drop shadow.
-When the foreground is cropped it can be given a bevelled textured border.  The bevel
-can be feathered, as can the drop shadow.  The second DVE adjusts the size and position
-of the foreground inside the frame.
+ This is a combination of two 2D DVEs designed to provide a drop shadow and vignette
+ effect while matching Lightworks' 2D DVE parameters.  Because of the way that the DVEs
+ are created and applied they have exactly the same quality impact on the final result
+ as a single DVE would.  The main DVE adjusts the foreground, crop, frame and drop shadow.
+ When the foreground is cropped it can be given a bevelled textured border.  The bevel
+ can be feathered, as can the drop shadow.  The second DVE adjusts the size and position
+ of the foreground inside the frame.
 
-There is actually a third DVE of sorts that adjusts the size and offset of the border
-texture.  This is extremely rudimentary though.
+ There is actually a third DVE of sorts that adjusts the size and offset of the border
+ texture.  This is extremely rudimentary though.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FramedDVE.fx
+//
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Modified jwrl 2018-12-23:
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
 //
 // Modified jwrl: 2018-11-16
 // Added antialiassing to the crop edges to reduce artefacts visible during rotation.
@@ -35,10 +44,6 @@ texture.  This is extremely rudimentary though.
 // be no way to do that using Lightworks effects programming - well, no way that I can
 // work out, anyway.  For example, sampler3D and tex3D() both compile but neither seem
 // to do very much.  I suspect that this is fated to remain on the to-do list.
-//
-// Modified jwrl 2018-12-23:
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

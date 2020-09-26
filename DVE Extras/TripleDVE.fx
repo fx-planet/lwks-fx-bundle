@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2020-04-16
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_640.png
 
 /**
  This is a combination of three DVEs each of which has been reverse engineered to match
- Editshare's 2D DVE parameters.  DVE 1 adjusts the foreground and DVE 2 adjusts the
+ Lightworks' 2D DVE parameters.  DVE 1 adjusts the foreground and DVE 2 adjusts the
  background.  The foreground can be cropped with rounded corners and given a bi-colour
  border.  Both the edges and borders can be feathered, and a drop shadow is also provided.
 
@@ -22,28 +22,33 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TripleDVE.fx
 //
-// Bug fix 17 July 2017 by jwrl.
-// Corrected ambiguous declaration affecting Linux and Mac versions only.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Modified 16 April 2020 jwrl.
+// Explicitly set SupportsAlpha flag for the border colours to false.
+// Added DisplayAsPercentage flags for version 2020 and higher.
+//
+// Modified 23 December 2018 jwrl.
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 29 August 2018 jwrl.
+// Added notes to header.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
 // Legality checking has been added to correct for a bug in XY sampler addressing on
 // Linux and OS-X platforms.  This effect will function correctly when used with all
 // current and previous Lightworks versions.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 16 April 2020 jwrl.
-// Explicitly set SupportsAlpha flag for the border colours to false.
-// Added DisplayAsPercentage flags for version 2020 and higher.
+// Bug fix 17 July 2017 by jwrl.
+// Corrected ambiguous declaration affecting Linux and Mac versions only.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author msi
 // @Created 2011-05-27
 // @License "CC BY-NC-SA"
 // @see https://www.lwks.com/media/kunena/attachments/6375/bleachbypass_640.png
 
 /**
-This effect emulates the altered contrast and saturation obtained by skipping the bleach
-step in classical colour film processing.
+ This effect emulates the altered contrast and saturation obtained by skipping the bleach
+ step in classical colour film processing.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,20 +15,25 @@ step in classical colour film processing.
 //
 // [CC BY-NC-SA]
 //
-// Added subcategory for LW14 - jwrl, 18 Feb 2017.
+// Version history:
 //
-// Bug fix 31 July 2017 by jwrl.
-// Explicitly defined sampler to ensure cross platform default sampler state
-// compatibility.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix 31 July 2017 by jwrl.
+// Explicitly defined sampler to ensure cross platform default sampler state
+// compatibility.
+//
+// Added subcategory for LW14 - jwrl, 18 Feb 2017.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

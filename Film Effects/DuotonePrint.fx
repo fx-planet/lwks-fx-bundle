@@ -1,36 +1,41 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2016-04-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_640.png
 
 /**
-This simulates the effect of the old Duotone film colour process.
+ This simulates the effect of the old Duotone film colour process.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DuotonePrint.fx
 //
-// Modified 14 April 2016 by jwrl.
-// This version has changed the axes slightly to better handle foliage and other
-// greenery, and has added a saturation control after requests for it.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 23 December 2018 jwrl.
+// Changed name from "Duotone".
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Update 31 July 2017 jwrl.
 // Added an extra profile and two extra parameters.  It's now possible to mix between
 // the original profile and a new one that is better for flesh tones.  Additionally,
 // a gamma tweak has been added under the guise of a dye curve adjustment.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 23 December 2018 jwrl.
-// Changed name from "Duotone".
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
+// Modified 14 April 2016 by jwrl.
+// This version has changed the axes slightly to better handle foliage and other
+// greenery, and has added a saturation control after requests for it.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

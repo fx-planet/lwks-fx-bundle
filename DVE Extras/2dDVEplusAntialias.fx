@@ -2,14 +2,14 @@
 // @Released 2020-04-12
 // @Author schrauber
 // @Author jwrl
-// @Author Editshare
-// @Created 2018-03-09
+// @Author LWKS Software Ltd
+// @Created 2018-10-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_antialias_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_alpha_antialias.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/2D_DVE_antialias.mp4
 
 /**
- This a 2D DVE that performs as the Editshare version does, but with some differences.
+ This a 2D DVE that performs as the Lightworks version does, but with some differences.
  The first is the obvious one that Fg, Bg and drop shadow alphas are passed through
  to the output.  The behaviour of the drop shadow is also different, and in this
  effect scales along with the foreground.  This is felt to be more logical behaviour
@@ -17,10 +17,10 @@
 
  Fixed in this version of the 2D DVE is the half texel offset error which can appear as
  a transparent one pixel boundary between the image and the drop shadow under the right
- conditions in the Editshare version.  Also fixed is the fact the shadow is calculated
+ conditions in the Lightworks version.  Also fixed is the fact the shadow is calculated
  from Fg frame boundaries regardless of whether they are opaque or not.  Finally, the
  presence of the drop shadow will not punch a transparent hole in the composite when used
- with downstream blend and DVE effects as the Editshare version does.
+ with downstream blend and DVE effects as the Lightworks version does.
 
  Added in this version is a means of smoothing edges, overcoming the aliasing and jitter
  caused by simple GPU processing of a zoom.  Because of the considerably increased GPU
@@ -33,20 +33,34 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect 2dDVEplusAntialias.fx
 //
-// This 2D DVE was originally built to emulate the Editshare original but respect alpha
+// This 2D DVE was originally built to emulate the Lightworks original but respect alpha
 // channels in both foreground and background, as well any produced by the drop shadow.
-// That effect was called "2D DVE plus alpha" and was highly successful.  It is still
-// available in that form but will ultimately be withdrawn, since this effect at its
-// simplest provides exactly the same functionality.
+// That effect was called "2D DVE plus alpha" and was highly successful.  It has been
+// withdrawn, since this effect at its simplest provides exactly the same functionality.
 //
 // The original effect was locked at 14 October 2018 and it is that version that forms
-// the basis for this effect.  The creation date shown here is the date that schruaber
-// first posted his initial amendment.  That version was considered by scrauber to be
-// a prototype, and while posted on the Lightworks forums, was never actually released.
+// the basis for this effect.  The creation date shown here is the date of the original
+// effect without schrauber's amendment.  This version is based on a variant that was
+// considered by schrauber to be a prototype.  That was posted on the Lightworks forums
+// but never actually released.
 //
-// Initial version schrauber 2020-03-09:
-// Added proportional pre-blurring to "2D DVE plus alpha" to improve smoothness of zooms
-// and slow position changes.  That blur only applied to scaling factors less than zero.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Modified jwrl 2020-04-12:
+// Added linear filtering to s_Foreground to improve antialiasing.
+//
+// Modified jwrl 2020-03-12:
+// Removed the necessity to explicitly pass the shader value to ps_blur().
+// Added the ability to apply a non-linear proportional edge blur for zoom scaling factors
+// greater than 1.
+// Changed the layout of the parameters so that SetTechnique is ahead of the scale factors.
+// Finalised the labelling of the SetTechnique parameters.
+// If both X and Y scale factors are unity we exit the blur routine immediately.
+// Removed the redundant aspect ratio correction from the blur scale factor.  While it is
+// necessary for a standard blur, it should not be necessary here.
 //
 // Modified jwrl 2020-03-11:
 // Modified ps_crop() to simplify the code slightly.
@@ -54,18 +68,19 @@
 // produces will be processed by ps_blur().
 // As a result, changed the mirror addressing of s_Foreground back to default.
 //
-// Modified jwrl 2020-03-12:
-// Removed the necessity to explicitly pass the shader value to ps_blur().
-// Added the ability to apply a non-linear proportional edge blur for zoom scaling factors
-// greater than 1.
-// Changed the layout of the parameters so that SetTechnique is ahead of the sacle factors.
-// Finalised the labelling of the SetTechnique parameters.
-// If both X and Y scale factors are unity we exit the blur routine immediately.
-// Removed the redundant aspect ratio correction from the blur scale factor.  While it is
-// necessary for a standard blur, it should not be necessary here.
+// Initial version as 2dDVEplusAntialias.fx schrauber 2020-03-09:
+// Added proportional pre-blurring to "2D DVE plus alpha" to improve smoothness of zooms
+// and slow position changes.  That blur only applied to scaling factors less than zero.
 //
-// Modified jwrl 2020-04-12:
-// Added linear filtering to s_Foreground to improve antialiasing.
+// Modified jwrl 2018-12-23:
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2018-10-14:
+// Added code to scale the drop shadow offsets so that the same values in the X and
+// Y parameters give the same visual displacement.
+//
+// Built as 2dDVEplusAlpha.fx jwrl 2018-10-07.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -116,7 +131,7 @@ sampler s_Input = sampler_state
 float CentreX
 <
    string Description = "Position";
-   string Flags = "SpecifiesPointX";
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -124,7 +139,7 @@ float CentreX
 float CentreY
 <
    string Description = "Position";
-   string Flags = "SpecifiesPointY";
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
@@ -204,6 +219,7 @@ float ShadowXOffset
 <
    string Description = "X Offset";
    string Group = "Shadow";
+   string Flags = "DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 1.0;
 > = 0.0;
@@ -212,6 +228,7 @@ float ShadowYOffset
 <
    string Description = "Y Offset";
    string Group = "Shadow";
+   string Flags = "DisplayAsPercentage";
    float MinVal = -1.0;
    float MaxVal = 1.0;
 > = 0.0;
@@ -228,7 +245,7 @@ float Opacity
 //-----------------------------------------------------------------------------------------//
 
 #define EMPTY        0.0.xxxx    // Transparent black
-#define SHADOW_SCALE 0.2         // Carry over from Editshare original to match unity scaling
+#define SHADOW_SCALE 0.2         // Carry over from Lightworks original to match unity scaling
 
 float _OutputAspectRatio;
 float _OutputWidth;
@@ -429,4 +446,3 @@ technique DVEplusAntialias_3
 
    pass P_2   { PixelShader = compile PROFILE ps_main (); }
 }
-

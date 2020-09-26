@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-04-16
+// @Released 2020-09-27
 // @Author jwrl
 // @Author abelmilanes
 // @Created 2017-03-04
@@ -14,6 +14,30 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmExposure.fx
 //
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 16 April 2020 jwrl.
+// Removed buggy "all()" Cg expression.  Both "all()" and "any()" suffer from this Cg
+// documented bug.
+//
+// Modified 23 December 2018 jwrl.
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix 10 July 2017 by jwrl.
+// Corrected ambiguous declaration affecting Linux and Mac versions only.
+//
+// Completed 4 March 2017 by jwrl.
 // This effect was started by user abelmilanes as FilmFx.fx in 2011 but was never
 // completed.  This version was completed by jwrl.  Hopefully abelmilane's original
 // intentions have been preserved.  In the process there has been considerable code
@@ -31,24 +55,6 @@
 //
 // The "magic numbers" used in the original have been kept at their original depths of
 // up to seven decimal places.  That surely can't really be necessary!!!
-//
-// Bug fix 10 July 2017 by jwrl.
-// Corrected ambiguous declaration affecting Linux and Mac versions only.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 16 April 2020 jwrl.
-// Removed buggy "all()" Cg expression.  Both "all()" and "any()" suffer from this Cg
-// documented bug.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

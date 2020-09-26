@@ -1,37 +1,42 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2018-09-26
 // @Author jwrl
 // @Created 2017-05-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/BorderCrop_640.png
 
 /**
-This started out to be a revised SimpleCrop.fx, but since it adds a feathered,
-coloured border and a soft drop shadow was given its own name.  It's now essentially
-the same as DualDVE.fx without the DVE components but with input swapping instead.
+ This started out to be a revised SimpleCrop.fx, but since it adds a feathered,
+ coloured border and a soft drop shadow was given its own name.  It's now essentially
+ the same as DualDVE.fx without the DVE components but with input swapping instead.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BorderedCrop.fx
 //
-// Bug fix by LW user jwrl 20 July 2017
-// This effect didn't work on Linux/Mac platforms.  It now does.  In the process
-// significant code optimisation has been performed.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Reformatted header block.
+//
+// Modified 23 December 2018 jwrl.
+// Changed subcategory.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 29 August 2018 jwrl.
+// Added notes to header.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
 // Legality checking has been added to correct for a bug in XY sampler addressing on
 // Linux and OS-X platforms.  This effect will now function correctly when used with
 // all current and previous Lightworks versions.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
+// Bug fix by LW user jwrl 20 July 2017
+// This effect didn't work on Linux/Mac platforms.  It now does.  In the process
+// significant code optimisation has been performed.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

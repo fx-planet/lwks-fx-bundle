@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author schrauber
 // @Created 2017-01-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/magnifying_glass_640.png
 
 /**
-This is similar in operation to the regional zoom effect, but instead of non-linear
-distortion a linear zoom is performed.  It can be used as-is, or fed into another
-effect to generate borders and/or generate shadows or blend with another background.
+ This is similar in operation to the regional zoom effect, but instead of non-linear
+ distortion a linear zoom is performed.  It can be used as-is, or fed into another
+ effect to generate borders and/or generate shadows or blend with another background.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect MagnifyingGlass.fx
 //
-// Added subcategory for LW14 - jwrl 18 February 2017
+// Version history:
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-26 jwrl.
+// Updated the header block.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed category.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Added subcategory for LW14 - jwrl 18 February 2017
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author schrauber
 // @Created 2017-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/Spin_Zoom_640.png
 
 /**
-This has some of the same functions as the 3D DVE, but the settings menu does not look
-as interesting as that effect.  It trades that for simple functionality, and adds the
-ability to mirror or duplicate the image as you zoom out.  If you only need rotation
-and zoom, then you only need this effect.  The rotation axis is automatically adjusted
-in the same way as the 3D DVE does.
+ This has some of the same functions as the 3D DVE, but the settings menu does not look
+ as interesting as that effect.  It is actually more interesting.  It gives you a simple
+ functionality, and adds the ability to mirror or duplicate the image as you zoom out.
+ If you only need rotation and zoom, then you only need this effect.  The rotation axis
+ is automatically adjusted in the same way as the 3D DVE does.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -36,11 +36,17 @@ in the same way as the 3D DVE does.
 //        Zoom >= 0: first ZOOM, then ROTATION
 //        Zoom <  0: first ROTATION, then ZOOM
 //
-//-----------------------------------------------------------------------------------------//
 // Information for Effect Developer:
 // 16 May 2018 by LW user schrauber: Subcategory defined, and data relevant to the homepage.
 // The rotation code is based on the spin-dissolve effects of the user "jwrl".
 // The zoom code is based on the zoom out, zoom in effect of the user "schrauber".
+//
+//-----------------------------------------------------------------------------------------//
+//
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
 //
 // Modified jwrl 2018-12-23:
 // Changed subcategory.

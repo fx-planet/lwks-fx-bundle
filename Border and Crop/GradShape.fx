@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2020-04-02
+// @Released 2020-09-26
 // @Author jwrl
-// @Author Editshare
+// @Author LWKS Software Ltd
 // @Created 2020-03-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/GradShape_640.png
 
 /**
- This effect is built around Editshare's effect "Simple 2D Shape".  In this version three
+ This effect is built around the Lightworks effect "Simple 2D Shape".  In this version 3
  additional colour parameters have been added to allow a colour gradient to be produced
  inside the shape.  The horizontal and vertical linearity of the gradient can be adjusted,
  and the full gradient will display inside the 2D shape, regardless of the size of the
@@ -27,12 +27,17 @@
 // the gradient.  A preamble was added to both the rectangle and ellipse shaders to allow
 // the gradient to be used as either the inner or outer area of the frame.
 //
-// Modified April 1 2020 jwrl:
-// Corrected a bug that meant that scaling beyond full screen could return an incorrect
-// colour address if the position was panned up or left.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Reformatted header block.
 //
 // Modified April 2 2020 jwrl:
 // Restructured the rectangle and ellipse shaders to simplify the execution slightly.
+//
+// Modified April 1 2020 jwrl:
+// Corrected a bug that meant that scaling beyond full screen could return an incorrect
+// colour address if the position was panned up or left.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -272,7 +277,8 @@ float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
    else if (xy.y < innerT) { amount = (xy.y - outerT) / softness.y; }
    else amount = (outerB - xy.y) / softness.y;
 
-   // Return a mix of background and foreground depending on softness
+   // Return a mix of background and foreground depending on softness.  The mix amount can
+   // go negative on the corners so it must be limited to zero to prevent artefacts there.
 
    return lerp (Bgnd, Fgnd, max (amount, 0.0));
 }
@@ -289,13 +295,13 @@ float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
       Fgnd = temp;
    }
 
-   // From here on is the original Editshare effect
+   // From here on is largely the original Editshare effect
 
    float a = Width / (_OutputAspectRatio * 2.0);
    float b = Height / 2.0;
 
-   float sa = ((Width / _OutputAspectRatio) / 2.0) + (Softness / _OutputAspectRatio);
-   float sb = (Height / 2.0) + Softness;
+   float sa = a + (Softness / _OutputAspectRatio);
+   float sb = b + Softness;
 
    float2 pos = xy - float2 (CentreX, 1.0 - CentreY);
 
@@ -306,31 +312,43 @@ float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 
    float2 posSq = pos * pos;
 
-   float v1 = (posSq.x / (a * a)) + (posSq.y / (b * b));
-   float v2 = (posSq.x / (sa * sa)) + (posSq.y / (sb * sb));
+   // Somewhat restructured code from here on, so I've commented what I've done - jwrl.
 
-   // Slightly restructured code from here on, so I've commented what I've done - jwrl.
+   // Check whether the current position is within the ellipse range, i.e., < 1.0
 
-   // If the current position is entirely within the solid ellipse we return the foreground,
-   // and if it's entirely outside the soft edge of the ellipse we return the background.
+   float range = (posSq.x / (a * a)) + (posSq.y / (b * b));
 
-   if (v1 < 1.0) return Fgnd;
+   // If the current position is entirely within the ellipse we return the foreground.
 
-   if (v2 > 1.0) return Bgnd;
+   if (range < 1.0) return Fgnd;
+
+   // Now calculate whether the position is outside the legal ellipse range including softness
+
+   range = (posSq.x / (sa * sa)) + (posSq.y / (sb * sb));
+
+   // If it's entirely outside the soft edge of the ellipse we return the background.
+
+   if (range > 1.0) return Bgnd;
 
    // http://www.slader.com/discussion/question/what-is-the-equation-of-an-ellipse-in-polar-coordinates/
 
    // I have replaced the original explicit sin() and cos() functions with sincos().  The atan2()
    // operation to produce theta has also been placed inside the sincos() function.  In the process
-   // I have moved the pow() expressions used to square the sine and cosine values into dLower and
-   // dUpper.  This simplifies those calculations slightly - jwrl.
+   // I have removed the pow() expressions used to square the sine and cosine values at the expense
+   // of two new variables, ab and sab.  This simplifies the calculations slightly - I think!
 
+   float ab  = a * b;
+   float sab = sa * sb;
    float cosTheta, sinTheta;
 
    sincos (atan2 (pos.y, pos.x), sinTheta, cosTheta);
+   a  *= sinTheta;
+   b  *= cosTheta;
+   sa *= sinTheta;
+   sb *= cosTheta;
 
-   float dLower = (a * b) / sqrt (pow (a * sinTheta, 2.0) + pow (b * cosTheta, 2.0));
-   float dUpper = (sa * sb) / sqrt (pow (sa * sinTheta, 2.0) + pow (sb * cosTheta, 2.0));
+   float dLower = ab / sqrt ((a * a) + (b * b));
+   float dUpper = sab / sqrt ((sa * sa) + (sb * sb));
    float amount = (length (pos) - dLower) / (dUpper - dLower);
 
    return lerp (Fgnd, Bgnd, amount);

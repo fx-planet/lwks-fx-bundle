@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-11
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2018-06-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/EnhancedBlend_640.png
@@ -15,6 +15,9 @@
 // User effect EnhancedBlend.fx
 //
 // Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated "Source" settings.
 //
 // Update 11 July 2020 jwrl.
 // Added a delta key to separate blended effects from the background.
@@ -69,8 +72,8 @@ sampler s_Background = sampler_state { Texture = <bg>; };
 
 int Source
 <
-   string Description = "Source selection (disconnect input to text effects first)";
-   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 1;
 
 float Amount

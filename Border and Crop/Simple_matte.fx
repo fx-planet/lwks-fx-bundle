@@ -1,27 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2018-01-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleMatte_640.png
 
 /**
-This just a simple crop and matte effect.  There is no bordering or feathering of the
-edges and the background matte is just a plain flat colour.
+ This just a simple crop and matte effect.  There is no bordering or feathering of the
+ edges and the background matte is just a plain flat colour.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Simple_matte.fx
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
+// Update 2020-09-26 jwrl.
+// Reformatted header block.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 29 August 2018 jwrl.
+// Added notes to header.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

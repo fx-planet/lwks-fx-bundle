@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author msi
 // @OriginalAuthor "Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)"
 // @Created 2011-05-27
@@ -7,8 +7,8 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/vintagelook_640.png
 
 /**
-Vintage look simulates what happens when the dye layers of old colour film stock start
-to fade.
+ Vintage look simulates what happens when the dye layers of old colour film stock start
+ to fade.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,20 +17,25 @@ to fade.
 // 2011 msi [CC BY-NC-SA] - Uses Vintage Look routine by Wojciech
 // Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)
 //
-// Added subcategory for LW14 18 Feb 2017 - jwrl.
+// Version history:
 //
-// Cross platform compatibility check 31 July 2017 jwrl.
-// Explicitly define float4 variables to address the behavioural differences between
-// the D3D and Cg compilers.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 31 July 2017 jwrl.
+// Explicitly define float4 variables to address the behavioural differences between
+// the D3D and Cg compilers.
+//
+// Added subcategory for LW14 18 Feb 2017 - jwrl.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

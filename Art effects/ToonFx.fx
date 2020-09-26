@@ -1,32 +1,37 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-08-02
 // @Author khaver
 // @Created 2011-04-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/Toon_640.png
 
 /**
-In Toon (ToonFx.fx) the image is posterized, then outlines are developed from the image
-edges.  These are then applied on top of the already posterized image to give the final
-result.
+ In Toon (ToonFx.fx) the image is posterized, then outlines are developed from the image
+ edges.  These are then applied on top of the already posterized image to give the final
+ result.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Toon.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
+//
+// Modified jwrl 2020-08-02:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
 // Explicitly defined float3 variable to address behavioural differences between the D3D
 // and Cg compilers.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

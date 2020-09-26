@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author windsturm
 // @OriginalAuthor "Evan Wallace"
 // @Created 2017-05-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxPerspective_640.png
 
 /**
-This effect warps one rectanglur area to another with a perspective transform.  It can be
-used to make a 2D image look 3D or to flatten a 2D image captured in a 3D environment.
+ This effect warps one rectanglur area to another with a perspective transform.  It can be
+ used to make a 2D image look 3D or to flatten a 2D image captured in a 3D environment.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -46,14 +46,19 @@ THE SOFTWARE.
 //-----------------------------------------------------------------------------------------//
 // FxPerspective
 //
-// Added subcategory and category changed to DVE by jwrl for version 14, 31 July 2017.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Modified 23 December 2018 jwrl.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 23 December 2018 jwrl.
-// Formatted the descriptive block so that it can automatically be read.
+// Added subcategory and category changed to DVE by jwrl for version 14, 31 July 2017.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

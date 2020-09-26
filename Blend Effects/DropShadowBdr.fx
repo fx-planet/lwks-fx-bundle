@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-11
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2018-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
@@ -20,7 +20,10 @@
 //
 // Version history:
 //
-// Update 11 July 2020 jwrl.
+// Update 2020-09-26 jwrl.
+// Updated "Source" settings.
+//
+// Update 2020-08-02 jwrl.
 // Added a delta key to separate blended effects from the background.
 //
 // Update 30 April 2019 jwrl.
@@ -242,8 +245,8 @@ int AlphaMode
 
 int Source
 <
-   string Description = "Source selection (disconnect input to text effects first)";
-   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//

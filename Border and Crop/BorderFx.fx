@@ -1,32 +1,37 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2018-09-26
 // @Author rhinox202
 // @Created 2012-11-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Border_640.png
 
 /**
-Border creates a coloured hard border over a cropped image.  The border is created
-inside the image being bordered, meaning that some of the image content will be lost.
+ Border creates a coloured hard border over a cropped image.  The border is created
+ inside the image being bordered, meaning that some of the image content will be lost.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BorderFx.fx
 //
-// Bug fix 21 July 2017 by jwrl:
-// This addresses a cross platform issue which may have caused the effect not to behave
-// as needed on Linux and Mac systems.
+// Version history:
 //
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-26 jwrl.
+// Reformatted header block.
+//
+// Modified 23 December 2018 jwrl.
+// Changed category and subcategory.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified 22 November 2018 jwrl.
 // Fixed a bug that meant that the border was always transparent.  Transparency can now
 // be set by adjusting the alpha value of "Color".
 //
-// Modified 23 December 2018 jwrl.
-// Changed category and subcategory.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix 21 July 2017 by jwrl:
+// This addresses a cross platform issue which may have caused the effect not to behave
+// as needed on Linux and Mac systems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

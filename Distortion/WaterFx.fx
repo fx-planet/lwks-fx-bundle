@@ -1,27 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author khaver
 // @Created 2014-11-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Water_640.png
 
 /**
-Water makes waves as well as refraction, and provides X and Y adjustment of the
-parameters.
+ Water makes waves as well as refraction, and provides X and Y adjustment of the
+ parameters.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect WaterFx.fx
 //
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+// Version history:
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-26 jwrl.
+// Updated header block.
 //
 // Modified 2018-12-23 jwrl:
 // Added creation date.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

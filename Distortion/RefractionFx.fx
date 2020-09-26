@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author windsturm
 // @OriginalAuthor "Ian McEwan"
 // @Created 2012-10-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxRefraction_640.png
 
 /**
-Simulates the distortion effect of an image seen through textured glass.  The rippling
-is derived for a random noise generator.
+ Simulates the distortion effect of an image seen through textured glass.  The rippling
+ is derived for a random noise generator.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -44,10 +44,18 @@ is derived for a random noise generator.
 //-----------------------------------------------------------------------------------------//
 // This conversion for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
 //
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Update 2020-09-26 jwrl.
+// Updated header block.
+//
+// Modified 2018-12-23 jwrl:
+// Changed subcategory.
+// Added creation date.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 5 December 2017 by jwrl.
 // Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
@@ -55,13 +63,10 @@ is derived for a random noise generator.
 // 14.5 and higher under Linux or OS-X and fixes a bug associated with using this
 // effect with transitions on those platforms.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //
-// Modified 2018-12-23 jwrl:
-// Changed subcategory.
-// Added creation date.
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

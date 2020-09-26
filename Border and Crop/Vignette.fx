@@ -1,29 +1,26 @@
 // @Maintainer jwrl
-// @Released 2019-01-06
+// @Released 2019-09-26
 // @Author juhartik
 // @AuthorEmail "juha@linearteam.org"
 // @Created 2011-04-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/jh_stylize_vignette_640.png
 
 /**
-A lens vignette effect created by Juha Hartikainen
+ A lens vignette effect created by Juha Hartikainen
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Vignette.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Explicitly defined float3 variables to allow for the behavioural differences between
-// the D3D and Cg compilers.
+// Update 2020-09-26 jwrl.
+// Reformatted header block.
 //
-// Modified by LW user jwrl 4 April 2018.
-// Metadata header block added to better support GitHub repository.
-// VignettePS() now returns float4 instead of half4.  This ensures that 32 bit floats
-// will be properly supported as Lightworks moves into those areas.
+// Modified 6 January 2019 jwrl.
+// Added colour setting for the surround.
+// Changed default values of radius and amount.
+// Renamed "Softness" to "Hardness" because reducing the value increases the softness.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
@@ -31,10 +28,18 @@ A lens vignette effect created by Juha Hartikainen
 // Changed name from jh_stylize_vignette.fx to Vignette.fx.
 // Formatted the descriptive block so that it can automatically be read.
 //
-// Modified 6 January 2019 jwrl.
-// Added colour setting for the surround.
-// Changed default values of radius and amount.
-// Renamed "Softness" to "Hardness" because reducing the value increases the softness.
+// Modified by LW user jwrl 4 April 2018.
+// Metadata header block added to better support GitHub repository.
+// VignettePS() now returns float4 instead of half4.  This ensures that 32 bit floats
+// will be properly supported as Lightworks moves into those areas.
+//
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Explicitly defined float3 variables to allow for the behavioural differences between
+// the D3D and Cg compilers.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

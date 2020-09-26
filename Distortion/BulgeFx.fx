@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author schrauber
 // @Created 2016-03-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/bulge-2018_640.png
 // @see https://www.youtube.com/watch?v=IZToP0MrbZM
 
 /**
-Bulge 2018 allows a variable area of the frame to have a concave or convex bulge applied.
-Optionally the background can have a radial distortion applied at the same time, or can
-be made black or transparent black.
+ Bulge 2018 allows a variable area of the frame to have a concave or convex bulge applied.
+ Optionally the background can have a radial distortion applied at the same time, or can
+ be made black or transparent black.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,16 +19,21 @@ be made black or transparent black.
 // to the existing old effect, but avoid using the withdrawn version for new editing
 // operations.
 //
-// Update 26 April 2018 by LW user schrauber:
-// The aspect ratio of the bulge is now adjustable and rotatable.
-// Fixed cross-platform compatibility (Mode: Environment, distorted).
+// Version history:
 //
-// Update 18 Feb 2017 by LW user jwrl:
-// Added subcategory for LW14
+// Update 2020-09-26 jwrl.
+// Updated the header block.
 //
 // Update 23 Dec 2018 by LW user jwrl:
 // Changed category.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Update 18 Feb 2017 by LW user jwrl:
+// Added subcategory for LW14
+//
+// Update 26 April 2018 by LW user schrauber:
+// The aspect ratio of the bulge is now adjustable and rotatable.
+// Fixed cross-platform compatibility (Mode: Environment, distorted).
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

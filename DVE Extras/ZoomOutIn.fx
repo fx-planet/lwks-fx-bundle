@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author schrauber
 // @Created 2016-07-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/zoom-out-in_640.png
@@ -7,27 +7,32 @@
 // @see https://www.youtube.com/watch?v=weSAKIDkWwk
 
 /**
-This is a zoom effect designed to allow zooming at frame edge without going outside
-the frame.  With this effect it should be unnecessary to dynamically adjust the effect
-position to prevent overrun because the interface is extremely simple.  You should do
-any fine adjustment of position at maximum zoom used to prevent centring problems.
+ This is a zoom effect designed to allow zooming at frame edge without going outside
+ the frame.  With this effect it should be unnecessary to dynamically adjust the effect
+ position to prevent overrun because the interface is extremely simple.  You should do
+ any fine adjustment of position at maximum zoom used to prevent centring problems.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ZoomOutIn.fx
 //
-// Update 20 July 2017 jwrl:
-// Changed category to DVE, added subcategory.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Modified jwrl 2018-12-23:
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// GitHub-relevant modification, 18 April 2018 schrauber
 //
 // Modified 7 April 2018 by jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// GitHub-relevant modification, 18 April 2018 schrauber
-//
-// Modified jwrl 2018-12-23:
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
+// Update 20 July 2017 jwrl:
+// Changed category to DVE, added subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

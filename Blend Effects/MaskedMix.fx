@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2020-05-26
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2020-05-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMix_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMixRoute.png
 
 /**
- This is a variant of Editshare's masked blend that allows the mask to be mixed with
+ This is a variant of Lightworks' masked blend that allows the mask to be mixed with
  the foreground.  There are some major differences.  The first is that instead of
  putting the mask input on the bottom layer it is placed on the top.  This just appears
  to make more sense to me.  The next layer is the fill layer, then the bottom is the
@@ -35,8 +35,13 @@
 //-----------------------------------------------------------------------------------------//
 // User effect MaskedMix.fx
 //
-// Modified 2020-05-25 jwrl:
-// Added the ability to derive the mask by colour matching.
+// Version history:
+//
+// Modified jwrl 2020-09-26:
+// Updated "Source" settings.
+//
+// Modified jwrl 2020-08-02:
+// Reformatted the effect header.
 //
 // Modified 2020-05-26 jwrl:
 // Reworked the fill masking to clean up the edges.  Previously there was a visible hard
@@ -48,6 +53,9 @@
 // First Mode enumerator now reads "Foreground" and not "Foreground luminance".
 // Second Mode enumerator is now "Matching foreground colour" not "Foreground colour match".
 // Parameter MatchColour changed from "Colour match" to read "Colour to match".
+//
+// Modified 2020-05-25 jwrl:
+// Added the ability to derive the mask by colour matching.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -81,8 +89,8 @@ sampler s_Background = sampler_state { Texture = <Bg>; };
 
 int Source
 <
-   string Description = "Source selection (disconnect input to text effects first)";
-   string Enum = "Crawl / roll / titles,Video / external image";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 1;
 
 int SetTechnique

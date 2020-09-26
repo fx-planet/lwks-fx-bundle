@@ -1,16 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author khaver
 // @Author saabi
 // @Created 2018-06-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/OldFilmLook_640.png
 
 /**
-This effect simulates a black and white film with scratches, sprocket holes, weave and
-flicker.
+ This effect simulates a black and white film with scratches, sprocket holes, weave and
+ flicker.
 
-NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
-A legacy version is available for users in that position.
+ NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
+ A legacy version is available for users in that position.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -27,6 +27,11 @@ A legacy version is available for users in that position.
 // used for commercial purposes.
 //
 // note: code comments are from the original author(s).
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
@@ -383,4 +388,3 @@ technique SampleFxTechnique
       PixelShader = compile PROFILE mainImage2();
    }
 }
-

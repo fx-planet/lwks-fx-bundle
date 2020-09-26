@@ -1,30 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2016-05-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmNeg_640.png
 
 /**
-This simulates the look of 35 mm masked film negative.
+ This simulates the look of 35 mm masked film negative.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ColourNegative.fx
 //
-// Added subcategory for LW14 - jwrl 18 February 2017.
+// Version history:
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Renamed effect from "Film negative".
 // Changed subcategory.
 // Amended the Notes to be more descriptive.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Added subcategory for LW14 - jwrl 18 February 2017.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

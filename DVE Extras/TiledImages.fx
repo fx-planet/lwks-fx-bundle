@@ -1,30 +1,36 @@
 // @Maintainer jwrl
-// @Released 2020-04-12
+// @Released 2020-09-26
 // @Author windsturm
 // @Created 2012-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTile_640.png
 
 /**
-  * FxTile.
-  * Tiling and Rotation effect.
-  * 
-  * @param <threshold> The granularity of the tiling parameters
-  * @param <angle> Rotation parameters of the screen
-  * @author Windsturm
-  * @version 1.0
-  * @see <a href="http://kuramo.ch/webgl/videoeffects/">WebGL Video Effects Demo</a>
+ This effect tiles an image and rotates those tiles to create abstract backgrounds.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TiledImages.fx
 //
-// Checked and modded for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
+//------------------------------- Original author's header --------------------------------//
 //
-// LW 14+ version by jwrl 12 February 2017 - SubCategory added.
+// FxTile.
+// Tiling and Rotation effect.
+// 
+// @param <threshold> The granularity of the tiling parameters
+// @param <angle> Rotation parameters of the screen
+// @author Windsturm
+// @version 1.0
+// @see <a href="http://kuramo.ch/webgl/videoeffects/">WebGL Video Effects Demo</a>
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+//-----------------------------------------------------------------------------------------//
+//
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Modified jwrl 2020-04-12:
+// Changed clamp addressing to ClampToEdge for compatibility reasons.
 //
 // Modified jwrl 2018-10-23:
 // Added creation date.
@@ -32,8 +38,13 @@
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
 //
-// Modified jwrl 2020-04-12:
-// Changed clamp addressing to ClampToEdge for compatibility reasons.
+// Checked and modded for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// LW 14+ version by jwrl 12 February 2017 - SubCategory added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

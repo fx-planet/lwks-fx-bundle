@@ -1,18 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2017-04-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Deco_DVE_640.png
 
 /**
-This is an Art Deco take on the classic DVE effect.  It produces two independently
-adjustable borders around the foreground image.  It also produces corner flash lines
-inside the crop which are adjustable.
+ This is an Art Deco take on the classic DVE effect.  It produces two independently
+ adjustable borders around the foreground image.  It also produces corner flash lines
+ inside the crop which are adjustable.
 
-It allows the foreground image to be resized and positioned inside the crop window,
-as well as allowing the foreground composite with borders to be scaled and positioned.
-Finally, as the composite is zoomed out the user can choose to have a single instance
-on screen or multiples.
+ It allows the foreground image to be resized and positioned inside the crop window,
+ as well as allowing the foreground composite with borders to be scaled and positioned.
+ Finally, as the composite is zoomed out the user can choose to have a single instance
+ on screen or multiples.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,29 +22,34 @@ on screen or multiples.
 // use simple mathematics.  As a result it should be capable of real time speeds on even
 // minimal systems.
 //
-// Cross platform compatibility check 31 July 2017 jwrl.
-// Explicitly defined float2 and float4 variables to address behavioural differences
-// between the D3D and Cg compilers.
-// Inverted the position settings.  They originally worked backwards. i.e., from the
-// camera point of view.
+// Version history:
 //
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect will function correctly when used with all
-// current and previous Lightworks versions.
+// Update 2020-09-26 jwrl.
+// Updated the header block.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified jwrl 2018-12-23:
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 6 July 2018 jwrl.
 // Added a note to describe the function of the effect.
 // Cleaned up border generation code so that it's much clearer what's going on.
 // Reformatted the sampler definitions to be consistent with my other effects.
 //
-// Modified jwrl 2018-12-23:
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
+// Cross platform compatibility check 31 July 2017 jwrl.
+// Explicitly defined float2 and float4 variables to address behavioural differences
+// between the D3D and Cg compilers.
+// Inverted the position settings.  They originally worked backwards. i.e., from the
+// camera point of view.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect will function correctly when used with all
+// current and previous Lightworks versions.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

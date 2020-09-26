@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2016-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
@@ -25,7 +25,7 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl:
+// Update 2020-09-27 jwrl:
 // Updated "Source" settings.
 //
 // Update 11 July 2020 jwrl.
@@ -198,8 +198,8 @@ float Ycentre
 
 int Source
 <
-   string Description = "Lightworks effects: Disconnect the input and select";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
+   string Description = "Source selection (disconnect title and image key inputs)";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//

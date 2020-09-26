@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-10
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2020-05-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rosehaven_640.png
@@ -24,6 +24,13 @@
 //
 // This started life as a very simple effect called Mirrors.fx with just three lines of
 // active code.  Adding the ability to rotate and flip the image changed that though!
+//
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Built 2020-05-08 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -314,4 +321,3 @@ technique Rosehaven_7
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

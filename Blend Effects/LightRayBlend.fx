@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-11
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2016-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
@@ -24,6 +24,9 @@
 // Lightworks user effect LightRayBlend.fx
 //
 // Version history:
+//
+// Update 2020-09-26 jwrl:
+// Updated "Source" settings.
 //
 // Update 11 July 2020 jwrl.
 // Added a delta key to separate blended effects from the background.
@@ -195,8 +198,8 @@ float Ycentre
 
 int Source
 <
-   string Description = "Source selection (disconnect input to text effects first)";
-   string Enum = "Crawl / roll / titles,Video / external image,Extracted foreground";
+   string Description = "Lightworks effects: Disconnect the input and select";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//

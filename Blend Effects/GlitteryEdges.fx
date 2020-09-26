@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2016-05-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/GlitterEdge_640.png
@@ -20,7 +20,7 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl:
+// Update 2020-09-27 jwrl:
 // Updated "Source" settings
 //
 // Update 11 July 2020 jwrl.
@@ -234,8 +234,8 @@ float4 Colour
 
 int Source
 <
-   string Description = "Lightworks effects: Disconnect the input and select";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
+   string Description = "Source selection (disconnect title and image key inputs)";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//

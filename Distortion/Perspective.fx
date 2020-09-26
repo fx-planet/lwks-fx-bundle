@@ -1,23 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author khaver
 // @Created 2011-06-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Perspective_640.png
 
 /**
-The name of the effect describes what it does.  It's a neat, simple effect for adding
-a perspective illusion to a flat plane.
+ The name of the effect describes what it does.  It's a neat, simple effect for adding
+ a perspective illusion to a flat plane.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Perspective.fx
 //
-// Version 14 update 21 May 2017 by jwrl: Changed category to DVE and added subcategory.
+// Version history:
 //
-// Cross platform compatibility check 31 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Fully defined float2 and float4 variables to address the behavioural difference
-// between the D3D and Cg compilers when this is not done.
+// Update 2020-09-26 jwrl.
+// Updated the header block.
+//
+// Modified 23 December 2018 jwrl.
+// Added creation date.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.1 update 5 December 2017 by jwrl.
 // Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge" on
@@ -26,13 +32,12 @@ a perspective illusion to a flat plane.
 // with transitions on those platforms.  The bug still exists when using older versions
 // of Lightworks.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Cross platform compatibility check 31 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Fully defined float2 and float4 variables to address the behavioural difference
+// between the D3D and Cg compilers when this is not done.
 //
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Version 14 update 21 May 2017 by jwrl: Changed category to DVE and added subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

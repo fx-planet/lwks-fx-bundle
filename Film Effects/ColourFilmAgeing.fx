@@ -1,23 +1,23 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2017-02-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColourFilmAge_640.png
 
 /**
-This effect mimics the aging of colour film.  It starts by emulating the fading of the
-film dye layers with age.  The default order is yellow, magenta, then cyan, but that
-order can be changed to the less common chemically induced yellow, cyan, magenta variant
-(I've only ever seen that once).
+ This effect mimics the aging of colour film.  It starts by emulating the fading of the
+ film dye layers with age.  The default order is yellow, magenta, then cyan, but that
+ order can be changed to the less common chemically induced yellow, cyan, magenta variant
+ (I've only ever seen that once).
 
-Bleach bypass can also be applied in either the positive or negative domains, and a
-vibrance parameter adds an S-curve saturation adjustment.  Subjectively this gives a
-reasonably close approximation to the appearance of early Technicolor footage, although
-it makes no claim to be very accurate.
+ Bleach bypass can also be applied in either the positive or negative domains, and a
+ vibrance parameter adds an S-curve saturation adjustment.  Subjectively this gives a
+ reasonably close approximation to the appearance of early Technicolor footage, although
+ it makes no claim to be very accurate.
 
-Sprocket hole wear and tear can be emulated with separate horizontal and vertical
-adjustments.  Fixed size grain can also be applied, and is added prior to the dye
-layer fade process for consistency of emulation.
+ Sprocket hole wear and tear can be emulated with separate horizontal and vertical
+ adjustments.  Fixed size grain can also be applied, and is added prior to the dye
+ layer fade process for consistency of emulation.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -42,24 +42,29 @@ layer fade process for consistency of emulation.
 // internally, but I doubt if that would be realistically possible as a real-time
 // effect.
 //
-// 31 July 2017 jwrl: Added flicker to the mix.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 23 December 2018 jwrl.
+// Removed spurious debug lines from ps_weave() causing uncontrolled flicker.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 4 December 2018 jwrl.
+// Changed subcategory.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 6 July 2018 jwrl.
+// Made blurring and noise generation independent of pixel size.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 6 July 2018 jwrl.
-// Made blurring and noise generation independent of pixel size.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 4 December 2018 jwrl.
-// Changed subcategory.
-//
-// Modified 23 December 2018 jwrl.
-// Removed spurious debug lines from ps_weave() causing uncontrolled flicker.
-// Reformatted the effect description for markup purposes.
+// 31 July 2017 jwrl: Added flicker to the mix.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

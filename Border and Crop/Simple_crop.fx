@@ -1,30 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2017-03-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCrop_640.png
 
 /**
-This is a quick simple cropping tool.  You can also use it to blend images without
-using a blend effect.  It provides a simple border and the "sense" of the effect can
-be swapped so that background becomes foreground and vice versa.  With its extended
-alpha support you can also use it to crop and overlay two images with alpha channels
-over another background.
+ This is a quick simple cropping tool.  You can also use it to blend images without
+ using a blend effect.  It provides a simple border and the "sense" of the effect can
+ be swapped so that background becomes foreground and vice versa.  With its extended
+ alpha support you can also use it to crop and overlay two images with alpha channels
+ over another background.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Simple_crop.fx
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
+// Update 2020-09-26 jwrl.
+// Reformatted header block.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 29 August 2018 jwrl.
+// Added notes to header.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

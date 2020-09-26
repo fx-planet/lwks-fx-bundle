@@ -1,56 +1,61 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2018-04-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_640.png
 
 /**
-This effect simulates a filmic curve with exposure adjustment and controllable halation
-and vibrance.  The order of the parameters has been arranged to allow two logical groups
-to be formed as well as several non-grouped settings.
+ This effect simulates a filmic curve with exposure adjustment and controllable halation
+ and vibrance.  The order of the parameters has been arranged to allow two logical groups
+ to be formed as well as several non-grouped settings.
 
-Video range : This allows the adjustment range to be set to BT.709 or full gamut.
-Amount      : Mixes the modified image with the original.
+ Video range : This allows the adjustment range to be set to BT.709 or full gamut.
+ Amount      : Mixes the modified image with the original.
 
-Exposure    : Allows a plus or minus one stop exposure correction.
-S curve     : Adjusts the amount of S-curve correction.
-Halation    : Mimics the back layer light scatter of older film stocks.
+ Exposure    : Allows a plus or minus one stop exposure correction.
+ S curve     : Adjusts the amount of S-curve correction.
+ Halation    : Mimics the back layer light scatter of older film stocks.
 
-Colour temp : Swings colour temperature between warmer (red) and colder (blue)
-Saturation  : Increases or reduces master saturation.
-Vibrance    : Allows the midtone saturation to be increased.
+ Colour temp : Swings colour temperature between warmer (red) and colder (blue)
+ Saturation  : Increases or reduces master saturation.
+ Vibrance    : Allows the midtone saturation to be increased.
+
+ Exposure is adjusted before range limiting because we need the exposure fed to the
+ main effect to be correct, and this parameter is meant as a correction adjustment.
+ For the same reason colour temperature is also adjusted ahead of the range limit.
+ The sense of that setting has been swapped so that the higher the colour temperature
+ and the bluer the image the more positive the control now is.  There's also now no
+ change in luminance as the colour temperature is adjusted.
+
+ Both vibrance and halation are adjusted logarithmically.  By doing this we get a more
+ natural feel to the adjustment.  The halation generation technique has been slightly
+ altered from that used in the earlier effect for a result that more closely resembles
+ the look of film.  Vibrance is very similar to the sort of effect you get with
+ the Photoshop vibrance filter - thanks gr00by for the algorithm.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FilmLook.fx
 //
-// Exposure is adjusted before range limiting because we need the exposure fed to the
-// main effect to be correct, and this parameter is meant as a correction adjustment.
-// For the same reason colour temperature is also adjusted ahead of the range limit.
-// The sense of that setting has been swapped so that the higher the colour temperature
-// and the bluer the image the more positive the control now is.  There's also now no
-// change in luminance as the colour temperature is adjusted.
+// Version history:
 //
-// Both vibrance and halation are adjusted logarithmically.  By doing this we get a more
-// natural feel to the adjustment.  The halation generation technique has been slightly
-// altered from that used in the earlier effect for a result that more closely resembles
-// the look of film.  Vibrance is very similar to the sort of effect you get with
-// the Photoshop vibrance filter - thanks gr00by for the algorithm.
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 23 December 2018 jwrl.
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 27 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 2018-07-06 jwrl.
+// Calculates halation based on frame size not pixel size.
 //
 // Bugfix and enhancement 2018-05-29 - jwrl.
 // Discovered a bug that affects Linux and Mac versions when setting colour temperature.
 // Highlights would invert when setting higher colour temperatures.  While correcting
 // that the way the function performed subjectively was also improved.
-//
-// Modified 2018-07-06 jwrl.
-// Calculates halation based on frame size not pixel size.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -8,7 +8,7 @@
 /**
  This effect was created to provide a granular noise driven dissolve.  It is fully
  cross-platform compatible.  The noise component is based on work by users khaver and
- windsturm.  The radial gradient generator is from an effect created by Editshare.
+ windsturm.  The radial gradient part is from an effect provided by LWKS Software Ltd.
 */
 
 //-----------------------------------------------------------------------------------------//

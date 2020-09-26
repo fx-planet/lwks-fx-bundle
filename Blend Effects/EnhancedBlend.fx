@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2018-06-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/EnhancedBlend_640.png
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
+// Update 2020-09-27 jwrl.
 // Updated "Source" settings.
 //
 // Update 11 July 2020 jwrl.
@@ -72,8 +72,8 @@ sampler s_Background = sampler_state { Texture = <bg>; };
 
 int Source
 <
-   string Description = "Lightworks effects: Disconnect the input and select";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image";
+   string Description = "Source selection (disconnect title and image key inputs)";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = 1;
 
 float Amount

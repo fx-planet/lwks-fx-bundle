@@ -6,7 +6,7 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dissolve_S.mp4
 
 /**
- This is essentially the same as Editshare's "Mix", with a trigonometric curve applied
+ This is essentially the same as Lightworks' dissolve, with a trigonometric curve applied
  to the "Amount" parameter.  If you need to you can vary the linearity of the curve.
 */
 

@@ -1,63 +1,65 @@
 // @Maintainer jwrl
-// @Released 2020-04-12
+// @Released 2020-09-26
 // @Author jwrl
 // @Created 2017-05-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_vignette_640.png
 
 /**
-This effect is a simple 2D DVE with the ability to apply a circular, diamond or square
-shaped mask.  The foreground image can be sized, positioned, flipped and flopped.  Since
-flipping or flopping will change the direction of movement of the foreground position
-parameters it may be advisable to adjust the position before changing the foreground
-orientation.
+ This effect is a simple 2D DVE with the ability to apply a circular, diamond or square
+ shaped mask.  The foreground image can be sized, positioned, flipped and flopped.  Since
+ flipping or flopping will change the direction of movement of the foreground position
+ parameters it may be advisable to adjust the position before changing the foreground
+ orientation.
 
-The aspect ratio of the mask can be adjusted, so ellipses and rectangles can be created.
-The aspect ratio will also affect the edge softness and border thickness.  Sufficient
-range has been given to the mask size parameter to allow the frame to be filled if needed.
+ The aspect ratio of the mask can be adjusted, so ellipses and rectangles can be created.
+ The aspect ratio will also affect the edge softness and border thickness.  Sufficient
+ range has been given to the mask size parameter to allow the frame to be filled if needed.
 
-The mask can be repositioned, taking the foreground image with it.  The edges of the
-mask can be bordered with a bicolour shaded surround.  Drop shadowing is included, and
-the border and shadow can be independently feathered.
+ The mask can be repositioned, taking the foreground image with it.  The edges of the
+ mask can be bordered with a bicolour shaded surround.  Drop shadowing is included, and
+ the border and shadow can be independently feathered.
 
-There is no cropping provided, since the vignette is felt to be sufficient for most
-reasonable needs.
+ There is no cropping provided, since the vignette is felt to be sufficient for most
+ reasonable needs.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DVEwithVignette.fx
 //
-// Modified by LW user jwrl 6 July 2017.
-// Master scaling has been added to the vignette so that it and the foreground will
-// track when zoomed.
+// Version history:
 //
-// A limited 2D DVE capability has been provided for the background image.
+// Update 2020-09-26 jwrl.
+// Updated the header block.
 //
-// The circle and diamond scaling have been adjusted to more closely match that of the
-// square.
+// Modified jwrl 2020-04-12:
+// Added linear filtering to s_Background to improve smoothness.
 //
-// A bug which affected the position direction when the foreground was flipped or flopped
-// has been fixed.
+// Modified jwrl 2018-12-23:
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Modified 2018-07-07 jwrl:
+// Drop shadow feathering now resolution independent.
+//
+// Modified by LW user jwrl 4 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Version 14.5 update 28 March 2018 by jwrl.
 // This will now function correctly when used with Lightworks versions 14.5 and higher
 // under Linux or OS-X.  It addresses the "Clamp/ClampToEdge" bug associated with using
 // DVE effects with transitions on those platforms.
 //
-// Modified by LW user jwrl 4 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 2018-07-07 jwrl:
-// Drop shadow feathering now resolution independent.
-//
-// Modified jwrl 2018-12-23:
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified jwrl 2020-04-12:
-// Added linear filtering to s_Background to improve smoothness.
+// Modified by LW user jwrl 6 July 2017.
+// Master scaling has been added to the vignette so that it and the foreground will
+// track when zoomed.
+// A limited 2D DVE capability has been provided for the background image.
+// The circle and diamond scaling have been adjusted to more closely match that of the
+// square.
+// A bug which affected the position direction when the foreground was flipped or flopped
+// has been fixed.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

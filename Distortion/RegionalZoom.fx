@@ -1,29 +1,34 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author schrauber
 // @Created 2016-03-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/RegionalZoom_640.jpg
 
 /**
-Regional zoom is designed to allow you to apply localised (focussed) distortion to a
-region of the frame.  Either zoom in or zoom out can be applied, the area covered can
-be varied, and the amount of distortion can be adjusted.  The edges of the image after
-distortion can optionally be mirrored out to fill the frame.
+ Regional zoom is designed to allow you to apply localised (focussed) distortion to a
+ region of the frame.  Either zoom in or zoom out can be applied, the area covered can
+ be varied, and the amount of distortion can be adjusted.  The edges of the image after
+ distortion can optionally be mirrored out to fill the frame.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RegionalZoom.fx
 //
-// Added subcategory for version 14, 18 Feb 2017 - jwrl.
+// Version history.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-26 jwrl.
+// Updated header block.
 //
 // Update 23 December 2018 jwrl:
 // Added creation date.
 // Changed category.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Added subcategory for version 14, 18 Feb 2017 - jwrl.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

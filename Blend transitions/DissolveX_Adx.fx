@@ -23,8 +23,8 @@
 //
 // Although dissolveX.fx by khaver was a trigger for this, this implementation is my own.
 // While I have retained some of the blend choices in his original, they are definitely
-// not the Lightworks ones that he used.  I didn't look at khaver's or Editshare's until
-// after I had produced the ones used here.
+// not the Lightworks ones that he used.  I didn't look at khaver's or the Lightworks
+// effect until after I had produced the ones used here.
 //
 // The Photoshop Dissolve blend has not been included as there would be little point.
 // The Lightworks Average effect has also been dropped, since it isn't part of the

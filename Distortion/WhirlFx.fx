@@ -1,31 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-26
 // @Author schrauber
 // @Created 2017-11-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/whirl20171106_640.png
 // @see https://www.youtube.com/watch?v=LB5-_cvkRb0
 
 /**
-Visualise what happens when water empties out of a sink, and you have what this effect
-does.  Possibly you could regard it as adding the sort of sink error you want to your
-video!
+ Visualise what happens when water empties out of a sink, and you have what this effect
+ does.  Possibly you could regard it as adding the sort of sink error you want to your
+ video!
 */ 
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect WhirlFx.fx
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Update 2020-09-26 jwrl.
+// Updated header block.
+//
+// Modified 23 December 2018 jwrl.
+// Changed category.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // GitHub-relevant modifications, 15 April 2018 schrauber: 
 // Lightworks relevant release date used.
 // Added video link.
 // Added provisional comment blank lines (test the presentation on the homepage)
 //
-// Modified 23 December 2018 jwrl.
-// Changed category.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -183,4 +188,3 @@ technique main
 {
    pass P_1 { PixelShader = compile PROFILE ps_main (); }
 }
-

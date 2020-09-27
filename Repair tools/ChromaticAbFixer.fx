@@ -1,37 +1,42 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2011-05-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromaticAbberationFixer_640.png
 
 /**
-This effect is pretty self explanatory.  When you need it, you need it.  It zooms in and
-out of the red, green and blue channels independently to help remove the colour fringing
-(chromatic aberration) in areas near the edges of the frame often produced by cheaper
-lenses.  To see the fringing better while adjusting click the saturation check box.
+ This effect is pretty self explanatory.  When you need it, you need it.  It zooms in and
+ out of the red, green and blue channels independently to help remove the colour fringing
+ (chromatic aberration) in areas near the edges of the frame often produced by cheaper
+ lenses.  To see the fringing better while adjusting click the saturation check box.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromaticAbFixer.fx
 //
-// Cross platform compatibility check 29 July 2017 jwrl.
-// Explicitly defined samplers to correct for platform default sampler state differences.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Amended header block.
+//
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 2018-12-05 jwrl.
+// Added creation date.
+// Changed subcategory.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
 // Addressing has been changed from Clamp to Mirror to bypass a bug in XY sampler
 // addressing on Linux and OS-X platforms.  This effect should now function correctly
 // when used with all current and previous Lightworks versions.
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 2018-12-05 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to correct for platform default sampler state differences.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -103,8 +108,6 @@ float sat
 //-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

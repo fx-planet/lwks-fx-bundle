@@ -1,18 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author brdloush
 // @Created 2013-02-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/CubicLensDistortion_640.png
 
 /**
-Nice effect that can be used for getting rid of heavy fish-eye distortion with GoPro HD
-Hero2 and similar cameras.
+ Nice effect that can be used for getting rid of heavy fish-eye distortion with GoPro HD
+ Hero2 and similar cameras.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CubicLensDistortion.fx 
 //
-// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by François Tarlier
+// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by FranÃ§ois Tarlier
 //
 // Following settings worked nicely:
 // - Comp Size - X: 100%
@@ -24,7 +24,7 @@ Hero2 and similar cameras.
 // Feel free to share/modify or implement all the functions of original
 // "ft-CubicLensDistortion".
 //
-// Pixel Bender shader written by François Tarlier
+// Pixel Bender shader written by FranÃ§ois Tarlier
 // http://www.francois-tarlier.com/blog/index.php/2010/03/update-cubic-lens-distortion-pixel-bender-shader-for-ae-with-scale-chroamtic-aberration/
 //     
 // Original Lens Distortion Algorithm from SSontech (Syntheyes)
@@ -34,7 +34,7 @@ Hero2 and similar cameras.
 //     u' = f*u
 //     v' = f*v
 //
-// Copyright (c) 2010 François Tarlier
+// Copyright (c) 2010 FranÃ§ois Tarlier
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in the
 // Software without restriction, including without limitation the rights to use, copy,
@@ -52,8 +52,23 @@ Hero2 and similar cameras.
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-// Cross platform compatibility check 29 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+//-----------------------------------------------------------------------------------------//
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Amended header block.
+//
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 2018-12-05 jwrl.
+// Added creation date.
+// Changed subcategory.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
 // Legality checking has been added to correct for a bug in XY sampler addressing on
@@ -62,16 +77,8 @@ Hero2 and similar cameras.
 // restructured the code so that it is both more readable and will run more efficiently
 // in Lightworks.
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 2018-12-05 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -135,8 +142,6 @@ float cubicDistortion
 float _OutputAspectRatio;
 
 #define EMPTY    (0.0).xxxx
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

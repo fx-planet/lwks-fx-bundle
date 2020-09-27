@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author khaver
 // @Author mu6k
 // @Author Icecool
@@ -9,20 +9,23 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/LensFlare_1.mp4
 
 /**
-This effect creates very realistic lens flare patterns.  The file LensFlare_1.png is also
-required, and must be in the Effects Templates folder.
+ This effect creates very realistic lens flare patterns.  The file LensFlare_1.png is also
+ required, and must be in the Effects Templates folder.
 
-***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
+ ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
 */
 
 //-----------------------------------------------------------------------------------------//
+// Lightworks user effect LensFlare1.fx
+//-----------------------------------------------------------------------------------------//
+//
 // Original Shadertoy authors:
 // mu6k (2013-08-13) https://www.shadertoy.com/view/4sX3Rs
 // Icecool (2014-07-06) https://www.shadertoy.com/view/XdfXRX
 // Yusef28 (2016-08-19) https://www.shadertoy.com/view/Xlc3D2
 //
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
-//-----------------------------------------------------------------------------------------//
+//
 // LensFlare1.fx for Lightworks was adapted by user khaver 16 May 2018 from original
 // code by the above authors taken from the Shadertoy website:
 // https://www.shadertoy.com/view/4sX3Rs
@@ -34,6 +37,17 @@ required, and must be in the Effects Templates folder.
 //
 // note: code comments are from the original author(s).
 //
+//-----------------------------------------------------------------------------------------//
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2018-12-23:
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
 // Modified jwrl 2018-05-18:
 // Cross platform compatibility check and code optimisation.  A total of roughly twenty
 // major or minor changes were found.  Additional comments identify those sections, and
@@ -43,10 +57,6 @@ required, and must be in the Effects Templates folder.
 // inverse of the way that they're used in GLSL.  I simply changed the default CENTERY
 // setting from 0.25 to 0.75 to make the flare appear in the upper half of the frame by
 // default.
-//
-// Modified jwrl 2018-12-23:
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -403,7 +413,7 @@ Finally + 0.2 - 0.5 has been simplified to - 0.3.
 	color*= exp(1.0-length(uv-mm))/5.;
 /*
 jwrl: This was originally of the form shown below.  However only the first three elements of fragColor were ever used, making it identical to color in
-this context.  Additionly orig no longer needs to be a float4, since the alpha channel is never used either.  This makes the exit code very much simpler.
+this context.  Additionally orig no longer needs to be a float4, since the alpha channel is not used either.  This makes the exit code very much simpler.
 
 	fragColor = float4(color,0.5);
 	return float4(saturate(orig.rgb + ((fragColor.rgb * AMOUNT) * v)),1.0);

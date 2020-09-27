@@ -1,26 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-02
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2011-12-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Polymask_640.png
 
 /**
-This a user adjustable mask with five sides.  The edges of the mask can be feathered, and
-a background colour can be set.
+ This a user adjustable mask with five sides.  The edges of the mask can be feathered, and
+ a background colour can be set.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PolyMask05.fx
 //
-// 21 March 2018: Modification by jwrl
-// This will now compile in all Lightworks versions on Windows, Linux or OS-X.
+// Version history.
 //
-// 4 April 2018: Modification by jwrl
-// Metadata header block added to better support GitHub repository.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 2 December 2018 jwrl.
 // Changed subcategory.
 // Added creation date.
+//
+// 4 April 2018: Modification by jwrl
+// Metadata header block added to better support GitHub repository.
+//
+// 21 March 2018: Version 14.5 modification by jwrl
+// This will compile in all Lightworks versions on Linux or OS-X, and Lightworks versions
+// 14.5+ running under Windows.  If running Lightworks version 14.0 or lower Windows users
+// should use the older Windows version.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -234,8 +241,6 @@ float P5Y
 float _OutputWidth,  _OutputHeight, _OutputAspectRatio;
 
 #define _psize 5
- 
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

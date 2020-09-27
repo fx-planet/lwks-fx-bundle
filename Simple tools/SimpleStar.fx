@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-04-12
+// @Released 2020-09-27
 // @Maintainer jwrl
 // @Created 2020-04-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Simple_star_640.png
@@ -35,6 +35,11 @@
 //
 // This looks considerably more complex than it in fact is.  Although between three and
 // four passes are used the simplicity of each one should keep the overall GPU load low.
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Modified header block.
 //
 // Modified 2020-04-12 jwrl
 // Explicitly defined linear filtration in target samplers.  This fixes a problem with

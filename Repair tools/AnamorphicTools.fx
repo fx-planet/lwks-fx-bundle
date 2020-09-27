@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-10-22
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2018-06-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/AnamorphicTools_640.png
@@ -25,28 +25,33 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AnamorphicTools.fx
 //
-// Modified 2018-06-04 jwrl.
-// Range limited CustomAspect and CustomLetterbox to prevent divide by zero.  I also
-// realised that I didn't need a second pass to perform the letterbox, so I removed it.
-// It won't make a huge difference, but it should execute slightly more efficiently.
+// Version history:
 //
-// Modified 2018-06-05 jwrl.
-// Re-ordered parameters, added the ability to correct non-full frame anamorphs.
+// Update 2020-09-27 jwrl.
+// Amended header block.
 //
-// Modified 2018-06-16 jwrl.
-// Explicitly defined addressing modes to avoid a flicker on frame boundaries.
-//
-// Modified 2018-06-29 jwrl.
-// Changed PanPosition description to "Pan or tilt".  Cosmetic only.
-//
-// Modified 2018-12-05 jwrl.
-// Changed subcategory.
+// Modified 22 Oct 2019 by user jwrl:
+// Changed letterbox crop to opaque.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
 //
-// Modified 22 Oct 2019 by user jwrl:
-// Changed letterbox crop to opaque.
+// Modified 2018-12-05 jwrl.
+// Changed subcategory.
+//
+// Modified 2018-06-29 jwrl.
+// Changed PanPosition description to "Pan or tilt".  Cosmetic only.
+//
+// Modified 2018-06-16 jwrl.
+// Explicitly defined addressing modes to avoid a flicker on frame boundaries.
+//
+// Modified 2018-06-05 jwrl.
+// Re-ordered parameters, added the ability to correct non-full frame anamorphs.
+//
+// Modified 2018-06-04 jwrl.
+// Range limited CustomAspect and CustomLetterbox to prevent divide by zero.  I also
+// realised that I didn't need a second pass to perform the letterbox, so I removed it.
+// It won't make a huge difference, but it should execute slightly more efficiently.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

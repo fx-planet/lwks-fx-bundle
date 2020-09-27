@@ -1,22 +1,27 @@
 // @Maintainer jwrl
-// @Released 2020-07-23
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2020-07-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyAndBg_640.png
 
 /**
- This effect is a customised version of Editshare's Chromakey effect with cropping and some
- simple DVE adjustments added.  Also added is a means of generating an infinite cyclorama
- style background.  The colour of the background and its linearity can be adjusted to give
- a very realistic studio look.
+ This effect is a customised version of the Lightworks Chromakey effect with cropping and
+ some simple DVE adjustments added.  A means of generating an infinite cyclorama style
+ background has also been added.  The colour of the background and its linearity can be
+ adjusted to give a very realistic studio look.
 
- The ChromaKey sections are based on work copyright (c) EditShare EMEA.
+ The ChromaKey sections are based on work copyright (c) LWKS Software Ltd.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromakeyAndBg.fx
 //
 // This effect is an extension of a previous effect, "Chromakey with DVE".
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -268,7 +273,7 @@ bool fn_allPos (float4 pixel)
 // ps_dve
 //
 // This simple shader adjusts the cropping, position and scaling of the foreground image.
-// It is a new addition to the original Editshare chromakey effect.
+// It is a new addition to the original Lightworks chromakey effect.
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
@@ -281,7 +286,7 @@ float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
    float T = max (0.0, 1.0 - CropTop);
    float B = min (1.0, 1.0 - CropBottom);
 
-   // Set up the scale factor, using the Z axis position.  Unlike the Editshare 3D DVE
+   // Set up the scale factor, using the Z axis position.  Unlike the Lightworks 3D DVE
    // the range isn't linear and operates smallest to largest.  Since it is intended to
    // just fine tune position it does not cover the full range of the 3D DVE.
 
@@ -325,7 +330,7 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 
    if (max (maxComponentVal, rgba.a) == 0.0) return rgba;
 
-   // Now return to the Editshare original, minus the rgba = tex2D() section and
+   // Now return to the Lightworks original, minus the rgba = tex2D() section and
    // the maxComponentVal initialisation for the HSV conversion.
 
    float keyVal = 1.0;
@@ -473,7 +478,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float mix = saturate ((1.0 - min (Key.x, Key.y) * Fgd.a) * 2.0);
 
    // If we just want to show the key we can get out now.  Because we no longer have the
-   // invert key function this process has become simpler than the Editshare original.
+   // invert key function this process has become simpler than the Lightworks original.
 
    if (Reveal) return float4 (mix.xxx, 1.0);
 
@@ -487,7 +492,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       Fgd = lerp (Fgd, fgLum.xxxx, ((Key.w - 0.8) / 0.2) * RemoveSpill);
    }
 
-   //  From here on differs significantly from the code in the Editshare effect.
+   //  From here on differs significantly from the code in the Lightworks effect.
 
    // Now we generate the background. The groundrow distance to the centre point, cg,
    // is first calculated using a range limited version of Horizon.  Subtracting that

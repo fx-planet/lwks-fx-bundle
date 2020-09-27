@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2016-01-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Blocks_640.png
@@ -10,7 +10,7 @@
  the effect, then dissolves to the new image for the next third, then loses the blocks
  over the remainder of the effect.
 
- It's based on Editshare's mosaic and mix effects, but some parameters have been modified.
+ It's based on the Lightworks mosaic and mix effects, but some settings have been changed.
  It is compatible with both compiler versions used to compile Lightworks effects.
 */
 
@@ -18,6 +18,9 @@
 // Lightworks user effect Blocks_Dx.fx
 //
 // Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 2020-07-31 jwrl.
 // Corrected potential divide by zero bug.

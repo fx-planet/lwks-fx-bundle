@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2020-07-02
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2019-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/TitleFix_640.png
 
 /**
  This effect enhances the blending of a title, roll or crawl when used with external blending
- or DVE effects.  Because it has been developed empirically with no knowledge of how Editshare
+ or DVE effects.  Because it has been developed empirically with no knowledge of how Lightworks
  does it internally, it only claims to be subjectively close to the Lightworks effect.
 
  To use it, disconnect the title input, apply this effect to the title then apply the blend or
@@ -23,6 +23,9 @@
 // Lightworks user effect TitleFix.fx
 //
 // Version history:
+//
+// Update 2020-09-27 jwrl.
+// Modified header block.
 //
 // Modified 2020-07-02 jwrl:
 // Changed the gaussian blur default to zero to bypass the gaussian blur.

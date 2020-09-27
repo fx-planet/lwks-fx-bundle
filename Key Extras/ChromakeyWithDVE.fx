@@ -1,33 +1,40 @@
 // @Maintainer jwrl
-// @Released 2020-05-04
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2018-03-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyDVE_640.png
 
 /**
- This effect is a customised version of Editshare's Chromakey effect with cropping and some
- simple DVE adjustments added.  The ChromaKey sections are copyright (c) EditShare EMEA.
+ This effect is a customised version of the Lightworks Chromakey effect with cropping and
+ some simple DVE adjustments added.
+
+ The ChromaKey sections are copyright (c) LWKS Software Ltd.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromakeyWithDVE.fx
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified 6 July 2018 jwrl.
-// Made blur component resolution-independent.
-//
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 4 May 2020 jwrl.
 // Incorporated crop into DVE shader.
 // Some general code cleanup and commenting.
+//
+// Modified 23 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 26 Nov 2018 by user schrauber:
+// Changed subcategory from "User Effects" to "Key Extras".
+//
+// Modified 6 July 2018 jwrl.
+// Made blur component resolution-independent.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,7 +43,7 @@ int _LwksEffectInfo
    string Description = "Chromakey with DVE";
    string Category    = "Key";
    string SubCategory = "Key Extras";
-   string Notes       = "A customised version of Editshare's Chromakey effect with cropping and a simple DVE";
+   string Notes       = "A customised version of the Lightworks Chromakey effect with cropping and a simple DVE";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -254,7 +261,7 @@ bool fn_allPos (float4 pixel)
 // ps_dve
 //
 // This simple shader adjusts the cropping, position and scaling of the foreground image.
-// It is a new addition to the original Editshare chromakey effect.
+// It is a new addition to the original Lightworks chromakey effect.
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
@@ -267,7 +274,7 @@ float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
    float T = max (0.0, 1.0 - CropTop);
    float B = min (1.0, 1.0 - CropBottom);
 
-   // Set up the scale factor, using the Z axis position.  Unlike the Editshare 3D DVE
+   // Set up the scale factor, using the Z axis position.  Unlike the Lightworks 3D DVE
    // the range isn't linear and operates smallest to largest.  Since it is intended to
    // just fine tune position it does not cover the full range of the 3D DVE.
 
@@ -311,7 +318,7 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 
    if (max (maxComponentVal, rgba.a) == 0.0) return rgba;
 
-   // Now return to the Editshare original, minus the rgba = tex2D() section and
+   // Now return to the Lightworks original, minus the rgba = tex2D() section and
    // the maxComponentVal initialisation for the HSV conversion.
 
    float keyVal = 1.0;

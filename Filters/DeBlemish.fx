@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-02-04
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2019-01-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeBlemish_640.png
@@ -18,6 +18,16 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DeBlemish.fx
 //
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2019-01-31:
+// Relabelled "White levels" to "White clip" and changed the direction of operation.
+// Relabelled "Black levels" to "Black crush".
+// Added "Peak cleanup" to allow mask peaks exceeding the white clip to be set to zero.
+//
 // Modified jwrl 2019-02-04:
 // Added a flesh tone color selector, "Skin colour".
 // Added "Mask clip" to support it.
@@ -25,11 +35,6 @@
 // Added a simple four-way crop to the mask.
 // Removed the now redundant "Peak cleanup" setting.
 // Commented the code to make it simpler for someone else to follow.
-//
-// Modified jwrl 2019-01-31:
-// Relabelled "White levels" to "White clip" and changed the direction of operation.
-// Relabelled "Black levels" to "Black crush".
-// Added "Peak cleanup" to allow mask peaks exceeding the white clip to be set to zero.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -333,4 +338,3 @@ technique DeBlemish
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,43 +1,22 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author windsturm
 // @Author jwrl
 // @Created 2012-05-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxManga_640.png
 
 /**
-This simulates the star pattern and hard contours used to create tonal values in a Manga
-half-tone image.
+ This simulates the star pattern and hard contours used to create tonal values in a Manga
+ half-tone image.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FxManga.fx
 //
-// Original effect "FxMangaShader" (FxManga.fx) by windsturm.
+// Version history:
 //
-// Basically as this now stands it's windsturm's algorithm, but with a completely
-// different implementation by jwrl (see 3 August 2017, below).  I'm still leaving
-// it credited to him on the Lightworks forums, because it is his original approach.
-// I appreciate that now it's like the old joke about the original George Washington
-// tomahawk with ten new handles and three new heads, but still...
-//
-// Converted for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
-//
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
-//
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in Lightworks effects.
-//
-// Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Rewrote the code that generates the lookup indexing to be array driven.
-// Extended the indexing to be 36 deep instead of the original 32, because for some
-// reason Linux got that part wrong and displayed white lines where it overflowed.
-// Changed the parameter text to actually mean something.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 5 December 2018 jwrl.
 // Added creation date.
@@ -46,6 +25,31 @@ half-tone image.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 3 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Rewrote the code that generates the lookup indexing to be array driven.
+// Extended the indexing to be 36 deep instead of the original 32, because for some
+// reason Linux got that part wrong and displayed white lines where it overflowed.
+// Changed the parameter text to actually mean something.
+//
+// Bug fix 26 February 2017 by jwrl:
+// Added workaround for the interlaced media height bug in Lightworks effects.
+//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+//
+// Converted for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
+//
+// Original effect "FxMangaShader" (FxManga.fx) by windsturm.
+// Basically as this now stands it's windsturm's algorithm, but with a completely
+// different implementation by jwrl (see 3 August 2017, below).  I'm still leaving
+// it credited to him on the Lightworks forums, because it is his original approach.
+// I appreciate that now it's like the old joke about the original George Washington
+// tomahawk with ten new handles and three new heads, but still...
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -132,8 +136,6 @@ float td4
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shader

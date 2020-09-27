@@ -1,37 +1,42 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2012-10-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/Glint_640.png
 
 /**
-Glint Effect creates star filter-like highlights, with 4, 6 or 8 points selectable.  The
-glints/stars can be rotated and may be normal or rainbow coloured.  They may also be
-blurred, and the "Show Glint" checkbox will display the glints over a black background.
+ Glint Effect creates star filter-like highlights, with 4, 6 or 8 points selectable.  The
+ glints/stars can be rotated and may be normal or rainbow coloured.  They may also be
+ blurred, and the "Show Glint" checkbox will display the glints over a black background.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GlintFx.fx by Gary Hango (khaver)
 //
-// Cross-platform conversion 1 May 2016 by jwrl.
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl.
-// Corrected for a problem with the way that Lightworks handles interlaced media.
-// Added subcategory to effect header for version 14.
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 23 December 2018 jwrl.
+// Added creation date.
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
 // Fully defined float3 and float4 variables to bypass the behavioural differences
 // between the D3D and Cg compilers.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Bug fix 26 February 2017 by jwrl.
+// Corrected for a problem with the way that Lightworks handles interlaced media.
+// Added subcategory to effect header for version 14.
 //
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
+// Cross-platform conversion 1 May 2016 by jwrl.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

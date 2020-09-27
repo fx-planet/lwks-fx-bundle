@@ -1,35 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2011-05-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/AnaFlare_640.png
 
 /**
-Anamorphic Lens Flare simulates the non-linear flare that an anamorphic lens produces.
-They are those purplish horizontal flares often seen on movie blockbusters.  Use the
-Threshold slider to isolate just the bright lights and the Length slider to adjust the
-size of the flare.  Checking the "Show Flare" checkbox will display the flare against
-black.
+ Anamorphic Lens Flare simulates the non-linear flare that an anamorphic lens produces.
+ They are those purplish horizontal flares often seen on movie blockbusters.  Use the
+ Threshold slider to isolate just the bright lights and the Length slider to adjust the
+ size of the flare.  Checking the "Show Flare" checkbox will display the flare against
+ black.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AnamorphicLensFlare.fx
 //
-// Modified by jwrl to add a V14 subcategory February 18, 2017.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 23 December 2018 jwrl.
+// Added creation date.
+// Changed subcategory.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Cross platform compatibility check 31 July 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
 // Explicitly defined float4 variables to avoid the difference in behaviour between
 // the D3D and Cg compilers.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
+// Modified by jwrl to add a V14 subcategory February 18, 2017.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

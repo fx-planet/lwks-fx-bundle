@@ -1,31 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2014-07-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/GradNDFilter_640.png
 
 /**
-Original effect by khaver, this is a neutral density filter which can be tinted, and its
-blend modes can be adjusted.  Select vertical or horizontal, flip the gradient, adjust
-strength and use the on-screen handles to move where the gradient starts and ends.
+ Original effect by khaver, this is a neutral density filter which can be tinted, and its
+ blend modes can be adjusted.  Select vertical or horizontal, flip the gradient, adjust
+ strength and use the on-screen handles to move where the gradient starts and ends.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GraduatedNDFilter.fx
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Fully defined float3 variables and constants to address behavioural differences
-// between the D3D and Cg compilers.
+// Version history:
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Fully defined float3 variables and constants to address behavioural differences
+// between the D3D and Cg compilers.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -117,9 +122,6 @@ float EY
    float MinVal = 0.00;
    float MaxVal = 1.00;
 > = 0.25;
-
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author josely
 // @Created 2012-06-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromAb_640.png
 
 /**
-Generates or removes chromatic aberration.
+ Generates or removes chromatic aberration.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -13,19 +13,24 @@ Generates or removes chromatic aberration.
 //
 // Chromatic Abberation Copyright (c) Johannes Bausch (josely). All rights reserved.
 //
-// This cross-platform conversion by jwrl April 28, 2016
+// Version history:
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// This cross-platform conversion by jwrl April 28, 2016
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

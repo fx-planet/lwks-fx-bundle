@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author windsturm
 // @Created 2012-06-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxColorHalftone2_640.png
 
 /**
-This effect emulates the dot pattern of a colour half-tone print image.  The colours used
-for background and dots are user adjustable.
+ This effect emulates the dot pattern of a colour half-tone print image.  The colours used
+ for background and dots are user adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,25 +14,30 @@ for background and dots are user adjustable.
 //
 // Original effect "FxColorHalftone2" (FxColorHalftone2.fx) by windsturm.
 //
-// This conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
-// Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined float3 and float4 variables to address the behaviour differences
-// between the D3D and Cg compilers.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 5 December 2018 jwrl.
 // Added creation date.
 // Renamed effect.
 // Changed subcategory.
 //
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 3 August 2017 jwrl.
+// Explicitly defined float3 and float4 variables to address the behaviour differences
+// between the D3D and Cg compilers.
+//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+//
+// This conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -161,8 +166,6 @@ float4 colorBG
 #define SQRT_2 1.414214
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

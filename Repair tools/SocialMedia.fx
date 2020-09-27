@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-07-15
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2019-07-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/SocialMedia_640.png
@@ -27,8 +27,10 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SocialMedia.fx
 //
-// 2019-07-15:
-// Original release date.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Amended header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -147,4 +149,3 @@ technique SocialMedia_2
    pass P_1
    { PixelShader = compile PROFILE ps_main_2 (); }
 }
-

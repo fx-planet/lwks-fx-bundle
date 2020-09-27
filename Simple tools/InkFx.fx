@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2020-01-14
+// @Released 2020-09-27
 // @Author "Nicholas Carroll"
 // @Created 2016-05-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/INK_640.png
 
 /**
-INK is a proportionate colour difference keyer
+ INK is a proportionate colour difference keyer
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,24 +23,29 @@ INK is a proportionate colour difference keyer
 // 1.1  jwrl        2-MAY-16  Reworked to remove array indexing which didn't work
 // 1.2  N. Carroll  4-MAY-16  Put the matte in the alpha channel.
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Changed category from "Keying" to "Key", added subcategory to effect header.
+// Version history:
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Update 2020-09-27 jwrl.
+// Modified header block.
+//
+// Modified 14 Jan 2020 by user jwrl:
+// Changed subcategory from "Key Extras" to "Simple tools".
+//
+// Modified 23 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 26 Nov 2018 by user schrauber:
+// Changed subcategory from "User Effects" to "Key Extras".
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 14 Jan 2020 by user jwrl:
-// Changed subcategory from "Key Extras" to "Simple tools".
+// Version 14 update 18 Feb 2017 jwrl.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

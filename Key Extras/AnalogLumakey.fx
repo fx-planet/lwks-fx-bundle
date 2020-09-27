@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2019-07-30
+// @Released 2019-09-27
 // @Author jwrl
 // @Created 2019-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/AnalogLumakey_640.png
 
 /**
- This keyer is similar to the Editshare lumakey effect, but behaves more like an analogue
+ This keyer is similar to the Lightworks lumakey effect, but behaves more like an analogue
  luminance keyer.  In this version "Tolerance" is called "Clip" and "Invert" has become
  "Invert key".  These are the industry standard names used for these functions in analogue
  keyers.
@@ -27,6 +27,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AnalogLumakey.fx
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -135,4 +140,3 @@ technique AnalogLumakey
 {
    pass P_1 { PixelShader = compile PROFILE ps_main (); }
 }
-

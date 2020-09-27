@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-15
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2020-04-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/RadialGrad_640.png
@@ -13,14 +13,19 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RadialGrad.fx
 //
-// Modified 2020-04-04 - jwrl.
-// Added aspect ratio correction and a means of varying the amount of correction applied.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Modified header block.
 //
 // Modified 2020-05-15 - jwrl.
 // Simplified code generally.
 // Added a limited range diameter control.
 // Relabelled "Centre colour" to "Inner colour".
 // Changed aspect ratio correction so that it tracks the output aspect ratio.
+//
+// Modified 2020-04-04 - jwrl.
+// Added aspect ratio correction and a means of varying the amount of correction applied.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

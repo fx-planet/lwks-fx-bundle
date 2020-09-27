@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author windsturm
 // @Created 2012-06-16
 // @OriginalAuthor "Evan Wallace"
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxDotScreen_640.png
 
 /**
-This effect is a version of the dot pattern of a black and white half-tone print image.
+ This effect is a version of the dot pattern of a black and white half-tone print image.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -41,10 +41,23 @@ THE SOFTWARE.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in all Lightworks effects.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 5 December 2018 jwrl.
+// Added creation date.
+// Renamed effect.
+// Changed subcategory.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Cross platform compatibility check 3 August 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
@@ -60,17 +73,10 @@ THE SOFTWARE.
 // In the process of doing all of the above, the original 20 lines of code have been
 // reduced to 10 with no loss of functionality.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Bug fix 26 February 2017 by jwrl:
+// Added workaround for the interlaced media height bug in all Lightworks effects.
 //
-// Modified 5 December 2018 jwrl.
-// Added creation date.
-// Renamed effect.
-// Changed subcategory.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -157,8 +163,6 @@ float Strength
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

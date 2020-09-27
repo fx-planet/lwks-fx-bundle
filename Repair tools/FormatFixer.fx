@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-04-24
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2017-05-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/FormatFixer_640.png
@@ -34,33 +34,10 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FormatFixer.fx
 //
-// Bug fix by LW user jwrl 13 July 2017
-// Corrected a syntax variation that meant that this effect may not work as expected on
-// Linux/Mac platforms.
+// Version history:
 //
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect should now function correctly when used with
-// all current and previous Lightworks versions.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 23 June 2018 jwrl.
-// Updated legality check function.
-//
-// Modified 6 July 2018 jwrl.
-// Added four flipped orientation modes to the foreground settings.
-// Prevented the crop function from over-running the centre point of the video.
-// Modified the background scaling to be influenced by the crop settings.
-// The blur settings are now frame based rather than pixel based.
-//
-// Modified 2018-12-05 jwrl.
-// Changed subcategory.
-//
-// Modified 2018-12-26 jwrl.
-// Reformatted the effect description for markup purposes.
+// Update 2020-09-27 jwrl.
+// Amended header block.
 //
 // Modified 2020-04-24 jwrl.
 // Reduced the number of shader passes from 5 to 4.
@@ -70,6 +47,34 @@
 // selected image negative.
 // Explicitly defined alpha support in border and background colour.  This now means that
 // setting the background colour to black produces opaque black.
+//
+// Modified 2018-12-26 jwrl.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 2018-12-05 jwrl.
+// Changed subcategory.
+//
+// Modified 6 July 2018 jwrl.
+// Added four flipped orientation modes to the foreground settings.
+// Prevented the crop function from over-running the centre point of the video.
+// Modified the background scaling to be influenced by the crop settings.
+// The blur settings are now frame based rather than pixel based.
+//
+// Modified 23 June 2018 jwrl.
+// Updated legality check function.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.  This effect should now function correctly when used with
+// all current and previous Lightworks versions.
+//
+// Bug fix by LW user jwrl 13 July 2017
+// Corrected a syntax variation that meant that this effect may not work as expected on
+// Linux/Mac platforms.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

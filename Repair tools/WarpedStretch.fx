@@ -1,41 +1,46 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2013-12-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/WarpedStretch_640.png
 
 /**
-This effect applies distortion to a region of the frame, and is intended for use as a means
-of helping handle mixed aspect ratio media.  It was designed to do the 4:3 to 16:9 warped
-stretch we all hate having to do.  You can set the range of the inner area that is not warped
-and set the outer limits at the edges of the crop.
+ This effect applies distortion to a region of the frame, and is intended for use as a means
+ of helping handle mixed aspect ratio media.  It was designed to do the 4:3 to 16:9 warped
+ stretch we all hate having to do.  You can set the range of the inner area that is not warped
+ and set the outer limits at the edges of the crop.
 
-It defaults to a 4:3 image in a 16:9 frame, but since a "Strength" slider is provided it can
-be used for other purposes as well.
+ It defaults to a 4:3 image in a 16:9 frame, but since a "Strength" slider is provided it can
+ be used for other purposes as well.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect WarpedStretch.fx
 //
-// Cross platform conversion by jwrl May 1 2016.
+// Version history:
 //
-// Added subcategory for LW14 - jwrl Feb 18 2017.
+// Update 2020-09-27 jwrl.
+// Amended header block.
+//
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 2018-12-05 jwrl.
+// Corrected creation date.
+// Changed subcategory.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
 // Legality checking has been added to correct for a bug in XY sampler addressing on
 // Linux and OS-X platforms.  This effect now functions correctly when used with all
 // current and previous Lightworks versions.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Added subcategory for LW14 - jwrl Feb 18 2017.
 //
-// Modified 2018-12-05 jwrl.
-// Corrected creation date.
-// Changed subcategory.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Cross platform conversion by jwrl May 1 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -152,8 +157,6 @@ float ORY
 //-----------------------------------------------------------------------------------------//
 
 #define BLACK float2(0.0, 1.0).xxxy
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

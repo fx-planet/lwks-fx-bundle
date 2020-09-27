@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2020-05-04
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2018-03-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_640.png
 
 /**
  DESCRIPTION:
- This is a luminance key similar to the Editshare effect, but with some differences.  A crop
+ This is a luminance key similar to the Lightworks effect, but with some differences.  A crop
  function and a simple DVE have been included to provide these often-needed functions without
  the need to add any external effects.
 
@@ -38,13 +38,25 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LumakeyWithDVE.fx
 //
-// NOTE:  This keyer uses an algorithm derived from the Editshare lumakey effect, but
-// this implementation is entirely my own.
+// NOTE:  This keyer uses an algorithm derived from the LWKS Software Ltd lumakey effect,
+// but this implementation is entirely my own.
 //
-// Updates:
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 4 May 2020 by user jwrl:
+// Combined crop with main luminance key and DVE code.
+//
+// Modified 23 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 26 Nov 2018 by user schrauber:
+// Changed subcategory from "User Effects" to "Key Extras".
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //
 // Modified 22 April 2018 jwrl.
 // Merged DVE operation with main shader, reducing the number of passes required by one
@@ -54,17 +66,9 @@
 // Range limited the crop settings.  It's no longer possible to exceed frame boundaries.
 // Restored comments to the code to assist anyone trying to work out what on earth I did.
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 4 May 2020 by user jwrl:
-// Combined crop with main luminance key and DVE code.
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

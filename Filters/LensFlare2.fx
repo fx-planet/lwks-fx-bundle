@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-21
+// @Released 2020-09-27
 // @Author khaver
 // @Author toninoni
 // @Created 2018-06-12
@@ -7,16 +7,26 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/LensFlare_2.mp4
 
 /**
-This effect is an accurate lens flare simulation.
+ This effect is an accurate lens flare simulation.
 */
 
 //-----------------------------------------------------------------------------------------//
+// Lightworks user effect LensFlare2.fx
+//-----------------------------------------------------------------------------------------//
+//
 // Original Shadertoy author:
 // toninoni (2014-02-05) https://www.shadertoy.com/view/ldSXWK
-//-----------------------------------------------------------------------------------------//
+//
 // LensFlare2.fx for Lightworks was adapted by user khaver 12 June 2018 from original
 // code by the above author taken from the Shadertoy website:
 // https://www.shadertoy.com/view/ldSXWK
+//
+//-----------------------------------------------------------------------------------------//
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified jwrl 2018-12-23:
 // Changed subcategory.

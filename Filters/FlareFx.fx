@@ -1,35 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2011-05-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flare_640.png
 
 /**
-Flare is an original effect by khaver which creates an adjustable lens flare effect.
-The origin of the flare can be positioned by adjusting the X and Y sliders or by
-dragging the on-viewer icon with the mouse.
+ Flare is an original effect by khaver which creates an adjustable lens flare effect.
+ The origin of the flare can be positioned by adjusting the X and Y sliders or by
+ dragging the on-viewer icon with the mouse.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FlareFx.fx
 //
-// Modified 11 February 2017 by jwrl.
-// Added subcategory to effect header for version 14.
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl.
-// Corrects for a problem with the way that Lightworks handles interlaced media.
-//
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Bug fix 26 February 2017 by jwrl.
+// Corrects for a problem with the way that Lightworks handles interlaced media.
+//
+// Modified 11 February 2017 by jwrl.
+// Added subcategory to effect header for version 14.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

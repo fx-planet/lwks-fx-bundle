@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2016-02-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic_640.png
@@ -22,6 +22,9 @@
 //
 // Version history:
 //
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
 // Modified 2020-07-31 jwrl.
 // Removed redundant technique producing the mosaic.
 //
@@ -35,10 +38,10 @@
 // Modified 2018-04-21 by jwrl.
 // This effect was originally developed not long after Dx_Blocks.fx, but never released.
 // It was an attempt to produce the mosaic tiles used in that effect without relying on
-// Editshare code, but I felt at the time that I had never really succeeded in doing that.
-// However I found it while going through my development history, did some code cleanup,
-// changed the mix section to the more efficient one used in Dx_Erosion.fx, and this is
-// the result.
+// LWKS Software Ltd code, but I felt at the time that I had never really succeeded in
+// doing that.  However I found it while going through my development history, did some
+// code cleanup, changed the mix section to the more efficient one used in Dx_Erosion.fx,
+// and this is the result.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

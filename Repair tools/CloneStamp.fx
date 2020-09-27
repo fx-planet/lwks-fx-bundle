@@ -1,16 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author nouanda
 // @Created 2014-10-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/CloneStamp_640.png
 
 /**
-A means of cloning sections of the image into other sections, in a similar way to the art
-tool.
+ A means of cloning sections of the image into other sections, in a similar way to the art
+ tool.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect CloneStamp.fx version alpha 0.03
+// Lightworks user effect CloneStamp.fx
 //
 // Collective effort from Lightworks Forum members nouanda // brdloush // jwrl
 // Ok, we're amateurs, but we managed to do it!
@@ -20,7 +20,26 @@ tool.
 //
 // Function aspectAdjustedpos from Lwks' shapes2.fx shader
 //
-// Cross platform compatibility check 29 July 2017 jwrl.
+//-----------------------------------------------------------------------------------------//
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Amended header block.
+//
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 2018-12-05 jwrl.
+// Added creation date.
+// Changed subcategory.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// MAJOR update 2017-07-29 jwrl.
+// Cross platform compatibility check and fix.
 // Explicitly defined samplers to correct for platform default sampler state differences.
 // Taking nouanda's "feel free" above at face value, I have rewritten the rectangle code
 // to correct a bug in the clone positioning.  In the process considerable code cleanup
@@ -45,17 +64,6 @@ tool.
 // I can work out a technique without using them for the rectangular linear softness.
 // Unfortunately it doesn't translate for the square or sinusoidal softness, so at the
 // moment I don't want to use it.  There has to be a way.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 2018-12-05 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -208,8 +216,6 @@ float DestBlue
 
 float _OutputAspectRatio;
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
@@ -341,4 +347,3 @@ technique Rectangle
    pass P_1
    { PixelShader = compile PROFILE ps_rectangle (); }
 }
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-18
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2020-05-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/RGBregistration_640.png
@@ -13,6 +13,13 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RGBregistration.fx
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Modified header block.
+//
+// Built 2020-05-18 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

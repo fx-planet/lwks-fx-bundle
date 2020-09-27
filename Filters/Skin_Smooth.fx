@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author baopao
 // @Created 2014-07-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SkinSmooth_640.png
 
 /**
-Smooths flesh tones to reduce visible skin blemishes.
+ Smooths flesh tones to reduce visible skin blemishes.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,11 +15,17 @@ Smooths flesh tones to reduce visible skin blemishes.
 //
 // Based on: http://www.blosser.org/d9/dlAviShader042.rar
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Update 2020-09-27 jwrl.
+// Revised header block.
+//
+// Modified 30 May 2018 jwrl.
+// Corrected a potential divide by zero bug when using the Amount parameter.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Cross platform compatibility check 1 August 2017 jwrl.
 // Explicitly defined samplers so we aren't bitten by cross platform default sampler
@@ -31,17 +37,16 @@ Smooths flesh tones to reduce visible skin blemishes.
 // mathematical operations.  Preserved the alpha channel of the input, and reworded
 // several parameter strings to make more sense.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 30 May 2018 jwrl.
-// Corrected a potential divide by zero bug when using the Amount parameter.
-//
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

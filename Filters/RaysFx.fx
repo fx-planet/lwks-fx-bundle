@@ -1,30 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2012-01-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rays_640.png
 
 /**
-This effect radiates rays away from the highlights in the image.
+ This effect radiates rays away from the highlights in the image.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RaysFx.fx
 //
-// Cross platform conversion by jwrl May 2 2016.
+// Version history:
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined float2 and float4 variables to address behavioural differences
-// between the D3D and Cg compilers.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Corrected creation date.
 // Changed subcategory.
 // Reformatted the effect description for markup purposes.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined float2 and float4 variables to address behavioural differences
+// between the D3D and Cg compilers.
+//
+// Cross platform conversion by jwrl May 2 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -143,8 +148,6 @@ float Mix
 //-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

@@ -1,41 +1,46 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author khaver
 // @Created 2013-02-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/PixelFixer_640.png
 
 /**
-Pixel Fixer is designed to repair dead pixels.  Add a clip to be corrected to a sequence
-and add the Pixel Fixer effect to the clip.  It will show a magnified area of the frame
-with a green target pixel in the middle.  It defaults to a single pixel but you can select
-a pixel pattern of up to 4 pixels in a group.  The green pixels will change as you select
-the different patterns.
+ Pixel Fixer is designed to repair dead pixels.  Add a clip to be corrected to a sequence
+ and add the Pixel Fixer effect to the clip.  It will show a magnified area of the frame
+ with a green target pixel in the middle.  It defaults to a single pixel but you can select
+ a pixel pattern of up to 4 pixels in a group.  The green pixels will change as you select
+ the different patterns.
 
-Using the on-screen cross-hairs, move the magnified area to the dead pixels and use the X
-Adjust and Y Adjust to fine tune the target over the dead pixel(s).  Check the "Fix" box
-to hide the dead pixel(s), then un-check "Magnify".
+ Using the on-screen cross-hairs, move the magnified area to the dead pixels and use the X
+ Adjust and Y Adjust to fine tune the target over the dead pixel(s).  Check the "Fix" box
+ to hide the dead pixel(s), then un-check "Magnify".
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PixelFixer.fx
 //
-// This cross platform conversion by jwrl April 29 2016.
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in Lightworks effects.
+// Update 2020-09-27 jwrl.
+// Amended header block.
 //
-// Cross platform compatibility check 29 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 2018-12-05 jwrl.
+// Changed subcategory.
 //
 // Modified 6 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 2018-12-05 jwrl.
-// Changed subcategory.
+// Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Bug fix 26 February 2017 by jwrl:
+// Added workaround for the interlaced media height bug in Lightworks effects.
+//
+// This cross platform conversion by jwrl April 29 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -141,8 +146,6 @@ float _OutputAspectRatio;
 float _OutputWidth;
 
 float4 _red = float4 (0.0, 1.0, 0.0, 1.0);
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

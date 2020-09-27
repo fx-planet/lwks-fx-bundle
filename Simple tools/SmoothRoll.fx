@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-01-06
+// @Released 2020-09-07
 // @Author jwrl
 // @Created 2020-01-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/SmoothRoll_640.png
@@ -14,6 +14,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SmoothRoll.fx
+//
+// Version history:
+//
+// Update 2020-09-27 jwrl.
+// Modified header block.
 //
 // Modified 6 January 2020 by user jwrl:
 // Changed blur from linear to a bi-directional 6 tap gaussian blur.

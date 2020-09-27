@@ -1,34 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-27
 // @Author windsturm
 // @Created 2012-12-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxHalfTone2_640.png
 
 /**
-This effect simulates the dot pattern used in a black and white half-tone print image.
-The colours used for background and dots are user adjustable.
+ This effect simulates the dot pattern used in a black and white half-tone print image.
+ The colours used for background and dots are user adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Halftone.fx
 //
-// Original effect "FxHalftone2" {FxHalftone2.fx) by windsturm.
+// Version history:
 //
-// Conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
+// Update 2020-09-27 jwrl.
+// Revised header block.
 //
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 26 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 5 December 2018 jwrl.
 // Added creation date.
 // Renamed effect.
 // Changed subcategory.
 //
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+//
+// Conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
+//
+// Original effect "FxHalftone2" (FxHalftone2.fx) by windsturm 2012-12-11.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -123,8 +128,6 @@ float4 colorBG
 float _OutputAspectRatio;
 
 #define SQRT_2 1.414214
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

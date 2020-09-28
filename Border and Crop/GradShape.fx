@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Author LWKS Software Ltd
 // @Created 2020-03-29
@@ -13,7 +13,7 @@
  shape and the amount of softness applied.
 
  Another addition is a means of inverting the shape to reveal the background video over
- the colour gradient.  In that mode the gradient functions in a similar way to Editshare's
+ the colour gradient.  In that mode the gradient functions in a similar way to Lightworks'
  "Corner Gradient" effect, and occupies the full frame.  The linearity in that mode is
  adjustable in the same way as the non-inverted version.
 */
@@ -21,15 +21,15 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GradShape.fx
 //
-// Based on shapes3.fx, copyright (c) EditShare EMEA.  All Rights Reserved
+// Based on shapes3.fx, copyright (c) LWKS Software Ltd.  All Rights Reserved
 //
-// This began as the original Editshare effect, with an additional shader added to create
+// This began as the original Lightworks effect, with an additional shader added to create
 // the gradient.  A preamble was added to both the rectangle and ellipse shaders to allow
 // the gradient to be used as either the inner or outer area of the frame.
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
+// Update 2020-09-28 jwrl.
 // Reformatted header block.
 //
 // Modified April 2 2020 jwrl:
@@ -295,7 +295,7 @@ float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
       Fgnd = temp;
    }
 
-   // From here on is largely the original Editshare effect
+   // From here on is largely the original Lightworks effect
 
    float a = Width / (_OutputAspectRatio * 2.0);
    float b = Height / 2.0;

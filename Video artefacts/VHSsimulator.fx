@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2014-11-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/VHSv2_640.png
 
 /**
-This effect simulates a damaged VHS tape.  Use the Source X pos slider to locate the
-vertical strip down the frame that affects the distortion.  The horizontal distortion
-uses the luminance value along this vertical strip.  The threshold adjusts the value
-that triggers the distortion and white, red and blue noise can be added.  There's also
-a Roll control to roll the image up or down at different speeds.
+ This effect simulates a damaged VHS tape.  Use the Source X pos slider to locate the
+ vertical strip down the frame that affects the distortion.  The horizontal distortion
+ uses the luminance value along this vertical strip.  The threshold adjusts the value
+ that triggers the distortion and white, red and blue noise can be added.  There's also
+ a Roll control to roll the image up or down at different speeds.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +17,21 @@ a Roll control to roll the image up or down at different speeds.
 //
 // VHS by khaver (cross-platform V2 mod by jwrl)
 //
-// LW 14+ version by jwrl 12 February 2017 - added subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 7 December 2018 jwrl.
+// Added creation date.
+// Changed subcategory.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Code cleanup 25 February 2017 by jwrl:
 // Bug fix to correct for a bug in the way that Lightworks handles interlaced media.
@@ -29,16 +43,7 @@ a Roll control to roll the image up or down at different speeds.
 // in the new "Distortion" group and changed to "Strength", "Threshold" and "Bias".
 // For consistency two additional groups have been added, "Noise" and "Roll".
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// LW 14+ version by jwrl 12 February 2017 - added subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -181,8 +186,6 @@ float _Progress;
 float _OutputAspectRatio;
 float _OutputWidth;
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
@@ -191,7 +194,7 @@ float random( float2 p )
 {
 	const float2 r = float2(
 		23.1406926327792690,  // e^pi (Gelfond's constant)
-		2.6651441426902251); // 2^sqrt(2) (Gelfond–Schneider constant)
+		2.6651441426902251); // 2^sqrt(2) (Gelfondâ€“Schneider constant)
 	return frac( cos( fmod( 123456789., 1e-7 + 256. * dot(p,r) ) ) );  
 }
 

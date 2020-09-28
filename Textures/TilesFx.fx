@@ -1,33 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2011-04-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Tiles_640.png
 
 /**
-Tiles breaks the image up into adjustable tiles of solid colour.  It's like a mosaic
-effect but has adjustable bevelled edges as well.
+ Tiles breaks the image up into adjustable tiles of solid colour.  It's like a mosaic
+ effect but has adjustable bevelled edges as well.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect TilesFx.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
 //
-// Bug fix 21 July 2017 by jwrl:
-// This addresses a cross platform issue which could cause the effect to not behave as
-// expected on Linux and Mac systems.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 7 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//
+// Bug fix 21 July 2017 by jwrl:
+// This addresses a cross platform issue which could cause the effect to not behave as
+// expected on Linux and Mac systems.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,8 +52,8 @@ texture Input;
 
 sampler FgSampler = sampler_state {
    Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -83,8 +88,6 @@ float4 EdgeColor
 //-----------------------------------------------------------------------------------------//
 
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shader

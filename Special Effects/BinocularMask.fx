@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-24
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2020-08-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/BinocularMask_640.png
@@ -13,7 +13,10 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BinocularMask.fx
 //
-// Created jwrl 2020-08-24.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -158,4 +161,3 @@ technique BinocularMask
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

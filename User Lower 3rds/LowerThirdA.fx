@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdA_640.png
@@ -7,39 +7,40 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdA_2.mp4
 
 /**
-This moves a coloured bar on from one side of the screen then lowers or raises it to reveal
-an alpha image connected to the input In_1.  To remove the effect, the bar can be moved up
-to hide the text again and then moved off.  This combination move is all done with one
-operation using the Transition parameter.
+ This moves a coloured bar on from one side of the screen then lowers or raises it to reveal
+ an alpha image connected to the input In_1.  To remove the effect, the bar can be moved up
+ to hide the text again and then moved off.  This combination move is all done with one
+ operation using the Transition parameter.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LowerThirdA.fx
 //
-// This completely replaces Lower3rd_1.fx, which has now been withdrawn.  While that
-// version is still quite useable, the significant user interface changes in this
-// version have made this a much better proposition.
+// Version history:
 //
-// Modified by LW user jwrl 16 March 2018
-// Cosmetic change only: "Transition" has been moved to the top of the parameters,
-// giving it higher priority than "Opacity".
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 26 December 2018 jwrl.
+// Formatted description for md.
+//
+// Modified 5 December 2018 jwrl.
+// Change subcategory.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //
 // Bugfixes 31 May 2018 jwrl.
 // Corrected text legality check to prevent mirroring.
 // Corrected X direction sense of TxtPosX.
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
-// Modified 5 December 2018 jwrl.
-// Change subcategory.
-//
-// Modified 26 December 2018 jwrl.
-// Formatted description for md.
+// Modified by LW user jwrl 16 March 2018
+// Cosmetic change only: "Transition" has been moved to the top of the parameters,
+// giving it higher priority than "Opacity".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

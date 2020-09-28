@@ -6,9 +6,9 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/StringTheory_640.png
 
 /**
-This effect is impossible to describe.  Try it to see what it does.
+ This effect is impossible to describe.  Try it to see what it does.
 
-***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
+ ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
 
 */
 
@@ -24,11 +24,16 @@ This effect is impossible to describe.  Try it to see what it does.
 // This adaptation retains the same Creative Commons license shown above.
 // It cannot be used for commercial purposes.
 //
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 5 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

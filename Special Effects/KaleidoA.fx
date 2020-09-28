@@ -1,39 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author baopao
 // @Author nouanda
 // @Created 2013-06-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido_640.png
 
 /**
-Kaleido A (previously Kaleido) produces the classic kaleidoscope effect.  The number of
-sides, the centering, scaling and zoom factor are all adjustable.
+ Kaleido A (previously Kaleido) produces the classic kaleidoscope effect.  The number of
+ sides, the centering, scaling and zoom factor are all adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect KaleidoA.fx
 //
 // Kaleido baopao (http://www.alessandrodallafontana.com) is based on the pixel shader
-// of: http://pixelshaders.com/ corrected for HLSL by Lightworks user nouanda.
+// of: http://pixelshaders.com/ corrected for Cg by Lightworks user nouanda.
 //
-// Modified August 10 2016 by jwrl.
-// Corrected three potential divide by zero errors by LW moderator jwrl.
-// Some code optimisation done mainly for Cg compliance.
-// User interface slightly altered.
+// Version history:
 //
-// LW 14+ version by jwrl 12 February 2017
-// SubCategory "Patterns" added.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 5 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// LW 14+ version by jwrl 12 February 2017
+// SubCategory "Patterns" added.
+//
+// Modified August 10 2016 by jwrl.
+// Corrected three potential divide by zero errors by LW moderator jwrl.
+// Some code optimisation done mainly for Cg compliance.
+// User interface slightly altered.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -112,8 +117,6 @@ float PosY
 
 #define PI      3.141593
 #define TWO_PI  6.283185
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shader

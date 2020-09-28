@@ -1,31 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdKitA_640.png
 
 /**
-This is a general purpose toolkit designed to build lower thirds.  It can optionally be
-fed with a graphics layer or other external image or effect.  It's designed to produce
-a flat coloured ribbon with two overlaid floating flat colour boxes.  They can be used
-to generate borders, other graphical components, or even be completely hidden.
+ This is a general purpose toolkit designed to build lower thirds.  It can optionally be
+ fed with a graphics layer or other external image or effect.  It's designed to produce
+ a flat coloured ribbon with two overlaid floating flat colour boxes.  They can be used
+ to generate borders, other graphical components, or even be completely hidden.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Lower3rdToolkitA.fx
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 26 December 2018 jwrl.
+// Formatted description for md.
 //
 // Modified 5 December 2018 jwrl.
 // Change subcategory.
 //
-// Modified 26 December 2018 jwrl.
-// Formatted description for md.
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

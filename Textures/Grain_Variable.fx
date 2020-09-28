@@ -1,37 +1,42 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2011-04-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/VariGrain_640.png
 
 /**
-This effect is an extended flexible means of adding grain to an image.  As well as
-intensity adjustment it's also possible to adjust the size and softness of the grain.
-The grain can be applied to the alpha channel alone with variable transparency.  This
-is designed to help with grain blending when combined with other video sources.
+ This effect is an extended flexible means of adding grain to an image.  As well as
+ intensity adjustment it's also possible to adjust the size and softness of the grain.
+ The grain can be applied to the alpha channel alone with variable transparency.  This
+ is designed to help with grain blending when combined with other video sources.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Grain_Variable.fx
 //
-// Subcategory added by jwrl 10 Feb 2017
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 7 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 2 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
+//
+// Subcategory added by jwrl 10 Feb 2017
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -143,8 +148,6 @@ float _Progress;
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

@@ -13,7 +13,16 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Screenshake.fx
 //
-// Ported to HLSL/Cg and adapted for Lightworks by hugly 2019-09-07
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-05-19.
+// Changed frac (time) to frac (time / 13.0) and scaled the result by 13.  Since it was
+// already scaled by 8, it is now scaled by 104.  This was done because a simple frac()
+// gave a result that was too obviously cyclic.  Dividing by a prime number that is not
+// related to a standard frame rate helps that.
 //
 // Modified jwrl 2020-05-18.
 // In order of application, the changes are:
@@ -31,11 +40,7 @@
 //   Added check for _LENGTH to check for version 14.5 or better.  The effect will now
 //   fail if earlier versions of Lightworks are used.
 //
-// Modified jwrl 2020-05-19.
-// Changed frac (time) to frac (time / 13.0) and scaled the result by 13.  Since it was
-// already scaled by 8, it is now scaled by 104.  This was done because a simple frac()
-// gave a result that was too obviously cyclic.  Dividing by a prime number that is not
-// related to a standard frame rate helps that.
+// Ported to HLSL/Cg and adapted for Lightworks by hugly 2019-09-07
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

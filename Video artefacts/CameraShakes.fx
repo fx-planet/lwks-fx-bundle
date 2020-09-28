@@ -1,40 +1,46 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author Gary Hango (khaver)
 // @Created 2012-12-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/CameraShake_640.png
 
 /**
-Camera Shake uses luminance variations in a clip to add motion horizontally, vertically
-and/or rotationally.  That clip can be either the source track or another video layer,
-and that second video layer may contain motion content or be a still frame.
+ Camera Shake uses luminance variations in a clip to add motion horizontally, vertically
+ and/or rotationally.  That clip can be either the source track or another video layer,
+ and that second video layer may contain motion content or be a still frame.
 
-The motion source track is set up using the "Show motion track" box.  This will display
-the motion track source in the viewer overlaid with red, green and blue lines and three
-associated coloured ovals.  Playing through the clip will cause each oval to move from
-one end of its line to the other, corresponding to the play head position.  Red shows
-the horizontal motion track, green the vertical, and blue, rotation.
+ The motion source track is set up using the "Show motion track" box.  This will display
+ the motion track source in the viewer overlaid with red, green and blue lines and three
+ associated coloured ovals.  Playing through the clip will cause each oval to move from
+ one end of its line to the other, corresponding to the play head position.  Red shows
+ the horizontal motion track, green the vertical, and blue, rotation.
 
-Best results are produced when the start and end points of each line cover a good range
-of dark and light areas as the clip plays.  This can be done with either the sliders or
-by dragging with the mouse.  Once they are set adjust the bias and strength for the
-required amount of horizontal, vertical and rotational movement.
+ Best results are produced when the start and end points of each line cover a good range
+ of dark and light areas as the clip plays.  This can be done with either the sliders or
+ by dragging with the mouse.  Once they are set adjust the bias and strength for the
+ required amount of horizontal, vertical and rotational movement.
 
-The zoom, rotation and pan sliders can be used for additional trimming.  Each motion
-track may be smoothed and/or have its direction of action reversed.
+ The zoom, rotation and pan sliders can be used for additional trimming.  Each motion
+ track may be smoothed and/or have its direction of action reversed.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CameraShakes.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in Lightworks effects.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers to avoid cross platform default sampler differences.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 7 December 2018 jwrl.
+// Added creation date.
+// Changed subcategory.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Version 14.5 update 5 December 2017 by jwrl.
 // Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge" on
@@ -43,15 +49,14 @@ track may be smoothed and/or have its direction of action reversed.
 // with transitions on those platforms.  The bug still exists when using older versions
 // of Lightworks.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Cross platform compatibility check 2 August 2017 jwrl.
+// Explicitly defined samplers to avoid cross platform default sampler differences.
 //
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
+// Bug fix 26 February 2017 by jwrl:
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -368,8 +373,6 @@ float _Progress;
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

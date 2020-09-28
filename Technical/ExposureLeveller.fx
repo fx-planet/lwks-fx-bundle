@@ -1,40 +1,45 @@
 // @Maintainer jwrl
-// @Released 2018-04-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2016-06-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/ExposureLeveler_640.png
 
 /**
-This exposure levelling effect is designed to correct fairly static shots where the
-exposure varies over time.  To use it select a frame that has the best exposure and
-create a reference frame either by freezing or export/import.  Add that frame to the
-sequence on a track under the video for the entire duration of the clip to be treated.
-Add the effect and check the box to view the sample frame then adjust the E1, E2, and
-E3 points to areas where there is minimal movement in the video clip.  The only
-constraint is that the chosen points must not be in pure black or white areas.
+ This exposure levelling effect is designed to correct fairly static shots where the
+ exposure varies over time.  To use it select a frame that has the best exposure and
+ create a reference frame either by freezing or export/import.  Add that frame to the
+ sequence on a track under the video for the entire duration of the clip to be treated.
+ Add the effect and check the box to view the sample frame then adjust the E1, E2, and
+ E3 points to areas where there is minimal movement in the video clip.  The only
+ constraint is that the chosen points must not be in pure black or white areas.
 
-If there is camera movement uncheck "Use Example Points for Video" and keyframe the V1,
-V2 and V3 points so they track the E1, E2 and E3 points.  Uncheck "Show Example Frame"
-and the exposure in the video clip should stay close to the sample frame's exposure.
-Further fine tuning can be done with the "Tune" slider.
+ If there is camera movement uncheck "Use Example Points for Video" and keyframe the V1,
+ V2 and V3 points so they track the E1, E2 and E3 points.  Uncheck "Show Example Frame"
+ and the exposure in the video clip should stay close to the sample frame's exposure.
+ Further fine tuning can be done with the "Tune" slider.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ExpoLeveller.fx
 //
-// Bug fix 26 February 2017 by jwrl:
-// Corrected for a bug in the way that Lightworks handles interlaced media.
+// Version history:
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
 // Changed category.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix 26 February 2017 by jwrl:
+// Corrected for a bug in the way that Lightworks handles interlaced media.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -274,8 +279,6 @@ float _OutputAspectRatio;
 float _OutputWidth;
 
 #define OutputHeight (_OutputWidth/_OutputAspectRatio)
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

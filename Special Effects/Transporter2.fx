@@ -1,34 +1,39 @@
 // @maintainer jwrl
-// @released 2018-12-27
+// @released 2020-09-28
 // @author jwrl
 // @created 2018-07-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/TransporterA_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transporter.mp4
 
 /**
-This is a difference key controlling a Star Trek-like transporter-style transition.  It
-is definitely not intended to be a copy of any of the Star Trek versions of that effect.
-At most it should be regarded as an interpretation of the idea behind it.  Unlike
-Transporter I, this is set up to be used in the same way as a dissolve.
+ This is a difference key controlling a Star Trek-like transporter-style transition.  It
+ is definitely not intended to be a copy of any of the Star Trek versions of that effect.
+ At most it should be regarded as an interpretation of the idea behind it.  Unlike
+ Transporter I, this is set up to be used in the same way as a dissolve.
 
-The transition is quite complex.  The key is only ever used to control the area that the
-sparkles/stars occupy.  During the first part of the transition's progress the sparkles
-or stars build, then hold for the middle section.  They then decay to zero.  Under that,
-after the first 30% of the transition the foreground starts a linear fade in, reaching
-full value at 70% of the transition progress.
+ The transition is quite complex.  The key is only ever used to control the area that the
+ sparkles/stars occupy.  During the first part of the transition's progress the sparkles
+ or stars build, then hold for the middle section.  They then decay to zero.  Under that,
+ after the first 30% of the transition the foreground starts a linear fade in, reaching
+ full value at 70% of the transition progress.
 
-Because the key settings are of so little importance to the final effect they have been
-re-ordered to fall below the star settings, unlike those in the chromakey version.
+ Because the key settings are of so little importance to the final effect they have been
+ re-ordered to fall below the star settings, unlike those in the chromakey version.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Transporter2.fx
 //
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 5 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,33 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2011-06-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleidoscope_640.png
 
 /**
-This kaleidoscope effect varies the number of sides, position and scale.
+ This kaleidoscope effect varies the number of sides, position and scale.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect KaleidoscopeFx.fx
 //
-// LW 14+ version by jwrl 12 February 2017
-// SubCategory "Patterns" added.
+// Version history:
 //
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 5 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14.5 update 24 March 2018 by jwrl.
+// Legality checking has been added to correct for a bug in XY sampler addressing on
+// Linux and OS-X platforms.
+//
+// LW 14+ version by jwrl 12 February 2017
+// SubCategory "Patterns" added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -141,8 +146,6 @@ float Zoom
 //-----------------------------------------------------------------------------------------//
 
 #define EMPTY    (0.0).xxxx
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

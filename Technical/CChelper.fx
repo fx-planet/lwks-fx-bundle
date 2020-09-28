@@ -1,41 +1,46 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2013-02-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/CCHelper2_640.png
 
 /**
-CC Helper (Colour Correction Helper) is designed to provide up to six user selected
-reference colour patches.  Individual colour patches can be turned off if you need
-fewer than six and you can change the colour patches to gradients if you wish.  The
-colour value range of the patches can be switched to 100% meaning that the selected
-colour will be scaled so that the highest of the RGB channels will become 100%.  You
-can also slide the bars up and down over the video to clear areas that you need to
-see, and optional RGB level meters can be laid over individual colour patches.
+ CC Helper (Colour Correction Helper) is designed to provide up to six user selected
+ reference colour patches.  Individual colour patches can be turned off if you need
+ fewer than six and you can change the colour patches to gradients if you wish.  The
+ colour value range of the patches can be switched to 100% meaning that the selected
+ colour will be scaled so that the highest of the RGB channels will become 100%.  You
+ can also slide the bars up and down over the video to clear areas that you need to
+ see, and optional RGB level meters can be laid over individual colour patches.
 
-Add the effect to a clip, select the pixels you want to check and select "Display
-Bars".  When using the colour picker, you can click and drag to select a rectangular
-region.  The resultant colour will be the average of the selected pixels.  Then add
-a Colour Correction effect to the chain and adjust using CC Helper to assist.
+ Add the effect to a clip, select the pixels you want to check and select "Display
+ Bars".  When using the colour picker, you can click and drag to select a rectangular
+ region.  The resultant colour will be the average of the selected pixels.  Then add
+ a Colour Correction effect to the chain and adjust using CC Helper to assist.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CChelper.fx
 //
-// This cross platform conversion by jwrl April 28 2016.
+// Version history:
 //
-// Cross platform compatibility check 30 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified by LW user jwrl 6 December 2018.
+// Changed category and subcategory.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified by LW user jwrl 6 December 2018.
-// Changed category and subcategory.
+// Cross platform compatibility check 30 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// This cross platform conversion by jwrl April 28 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -370,8 +375,6 @@ float4 _blue  = float2 (0.0, 1.0).xxyy;
 float4 _black = float2 (0.0, 1.0).xxxy;
 
 float4 _white = (1.0).xxxx;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

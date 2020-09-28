@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdKitB_640.png
 
 /**
-This is a general purpose toolkit designed to build lower thirds.  It's designed to create
-an edged, coloured ribbon gradient with an overlaid floating bordered flat colour box.  Any
-component can be completely hidden if required and all are fully adjustable.
+ This is a general purpose toolkit designed to build lower thirds.  It's designed to create
+ an edged, coloured ribbon gradient with an overlaid floating bordered flat colour box.  Any
+ component can be completely hidden if required and all are fully adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,18 +16,23 @@ component can be completely hidden if required and all are fully adjustable.
 // This is a three input effect.  It uses In1 for an optional logo or other graphical
 // component, In2 for optional text and Bgd as a background-only layer.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 26 December 2018 jwrl.
+// Formatted description for md.
 //
 // Modified 5 December 2018 jwrl.
 // Change subcategory.
 //
-// Modified 26 December 2018 jwrl.
-// Formatted description for md.
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,38 +1,43 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2013-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/HSVWheel_640.png
 
 /**
-HSV Wheel is a colour analysis tool.  It shows one or optionally two pixel reference points
-mapped onto the HSV wheel(s).  Select the pixels with the on-screen cross-hairs and move
-and zoom the HSV wheels to wherever you need.  The small dot in each wheel shows the hue
-and saturation of its associated reference point.  The outer ring displays the brightness
-value.
+ HSV Wheel is a colour analysis tool.  It shows one or optionally two pixel reference points
+ mapped onto the HSV wheel(s).  Select the pixels with the on-screen cross-hairs and move
+ and zoom the HSV wheels to wherever you need.  The small dot in each wheel shows the hue
+ and saturation of its associated reference point.  The outer ring displays the brightness
+ value.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect HSVwheel.fx
 //
-// Cross platform conversion by jwrl April 30 2016
+// Version history:
 //
-// Bug fix 10 July 2017 by jwrl.
-// Corrected modulo usage affecting Linux and Mac versions only.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Bug fix 26 February 2017 by jwrl:
-// Corrected for a bug in the way that Lightworks handles interlaced media.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
 // Changed category and subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix 26 February 2017 by jwrl:
+// Corrected for a bug in the way that Lightworks handles interlaced media.
+//
+// Bug fix 10 July 2017 by jwrl.
+// Corrected modulo usage affecting Linux and Mac versions only.
+//
+// Cross platform conversion by jwrl April 30 2016
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -197,8 +202,6 @@ float Pan2Y
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

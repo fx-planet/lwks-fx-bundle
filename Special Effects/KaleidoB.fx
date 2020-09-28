@@ -7,8 +7,8 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido_B_640.png
 
 /**
-Kaleido B is a reworking of Kaleido A and produces the classic kaleidoscope effect.  The
-number of sides, the centering, scaling and zoom factor are all adjustable.
+ Kaleido B is a reworking of Kaleido A and produces the classic kaleidoscope effect.  The
+ number of sides, the centering, scaling and zoom factor are all adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -36,11 +36,16 @@ number of sides, the centering, scaling and zoom factor are all adjustable.
 //
 // Finally, the original creation date was found and added here.
 //
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 5 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

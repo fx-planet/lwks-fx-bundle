@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author windsturm
 // @Created 2012-08-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxNoise_640.png
 
 /**
-This does exactly what it says - generates both monochrome and colour video noise.
+ This does exactly what it says - generates both monochrome and colour video noise.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -28,19 +28,24 @@ This does exactly what it says - generates both monochrome and colour video nois
 //-----------------------------------------------------------------------------------------//
 // This conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
 //
-// Version 14 update 18 Feb 2017 by jwrl.
-// Added subcategory to effect header.
+// Version history:
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 7 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Version 14 update 18 Feb 2017 by jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -113,8 +118,6 @@ float Seed
 //-----------------------------------------------------------------------------------------//
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

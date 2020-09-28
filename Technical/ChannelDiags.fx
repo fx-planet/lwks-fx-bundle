@@ -1,44 +1,49 @@
 // @Maintainer jwrl
-// @Released 2019-02-12
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2015-12-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640a.png
 
 /**
-This is a diagnostic tool that can be used to display individual RGB channels, luminance,
-summed RGB, U, V and alpha channels.
+ This is a diagnostic tool that can be used to display individual RGB channels, luminance,
+ summed RGB, U, V and alpha channels.
 
-Note: the alpha channel is preserved for potential later use in other effects.
+ Note: the alpha channel is preserved for potential later use in other effects.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChannelDiags.fx
 //
-// Modified 18 June 2016 by jwrl.
-// Added RGB sum, B - Y and R - Y display.
+// Version history:
 //
-// Modified 16 August 2016 by jwrl.
-// Added 709 luminance matrix and the ability to show any or all RGB as negative.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 12 Feb 2019 by user jwrl:
+// Changed input addressing to defaults.  This allows it to be used on older LW versions.
 //
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Rewrite by LW user jwrl 5 November 2018.
-// Rewritten to add 2020 support and clean up code.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Renamed effect.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Rewrite by LW user jwrl 5 November 2018.
+// Rewritten to add 2020 support and clean up code.
 //
-// Modified 12 Feb 2019 by user jwrl:
-// Changed input addressing to defaults.  This allows it to be used on older LW versions.
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Modified 16 August 2016 by jwrl.
+// Added 709 luminance matrix and the ability to show any or all RGB as negative.
+//
+// Modified 18 June 2016 by jwrl.
+// Added RGB sum, B - Y and R - Y display.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -192,4 +197,3 @@ technique ChannelDiags_2020
    pass P_1
    { PixelShader = compile PROFILE ps_main_2020 (); }
 }
-

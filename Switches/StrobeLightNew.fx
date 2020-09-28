@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-06
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-03-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_640.png
@@ -7,40 +7,45 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/Newstrobe1.mp4
 
 /**
-Development of this effect was triggered by khaver's "Strobe light" effect, but uses
-the newer Lightworks variables to set the strobe rate accurately in frames, not as a
-percentage of progress.  While the logic for the older versions is similar to that in
-khaver's effect, the implementation is entirely my own.
+ Development of this effect was triggered by khaver's "Strobe light" effect, but uses
+ the newer Lightworks variables to set the strobe rate accurately in frames, not as a
+ percentage of progress.  While the logic for the older versions is similar to that in
+ khaver's effect, the implementation is entirely my own.
 
-The legacy version incorporated in this effect can never be truly frame accurate,
-since it operates by scaling the effect's progress.  This makes the effect forward
-compatible, i.e., if it is compiled in version 14.0 then subsequently used in 14.5 it
-will work, but without frame accuracy.  It isn't fully backward compatible because it
-won't work at all if it is compiled under 14.5 then used in 14.0.
+ The legacy version incorporated in this effect can never be truly frame accurate,
+ since it operates by scaling the effect's progress.  This makes the effect forward
+ compatible, i.e., if it is compiled in version 14.0 then subsequently used in 14.5 it
+ will work, but without frame accuracy.  It isn't fully backward compatible because it
+ won't work at all if it is compiled under 14.5 then used in 14.0.
 */
 
 //-------------------------------------------------------------------------------------//
 // Lightworks user effect StrobeLightNew.fx
+//
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 6 December 2018 jwrl.
+// Changed effect name from "New strobe" to "Strobe light new".
+// Changed category and subcategory.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
+//
+// Updated 2018-05-23:
+// Added a means of turning the background off and replacing it with black.  This
+// should help the drag and drop multitrack editors.
 //
 // Moderated 2018-05-02:
 // Changed user interface to refer to "Flash" settings rather than "Strobe".  This
 // more accurately reflects what's going on.  This required a change to the .PNG
 // files referenced in the header.  They are now a single file incorporating both
 // user interfaces.  Finally, the effect has been posted on the main forums.
-//
-// Updated 2018-05-23:
-// Added a means of turning the background off and replacing it with black.  This
-// should help the drag and drop multitrack editors.
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 6 December 2018 jwrl.
-// Changed effect name from "New strobe" to "Strobe light new".
-// Changed category and subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
 //-------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

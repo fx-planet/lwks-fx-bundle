@@ -1,32 +1,37 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author baopao
 // @Created 2014-02-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/OutputSelect_640.png
 
 /**
-This effect is a simple device to select from up to four different outputs.  It was designed
-for, and is extremely useful on complex effects builds to check the output of masking or
-cropping, the DVE setup, colour correction pass or whatever else you may need.
+ This effect is a simple device to select from up to four different outputs.  It was designed
+ for, and is extremely useful on complex effects builds to check the output of masking or
+ cropping, the DVE setup, colour correction pass or whatever else you may need.
 
-Since it has very little overhead it may be safely left in situ when the effects setup
-process is complete.
+ Since it has very little overhead it may be safely left in situ when the effects setup
+ process is complete.
 */
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect OutputSelector.fx
 //
 // Created by baopao (http://www.alessandrodallafontana.com/).
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 6 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -53,8 +58,8 @@ texture Inp_Out_4;
 
 sampler2D Out_1_sampler = sampler_state {
    Texture = <Inp_Out_1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -62,8 +67,8 @@ sampler2D Out_1_sampler = sampler_state {
 
 sampler2D Out_2_sampler = sampler_state {
    Texture = <Inp_Out_2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -71,8 +76,8 @@ sampler2D Out_2_sampler = sampler_state {
 
 sampler2D Out_3_sampler = sampler_state {
    Texture = <Inp_Out_3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -80,8 +85,8 @@ sampler2D Out_3_sampler = sampler_state {
 
 sampler2D Out_4_sampler = sampler_state {
    Texture = <Inp_Out_4>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -96,8 +101,6 @@ int SetTechnique
    string Description = "Output";
    string Enum = "Out_1,Out_2,Out_3,Out_4";
 > = 0;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

@@ -1,28 +1,33 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2017-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Swizzler_640.png
 
 /**
-This "swizzles" the RGB channels to correct for bad channel assignments.
+ This "swizzles" the RGB channels to correct for bad channel assignments.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ColourSwizzler.fx
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Changed category and subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

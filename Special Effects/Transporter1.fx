@@ -1,45 +1,50 @@
 // @maintainer jwrl
-// @released 2018-12-27
+// @released 2020-09-28
 // @author jwrl
-// @author EditShare
+// @author LWKS Software Ltd
 // @created 2018-04-02
-// @Licence Copyright (c) EditShare EMEA.  All Rights Reserved
+// @Licence LWKS Software Ltd.  All Rights Reserved
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transporter_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transporter.mp4
 
 /**
-This is a customised version of Editshare's Chromakey effect with a transitional Star
-Trek-like transporter sparkle effect added.  This is definitely not a copy of any of
-the Star Trek versions of that effect, nor is it intended to be.  At most it should
-be regarded as an interpretation of the idea behind the effect.
+ This is a customised version of the Lightworks Chromakey effect with a transitional
+ Star Trek-like transporter sparkle effect added.  This is definitely not a copy of
+ any of the Star Trek versions of that effect, nor is it intended to be.  At most it
+ should be regarded as an interpretation of the idea behind the effect.
 
-The transition is quite complex.  During the first 0.3 of the transition progress the
-sparkles/stars build, then hold for the next 0.4 of the transition.  They then decay.
-Under that, after the first 0.3 of the transition the chromakey starts a linear fade
-in, reaching full value at 70% of the transition progress.  When the transition is at
-100% the result is exactly the same as a standard chromakey.
+ The transition is quite complex.  During the first 0.3 of the transition progress the
+ sparkles/stars build, then hold for the next 0.4 of the transition.  They then decay.
+ Under that, after the first 0.3 of the transition the chromakey starts a linear fade
+ in, reaching full value at 70% of the transition progress.  When the transition is at
+ 100% the result is exactly the same as a standard chromakey.
 
-Because significant sections of this effect are copyright (c) EditShare EMEA and all
-rights are reserved it must not be used in other effects in whole or in part without
-the express written permission of Editshare.  The additional DVE component and the
-sparkle generation is an original implementation, although it is based on common
-algorithms.
+ Because significant sections of this effect are copyright (c) LWKS Software Ltd and
+ all rights are reserved it cannot be used in other effects in whole or in part without
+ the express written permission of LWKS Software Ltd.  The additional DVE component and
+ the sparkle generation is an original implementation, although it is based on common
+ algorithms.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Transporter1.fx
+//
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 5 December 2018 jwrl.
+// Changed subcategory.
 //
 // Modified 2018-07-09 jwrl:
 // Renamed effect fron "Transporter" to "Transporter I".
 // Blur generation is now resolution independent.
 // Added the ability to ignore the existing state of the foreground alpha channel when
 // generating the key.
-//
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

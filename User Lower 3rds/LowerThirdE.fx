@@ -1,35 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdE_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdE.mp4
 
 /**
-This effect does a page turn type of text overlay over a standard ribbon with adjustable
-opacity.  The direction of the page turn can be set to wipe on or wipe off.  "Wipe on"
-gives a left > right transition, and "Wipe off" reverses it. 
+ This effect does a page turn type of text overlay over a standard ribbon with adjustable
+ opacity.  The direction of the page turn can be set to wipe on or wipe off.  "Wipe on"
+ gives a left > right transition, and "Wipe off" reverses it. 
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LowerThirdE.fx
 //
-// Modified by LW user jwrl 16 March 2018
-// Cosmetic change only: "Transition" has been moved to the top of the parameters,
-// giving it higher priority than "Opacity".
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 26 December 2018 jwrl.
+// Formatted description for md.
+//
+// Modified 5 December 2018 jwrl.
+// Change subcategory.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 5 December 2018 jwrl.
-// Change subcategory.
-//
-// Modified 26 December 2018 jwrl.
-// Formatted description for md.
+// Modified by LW user jwrl 16 March 2018
+// Cosmetic change only: "Transition" has been moved to the top of the parameters,
+// giving it higher priority than "Opacity".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -237,8 +242,6 @@ float RibbonOpacity_BR
 #define OFFSET   0.05
 
 #define EMPTY    (0.0).xxxx
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

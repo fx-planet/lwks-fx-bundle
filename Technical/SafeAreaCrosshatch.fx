@@ -1,17 +1,17 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2016-01-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/SafeAreaAndXhatch_640.png
 
 /**
-This safe area and cross hatch generator can display EBU R 95, SMPTE RP 218, or legacy
-RP 218 safe area zones.  Now largely redundant with digital images, it is probably most
-useful for viewfinder simulations and the like.  Title safe, action safe and a centre
-cross can be selectively displayed, and center 4:3 can also be enabled if it is needed.
+ This safe area and cross hatch generator can display EBU R 95, SMPTE RP 218, or legacy
+ RP 218 safe area zones.  Now largely redundant with digital images, it is probably most
+ useful for viewfinder simulations and the like.  Title safe, action safe and a centre
+ cross can be selectively displayed, and center 4:3 can also be enabled if it is needed.
 
-The crosshatch pattern can be adjusted from 8 to 32 lines across the screen width, and
-the line weight can be adjusted for best visibility.
+ The crosshatch pattern can be adjusted from 8 to 32 lines across the screen width, and
+ the line weight can be adjusted for best visibility.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,18 +22,23 @@ the line weight can be adjusted for best visibility.
 // All "magic numbers" are defined immediately following the sampler declarations for
 // easy access and adjustment.
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -244,8 +249,6 @@ bool disableBgd
 <
    string Description = "Disable background";
 > = false;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Pixel Shaders

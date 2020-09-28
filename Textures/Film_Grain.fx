@@ -1,35 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2013-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmGrain_640.png
 
 /**
-This effect adds grain to an image either as film-style grain or as random noise.
-The grain can be applied to the luminance, chroma, luminance and chroma, or RGB.
+ This effect adds grain to an image either as film-style grain or as random noise.
+ The grain can be applied to the luminance, chroma, luminance and chroma, or RGB.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Film_Grain.fx
 //
-// Subcategory added by jwrl 10 Feb 2017
+// Version history:
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined all samplers to fix crossplatform default sampler state differences.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 7 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 2 August 2017 jwrl.
+// Explicitly defined all samplers to fix crossplatform default sampler state differences.
+//
+// Subcategory added by jwrl 10 Feb 2017
+//
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -155,8 +160,6 @@ float _Progress;
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2020-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/BlendedGlow_640.png
@@ -17,10 +17,13 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BlendedGlow.fx
 //
-// This effect is based on the Editshare Glow effect.  I have rewritten the blur section
+// This effect is based on the Lightworks Glow effect.  I have rewritten the blur section
 // somewhat.  It's still pretty much their original, just tweaked a little.
 //
-// Version history;
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified jwrl 2020-08-26.
 // Rewrote the glow application section of ps_main().

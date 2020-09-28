@@ -1,24 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-09-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/DoubleVis_640.png
 
 /**
-Double vision gives a blurry double vision effect suitable for removing glasses or drunken
-or head punch effects.  The blur adjustment is scaled by the displacement amount, so that
-when the amount reaches zero the blur does also.  The displacement is produced by scaling
-the video slightly in the X direction, ensuring that no edge artefacts are visible.
+ Double vision gives a blurry double vision effect suitable for removing glasses or drunken
+ or head punch effects.  The blur adjustment is scaled by the displacement amount, so that
+ when the amount reaches zero the blur does also.  The displacement is produced by scaling
+ the video slightly in the X direction, ensuring that no edge artefacts are visible.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DoubleVision.fx
 //
-// Modified 5 Dec 2018 by user jwrl:
-// Changed subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 5 Dec 2018 by user jwrl:
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -135,4 +140,3 @@ technique DoubleVision
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

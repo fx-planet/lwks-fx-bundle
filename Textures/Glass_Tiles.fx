@@ -1,32 +1,37 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2011-06-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/GlassTiles_2018.png
 // @see https://www.youtube.com/watch?v=O55QTV0gjmQ
 
 /**
-Breaks the image into glass tiles.
+ Breaks the image into glass tiles.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Glass_Tiles.fx
 //
-// Added subcategory for LW14 - jwrl 18 Feb 2017
+// Version history:
 //
-// Bug fix 13 July 2017 by jwrl:
-// This addresses a cross platform issue which may have caused the effect not to behave
-// as expected on either Linux or Mac systems.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 7 December 2018 jwrl.
+// Added creation date.
+// Changed subcategory.
+//
+// GitHub-relevant modification, 18 April 2018 schrauber
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// GitHub-relevant modification, 18 April 2018 schrauber
+// Bug fix 13 July 2017 by jwrl:
+// This addresses a cross platform issue which may have caused the effect not to behave
+// as expected on either Linux or Mac systems.
 //
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
+// Added subcategory for LW14 - jwrl 18 Feb 2017
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -90,8 +95,6 @@ float4 GroutColor
 //-----------------------------------------------------------------------------------------//
 
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

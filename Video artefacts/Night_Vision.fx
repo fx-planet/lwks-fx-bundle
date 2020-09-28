@@ -1,16 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-05-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/NightVision_640.png
 
 /**
-This effect uses three possible profiles.  One partially inverts red, one partially inverts
-blue, and the third takes the red channel of an image and partially subtracts blue and
-green channels from it.  Highlights are then burned out, gamma is adjusted and video noise
-added.  Finally the image is softened and coloured green.  Because this type of effect will
-always be subjective, highlight burnout, gamma, grain, softness and green saturation are
-all adjustable.
+ This effect uses three possible profiles.  One partially inverts red, one partially inverts
+ blue, and the third takes the red channel of an image and partially subtracts blue and
+ green channels from it.  Highlights are then burned out, gamma is adjusted and video noise
+ added.  Finally the image is softened and coloured green.  Because this type of effect will
+ always be subjective, highlight burnout, gamma, grain, softness and green saturation are
+ all adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,14 +24,19 @@ all adjustable.
 // cleanup the major changes to the original are a revised profile 1 shader and the use
 // of SetTechnique instead of using in-shader conditionals.
 //
-// Modified 2018-07-07 jwrl:
-// Made glow resolution independent.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 7 December 2018 jwrl.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 2018-07-07 jwrl:
+// Made glow resolution independent.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

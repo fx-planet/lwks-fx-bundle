@@ -1,30 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2016-05-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Acidulate_640.png
 
 /**
-I was going to call this LSD, but this name will do.  Original effect.
+ I was going to call this LSD, but this name will do.  Original effect.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AcidulateFx.fx
 //
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
-// Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Cross platform compatibility check 3 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

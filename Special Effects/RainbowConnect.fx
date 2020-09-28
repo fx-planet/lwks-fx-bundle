@@ -1,23 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-09-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/RainbowConnectionA_640.png
 
 /**
-This effect changes tones through a complex colour translation while performing what is
-essentially a non-additive mix.  It can be adjusted to operate over a limited range of the
-input video levels or the full range.
+ This effect changes tones through a complex colour translation while performing what is
+ essentially a non-additive mix.  It can be adjusted to operate over a limited range of the
+ input video levels or the full range.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Rainbow_Connection.fx
 //
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 5 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

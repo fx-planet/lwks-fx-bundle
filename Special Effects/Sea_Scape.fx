@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2018-05-05
 // @OriginalAuthor Alexander Alekseev 2014
@@ -8,11 +8,11 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/Seascape.mp4
 
 /**
-Seascape produces a very realistic ocean simulation.  Wave height, choppiness and frequency
-are all adjustable.  The height above the waves and the speed through them can also be set
-up, as can the rocking of the POV.
+ Seascape produces a very realistic ocean simulation.  Wave height, choppiness and frequency
+ are all adjustable.  The height above the waves and the speed through them can also be set
+ up, as can the rocking of the POV.
 
-***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
+ ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
 
 */
 
@@ -28,11 +28,16 @@ up, as can the rocking of the POV.
 // This adaptation retains the same Creative Commons license shown above.
 // It cannot be used for commercial purposes.
 //
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 5 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -349,4 +354,3 @@ technique Scape
       PixelShader = compile PROFILE mainImage ();
    }
 }
-

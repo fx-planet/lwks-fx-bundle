@@ -1,45 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-09-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR.mp4
 
 /**
-This effect emulates the faults that could occur with Quadruplex videotape playback.
-Tip penetration and guide height are both emulated, and chroma timebase errors are
-also simulated.  A range of Ampex VTR types and modes can be emulated, as well as a
-generic RCA videotape recorder.
+ This effect emulates the faults that could occur with Quadruplex videotape playback.
+ Tip penetration and guide height are both emulated, and chroma timebase errors are
+ also simulated.  A range of Ampex VTR types and modes can be emulated, as well as a
+ generic RCA videotape recorder.
 
-Note: the alpha channel is turned fully on with this effect.
+ Note: the alpha channel is turned fully on with this effect.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuadVTRsimulator.fx
 //
-// Modified jwrl 2018-09-08:
-// Corrected some maths issues affecting the number of bands displayed.
-// Added desaturation to PAL chroma correction.
-// Added PAL Hanover bars setting.
-// Used SetTechnique to select modes, bypassing the conditionals previously used.
-// Added monochrome mode.
+// Possible future projects:
+// Add noise displacement when build up occurs.
+// Work out a convincing way to make the image lose lock as it would with severe build up.
+// Create tracking errors.  That might just be one for the "too hard" basket.
 //
-// Modified jwrl 2018-09-09:
-// Rearranged techniques to allow support for PAL-M and other rarer formats.
+// Version history:
 //
-// Modified jwrl 2018-09-10:
-// Corrected guide height adjustment to be closer to actual effect.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified jwrl 2018-09-11:
-// Added oxide build up effect.  That meant a further slight reworking of the maths.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
-// Modified jwrl 2018-09-12:
-// Added sparkle caused by the brushes in early Ampex heads.  It sort of works, but it's
-// not exactly great.
-// Added head switching dots visible in the Ampex VR-1000 series.
-// Added crop to 4:3 aspect ratio.  The alpha channel is set to one inside the crop zone
-// and zero outside it.  The crop is reasonably dumb and assumes that the image isn't in
-// portrait format.
+// Modified 7 December 2018 jwrl.
+// Changed subcategory.
+//
+// Modified jwrl 2018-09-20:
+// Added RCA-style chroma displacement error.
+//
+// Modified jwrl 2018-09-14:
+// Corrected Hi-band/lo-band edge sharpening.
+// Improved brush noise sparkle generation.
 //
 // Modified jwrl 2018-09-13:
 // Added Hi-band/lo-band selection.  Two low band modes are provided, because the type
@@ -49,23 +48,29 @@ Note: the alpha channel is turned fully on with this effect.
 // also improves the buildup simulation.
 // Some code cleanup performed.
 //
-// Modified jwrl 2018-09-14:
-// Corrected Hi-band/lo-band edge sharpening.
-// Improved brush noise sparkle generation.
+// Modified jwrl 2018-09-12:
+// Added sparkle caused by the brushes in early Ampex heads.  It sort of works, but it's
+// not exactly great.
+// Added head switching dots visible in the Ampex VR-1000 series.
+// Added crop to 4:3 aspect ratio.  The alpha channel is set to one inside the crop zone
+// and zero outside it.  The crop is reasonably dumb and assumes that the image isn't in
+// portrait format.
 //
-// Modified jwrl 2018-09-20:
-// Added RCA-style chroma displacement error.
+// Modified jwrl 2018-09-11:
+// Added oxide build up effect.  That meant a further slight reworking of the maths.
 //
-// Modified 7 December 2018 jwrl.
-// Changed subcategory.
+// Modified jwrl 2018-09-10:
+// Corrected guide height adjustment to be closer to actual effect.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified jwrl 2018-09-09:
+// Rearranged techniques to allow support for PAL-M and other rarer formats.
 //
-// Possible future projects:
-// Add noise displacement when build up occurs.
-// Work out a convincing way to make the image lose lock as it would with severe build up.
-// Create tracking errors.  That might just be one for the "too hard" basket.
+// Modified jwrl 2018-09-08:
+// Corrected some maths issues affecting the number of bands displayed.
+// Added desaturation to PAL chroma correction.
+// Added PAL Hanover bars setting.
+// Used SetTechnique to select modes, bypassing the conditionals previously used.
+// Added monochrome mode.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -533,4 +538,3 @@ technique QuadVTR_RCA
    pass P_3
    { PixelShader = compile PROFILE ps_main (); }
 }
-

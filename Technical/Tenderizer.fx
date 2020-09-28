@@ -1,33 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2016-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/Tenderizer_640.png
 
 /**
-This effect converts 8 bit video to 10 bit video by adding intermediate colors and luminance
-values using spline interpolation.  Set project to 10 bit and set source width and height
-for best results.
+ This effect converts 8 bit video to 10 bit video by adding intermediate colors and luminance
+ values using spline interpolation.  Set project to 10 bit and set source width and height
+ for best results.
 
-Note: the alpha channel is not changed, but there may be some image softening.
+ Note: the alpha channel is not changed, but there may be some image softening.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Tenderizer.fx
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Version history:
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
 // Changed category.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -88,8 +93,6 @@ float _OutputAspectRatio;
 float _OutputWidth;
 
 #define OutputHeight (_OutputWidth/_OutputAspectRatio)
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-11
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2017-02-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/TheDarkSide_640.png
@@ -15,7 +15,7 @@
 // Lightworks user effect DarkSide.fx
 //
 // Sort of based on the Lightworks "Glow" effect, I started work on this effect then
-// decided to check the Editshare code.  Accordingly, the user interface is now exactly
+// decided to check the Lightworks code.  Accordingly, the user interface is now exactly
 // the same as theirs, with the exception of the "Size" parameter.  The code under the
 // hood varies more than somewhat, and "Size" scales from 0% to 100%, not from 1 to 10.
 //
@@ -42,6 +42,9 @@
 // have seen from the parameter names.
 //
 // Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 11 July 2020 jwrl.
 // Explicitly set SupportsAlpha boolean value in colour parameter to false.

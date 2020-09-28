@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author juhartik
 // @AuthorEmail juha@linearteam.org
 // @Created 2016-05-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/JHshowHiLo_640.png
 
 /**
-This effect blinks extreme blacks and whites.
+ This effect blinks extreme blacks and whites.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,22 +14,27 @@ This effect blinks extreme blacks and whites.
 //
 // JH Analysis Show Hi/Lo v1.0 - Juha Hartikainen - juha@linearteam.org - Blinks extreme
 // darks/highlights.
-// 
-// Modified 11 February 2017 jwrl.
-// Modified to sit in user category "Analysis" for version 14.  This will actually show
-// as category "User", subcategory "Analysis" in 14 and as category "User" in earlier
-// versions.
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Changed effect name.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+// 
+// Modified 11 February 2017 jwrl.
+// Modified to sit in user category "Analysis" for version 14.  This will actually show
+// as category "User", subcategory "Analysis" in 14 and as category "User" in earlier
+// versions.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -80,8 +85,6 @@ float HiLimit
 //-----------------------------------------------------------------------------------------//
 
 float _Progress = 1.0;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

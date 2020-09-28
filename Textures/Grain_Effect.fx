@@ -1,33 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2011-04-17
 // @see https://www.lwks.com/media/kunena/attachments/6375/Grain_640.png
 
 /**
-This is a simple means of applying a video noise style of grain.
+ This is a simple means of applying a video noise style of grain.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Grain_Effect.fx
 //
-// Subcategory added by jwrl 10 Feb 2017
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 7 December 2018 jwrl.
+// Added creation date.
+// Changed subcategory.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Cross platform compatibility check 2 August 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
 // Fully defined float3 variable to fix the behavioural differences between the D3D and
 // Cg compilers in mathematical functions.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Subcategory added by jwrl 10 Feb 2017
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -72,8 +77,6 @@ float Strength
 //-----------------------------------------------------------------------------------------//
 
 float _Progress;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

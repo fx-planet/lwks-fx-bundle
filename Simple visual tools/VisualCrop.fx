@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2020-01-08
+// @Released 2020-09-28
 // @Author gr00by
-// @OriginalAuthor EditShare EMEA
+// @OriginalAuthor LWKS Software Ltd
 // @Created 2016-11-26
 // @see https://www.lwks.com/media/kunena/attachments/6375/vicrop_640.png
 
 /**
- Based on the crop section of DVE.fx as created by EditShare, this is a quick simple cropping
+ Based on the crop section of DVE.fx as created for Lightworks, this is a quick simple cropping
  tool that you can set up by dragging corner pins around on the screen.  In effects settings mode,
  move your mouse over your edit viewer and two diagonally opposing corner pins will appear.  Just
  click on them and drag and the crop will follow.  Done.  It's one of those "why did no-one think
@@ -16,24 +16,29 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect VisualCrop.fx
 //
-// Modifications for version 14 by jwrl 11 February 2017.
-// Category changed and subcategory added.
+// Version history:
 //
-// Bug fix by LW user jwrl 13 July 2017
-// This effect didn't work as expected on Linux/Mac platforms.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 8 January 2020 jwrl.
+// Changed subcategory (again)!
+// Changed the markup text to match the on-line description.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Changed name from vicrop.fx to VisualCrop.fx.
 // Formatted the descriptive block so that it can automatically be read.
 //
-// Modified 8 January 2020 jwrl.
-// Changed subcategory (again)!
-// Changed the markup text to match the on-line description.
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Modifications for version 14 by jwrl 11 February 2017.
+// Category changed and subcategory added.
+//
+// Bug fix by LW user jwrl 13 July 2017
+// This effect didn't work as expected on Linux/Mac platforms.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

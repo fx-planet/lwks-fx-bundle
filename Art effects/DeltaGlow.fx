@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2020-08-26
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeltaGlow_640.png
@@ -19,11 +19,12 @@
 // Lightworks user effect DeltaGlow.fx
 //
 // This effect is based on BlendedGlow.fx, with additional delta key support.  That in
-// turn was based on the Editshare Glow effect, with a rewritten blur section.
+// turn was based on the Lightworks Glow effect, with a rewritten blur section.
 //
-// Version history;
+// Version history:
 //
-// Built by jwrl 2020-08-26.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -363,4 +364,3 @@ technique BlueGlow
    pass P_4
    { PixelShader = compile PROFILE ps_main (); }
 }
-

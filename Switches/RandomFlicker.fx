@@ -1,26 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-08-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/RandomSwitch_640.png
 
 /**
-This effect is a pseudo random switch between two inputs.  It can compile and run under
-Lightworks version 14.0 and earlier, and with slightly different and more stable control
-under version 14.5 and up.
+ This effect is a pseudo random switch between two inputs.  It can compile and run under
+ Lightworks version 14.0 and earlier, and with slightly different and more stable control
+ under version 14.5 and up.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RandomFlicker.fx
 //
-// Modified jwrl 2018-08-24
-// Corrected the fact that opacity did nothing.  Thanks schrauber for picking that up.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 6 December 2018 jwrl.
 // Changed category and subcategory.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified jwrl 2018-08-24
+// Corrected the fact that opacity did nothing.  Thanks schrauber for picking that up.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

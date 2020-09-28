@@ -1,24 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-06-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChannelSelect_640.png
 
 /**
-Channel selector can choose the RGBA channel to be used from up to four separate video
-layers.  It can be used as a simple matte generator for use in other blending effects,
-a means of producing black and white from colour, or just a means of producing a colour
-image from colour separations.
+ Channel selector can choose the RGBA channel to be used from up to four separate video
+ layers.  It can be used as a simple matte generator for use in other blending effects,
+ a means of producing black and white from colour, or just a means of producing a colour
+ image from colour separations.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChannelSelector.fx
 //
-// Modified 6 December 2018 jwrl.
-// Changed category and subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 6 December 2018 jwrl.
+// Changed category and subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -166,4 +171,3 @@ technique ChannelSelector
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

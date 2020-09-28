@@ -1,31 +1,36 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2011-12-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColorBars_640.png
 
 /**
-This version of colorbars provides a SMPTE alternative to the Lightworks-supplied EBU
-version.  It installs into the custom category "User", subcategory "Technical".
+ This version of colorbars provides a SMPTE alternative to the Lightworks-supplied EBU
+ version.  It installs into the custom category "User", subcategory "Technical".
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Colorbars.fx
 //
-// Bugfix 14 July 2017 by jwrl.
-// Corrected an issue with Linux/Mac versions of the Lightworks effects compiler that
-// caused the bars not to display on those platforms.
+// Version history:
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bugfix 14 July 2017 by jwrl.
+// Corrected an issue with Linux/Mac versions of the Lightworks effects compiler that
+// caused the bars not to display on those platforms.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -52,8 +57,6 @@ int SetTechnique
    string Description = "Aspect Ratio";
    string Enum = "HD,SD";
 > = 0;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

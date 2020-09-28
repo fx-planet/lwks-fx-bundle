@@ -1,22 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-09-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromaSmear_640.png
 
 /**
-This simulates the "colour under/pilot tone colour" of early helical scan recorders.
-It does this by blurring the image chroma and re-applying it to the luminance.
+ This simulates the "colour under/pilot tone colour" of early helical scan recorders.
+ It does this by blurring the image chroma and re-applying it to the luminance.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromaBleed.fx
 //
-// Modified 7 December 2018 jwrl.
-// Changed subcategory.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 7 December 2018 jwrl.
+// Changed subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

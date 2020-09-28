@@ -1,39 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2017-03-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Deinterlace_640.png
 
 /**
-This de-interlace tool provides seven modes of operation: odd field only, even field
-only, blended fields, odd field interpolated, even field interpolated and two blended
-interpolated modes.  Depending on the mode chosen, this can require up to three passes
-to execute.  On that basis it shouldn't place too much of a strain on any modern GPU.
+ This de-interlace tool provides seven modes of operation: odd field only, even field
+ only, blended fields, odd field interpolated, even field interpolated and two blended
+ interpolated modes.  Depending on the mode chosen, this can require up to three passes
+ to execute.  On that basis it shouldn't place too much of a strain on any modern GPU.
 
-This effect is designed to work only on interlaced media of the same resolution as the
-project, and to then export only at that resolution.  If this is not the case severe
-"combing" can result which may be impossible to remove.  Because it relies on the
-capability of the GPU to do the pixel interpolation intensive testing was carried out
-before release.  It has been tested with an Nvidia Quadro K2200, an Nvidia GTX-970 G1
-and an Nvidia GTX-960.  On those it was reliable in all the interpolated modes with
-1080i media in a 1080p project.
+ This effect is designed to work only on interlaced media of the same resolution as the
+ project, and to then export only at that resolution.  If this is not the case severe
+ "combing" can result which may be impossible to remove.  Because it relies on the
+ capability of the GPU to do the pixel interpolation intensive testing was carried out
+ before release.  It has been tested with an Nvidia Quadro K2200, an Nvidia GTX-970 G1
+ and an Nvidia GTX-960.  On those it was reliable in all the interpolated modes with
+ 1080i media in a 1080p project.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Deinterlace.fx
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -104,8 +109,6 @@ int SetTechnique
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

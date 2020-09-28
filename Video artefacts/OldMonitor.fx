@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author juhartik
 // @Created 2011-08-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/jh_stylize_oldmonitor_640.png
 
 /**
-This old monitor effect is black and white with scan lines, which are fully adjustable.
+ This old monitor effect is black and white with scan lines, which are fully adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,22 +14,27 @@ This old monitor effect is black and white with scan lines, which are fully adju
 // JH Stylize Vignette v1.0 - Juha Hartikainen - juha@linearteam.org - Emulates old
 // Hercules monitor
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added "Simulation" subcategory to effect header.
+// Version history:
 //
-// Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined FgSampler to fix cross platform default sampler state differences.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 // 
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 7 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 3 August 2017 jwrl.
+// Explicitly defined FgSampler to fix cross platform default sampler state differences.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added "Simulation" subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -79,8 +84,6 @@ float LineCount
 //-----------------------------------------------------------------------------------------//
 
 #define _PI 3.14159265
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

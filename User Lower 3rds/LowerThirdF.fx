@@ -1,33 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-03-17
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdF_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdF.mp4
 
 /**
-This effect does a twist of a text overlay over a standard ribbon with adjustable opacity.
-The direction of the twist can be set to wipe on or wipe off.  "Wipe on" gives a left to
-right transition on, and "Wipe off" gives a left to right transition off.  As a result
-when setting the transition range in "Wipe off" it's necessary to set the transition to
-zero, unlike the usual 100%.
+ This effect does a twist of a text overlay over a standard ribbon with adjustable opacity.
+ The direction of the twist can be set to wipe on or wipe off.  "Wipe on" gives a left to
+ right transition on, and "Wipe off" gives a left to right transition off.  As a result
+ when setting the transition range in "Wipe off" it's necessary to set the transition to
+ zero, unlike the usual 100%.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LowerThirdF.fx
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 26 December 2018 jwrl.
+// Formatted description for md.
 //
 // Modified 5 December 2018 jwrl.
 // Change subcategory.
 //
-// Modified 26 December 2018 jwrl.
-// Formatted description for md.
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -239,8 +244,6 @@ float RibbonOpacity_BR
 #define R_LIMIT  0.005
 
 #define EMPTY    (0.0).xxxx
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

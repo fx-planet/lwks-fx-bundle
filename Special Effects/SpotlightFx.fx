@@ -1,37 +1,42 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2017-12-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/SpotlightEffect_640.png
 
 /**
-This effect is designed to produce a highlighted spotlight effect on the source video.
-It's a simple single effect solution for the alternative, a wipe/matte combination
-used in conjunction with a blend or DVE.  The spot can be scaled, have its aspect ratio
-adjusted, and rotated through plus or minus 90 degrees.  The edge of the effect can
-also be feathered.
+ This effect is designed to produce a highlighted spotlight effect on the source video.
+ It's a simple single effect solution for the alternative, a wipe/matte combination
+ used in conjunction with a blend or DVE.  The spot can be scaled, have its aspect ratio
+ adjusted, and rotated through plus or minus 90 degrees.  The edge of the effect can
+ also be feathered.
 
-Foreground and background exposure can be adjusted, as can saturation and vibrance.  The
-background can also be slightly blurred to give a soft focus effect, and the foreground
-and background can be individually tinted.
+ Foreground and background exposure can be adjusted, as can saturation and vibrance.  The
+ background can also be slightly blurred to give a soft focus effect, and the foreground
+ and background can be individually tinted.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spotlight_Effect.fx
 //
-// Bug fix and modification 2018-04-29 jwrl:
-// Corrected a bug which caused the angular adjustment to be always centred on the frame
-// centre, regardless of the spot position.  In the process the subcategory was changed
-// to "Matte" and the filename from SpotEffect.fx to SpotlightEffect.fx.
+// Version history:
 //
-// Modified 2018-07-07 jwrl:
-// Blur is now resolution independent.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified 5 December 2018 jwrl.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 2018-07-07 jwrl:
+// Blur is now resolution independent.
+//
+// Bug fix and modification 2018-04-29 jwrl:
+// Corrected a bug which caused the angular adjustment to be always centred on the frame
+// centre, regardless of the spot position.  In the process the subcategory was changed
+// to "Matte" and the filename from SpotEffect.fx to SpotlightEffect.fx.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

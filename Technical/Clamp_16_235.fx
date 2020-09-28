@@ -1,27 +1,32 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2011-05-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/Clamp16_235_640.png
 
 /**
-This is one of three tools to manage broadcast colour space.  The names are self-explanatory.
-They install into the custom category "User", subcategory "Technical".
+ This is one of three tools to manage broadcast colour space.  The names are self-explanatory.
+ They install into the custom category "User", subcategory "Technical".
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Clamp_16_235.fx
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
 // Changed subcategory.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,8 +53,6 @@ sampler FgSampler = sampler_state
    MagFilter = Linear;
    MipFilter = Linear;
 };
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

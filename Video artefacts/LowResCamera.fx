@@ -1,39 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2016-02-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/Low_res_cam_2018-05-23.png
 
 /**
-This effect was designed to simulate the pixellation that you get when a low-resolution
-camera is blown up just that little too much.
+ This effect was designed to simulate the pixellation that you get when a low-resolution
+ camera is blown up just that little too much.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LowResCamera.fx
 //
-// Version 14 update 2017-02-18 jwrl:
-// Added subcategory to effect header.
+// Version history:
 //
-// Bug fix 2017-02-26 jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Cross platform compatibility check 2017-08-03 jwrl:
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
 //
-// Modified 2018-04-08 jwrl:
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 7 December 2018 jwrl.
+// Changed subcategory.
 //
 // Modified 2018-07-07 jwrl:
 // Made blur resolution independent.  Bug fix 2017-02-26 no longer applies and has been
 // removed.
 //
-// Modified 7 December 2018 jwrl.
-// Changed subcategory.
+// Modified 2018-04-08 jwrl:
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Cross platform compatibility check 2017-08-03 jwrl:
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Bug fix 2017-02-26 jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
+//
+// Version 14 update 2017-02-18 jwrl:
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

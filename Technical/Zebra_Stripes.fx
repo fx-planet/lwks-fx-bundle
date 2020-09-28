@@ -1,121 +1,172 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
-// @Created 2016-04-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/Zebra_640.png
+// @Created 2018-06-10
+// @see https://www.lwks.com/media/kunena/attachments/6375/ChannelSelect_640.png
 
 /**
-This effect displays zebra patterning in over white and under black areas of the frame.
-The settings are adjustable but default to 16-239 (8 bit).  Settings display as 8 bit
-values to make setting up simpler, but in a 10-bit project they will be internally
-scaled to 10 bits.  This is consistent with other Lightworks level settings.
+ Channel selector can choose the RGBA channel to be used from up to four separate video
+ layers.  It can be used as a simple matte generator for use in other blending effects,
+ a means of producing black and white from colour, or just a means of producing a colour
+ image from colour separations.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks effect Zebra_Stripes.fx
+// Lightworks user effect ChannelSelector.fx
 //
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Changed subcategory.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 6 December 2018 jwrl.
+// Changed category and subcategory.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Zebra pattern";
+   string Description = "Channel selector";
    string Category    = "User";
-   string SubCategory = "Technical";
-   string Notes       = "Displays zebra patterning in over white and under black areas of the frame";
+   string SubCategory = "Switches";
+   string Notes       = "Selectively combine RGBA channels from up to four layers";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+texture V1;
+texture V2;
+texture V3;
+texture V4;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state {
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Video_1 = sampler_state { Texture = <V1>; };
+sampler s_Video_2 = sampler_state { Texture = <V2>; };
+sampler s_Video_3 = sampler_state { Texture = <V3>; };
+sampler s_Video_4 = sampler_state { Texture = <V4>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float whites
+int SelectVideo_1
 <
-   string Description = "White level";
-   float MinVal = 0;
-   float MaxVal = 255;
-> = 235;
+   string Description = "Select component to use from V1";
+   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
+> = 0;
 
-float blacks
+int RouteVideo_1
 <
-   string Description = "Black level";
-   float MinVal = 0;
-   float MaxVal = 255;
-> = 16;
+   string Description = "Select channel to assign V1 to";
+   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
+> = 0;
+
+int SelectVideo_2
+<
+   string Description = "Select component to use from V2";
+   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
+> = 6;
+
+int RouteVideo_2
+<
+   string Description = "Select channel to assign V2 to";
+   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
+> = 6;
+
+int SelectVideo_3
+<
+   string Description = "Select component to use from V3";
+   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
+> = 6;
+
+int RouteVideo_3
+<
+   string Description = "Select channel to assign V3 to";
+   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
+> = 6;
+
+int SelectVideo_4
+<
+   string Description = "Select component to use from V4";
+   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
+> = 6;
+
+int RouteVideo_4
+<
+   string Description = "Select channel to assign V4 to";
+   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
+> = 6;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define SCALE_PIXELS 400.00
+#define EMPTY (0.0).xxxx
 
-#define STRIPES      6.0
+#define LUMA  float3(0.2989, 0.5866, 0.1145)
 
-#define RED_LUMA     0.3
-#define GREEN_LUMA   0.59
-#define BLUE_LUMA    0.11
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_select (sampler vidSample, float2 xy, int vidSelect)
+{
+   if (vidSelect == 6) return EMPTY;
+
+   float4 retval = tex2D (vidSample, xy);
+
+   if (vidSelect == 1) return retval;
+   if (vidSelect == 2) return retval.rrrr;
+   if (vidSelect == 3) return retval.gggg;
+   if (vidSelect == 4) return retval.bbbb;
+   if (vidSelect == 5) return retval.aaaa;
+
+   return dot (retval.rgb, LUMA).xxxx;
+}
+
+float4 fn_route (float4 video_src, float4 video_ref, int vidRoute)
+{
+   if (vidRoute == 1) return float4 (video_src.rgb, video_ref.a);
+   if (vidRoute == 2) return float4 (video_src.r, video_ref.gba);
+   if (vidRoute == 3) return float4 (vide_ref.r video_src.g, video_ref.ba);
+   if (vidRoute == 4) return float4 (vide_ref.rg video_src.b, video_ref.a);
+   if (vidRoute == 5) return float4 (video_ref.rgb, video_src.a);
+   if (vidRoute == 6) return video_ref;
+
+   return video_src;
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (InputSampler, xy);
+   float4 newvid = fn_select (s_Video_1, uv, SelectVideo_1);
+   float4 retval = fn_route (newvid, EMPTY, RouteVideo_1);
 
-   float luma = dot (retval.rgb, float3 (RED_LUMA, GREEN_LUMA, BLUE_LUMA));
-   float peak_white = whites / 255.0;
-   float full_black = blacks / 255.0;
+   newvid = fn_select (s_Video_2, uv, SelectVideo_2);
+   retval = fn_route (newvid, retval, RouteVideo_2);
+   newvid = fn_select (s_Video_3, uv, SelectVideo_3);
+   retval = fn_route (newvid, retval, RouteVideo_3);
+   newvid = fn_select (s_Video_4, uv, SelectVideo_4);
 
-   float x = xy.x * SCALE_PIXELS;
-   float y = xy.y * SCALE_PIXELS;
-
-   x = frac (x / STRIPES);
-   y = frac (y / STRIPES);
-
-   if (luma >= peak_white) retval.rgb = (retval.rgb + float (round (frac (x + y))).xxx) / 2.0;
-
-   if (luma <= full_black) retval.rgb = (retval.rgb + float (round (frac (x + 1.0 - y))).xxx) / 2.0;
-
-   return retval;
+   return fn_route (newvid, retval, RouteVideo_4);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Zebra_Stripes
+technique ChannelSelector
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }

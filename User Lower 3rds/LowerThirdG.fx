@@ -1,34 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-12-26
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2018-03-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdG_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/LowerthirdG.mp4
 
 /**
-This uses a clock wipe to wipe on a box around text.  The box can wipe on clockwise or
-anticlockwise, and start from the top or the bottom.  Once the box is almost complete a
-fill colour dissolves in, along with the text.
+ This uses a clock wipe to wipe on a box around text.  The box can wipe on clockwise or
+ anticlockwise, and start from the top or the bottom.  Once the box is almost complete a
+ fill colour dissolves in, along with the text.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LowerThirdG.fx
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Version history:
 //
-// Bugfix 31 May 2018 jwrl.
-// Corrected X direction sense of ArtPosX.
+// Update 2020-09-28 jwrl.
+// Revised header block.
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Modified 26 December 2018 jwrl.
+// Formatted description for md.
 //
 // Modified 5 December 2018 jwrl.
 // Change subcategory.
 //
-// Modified 26 December 2018 jwrl.
-// Formatted description for md.
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
+//
+// Bugfix 31 May 2018 jwrl.
+// Corrected X direction sense of ArtPosX.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

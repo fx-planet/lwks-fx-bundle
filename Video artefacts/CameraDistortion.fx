@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author jwrl
 // @Created 2016-03-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/CameraDistortions_640.png
 
 /**
-Camera distortions adds colour fringing effects, pincushion distortion, scaling and
-anamorphic adjustment to an image.  The centre of action of the effect can also be
-adjusted.  It can be used to simulate camera distortion or possibly even correct it,
-and can also be used as an effect in its own right.
+ Camera distortions adds colour fringing effects, pincushion distortion, scaling and
+ anamorphic adjustment to an image.  The centre of action of the effect can also be
+ adjusted.  It can be used to simulate camera distortion or possibly even correct it,
+ and can also be used as an effect in its own right.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -58,14 +58,24 @@ and can also be used as an effect in its own right.
 // would be nice to be credited if you decide to use it elsewhere or change it in
 // any way - jwrl.
 //
-// Version 14 update 18 Feb 2017 jwrl: Added subcategory to effect header.
-//
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
 // Rewrote ps_lens() to speed things up a little by doing less multiply operations
 // in the loops and where possible by making any mathematical processes work on
 // float2 variables rather than individually on two floats.
+//
+// Version history:
+//
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 7 December 2018 jwrl.
+// Changed subcategory.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 28 March 2018 by jwrl.
 // Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
@@ -73,15 +83,10 @@ and can also be used as an effect in its own right.
 // 14.5 and higher under Linux or OS-X and fixes a bug associated with using this
 // effect with transitions on those platforms.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Cross platform compatibility check 2 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 7 December 2018 jwrl.
-// Changed subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Version 14 update 18 Feb 2017 jwrl: Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -243,8 +248,6 @@ float Ycentre
 #define BLACK     float2(0.0,1.0).xxxy
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

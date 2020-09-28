@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-27
+// @Released 2020-09-28
 // @Author khaver
 // @Created 2017-05-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/VariFilmGrain_640.png
 
 /**
-Author's note:  This effect is based on my earlier Grain (Variable) effect.  This effect
-rolls-off the strength of the grain as the luma values in the image approach 0 and 1,
-much like real film.
+ Author's note:  This effect is based on my earlier Grain (Variable) effect.  This effect
+ rolls-off the strength of the grain as the luma values in the image approach 0 and 1,
+ much like real film.
 
-Controls are:
+ Controls are:
    STRENGTH:         controls the amount of grain added.
    SIZE:             controls the size of the grain.
    DISTRIBUTION:     controls the space between grains.
@@ -24,26 +24,31 @@ Controls are:
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Variable_Film_Grain.fx
 //
-// Subcategory added by jwrl 10 Feb 2017
+// Version history:
 //
-// Bug fix 8 May 2017 by jwrl.
-// Added workaround for the interlaced media height bug in Lightworks effects.
+// Update 2020-09-28 jwrl.
+// Revised header block.
+//
+// Modified 27 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 7 December 2018 jwrl.
+// Corrected creation date.
+// Changed subcategory.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Cross platform compatibility check 2 August 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
 // Explicitly defined all float4 variables to address the behavioural difference
 // between the D3D and Cg compilers.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Bug fix 8 May 2017 by jwrl.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //
-// Modified 7 December 2018 jwrl.
-// Corrected creation date.
-// Changed subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Subcategory added by jwrl 10 Feb 2017
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -209,8 +214,6 @@ float _BlurWeights[13] =
 	    0.008764,
 	    0.002216
 	};
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

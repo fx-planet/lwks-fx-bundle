@@ -1,19 +1,19 @@
 // @Maintainer jwrl
-// @Released 2019-08-03
+// @Released 2020-09-29
 // @Author jwrl
 // @Author baopao
 // @Created 2016-05-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou_640.png
 
 /**
-Lissajou sparkles is based on Sinusoidal lights, a semi-abstract pattern generator created
-for Mac and Linux systems by Lightworks user baopao.  This version adds either external
-video or a colour gradient background to the pattern.  That has meant that the range and
-type of some parameters were changed from baopao's original to allow their interactive
-adjustment in the edit viewer.
+ Lissajou sparkles is based on Sinusoidal lights, a semi-abstract pattern generator created
+ for Mac and Linux systems by Lightworks user baopao.  This version adds either external
+ video or a colour gradient background to the pattern.  That has meant that the range and
+ type of some parameters were changed from baopao's original to allow their interactive
+ adjustment in the edit viewer.
 
-NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
-A legacy version is available for users in that position.
+ NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
+ A legacy version is available for users in that position.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -25,17 +25,21 @@ A legacy version is available for users in that position.
 //
 // Windows conversion was carried out by Lightworks user jwrl.
 //
-// LW 14+ version by jwrl 12 February 2017
-// Category changed from "Generators" to "Mattes", SubCategory "Patterns" added.
+// Version history:
 //
-// LW 14.5 update by jwrl 30 March 2018
-// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
-// care of in versions of LW higher than 14.0.  If using an older version under
-// Windows the Legacy version must be used.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 3 August 2019 jwrl.
+// Corrected matte generation so that it remains stable without an input.
+//
+// Modified 23 December 2018 jwrl.
+// Changed subcategory.
+// Inverted speed setting.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
 //
 // Modified 31 May 2018 jwrl.
 // Changed Num description from "Number" to "Star number".
@@ -44,16 +48,17 @@ A legacy version is available for users in that position.
 // Fixed default colours not displaying.
 // Performed general code cleanup to improve efficiency.
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Inverted speed setting.
-// Formatted the descriptive block so that it can automatically be read.
+// LW 14.5 update by jwrl 30 March 2018
+// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
+// care of in versions of LW higher than 14.0.  If using an older version under
+// Windows the Legacy version must be used.
 //
-// Modified 3 August 2019 jwrl.
-// Corrected matte generation so that it remains stable without an input.
+// LW 14+ version by jwrl 12 February 2017
+// Category changed from "Generators" to "Mattes", SubCategory "Patterns" added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -217,6 +222,10 @@ float4 botRight
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
 float _Progress;
 
 //-----------------------------------------------------------------------------------------//
@@ -269,10 +278,6 @@ float4 ps_main (float2 uv : TEXCOORD, float2 UV : TEXCOORD1) : COLOR
 //-----------------------------------------------------------------------------------------//
 //  Techniques
 //-----------------------------------------------------------------------------------------//
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
 
 technique LissajouSparkles
 {

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-11
+// @Released 2020-09-29
 // @Author idealsceneprod (Val Gameiro)
 // @Created 2014-12-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/FiveTone_640.png
@@ -14,6 +14,9 @@
 // Lightworks user effect Five_tone.fx
 //
 // Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified 11 July 2020 jwrl.
 // Explicitly declared SupportsAlpha flag to be false in each colour parameter.

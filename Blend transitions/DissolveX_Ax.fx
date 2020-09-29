@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2018-06-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_DissolveX_640.png
@@ -46,7 +46,7 @@
 //
 // Version history:
 //
-// Modified 23 July 2020 jwrl.
+// Modified 29 Sept. 2020 jwrl.
 // Changed "Transition" to "Transition position".
 // Changed Boost dialogue.
 //

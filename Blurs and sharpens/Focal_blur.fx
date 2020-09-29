@@ -1,20 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Released 2015-12-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/FocalBlur_640.png
 
 /**
-This effect is a 3 pass 13 tap circular kernel blur.  The blur can be varied using the
-alpha channel or luma value of the source video or another video track.  Uses a depth map
-for the blur mask for faux depth of field, and is refocusable.
+ This effect is a 3 pass 13 tap circular kernel blur.  The blur can be varied using the
+ alpha channel or luma value of the source video or another video track.  Uses a depth map
+ for the blur mask for faux depth of field, and is refocusable.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Focal_blur.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Bug fix 26 February 2017 by jwrl:
 // Added workaround for the interlaced media height bug in Lightworks effects.  THE BUG
@@ -22,12 +31,8 @@ for the blur mask for faux depth of field, and is refocusable.
 // needed one cannot reliably use _OutputHeight with interlaced media.  It returns only
 // half the actual frame height when interlaced media is stationary.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

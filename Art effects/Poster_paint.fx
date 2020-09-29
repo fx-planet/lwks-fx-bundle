@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-07-11
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2018-11-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/PosterPaint_640.png
@@ -16,6 +16,9 @@
 // Lightworks user effect PosterPaint.fx
 //
 // Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified 11 July 2020 jwrl.
 // Removed pointless settings bypass.

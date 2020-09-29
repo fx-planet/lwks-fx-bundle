@@ -1,33 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Released 2016-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeltaMask_640.png
 
 /**
-This is a delta mask or difference matte effect which needs 3 video tracks. V1 is the
-foreground clip, V2 the static background freeze frame and V3 the new background to be
-added.  Once the delta key is set up the routing panel is used to route the output of
-the delta mask effect to the foreground input of a blend effect and the new background
-track to the background input.
+ This is a delta mask or difference matte effect which  subtracts the background from the
+ foreground to produce an image with transparency.  This can then be used with external
+ blend or DVE effects in the same way as a title or image key.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DeltaMaskFx.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Changed category from "Keying" to "Key", added subcategory to effect header.
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
+// 
+// Modified 3 September 2020 by user jwrl:
+// Corrected "Notes" text.
+// Corrected the descriptive text, which related to an entirely different effect.
+// 
+// Modified 23 Dec 2018 by user jwrl:
+// Added creation date.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 26 Nov 2018 by user schrauber:
+// Changed subcategory from "User Effects" to "Key Extras".
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
-// 
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
 //
-// Modified 23 Dec 2018 by user jwrl:
-// Added creation date.
-// Reformatted the effect description for markup purposes.
+// Version 14 update 18 Feb 2017 jwrl.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,7 +43,7 @@ int _LwksEffectInfo
    string Description = "DeltaMask";
    string Category    = "Key";
    string SubCategory = "Key Extras";
-   string Notes       = "This delta mask effect needs 3 video tracks, reference, background and foreground";
+   string Notes       = "This delta mask effect removes the background from the foreground.";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

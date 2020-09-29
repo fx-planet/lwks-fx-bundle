@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-01
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2020-04-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/Simple_S_640.png
@@ -12,6 +12,12 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SimpleS.fx
+//
+// Version history:
+//
+// Modified jwrl 2020-09-29
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -94,8 +100,8 @@ float fn_s_curve (float video, float curve)
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 inp    = tex2D (s_Input, uv);   // Recover the video source
-   float4 retval = inp;                   // Only really needs inp.a
+   float4 inp = saturate (tex2D (s_Input, uv)); // Recover the video source
+   float4 retval = inp;                         // Only really needs inp.a
 
    // Now load a float3 variable with double the Y curve and offset it
    // by 1 to give us a range from 1 to 3, limited to a minimum of 1.
@@ -115,7 +121,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // Return the processed video, mixing it back with the input video
 
-   return lerp (inp, retval, Amount);
+   return lerp (inp, saturate (retval), Amount);
 }
 
 //-----------------------------------------------------------------------------------------//

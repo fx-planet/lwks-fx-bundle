@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-19
+// @Released 2020-09-29
 // @Author hugly
 // @Author flyingrub https://www.shadertoy.com/view/wsBXWW
 // @Created 2019-09-07
@@ -15,7 +15,7 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
+// Update 2020-09-29 jwrl.
 // Revised header block.
 //
 // Modified jwrl 2020-05-19.

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-11-06
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2019-11-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/BevelCrop_640.png
@@ -29,6 +29,11 @@
 // the two HSV functions, there's actually just thirty three lines of code to do it all.
 //
 // And it's all original work, so it probably could be done more efficiently than I have.
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -442,4 +447,3 @@ technique BevelCrop
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,16 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Author Daniel Taylor
 // @Created 2018-05-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/PencilSketch_640.png
 
 /**
-Pencil Sketch (PencilSketchFx.fx) is a really nice effect that creates a pencil sketch
-from your image.  As well as the ability to adjust saturation, gamma, brightness and
-gain, it's possible to overlay the result over a background layer.  What isn't possible
-is to compile this version under versions of Windows Lightworks earlier than 14.5.
-There is a legacy version available for users in that position.
+ Pencil Sketch (PencilSketchFx.fx) is a really nice effect that creates a pencil sketch
+ from your image.  As well as the ability to adjust saturation, gamma, brightness and
+ gain, it's possible to overlay the result over a background layer.  What isn't possible
+ is to compile this version under versions of Windows Lightworks earlier than 14.5.
+ There is a legacy version available for users in that position.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -27,6 +27,11 @@ There is a legacy version available for users in that position.
 // used for commercial purposes.
 //
 // note: code comments are from the original author(s).
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified 23 December 2018 jwrl.
 // Formatted the descriptive block so that it can automatically be read.

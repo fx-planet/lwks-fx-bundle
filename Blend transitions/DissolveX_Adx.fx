@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2018-11-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ax_DissolveX_640.png
@@ -44,7 +44,7 @@
 //
 // Revision history:
 //
-// Modified jwrl 2020-07-23
+// Modified jwrl 2020-09-29
 // Rolled fold/unfold into transition position.
 //
 // Modified jwrl 2020-06-02

@@ -1,32 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-06-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/TwoAxis_640.png
 
 /**
-This effect was written at the request of David Rasberry.  It's designed for fast efficient
-two-axis colour cast removal.  For more sophisticated grading there are better tools supplied
-with Lightworks which give precise colour correction.
+ This effect was written at the request of David Rasberry.  It's designed for fast efficient
+ two-axis colour cast removal.  For more sophisticated grading there are better tools supplied
+ with Lightworks which give precise colour correction.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect 2AxisColourBalance.fx
 //
-// The basic idea is from Editshare's colour temperature tool, but this implementation
-// is my own.
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
 // Modified by LW user jwrl 23 December 2018.
 // Changed subcategory.
 // Changed name from TwoAxis.fx
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -116,9 +122,9 @@ float4 _MagCorrect = float4 (1.0, 0.0, 1.0, 1.0);
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Image  = tex2D (InputSampler, xy);
+   float4 Image  = saturate (tex2D (InputSampler, uv));
    float4 retval = (redBlue > 0.0) ? lerp (Image, _BluCorrect, redBlue * RB_SCALE)
                                    : lerp (_RedCorrect, Image, 1.0 + (redBlue * RB_SCALE));
 
@@ -140,7 +146,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
    retval.a = Image.a;
 
-   return retval;
+   return saturate (retval);
 }
 
 //-----------------------------------------------------------------------------------------//

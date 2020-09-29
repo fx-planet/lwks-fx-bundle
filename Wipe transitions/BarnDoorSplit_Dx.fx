@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2017-08-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Split_640.png
@@ -7,7 +7,7 @@
 
 /**
  This is really the classic barn door effect, but since a wipe with that name already exists
- in Lightworks another name had to be found.  The Editshare wipe is just that, a wipe.  It
+ in Lightworks another name had to be found.  The Lightworks wipe is just that, a wipe.  It
  doesn't move the separated image parts apart.
 */
 
@@ -15,6 +15,9 @@
 // Lightworks user effect BarnDoorSplit_Dx.fx
 //
 // Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified 2020-07-31 jwrl.
 // Reformatted the effect header.

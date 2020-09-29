@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author gr00by
 // @Created 2016-06-14
 // @OriginalAuthor "Mark Ransom"
 // @see https://www.lwks.com/media/kunena/attachments/6375/HueRotate_640.png
 
 /**
-A quick method to correct hue errors on archival NTSC media and the like.
+ A quick method to correct hue errors on archival NTSC media and the like.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,21 +17,30 @@ A quick method to correct hue errors on archival NTSC media and the like.
 //
 // The template of this file is based on TwoAxis.fx by Lightworks user jwrl.
 //
-// Bug fix 4 January 2017 by jwrl.
-// Added missing comma to sincos (Hue * PI, s c).
+// Version history:
 //
-// Subcategory added by jwrl for v.14 and up 10 Feb 2017
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
-// Cross platform compatibility check 30 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Modified jwrl 2020-08-05
+// Clamped video levels on exit from the effect.  Floating point processing can result
+// in video level overrun which can impact exports poorly.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Changed subcategory.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
+// Cross platform compatibility check 30 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Subcategory added by jwrl for v.14 and up 10 Feb 2017
+//
+// Bug fix 4 January 2017 by jwrl.
+// Added missing comma to sincos (Hue * PI, s c).
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -90,7 +99,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    float4 gMat =float4 (ONE_THIRD * (1.0 - c) + SQRT_THIRD * s, c + ONE_THIRD * (1.0 - c), ONE_THIRD * (1.0 - c) - SQRT_THIRD * s, 1.0);
    float4 bMat =float4 (ONE_THIRD * (1.0 - c) - SQRT_THIRD * s, ONE_THIRD * (1.0 - c) + SQRT_THIRD * s, c + ONE_THIRD * (1.0 - c), 1.0);
 
-   float4 Image  = tex2D (InputSampler, xy);
+   float4 Image = tex2D (InputSampler, xy);
 
    float4 retval = float4 (
       Image.r * rMat.r + Image.g * rMat.g + Image.b * rMat.b,
@@ -98,7 +107,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
       Image.r * bMat.r + Image.g * bMat.g + Image.b * bMat.b,
       Image.a);
 
-   return retval;
+   return saturate (retval);
 }
 
 //-----------------------------------------------------------------------------------------//

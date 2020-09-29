@@ -1,42 +1,47 @@
 // @Maintainer jwrl
-// @Released 2019-02-22
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2018-06-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumaMatte_640.png
 
 /**
-This effect is designed to generate a key from the foreground video and use that key
-to superimpose the foreground over the background or fill the foreground key shape
-with a flat matte colour.  It has been designed with text supers in mind.  The key
-can be produced from a white on black image or inverted.  Alternatively the alpha
-channel can be used instead of the video to provide the key.  The same controls apply
-to the alpha channel in this mode as do to the video.
+ This effect is designed to generate a key from the foreground video and use that key
+ to superimpose the foreground over the background or fill the foreground key shape
+ with a flat matte colour.  It has been designed with text supers in mind.  The key
+ can be produced from a white on black image or inverted.  Alternatively the alpha
+ channel can be used instead of the video to provide the key.  The same controls apply
+ to the alpha channel in this mode as do to the video.
 
-A coloured border can also be generated from the key.  Border opacity, width and
-colour are all adjustable.  A drop shadow with the same range of adjustments can also
-be produced, and the position of that shadow can be adjusted.
+ A coloured border can also be generated from the key.  Border opacity, width and
+ colour are all adjustable.  A drop shadow with the same range of adjustments can also
+ be produced, and the position of that shadow can be adjusted.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LumakeyAndMatte.fx
 //
-// Modified 3 July 2018
-// Added ability to key in external video.
+// Version history:
 //
-// Modified 4 July 2018
-// Improved key tolerance calculation.  It's now symmetrical around clip.
-// Fixed a bug in border generation causing aspect ratio not to be correctly applied.
-// Improved border antialias routine.  It's now much smoother.
-//
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified 22 Feb 2019 by user jwrl:
 // Modified the key generation so that selecting key alpha bypasses the key clip.
 // Key clip and tolerance is now calculated from the RGB sum, not the RGB maximum.
+//
+// Modified 23 Dec 2018 by user jwrl:
+// Reformatted the effect description for markup purposes.
+//
+// Modified 26 Nov 2018 by user schrauber:
+// Changed subcategory from "User Effects" to "Key Extras".
+//
+// Modified 4 July 2018
+// Improved key tolerance calculation.  It's now symmetrical around clip.
+// Fixed a bug in border generation causing aspect ratio to not be correctly applied.
+// Improved border antialias routine.  It's now much smoother.
+//
+// Modified 3 July 2018
+// Added ability to key in external video.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

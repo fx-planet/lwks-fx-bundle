@@ -1,34 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2018-10-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeltaKeyBlend_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeltaKeyBlend.mp4
 
 /**
-This delta key (difference matte) effect is designed to easily create a key based on
-the difference between the foreground and the reference image.  That key can then be
-applied to a background layer or used with external blends or DVEs.
+ This delta key (difference matte) effect is designed to easily create a key based on
+ the difference between the foreground and the reference image.  That key can then be
+ applied to a background layer or used with external blends or DVEs.
 
-The reference and background images can be independently selected from either In1 or
-In2, and the background can be blanked to allow use with external blend and/or DVE
-effects.  For setup purposes the masked foreground or the alpha channel can be shown,
-and in those modes the opacity is set to 100% and the alpha channel is turned fully
-on.  This ensures that when used with downstream effects either mode will still work.
+ The reference and background images can be independently selected from either In1 or
+ In2, and the background can be blanked to allow use with external blend and/or DVE
+ effects.  For setup purposes the masked foreground or the alpha channel can be shown,
+ and in those modes the opacity is set to 100% and the alpha channel is turned fully
+ on.  This ensures that when used with downstream effects either mode will still work.
 
-Key clip, gain, erosion, expansion and feathering can all be adjusted.  The opacity
-of the key over the background can also be adjusted, allowing fades out and/or in to
-be created.
+ Key clip, gain, erosion, expansion and feathering can all be adjusted.  The opacity
+ of the key over the background can also be adjusted, allowing fades out and/or in to
+ be created.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DeltaKeyWithBlend.fx
 //
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified 23 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
+//
+// Modified 26 Nov 2018 by user schrauber:
+// Changed subcategory from "User Effects" to "Key Extras".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -373,4 +378,3 @@ technique DeltaKeyWithBlend_5
    pass P_5
    { PixelShader = compile PROFILE ps_main (); }
 }
-

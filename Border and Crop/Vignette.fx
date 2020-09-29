@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-09-26
+// @Released 2020-09-29
 // @Author juhartik
 // @AuthorEmail "juha@linearteam.org"
 // @Created 2011-04-29
@@ -14,7 +14,7 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
+// Update 2020-09-29 jwrl.
 // Reformatted header block.
 //
 // Modified 6 January 2019 jwrl.

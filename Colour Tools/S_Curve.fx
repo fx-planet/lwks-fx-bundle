@@ -1,17 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jMovie
 // @Created 2011-05-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/SCurve_640.png
 
 /**
-The effect adjusts RGB or HSV levels to give a smooth S-curve by means of fader controls.
-Care must be exercised not to push it too far, though, or discontinuities in the curves
-can appear.  The result can be quite ugly when that happens.
+ The effect adjusts RGB or HSV levels to give a smooth S-curve by means of fader controls.
+ Care must be exercised not to push it too far, though, or discontinuities in the curves
+ can appear.  The result can be quite ugly when that happens.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect S_Curve.fx
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Changed subcategory.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Lightworks version 14+ update by jwrl 21 January 2017.
 // The code has been optimised to reduce the number of passes required from six to two.
@@ -26,15 +44,6 @@ can appear.  The result can be quite ugly when that happens.
 //
 // This version has been compared against the original jMovie version to confirm its
 // functional equivalence.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -172,12 +181,6 @@ bool ValueChannel
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Declarations and definitions
-//-----------------------------------------------------------------------------------------//
-
-#pragma warning ( disable : 3571 )
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -260,8 +263,8 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
    float points [6] = { 0.0, InX * 0.2745, LowX * 0.6275, (HighX * 0.6667) + 0.3333, (OutX * 0.3333) + 0.6667, 1.0 };
 
-   float4 src_rgba = tex2D (InpSampler, xy);
-   float4 p2 = tex2D (HSVsampler, xy);
+   float4 src_rgba = saturate (tex2D (InpSampler, xy));
+   float4 p2 = saturate (tex2D (HSVsampler, xy));
    float4 src_hsv = p2, src_idx = 0.0;
 
    for (int i = 0; i < 6; ++i) {
@@ -304,7 +307,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
       }
    }
 
-   return src_rgba;
+   return saturate (src_rgba);
 }
 
 //-----------------------------------------------------------------------------------------//

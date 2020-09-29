@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-01-04
+// @Released 2020-09-27
 // @Author jwrl
 // @Created 2020-01-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Vibrance_640.png
@@ -12,6 +12,12 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Vibrance.fx
+//
+// Version history:
+//
+// Modified jwrl 2020-09-27
+// Clamped video levels on exit from the effect.  Floating point processing can result
+// in video level overrun which can impact exports poorly.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,7 +60,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float maxval = max (retval.r, max (retval.g, retval.b));
    float vibval = amount * (((retval.r + retval.g + retval.b) / 3.0) - maxval);
 
-   return float4 (lerp (retval.rgb, maxval.xxx, vibval), retval.a);
+   return float4 (saturate (lerp (retval.rgb, maxval.xxx, vibval)), retval.a);
 }
 
 //-----------------------------------------------------------------------------------------//

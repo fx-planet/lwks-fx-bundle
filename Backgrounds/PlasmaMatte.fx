@@ -1,27 +1,32 @@
 // @Maintainer jwrl
-// @Released 2019-08-03
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2018-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/Plasma_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Plasma.mp4
 
 /**
-This effect generates soft plasma-like cloud patterns.  Hue, level, saturation, and rate
-of change of the pattern are all adjustable, and the pattern is also adjustable.
+ This effect generates soft plasma-like cloud patterns.  Hue, level, saturation, and rate
+ of change of the pattern are all adjustable, and the pattern is also adjustable.
 
-NOTE: This will not run or compile under Windows version of Lightworks v. 14.0 or earlier
-and will instead produce an error message if that is attempted.
+ NOTE: This will not run or compile under Windows version of Lightworks v. 14.0 or earlier
+ and will instead produce an error message if that is attempted.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PlasmaMatte.fx
 //
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
 // Modified 3 August 2019 jwrl.
 // Corrected matte generation so that it remains stable without an input.
+//
+// Modified 23 December 2018 jwrl.
+// Changed subcategory.
+// Formatted the descriptive block so that it can automatically be read.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

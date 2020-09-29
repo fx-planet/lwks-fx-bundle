@@ -1,50 +1,55 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-11-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FloatImages_640.png
 
 /**
-"Floating images" generates up to four floating coloured outlines from a foreground
-image.  The foreground may have an alpha channel, a bad alpha channel or no alpha
-channel at all, the effect will still work.  The colour, position and size of the
-floating outlines are fully adjustable.
+ "Floating images" generates up to four floating coloured outlines from a foreground
+ image.  The foreground may have an alpha channel, a bad alpha channel or no alpha
+ channel at all, the effect will still work.  The colour, position and size of the
+ floating outlines are fully adjustable.
 
-The original effect came about because of a need to create a custom title treatment
-in production.
+ The original effect came about because of a need to create a custom title treatment
+ in production.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FloatingImages.fx
 //
-// Bug fix 26 July 2017
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
-// have now been explicitly declared.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Update 23 December 2018 jwrl.
+// Converted to version 14.5 and up.
+// Modified Windows version to compile as ps_3_0.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 25 November 2018 jwrl.
+// Changed category to "Mix".
+// Changed subcategory to "Blend Effects".
+//
+// Modified 30 August 2018 jwrl.
+// Added notes to header.
+//
+// Modified 23 June 2018 jwrl.
+// Added unpremultiply to the alpha channel procesing for Lightworks titles.  Moved the
+// alpha test into its own function, which simplifies ps_main() considerably.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
 //
 // Version 14.5 update 24 March 2018
 // Legality checking has been added to correct for a bug in XY sampler addressing on
 // Linux and OS-X platforms.  This effect should now function correctly when used with
 // current and previous Lightworks versions.
 //
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 23 June 2018 jwrl.
-// Added unpremultiply to the alpha channel procesing for Lightworks titles.  Moved the
-// alpha test into its own function, which simplifies ps_main() considerably.
-//
-// Modified 30 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 25 November 2018 jwrl.
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
+// Bug fix 26 July 2017
+// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
+// have now been explicitly declared.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

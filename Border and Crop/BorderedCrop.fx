@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-09-26
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2017-05-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/BorderCrop_640.png
@@ -15,7 +15,7 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
+// Update 2020-09-29 jwrl.
 // Reformatted header block.
 //
 // Modified 23 December 2018 jwrl.

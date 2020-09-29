@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-04
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2019-05-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FastBleachBypassRev_640.png
@@ -14,6 +14,12 @@
 //
 // MSI's earlier bleach bypass effect was based on sample code provided by Nvidia.  This
 // version is all original and designed from first principles.
+//
+// Version history:
+//
+// Modified jwrl 2020-09-29
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
 //
 // Rewrite jwrl 2020-08-04:
 // Never very happy with any of the previous attempts, this is yet another rewrite of the
@@ -71,7 +77,7 @@ float Amount
 
 float4 main_neg (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Input = tex2D (InpSampler, uv);
+   float4 Input = saturate (tex2D (InpSampler, uv));
 
    float amnt = Amount * 0.75;
    float prof = 1.0 / (1.0 + amnt);
@@ -81,12 +87,12 @@ float4 main_neg (float2 uv : TEXCOORD1) : COLOR
    mono = pow (mono, prof) / 2.0;
    luma = (luma > 0.5) ? 0.5 + mono : 0.5 - mono;
 
-   return float4 (lerp (Input.rgb, luma.xxx, amnt), Input.a);
+   return float4 (saturate (lerp (Input.rgb, luma.xxx, amnt)), Input.a);
 }
 
 float4 main_pos (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Input = tex2D (InpSampler, uv);
+   float4 Input = saturate (tex2D (InpSampler, uv));
 
    float amnt = Amount * 0.75;
    float prof = 1.0 / (1.0 + amnt);
@@ -96,7 +102,7 @@ float4 main_pos (float2 uv : TEXCOORD1) : COLOR
    mono = pow (mono, prof) / 2.0;
    luma = (luma > 0.5) ? 0.5 + mono : 0.5 - mono;
 
-   return float4 (lerp (Input.rgb, luma.xxx, amnt), Input.a);
+   return float4 (saturate (lerp (Input.rgb, luma.xxx, amnt)), Input.a);
 }
 
 //-----------------------------------------------------------------------------------------//

@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/UnsharpMask_640.png
 
 /**
-A simple unsharp mask.  Probably redundant, since the Lightworks effect does the same thing.
+ A simple unsharp mask.  Probably redundant, since the Lightworks effect does the same thing.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,6 +24,22 @@ A simple unsharp mask.  Probably redundant, since the Lightworks effect does the
 // actually reduced to 5 in Jerker's effect - jwrl)
 //
 // ******************************** END OF ORIGINAL HEADER **********************************
+//
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+// Renamed "Edge gamma" to "Edge contrast".  While strictly speaking incorrect, it feels
+// more like what's happening with that control to an uneducated user.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Totally rewritten 19 July 2017 by jwrl.
 // I didn't understand how the original effect could ever have worked correctly and didn't
@@ -62,17 +78,6 @@ A simple unsharp mask.  Probably redundant, since the Lightworks effect does the
 //
 // The finished effect functions cross-platform and has been tested to confirm that.
 // As a result the old effect has been retired.  It really was too broken to repair.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-// Renamed "Edge gamma" to "Edge contrast".  While strictly speaking incorrect, it feels
-// more like what's happening with that control to an uneducated user.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

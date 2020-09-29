@@ -1,19 +1,29 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author quality
 // @Created 2013-02-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/MotionBlur.png
 
 /**
-A directional blur that can be used to simulate fast motion, whip pans and the like.
+ A directional blur that can be used to simulate fast motion, whip pans and the like.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect MotionBlur.fx
 //
-// Modified 5 February 2016 by user jwrl.
-// This effect was originally posted by Lightworks user quality.  It was converted for
-// better ps_2_b compliance.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 15 September 2018.
+// Corrected a bug which could cause this effect to fail to compile.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Cross platform compatibility check 29 July 2017 jwrl.
 // Explicitly defined samplers to fix cross platform default sampler state differences.
@@ -21,14 +31,9 @@ A directional blur that can be used to simulate fast motion, whip pans and the l
 // Also added an offset adjustment to compensate for the subjective position shift seen
 // with low values of that variable.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 15 September 2018.
-// Corrected a bug which could cause this effect to fail to compile.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified 5 February 2016 by user jwrl.
+// This effect was originally posted by Lightworks user quality.  It was converted for
+// better ps_2_b compliance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -62,8 +67,6 @@ sampler InputSampler = sampler_state {
 float _Progress;
 
 #define MAXSAMPLES 60.0
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Parameters

@@ -1,40 +1,45 @@
 // @Maintainer jwrl
-// @Released 2019-08-03
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-07-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/Multigrad_640.png
 
 /**
-This effect creates a colour field which can be set up to be just a flat colour or a wide
-range of gradients.  Gradient choices are horizontal, horizontal to center and back, vertical,
-vertical to centre and back, a four way gradient from the corners, and several variants of a
-four way gradient to the centre and back.  There's also a radially blended colour gradiant.
+ This effect creates a colour field which can be set up to be just a flat colour or a wide
+ range of gradients.  Gradient choices are horizontal, horizontal to center and back, vertical,
+ vertical to centre and back, a four way gradient from the corners, and several variants of a
+ four way gradient to the centre and back.  There's also a radially blended colour gradiant.
 
-If the gradient blends to the centre, the position of the centre point is fully adjustable.
+ If the gradient blends to the centre, the position of the centre point is fully adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect MulticolourGradient.fx
 //
-// LW 14+ version by jwrl 12 February 2017
-// SubCategory "Patterns" added.
+// Version history:
 //
-// Bug fix by LW user jwrl 14 July 2017.
-// Due to Cg/D3D issues previously this was unreliable on Linux/Mac platforms.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Modified 3 August 2019 jwrl.
+// Corrected matte generation so that it remains stable without an input.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
 //
-// Modified 3 August 2019 jwrl.
-// Corrected matte generation so that it remains stable without an input.
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Bug fix by LW user jwrl 14 July 2017.
+// Due to Cg/D3D issues previously this was unreliable on Linux/Mac platforms.
+//
+// LW 14+ version by jwrl 12 February 2017
+// SubCategory "Patterns" added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author rakusan/windsturm
 // @Created 2012-05-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxSpinBlur_640.png
 
 /**
-This applies a rotary blur with adjustable aspect ratio and centring.
+ This applies a rotary blur with adjustable aspect ratio and centring.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -21,21 +21,26 @@ This applies a rotary blur with adjustable aspect ratio and centring.
 //
 // Cross-platform port by Lightworks forum moderator jwrl May 3 2016.
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Renamed from FxSpinBlur.fx to SpinBlur.fx.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Bug fix June 28 2017 by jwrl.
 // An arithmetic bug which arose during the cross platform conversion was detected and
 // fixed.  The bug resulted in a noticeable drop in video levels and severe highlight
 // compression.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Renamed from FxSpinBlur.fx to SpinBlur.fx.
-// Formatted the descriptive block so that it can automatically be read.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -127,8 +132,6 @@ float AR
 #define INTERVAL  0.033333
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

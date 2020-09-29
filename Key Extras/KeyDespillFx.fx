@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author baopao
 // @Released 2014-02-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/KeyDespill_640.png
 
 /**
-KeyDespill is a background-based effect for removing the key colour spill in a chromakey
-composite.
+ KeyDespill is a background-based effect for removing the key colour spill in a chromakey
+ composite.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,22 +14,27 @@ composite.
 //
 // Despill Background Based http://www.alessandrodallafontana.com/ (baopao)
 //
-// Version 14 update 19 Feb 2017 jwrl.
-// Changed category from "Keying" to "Key", added subcategory to effect header.
+// Version history:
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified 23 December 2018 jwrl.
+// Added creation date.
+// Reformatted the effect description for markup purposes.
+//
+// Modified 26 Nov 2018 by user schrauber:
+// Changed subcategory from "User Effects" to "Key Extras", effect name changed minimally.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras", effect name changed minimally.
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Reformatted the effect description for markup purposes.
+// Version 14 update 19 Feb 2017 jwrl.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -88,8 +93,6 @@ float RedAmount
    float MinVal = 0.0;
    float MaxVal = 1.00;
 > = 0.5;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shader

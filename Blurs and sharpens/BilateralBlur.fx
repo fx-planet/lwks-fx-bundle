@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author baopao
 // @Created 2013-10-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/BilateralBlur_640.png
 
 /**
-A strong bilateral blur created by baopao with a little help from his friends.
+ A strong bilateral blur created by baopao with a little help from his friends.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,8 +15,17 @@ A strong bilateral blur created by baopao with a little help from his friends.
 // Antitorgo's avishader 0.42 filter
 // http://www.blosser.org/d9/dlAviShader042.rar
 //
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Bug fix 18 July 2017 by jwrl.
 // Partial rewrite to address a Linux/Mac compatibility issue.  In the process some
@@ -27,12 +36,8 @@ A strong bilateral blur created by baopao with a little help from his friends.
 // The direction of operation of that control has also been reversed so that increasing
 // values result in an increase of the blur window, and no longer a reduction.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Bug fix 26 February 2017 by jwrl:
+// This corrects for a bug in the way that Lightworks handles interlaced media.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

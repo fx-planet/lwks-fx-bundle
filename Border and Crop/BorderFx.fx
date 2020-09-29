@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2018-09-26
+// @Released 2020-09-29
 // @Author rhinox202
 // @Created 2012-11-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Border_640.png
@@ -14,7 +14,7 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
+// Update 2020-09-29 jwrl.
 // Reformatted header block.
 //
 // Modified 23 December 2018 jwrl.

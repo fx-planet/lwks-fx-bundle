@@ -1,18 +1,18 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)
 // @Created 2012-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTiltShift_640.png
 
 /**
-ORIGINAL AUTHOR'S DESCRIPTION
-Simulates the shallow depth of field normally encountered in close-up photography,
-which makes the scene seem much smaller than it actually is. This filter assumes the
-scene is relatively planar, in which case the part of the scene that is completely
-in focus can be described by a line (the intersection of the focal plane and the
-scene). An example of a planar scene might be looking at a road from above at a
-downward angle. The image is then blurred with a blur radius that starts at zero
-on the line and increases further from the line.
+ ORIGINAL AUTHOR'S DESCRIPTION
+ Simulates the shallow depth of field normally encountered in close-up photography,
+ which makes the scene seem much smaller than it actually is. This filter assumes the
+ scene is relatively planar, in which case the part of the scene that is completely
+ in focus can be described by a line (the intersection of the focal plane and the
+ scene). An example of a planar scene might be looking at a road from above at a
+ downward angle. The image is then blurred with a blur radius that starts at zero
+ on the line and increases further from the line.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -40,23 +40,28 @@ on the line and increases further from the line.
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-// Conversion for ps_2_0 compliance by Lightworks user jwrl, 5 February 2016.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Renamed from FxTiltShift to TiltShift.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Bug fix June 28 2017 by jwrl.
 // An arithmetic bug which arose during the cross platform conversion was detected and
 // fixed.  The bug resulted in a noticeable drop in video levels and severe highlight
 // compression.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Renamed from FxTiltShift to TiltShift.
-// Formatted the descriptive block so that it can automatically be read.
+// Conversion for ps_2_0 compliance by Lightworks user jwrl, 5 February 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -155,8 +160,6 @@ float gradientRadius
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

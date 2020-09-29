@@ -1,16 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Created 2012-04-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
 
 /**
-Iris Bokeh is similar to Bokeh.fx, but provides control of the iris (5 to 8 segments or
-round).  It also controls the size, rotation, threshold and pretty much anything else
-that you're likely to need to adjust.
+ Iris Bokeh is similar to Bokeh.fx, but provides control of the iris (5 to 8 segments or
+ round).  It also controls the size, rotation, threshold and pretty much anything else
+ that you're likely to need to adjust.
 
-NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
-A legacy version is available for users in that position.
+ NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
+ A legacy version is available for users in that position.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -34,24 +34,29 @@ A legacy version is available for users in that position.
 // The changes have reduced conditional execution and function calls significantly.
 // With fourteen passes, anything that we can do to reduce overheads is worth it.
 //
-// Version 14.5 update 5 December 2017 by jwrl.
-// Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge"
-// on those platforms.  It will now function correctly when used with Lightworks
-// versions 14.5 and higher under Linux or OS-X and fixes a bug associated with using
-// this effect with transitions on those platforms.  The bug still exists when using
-// older versions of Lightworks.
+// Version history:
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified by LW user jwrl 20 May 2018.
 // This version will only run on versions of Lightworks better than version 14 if it is
 // compile on a Windows system.  There is a legacy version available for older Windows
 // Lightworks versions.  This restriction doesn't apply to Linux or Mac.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//
+// Version 14.5 update 5 December 2017 by jwrl.
+// Added LINUX and MAC test to allow support for changing "Clamp" to "ClampToEdge"
+// on those platforms.  It will now function correctly when used with Lightworks
+// versions 14.5 and higher under Linux or OS-X and fixes a bug associated with using
+// this effect with transitions on those platforms.  The bug still exists when using
+// older versions of Lightworks.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -381,8 +386,6 @@ float2 _bokeh[120] =
 	{0.5878,-0.809},
 	{0.3045,-0.7061}
 };
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

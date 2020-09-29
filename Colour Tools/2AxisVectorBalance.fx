@@ -1,17 +1,44 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-06-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/Two_Axis_Vector_640.png
 
 /**
-This effect was written at the request of David Rasberry.  It's designed for fast efficient
-two-axis YUV-based colour grading.  For comprehensive RGB-based grading there are better tools
-supplied with Lightworks which supply a wide range of colour grading tools.
+ This effect was written at the request of David Rasberry.  It's designed for fast efficient
+ two-axis YUV-based colour grading.  For comprehensive RGB-based grading there are better tools
+ supplied with Lightworks which supply a wide range of colour grading tools.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect 2AxisVectorBalance.fx
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to the effect.  Floating point processing can result in
+// video level overrun which can impact exports poorly.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Changed category and subcategory.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified 21 May 2018 jwrl.
+// Corrected spurious display of _Crgb and _C_uv arrays as user parameters.
+//
+// Modified 6 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 29 July 2017 jwrl.
+// Explicitly defined samplers to compensate for cross platform default sampler state
+// differences.  Some extra code cleanup to improve efficiency has also been done.
 //
 // Modified 16 June 2016 by jwrl.
 // Reinstated hue adjustment.  Taken out of the original effect because of code "bloat",
@@ -32,24 +59,6 @@ supplied with Lightworks which supply a wide range of colour grading tools.
 // Since the range of gain adjustment available more than compensates for it, automatic
 // luminance tracking has been removed.  It wasn't doing what it was designed to do very
 // well and had the potential to add significant distortion.
-//
-// Cross platform compatibility check 29 July 2017 jwrl.
-// Explicitly defined samplers to compensate for cross platform default sampler state
-// differences.  Some extra code cleanup to improve efficiency has also been done.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 21 May 2018 jwrl.
-// Corrected spurious display of _Crgb and _C_uv arrays as user parameters.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Changed category and subcategory.
-// Formatted the descriptive block so that it can automatically be read.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -211,7 +220,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
    float3 RGBluma = _Crgb [BT_ver];
 
-   float4 Image  = tex2D (InputSampler, xy);
+   float4 Image  = saturate (tex2D (InputSampler, xy));
    float4 retval = saturate ((pow (Image, _gamma) * (1.0 + Gain)) + (Ped / 3.0));
 
    float luma = dot (retval.rgb, RGBluma);

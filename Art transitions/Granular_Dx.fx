@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-02-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Granular_640.png
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
+// Modified 2020-09-29 jwrl.
 // Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.

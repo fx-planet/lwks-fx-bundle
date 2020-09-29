@@ -1,26 +1,31 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2017-07-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SoftZoomBlur_640.png
 
 /**
-This blur effect is similar to the Lightworks radial blur effect, but is very much
-softer in the result that it can produce.  The blur length range is also much greater
-than that provided by the Lightworks effect.
+ This blur effect is similar to the Lightworks radial blur effect, but is very much
+ softer in the result that it can produce.  The blur length range is also much greater
+ than that provided by the Lightworks effect.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SoftZoomBlur.fx
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified by LW user jwrl 26 September 2018.
 // Added notes to header.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -118,8 +123,6 @@ float CentreY
 
 #define WEIGHT  1.0
 #define W_DIFF  0.0277778
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

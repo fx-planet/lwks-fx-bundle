@@ -1,23 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_640.png
 
 /**
-Edge glow (EdgeGlowFx.fx) is an effect that can use image levels or the edges of the
-image to produce a glow effect.  The resulting glow can be applied to the image using
-any of five blend modes.
+ Edge glow (EdgeGlowFx.fx) is an effect that can use image levels or the edges of the
+ image to produce a glow effect.  The resulting glow can be applied to the image using
+ any of five blend modes.
 
-The glow can use the native image colours, a preset colour, or two colours which cycle.
-Cycle rate can be adjusted, and the detected edges can be mixed back over the effect.
+ The glow can use the native image colours, a preset colour, or two colours which cycle.
+ Cycle rate can be adjusted, and the detected edges can be mixed back over the effect.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect EdgeGlowFx.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified 23 December 2018 jwrl.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified by LW user jwrl 5 July 2018.
+// Made blur calculations frame based rather than pixel based.
+// Changed clamp addressing to mirror addressing for glow calculations.  This also solves
+// a potential cross-platform bug before it arises.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Cross platform compatibility check 27 July 2017 jwrl.
 // Added workaround for the interlaced media height bug in Lightworks effects.
@@ -27,19 +43,8 @@ Cycle rate can be adjusted, and the detected edges can be mixed back over the ef
 // differing blend modes.
 // Halved the samplers used by the glow for the same reason.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 5 July 2018.
-// Made blur calculations frame based rather than pixel based.
-// Changed clamp addressing to mirror addressing for glow calculations.  This also solves
-// a potential cross-platform bug before it arises.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified 23 December 2018 jwrl.
-// Formatted the descriptive block so that it can automatically be read.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -65,7 +70,7 @@ texture Glow_2 : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state {
+sampler s_Input = sampler_state {
    Texture   = <Input>;
    AddressU  = Mirror;
    AddressV  = Mirror;
@@ -214,9 +219,9 @@ float _OutputAspectRatio;
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float fn_get_edge (float2 uv)
+float fn_get_luma (float2 uv)
 {
-   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 Fgd = tex2D (s_Input, uv);
 
    return (Fgd.r + Fgd.g + Fgd.b) / 3.0;
 }
@@ -227,7 +232,7 @@ float fn_get_edge (float2 uv)
 
 float4 ps_edges (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 Fgd = tex2D (s_Input, uv);
    float edges, pattern;
 
    if (lCycle == 1) {
@@ -235,20 +240,20 @@ float4 ps_edges (float2 uv : TEXCOORD1) : COLOR
       float xVal = L_RATE * lRate;
       float yVal = xVal * _OutputAspectRatio;
 
-      float p2 = -1.0 * fn_get_edge (uv + float2 (xVal, yVal));
+      float p2 = -1.0 * fn_get_luma (uv + float2 (xVal, yVal));
       float p1 = p2;
 
-      p1 += fn_get_edge (uv - float2 (xVal, yVal));
-      p1 += fn_get_edge (uv - float2 (xVal, -yVal));
-      p1 -= fn_get_edge (uv + float2 (xVal, -yVal));
-      p1 -= fn_get_edge (uv + float2 (xVal, nVal)) * 2.0;
-      p1 += fn_get_edge (uv - float2 (xVal, nVal)) * 2.0;
+      p1 += fn_get_luma (uv - float2 (xVal, yVal));
+      p1 += fn_get_luma (uv - float2 (xVal, -yVal));
+      p1 -= fn_get_luma (uv + float2 (xVal, -yVal));
+      p1 -= fn_get_luma (uv + float2 (xVal, nVal)) * 2.0;
+      p1 += fn_get_luma (uv - float2 (xVal, nVal)) * 2.0;
 
-      p2 += fn_get_edge (uv - float2 (xVal, yVal));
-      p2 -= fn_get_edge (uv - float2 (xVal, -yVal));
-      p2 += fn_get_edge (uv + float2 (xVal, -yVal));
-      p2 -= fn_get_edge (uv + float2 (nVal, yVal)) * 2.0;
-      p2 += fn_get_edge (uv - float2 (nVal, yVal)) * 2.0;
+      p2 += fn_get_luma (uv - float2 (xVal, yVal));
+      p2 -= fn_get_luma (uv - float2 (xVal, -yVal));
+      p2 += fn_get_luma (uv + float2 (xVal, -yVal));
+      p2 -= fn_get_luma (uv + float2 (nVal, yVal)) * 2.0;
+      p2 += fn_get_luma (uv - float2 (nVal, yVal)) * 2.0;
 
       edges = saturate (p1 * p1 + p2 * p2);
    }
@@ -309,7 +314,7 @@ float4 ps_build_glow (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_add_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd  = tex2D (s_Foreground, uv);
+   float4 Fgd  = tex2D (s_Input, uv);
    float4 Glow = saturate (Fgd + tex2D (s_Glow_1, uv));
 
    return lerp (Fgd, Glow, Amount);
@@ -317,7 +322,7 @@ float4 ps_add_main (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_screen_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd    = tex2D (s_Foreground, uv);
+   float4 Fgd    = tex2D (s_Input, uv);
    float4 Glow   = tex2D (s_Glow_1, uv);
    float4 retval = saturate (Fgd + Glow - (Fgd * Glow));
 
@@ -326,7 +331,7 @@ float4 ps_screen_main (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_lighten_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd  = tex2D (s_Foreground, uv);
+   float4 Fgd  = tex2D (s_Input, uv);
    float4 Glow = max (Fgd, tex2D (s_Glow_1, uv));
 
    return lerp (Fgd, Glow, Amount);
@@ -334,7 +339,7 @@ float4 ps_lighten_main (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_soft_glow_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd    = tex2D (s_Foreground, uv);
+   float4 Fgd    = tex2D (s_Input, uv);
    float4 Glow   = Fgd * tex2D (s_Glow_1, uv);
    float4 retval = saturate (Fgd + Glow - (Fgd * Glow));
 
@@ -343,7 +348,7 @@ float4 ps_soft_glow_main (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_vivid_light_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd  = tex2D (s_Foreground, uv);
+   float4 Fgd  = tex2D (s_Input, uv);
    float4 Glow = saturate ((tex2D (s_Glow_1, uv) * 2.0) + Fgd - 1.0.xxxx);
 
    return lerp (Fgd, Glow, Amount);

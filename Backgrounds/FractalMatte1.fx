@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2019-08-03
+// @Released 2020-09-29
 // @Author jwrl
 // @Author trirop
 // @Created 2016-05-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Fractal1_640.png
 
 /**
-Fractal matte 1 produces backgrounds generated from fractal patterns.
+ Fractal matte 1 produces backgrounds generated from fractal patterns.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,25 +16,30 @@ Fractal matte 1 produces backgrounds generated from fractal patterns.
 // sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better
 // suit its use in this effect.
 //
-// Updated by jwrl 22 May 2016 by jwrl.
-// Added comprehensive effect colorgrading capability.
+// Version history:
 //
-// LW 14+ version by jwrl 12 February 2017
-// SubCategory "Patterns" added.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
+// Modified 3 August 2019 jwrl.
+// Corrected matte generation so that it remains stable without an input.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
 //
-// Modified 3 August 2019 jwrl.
-// Corrected matte generation so that it remains stable without an input.
+// Modified 29 September 2018 jwrl.
+// Added notes to header.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// LW 14+ version by jwrl 12 February 2017
+// SubCategory "Patterns" added.
+//
+// Updated by jwrl 22 May 2016 by jwrl.
+// Added comprehensive effect colorgrading capability.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

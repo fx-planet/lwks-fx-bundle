@@ -1,19 +1,28 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Created 2011-08-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedBlur_640.png
 
 /**
-This is a 3 pass 13 tap circular kernel blur.  The blur can be masked using the alpha
-channel or the luminance value of the source video or another video track.
+ This is a 3 pass 13 tap circular kernel blur.  The blur can be masked using the alpha
+ channel or the luminance value of the source video or another video track.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect MaskedBlur.fx
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Bug fix 26 February 2017 by jwrl:
 // Added workaround for the interlaced media height bug in Lightworks effects.  THE BUG
@@ -21,12 +30,8 @@ channel or the luminance value of the source video or another video track.
 // needed one cannot reliably use _OutputHeight with interlaced media.  It returns only
 // half the actual frame height when interlaced media is stationary.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -169,8 +174,6 @@ bool show
 
 float _OutputAspectRatio;
 float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions

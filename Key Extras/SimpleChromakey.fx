@@ -1,43 +1,47 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCkey_640.png
 
 /**
-This is a simple keyer that has only five adjustments, the key colour, key clip, key
-gain and the defringe controls.  Defringing can either use the standard desaturate
-technique, or can replace the key colour with the background image either in colour
-or monochrome.  Finally, the key can be faded in and out by adjusting the opacity.
+ This is a simple keyer that has only five adjustments, the key colour, key clip, key
+ gain and the defringe controls.  Defringing can either use the standard desaturate
+ technique, or can replace the key colour with the background image either in colour
+ or monochrome.  Finally, the key can be faded in and out by adjusting the opacity.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SimpleChromakey.fx
 //
-// Original release 2018-04-30:
-// The creation date is a guess only, because I couldn't find the original version.
-// This is a reconstruction from several experimental fragments.  It was really more of
-// an intellectual challenge to create a chromakey and defringe entirely in the RGB
-// domain rather than using the more common HSL approach.  I dare say that if there
-// was anyone interested enough to work with it, it could be made into a much more
-// sophisticated keyer.
+// Version history:
 //
-// Modified 2018-05-01:
-// Added feathering to the key, which operates entirely within the key boundaries.  Also
-// picked up on the fact that I had failed to credit baopao, on who's KeyDespill.fx I
-// based my defringing routines.  The rest of the work is very definitely all my own.
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
-// Modified 2018-07-06:
-// Made feathering resolution-independent.
+// Modified 2018-12-23 jwrl:
+// Reformatted the effect description for markup purposes.
 //
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 26 Nov 2018 by user schrauber:
+// Modified 2018-11-26 schrauber:
 // Changed subcategory from "User Effects" to "Key Extras".
 //
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Modified 2018-09-29 jwrl:
+// Added notes to header.
+//
+// Modified 2018-07-06 jwrl:
+// Made feathering resolution-independent.
+//
+// Modified 2018-05-01 jwrl:
+// Added feathering to the key, which operates entirely within the key boundaries.
+// Picked up on the fact that I had failed to credit baopao, on who's KeyDespill.fx I
+// based my defringing routines.
+//
+// Original release 2018-04-30 jwrl:
+// The creation date is a guess only, because I couldn't find the original version.  This
+// is a reconstruction from several experimental fragments.  It was really more of an
+// intellectual challenge to create a chromakey and defringe entirely in the RGB domain
+// rather than using the more common HSL approach.  I dare say that if there was anyone
+// interested enough to work with it, it could become a much more sophisticated effect.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -106,22 +110,22 @@ float4 Colour
 float Clip
 <
    string Description = "Key clip";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Gain
 <
    string Description = "Key gain";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.25;
 
 float Size
 <
    string Description = "Feather";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 int SetTechnique
@@ -133,15 +137,15 @@ int SetTechnique
 float DeFringeAmt
 <
    string Description = "Defringe amount";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float DeFringe
 <
    string Description = "Defringe depth";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
@@ -166,10 +170,14 @@ float4 ps_key_gen (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Fgnd = tex2D (s_Foreground, uv);
 
-   float cDiff = distance (Colour.rgb, Fgnd.rgb);
+   float cDiff = distance (Colour.r, Fgnd.r);
+
+   cDiff = max (cDiff, distance (Colour.g, Fgnd.g));
+   cDiff = max (cDiff, distance (Colour.b, Fgnd.b));
+
    float alpha = smoothstep (Clip, Clip + Gain, cDiff);
 
-   return float2 (alpha, Fgnd.a).xxxy;
+   return float4 (alpha.xxx, Fgnd.a);
 }
 
 float4 ps_feather (float2 uv : TEXCOORD) : COLOR

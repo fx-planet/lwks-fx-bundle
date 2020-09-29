@@ -1,30 +1,35 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author baopao
 // @Created 2015-10-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMotionBlur_640.png
 
 /**
-This is an extremely strong directional blur.  The blur angle can be adjusted through
-a full 360 degrees, and sampling can be adjusted to range from a succession of discrete
-images to a very smooth blur.  An external mask input is available to control where the
-mask appears.
+ This is an extremely strong directional blur.  The blur angle can be adjusted through
+ a full 360 degrees, and sampling can be adjusted to range from a succession of discrete
+ images to a very smooth blur.  An external mask input is available to control where the
+ mask appears.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Masked_motion_blur.fx
 //
-//  Cross-platform conversion by jwrl April 28 2016.
+// Version history:
 //
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Added creation date.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Added subcategory to effect header.
+//
+// Cross-platform conversion by jwrl April 28 2016.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -130,8 +135,6 @@ bool invertMask
 //-----------------------------------------------------------------------------------------//
 
 #define MAXSAMPLES 60
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

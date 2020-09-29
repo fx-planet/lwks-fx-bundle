@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-05
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2020-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/WitnessProtection_640.png
@@ -38,6 +38,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect WitnessProtection.fx
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified jwrl 2020-06-05
 // Added a choice of rectangular or oval mask shapes.

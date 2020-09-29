@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-04-12
+// @Released 2020-09-29
 // @Author schrauber
 // @Author jwrl
 // @Author LWKS Software Ltd
@@ -46,7 +46,7 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
+// Update 2020-09-29 jwrl.
 // Updated the header block.
 //
 // Modified jwrl 2020-04-12:

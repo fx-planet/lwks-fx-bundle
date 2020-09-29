@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-02
+// @Released 2020-09-29
 // @Author khaver
 // @Created 2011-04-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/Toon_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-08-02:
-// Reformatted the effect header.
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Added creation date.

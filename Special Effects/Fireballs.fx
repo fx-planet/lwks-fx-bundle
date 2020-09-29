@@ -1,11 +1,10 @@
 // @Maintainer jwrl
-// @Released 2020-06-29
+// @Released 2020-09-29
 // @Author jwrl
 // @Author Unknown
 // @Created 2020-06-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay.mp4
-// @see https://www.lwks.com/media/kunena/attachments/6375/Fireball.mp4
 
 /**
  This is a fireball effect that can be scaled and positioned to simulate explosions and
@@ -21,7 +20,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Fireballs.fx
+// Lightworks user effect Fireball.fx
 //
 // Author's note 2020-06-28:
 // This effect is based on a matchbook fireball effect called CPGP_Fireball.glsl found
@@ -35,6 +34,10 @@
 //
 // Version history:
 //
+// Modified jwrl 2020-09-29
+// Improved alpha channel generation.
+// Isolated non-input from input/overlay version.
+//
 // Built jwrl 2020-06-28:
 // Combined two earlier effects, "Fireball" and "Fireball overlay".
 //-----------------------------------------------------------------------------------------//
@@ -42,7 +45,7 @@
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Fireballs";
+   string Description = "Fireball";
    string Category    = "Stylize";
    string SubCategory = "Special Effects";
    string Notes       = "Produces a hot fireball and optionally blends it with a background image";
@@ -64,12 +67,12 @@ sampler s_Input = sampler_state { Texture = <Inp>; };
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int Standalone
+int SetTechnique
 <
    string Group = "Overlay settings";
    string Description = "Fireball mode";
-   string Enum = "Overlay over input,Standalone (ignore overlay settings)";
-> = false;
+   string Enum = "Overlay over input,Standalone (ignores overlay settings)";
+> = 0;
 
 float Amount
 <
@@ -218,7 +221,7 @@ float4 fn_hueShift (float4 rgb)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Bgnd = tex2D (s_Input, uv);
 
@@ -230,7 +233,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    if (abs (xy.y) < MINIMUM) xy.y = MINIMUM;
 
-   float fire = 3.0 * (1.0 - length (2.0 * xy));
+   float red  = 3.0 * (1.0 - length (2.0 * xy));
    float time = _Progress * _Length * Speed * 0.05;
    float cd_y = (length (xy) * 0.4) - time - 0.5;
    float power = 32.0;
@@ -238,34 +241,71 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float3 coord = float3 (atan2 (xy.x, xy.y) / TWO_PI, cd_y, time + time) + 0.5.xxx;
 
    for (int i = 0; i <= 6; i++) {
-      fire  += (24.0 / power) * fn_noise (coord, power);
+      red   += (24.0 / power) * fn_noise (coord, power);
       power += 16.0;
    }
 
-   fire = max (fire, 0.0);
+   red = max (red, 0.0);
 
-   float fire_blue = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
-   float fire_base = fire * fire;
+   float blue  = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
+   float green = red * red;
 
-   fire_blue = min (fire_blue, fire_base * fire * 0.15);
+   blue = min (blue, green * red * 0.15);
 
-   float4 Fgnd = float4 (fire, fire_base * 0.4, fire_blue, fire_base);
+   float4 Fgnd = float4 (red, green * 0.4, blue, green);
 
    Fgnd = fn_hueShift (saturate (Fgnd * Intensity));
+   Fgnd.a = saturate (red + green + blue) * Amount;
 
-   if (Standalone == 1) return Fgnd;
+   return (InvertAlpha) ? lerp (Fgnd, Bgnd, Fgnd.a) : lerp (Bgnd, Fgnd, Fgnd.a);
+}
 
-   fire = Fgnd.a * Amount;
+float4 ps_main_1 (float2 uv : TEXCOORD0) : COLOR
+{
+   float2 xy = float2 ((uv.x - PosX) * _OutputAspectRatio, 1.0 - uv.y - PosY);
 
-   return (InvertAlpha) ? lerp (Fgnd, Bgnd, fire) : lerp (Bgnd, Fgnd, fire);
+   xy /= max (Size * 5.0, MINIMUM);
+
+   if (abs (xy.x) < MINIMUM) xy.x = MINIMUM;
+
+   if (abs (xy.y) < MINIMUM) xy.y = MINIMUM;
+
+   float red = 3.0 * (1.0 - length (2.0 * xy));
+   float time = _Progress * _Length * Speed * 0.05;
+   float cd_y = (length (xy) * 0.4) - time - 0.5;
+   float power = 32.0;
+
+   float3 coord = float3 (atan2 (xy.x, xy.y) / TWO_PI, cd_y, time + time) + 0.5.xxx;
+
+   for (int i = 0; i <= 6; i++) {
+      red  += (24.0 / power) * fn_noise (coord, power);
+      power += 16.0;
+   }
+
+   red = max (red, 0.0);
+
+   float blue = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
+   float green = red * red;
+
+   blue = min (blue, green * red * 0.15);
+
+   float4 Fgnd = float4 (red, green * 0.4, blue, saturate (red + green + blue));
+
+   return fn_hueShift (saturate (Fgnd * Intensity));
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Fireballs
+technique Fireball_0
 {
    pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   { PixelShader = compile PROFILE ps_main_0 (); }
+}
+
+technique Fireball_1
+{
+   pass P_1
+   { PixelShader = compile PROFILE ps_main_1 (); }
 }

@@ -1,37 +1,46 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Created 2014-11-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/PolyGrad_640.png
 
 /**
-PolyGrade emulates to a degree the operation of power windows.  This maskable grading
-tool can add that little extra polish to your colourgrade.
+ PolyGrade emulates to a degree the operation of power windows.  This maskable grading
+ tool can add that little extra polish to your colourgrade.
 
-To use it, apply the effect and turn on "Show Guides".  This will allow you to position
-the corners of the polygon mask.  The red area shows where the colourgrade effect will
-be at 100%, and the green area is where the effect influence will be at 0%.  Increasing
-the feather amount will increase the area between the red and green zones.  When a
-corner node gets near the edge of frame it will snap to that edge.
+ To use it, apply the effect and turn on "Show Guides".  This will allow you to position
+ the corners of the polygon mask.  The red area shows where the colourgrade effect will
+ be at 100%, and the green area is where the effect influence will be at 0%.  Increasing
+ the feather amount will increase the area between the red and green zones.  When a
+ corner node gets near the edge of frame it will snap to that edge.
 
-Once the areas are set turn off "Show Guides" and adjust the other parameters as you
-would any other colourgrading tool.
+ Once the areas are set turn off "Show Guides" and adjust the other parameters as you
+ would any other colourgrading tool.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PolyGrade.fx
 //
-// Subcategory added by jwrl for v.14 and up 10 Feb 2017
+// Version history:
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Added creation date.
 // Changed subcategory.
 // Changed name from PolyGrad.fx
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Subcategory added by jwrl for v.14 and up 10 Feb 2017
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -270,11 +279,9 @@ float P8Y
 float _OutputWidth,  _OutputHeight, _OutputAspectRatio;
 
 #define _psize 8
- 
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
 //-----------------------------------------------------------------------------------------//
 
 float4 makePoly(float2 p, float2 poly[_psize]) {
@@ -372,6 +379,10 @@ float3 method(float3 fg, float3 bg) {
 	return newc;
 }
 
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
 float4 main1( float2 xy : TEXCOORD1, uniform int run ) : COLOR
 {
 	float pixelsx = 0.04; //20.0 / _OutputWidth;
@@ -413,7 +424,7 @@ float4 main1( float2 xy : TEXCOORD1, uniform int run ) : COLOR
 float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
 {
 	float4 color;
-	float4 orig = tex2D( BGround, uv);
+	float4 orig = saturate (tex2D( BGround, uv));
 	float3 bg, fg, newc;
 	bg = orig.rgb;
 	fg = MaskColor.rgb;
@@ -428,7 +439,7 @@ float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
 		newc = method(fg, bg); //clamp(bg + fg, 0.0, 1.0);	//Add  
 		color = lerp(orig,float4(newc.r, newc.g, newc.b, orig.a), Mask.a * strength);
 	}
-	return color;
+	return saturate (color);
 }
 
 //-----------------------------------------------------------------------------------------//

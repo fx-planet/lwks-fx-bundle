@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-09-27
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2019-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/AnalogLumakey_640.png
@@ -30,7 +30,7 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
+// Update 2020-09-29 jwrl.
 // Revised header block.
 //-----------------------------------------------------------------------------------------//
 

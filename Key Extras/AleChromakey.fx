@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author baopao
 // @Created 2013-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ale_ChromaKey_640.png
 
 /**
-This sophisticated chromakey has the same range of adjustments that you would expect to
-find on expensive commercial tools.  It's particularly effective on fine detail.
+ This sophisticated chromakey has the same range of adjustments that you would expect to
+ find on expensive commercial tools.  It's particularly effective on fine detail.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,24 +14,28 @@ find on expensive commercial tools.  It's particularly effective on fine detail.
 //
 // Created by baopao (http://www.alessandrodallafontana.com).
 //
-// Updates:
-// Version 14 update 18 Feb 2017 jwrl.
-// Changed category from "Keying" to "Key", added subcategory to effect header.
+// Version history:
 //
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified 23 Dec 2018 by user jwrl:
+// Added creation date.
+// Reformatted the effect description for markup purposes.
 //
 // Modified 26 Nov 2018 by user schrauber:
 // Changed subcategory from "User Effects" to "Key Extras", effect name and file name
 // changed minimally .
 //
-// Modified 23 Dec 2018 by user jwrl:
-// Added creation date.
-// Reformatted the effect description for markup purposes.
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 1 August 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
+//
+// Version 14 update 18 Feb 2017 jwrl.
+// Changed category from "Keying" to "Key", added subcategory to effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -142,8 +146,6 @@ float4 ColorReplace
    string Description = "ColorReplace";
 > = { 0.5, 0.5, 0.5, 1.0 };
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
@@ -241,4 +243,3 @@ technique Blue2
       PixelShader = compile PROFILE Blue();
    }
 }
-

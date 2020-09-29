@@ -1,20 +1,25 @@
 // @Maintainer jwrl
-// @Released 2019-01-10
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2019-01-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalSharpen_640.png
 
 /**
-A directional unsharp mask.  Useful where directional stretching and motion blur must be
-compensated for.  The angle can only be adjusted through 180 degrees, because it uses a
-bidirectional blur.  Using that technique, 90 degrees and 270 degrees would give identical
-results.
+ A directional unsharp mask.  Useful where directional stretching and motion blur must be
+ compensated for.  The angle can only be adjusted through 180 degrees, because it uses a
+ bidirectional blur.  Using that technique, 90 degrees and 270 degrees would give identical
+ results.
 
-NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
+ NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DirectionalSharpen.fx
+//
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

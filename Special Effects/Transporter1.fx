@@ -1,5 +1,5 @@
 // @maintainer jwrl
-// @released 2020-09-28
+// @released 2020-09-29
 // @author jwrl
 // @author LWKS Software Ltd
 // @created 2018-04-02
@@ -31,7 +31,7 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
+// Update 2020-09-29 jwrl.
 // Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
@@ -307,7 +307,7 @@ bool fn_allPos (float4 pixel)
 
 float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
 {
-   // First we set up the scale factor, using the Z axis position.  Unlike the Editshare
+   // First we set up the scale factor, using the Z axis position.  Unlike the Lightworks
    // 3D DVE the transition isn't linear and operates smallest to largest.  Since it has
    // been designed to fine tune position it does not cover the full range of the 3D DVE.
 

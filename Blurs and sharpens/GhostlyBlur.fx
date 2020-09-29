@@ -1,33 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-05-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/GhostBlur_640.png
 
 /**
-Originally created as YAblur.fx, this was an accident that looked interesting, so it was
-given a name and further developed.  It is based on a radial anti-aliassing blur developed
-for another series of effects, further modulated by image content.  The result is a very
-soft ghostly blur.
+ Originally created as YAblur.fx, this was an accident that looked interesting, so it was
+ given a name and further developed.  It is based on a radial anti-aliassing blur developed
+ for another series of effects, further modulated by image content.  The result is a very
+ soft ghostly blur.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect GhostlyBlur.fx
+//
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Modified by jwrl 29 July 2017.
 // Renamed to Ghost blur because it felt more like the result that you get.  Opacity and
 // Radius limiting added so that negative values of either will not be acted on.  Added
 // a fogginess adjustment.  Really a gamma tweak applied while sampling the blur, it's
 // also range limited to ensure that whiter than white video levels are controlled.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -109,8 +114,6 @@ float Opacity
 #define FOG_LIM  0.8
 #define FOG_MIN  0.4
 #define FOG_MAX  4.0
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

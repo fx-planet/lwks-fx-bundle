@@ -1,16 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author baopao
 // @Created 2015-09-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/CC_RGBCMY_640.png
 
 /**
-RGB-CMY correction is a colorgrade tool based on the individual red, green, blue, cyan,
-magenta and yellow parameters.  This is a "Color_NOT_Channel" correction based filter
-originally created for Mac and Linux systems, and subsequently extended to Windows.
+ RGB-CMY correction is a colorgrade tool based on the individual red, green, blue, cyan,
+ magenta and yellow parameters.  This is a "Color_NOT_Channel" correction based filter
+ originally created for Mac and Linux systems, and subsequently extended to Windows.
 
-NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
-A legacy version is available for users with that requirement.
+ NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
+ A legacy version is available for users with that requirement.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,20 +18,29 @@ A legacy version is available for users with that requirement.
 //
 // Feedback should be to http://www.alessandrodallafontana.com/ 
 //
-// Cross platform compatibility check 31 July 2017 jwrl.
-// Explicitly defined samplers to compensate for cross platform default sampler state
-// differences.  In the process the original version has been rewritten to make it more
-// modular and to provide Windows support.
+// Version history:
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Changed subcategory.
 // Changed name from CC_RGBCMY.fx.
 // Added creation date.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 31 July 2017 jwrl.
+// Explicitly defined samplers to compensate for cross platform default sampler state
+// differences.  In the process the original version has been rewritten to make it more
+// modular and to provide Windows support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -417,7 +426,7 @@ float Y_Brightness
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 Cs = tex2D (FgSampler, xy);
+   float4 Cs = saturate (tex2D (FgSampler, xy));
 
    float lum   = (Cs.r + Cs.g + Cs.b) / 3.0;
    float lum_1 = lum - 0.5;
@@ -498,7 +507,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    Cs_C = lerp (Cs_B, Cs_C, cyan);
    Cs_M = lerp (Cs_C, Cs_M, magenta);
 
-   return lerp (Cs_M, Cs_Y, yellow);
+   return saturate (lerp (Cs_M, Cs_Y, yellow));
 }
 
 //-----------------------------------------------------------------------------------------//

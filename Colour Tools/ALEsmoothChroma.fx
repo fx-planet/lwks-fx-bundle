@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author baopao
 // @Created 2013-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
 
 /**
-This smooths the colour component of video media.  Its most appropriate use is probably
-to smooth chroma in 4:2:0 footage.  It works by converting the RGB signal to YCbCr then
-blurs just the chroma Cb/Cr components.  The result is then converted back to RGB using
-the original Y channel.  This ensures that luminance sharpness is maintained and just
-the colour component is softened.
+ This smooths the colour component of video media.  Its most appropriate use is probably
+ to smooth chroma in 4:2:0 footage.  It works by converting the RGB signal to YCbCr then
+ blurs just the chroma Cb/Cr components.  The result is then converted back to RGB using
+ the original Y channel.  This ensures that luminance sharpness is maintained and just
+ the colour component is softened.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,19 +17,28 @@ the colour component is softened.
 //
 // Feedback should be to http://www.alessandrodallafontana.com/ 
 //
-// Modified 11 February 2017 by jwrl:
-// Added subcategory to Fx header.
+// Version history:
 //
-// Cross platform compatibility check 30 July 2017 jwrl.
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Cross platform compatibility check 30 July 2017 jwrl.
+//
+// Modified 11 February 2017 by jwrl:
+// Added subcategory to Fx header.
 //-----------------------------------------------------------------------------------------//
 
 
@@ -75,7 +84,7 @@ float BlurAmount
 
 float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
-   float4 ret = tex2D( InputSampler, xy1 );
+   float4 ret = saturate (tex2D( InputSampler, xy1));
    float4 ret_NoBlur = ret;
 
    float amount = BlurAmount * 0.01;
@@ -112,7 +121,7 @@ float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
    o_color.a = 1;
 
 
-   return o_color;
+   return saturate (o_color);
 }
 
 //-----------------------------------------------------------------------------------------//

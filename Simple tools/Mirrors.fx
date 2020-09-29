@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-10
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2020-05-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Mirrors_640.png
@@ -18,6 +18,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Mirrors.fx
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Modified header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -156,4 +161,3 @@ technique Mirrors_V
    pass P_2
    { PixelShader = compile PROFILE ps_main_V (); }
 }
-

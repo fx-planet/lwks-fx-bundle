@@ -1,34 +1,39 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Created 2012-12-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaFeather_640.png
 
 /**
-The Alpha Feather effect was created to help bed an externally generated graphic with
-an alpha channel into an existing background after it was noticed that the standard LW
-Blend/In Front effect can give foreground images sharp, slightly aliased edges.  It will
-allow feathering the edges of the foreground image with the background image by blurring
-both in the blend region.  The blurring is a true gaussian blur and provides controls to
-allow you to change the blur radius and threshold.
+ The Alpha Feather effect was created to help bed an externally generated graphic with
+ an alpha channel into an existing background after it was noticed that the standard LW
+ Blend/In Front effect can give foreground images sharp, slightly aliased edges.  It will
+ allow feathering the edges of the foreground image with the background image by blurring
+ both in the blend region.  The blurring is a true gaussian blur and provides controls to
+ allow you to change the blur radius and threshold.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Alpha_feather.fx
 //
-// Cross platform compatibility check 26 July 2017 jwrl.
-// Explicitly defined samplers to correct a cross-platform default sampler bug.
-// Added workaround for the interlaced media height bug in Lightworks effects.
+// Version history:
 //
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects on GitHub.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory to "Blend Effects".
 // Added "Notes" section.
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 5 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects on GitHub.
+//
+// Cross platform compatibility check 26 July 2017 jwrl.
+// Explicitly defined samplers to correct a cross-platform default sampler bug.
+// Added workaround for the interlaced media height bug in Lightworks effects.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -126,8 +131,6 @@ float _OutputAspectRatio;
 
 float offset[5] = {0.0, 1.0, 2.0, 3.0, 4.0 };
 float weight[5] = {0.2734375, 0.21875 / 4.0, 0.109375 / 4.0,0.03125 / 4.0, 0.00390625 / 4.0};
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

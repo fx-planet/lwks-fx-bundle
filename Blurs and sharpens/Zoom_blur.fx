@@ -1,17 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Created 2012-01-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/ZoomBlur_640.png
 
 /**
-A radial blur effect that simulates the motion of a zoom in or out.
+ A radial blur effect that simulates the motion of a zoom in or out.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Zoom_blur.fx
 //
-// Cross platform conversion by jwrl 20 July 2017.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Added creation date.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //
 // Version 14.5 update 24 March 2018 by jwrl.
 // Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
@@ -20,12 +30,7 @@ A radial blur effect that simulates the motion of a zoom in or out.
 // with transitions on those platforms.  The bug still exists when using older versions
 // of Lightworks.
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
+// Cross platform conversion by jwrl 20 July 2017.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -86,8 +91,6 @@ float BlurAmount
    float MinVal = 0.00;
    float MaxVal = 1.00;
 > = 0.1;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

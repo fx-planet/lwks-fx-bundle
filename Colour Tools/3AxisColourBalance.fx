@@ -1,29 +1,38 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author khaver
 // @Created 2016-06-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/3AxisColTemp_640.png
 
 /**
-3 axis colour balance is a simple axis-based colourgrade tool, originally written for
-David Rasberry.  It can adjust Red<>Cyan, Green<>Magenta, Blue<>Yellow, all of which
-match the vector scope, as well as luminance.
+ 3 axis colour balance is a simple axis-based colourgrade tool, originally written for
+ David Rasberry.  It can adjust Red<>Cyan, Green<>Magenta, Blue<>Yellow, all of which
+ match the vector scope, as well as luminance.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect 3AxisColourBalance.fx
 //
-// Subcategory added by jwrl for version 14 and up 10 Feb 2017
+// Version history:
 //
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to and exit from the effect.  Floating point processing
+// can result in video level overrun which can impact exports poorly.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Added creation date.
 // Changed subcategory.
 // Changed name from 3AxisColTemp.fx
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 7 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// Subcategory added by jwrl for version 14 and up 10 Feb 2017
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -92,7 +101,7 @@ float4 _YellowColour  = float4( 1.0, 1.0, 0.0, 1.0 );
 
 float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
-   float4 src = tex2D( InputSampler, xy1 );
+   float4 src = saturate (tex2D( InputSampler, xy1));
    float4 ret;
    float4 chrom = float4(0,0,0,0);
    float Lmin = min(src.r, min(src.g, src.b));
@@ -136,7 +145,7 @@ float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
    Lmin += (Luma / 2.0);
    ret = float4(ret.r + Lmin - 0.5, ret.g + Lmin - 0.5, ret.b + Lmin - 0.5, src.a);
 
-   return ret;
+   return saturate (ret);
 }
 
 //-----------------------------------------------------------------------------------------//

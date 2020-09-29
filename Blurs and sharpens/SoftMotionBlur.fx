@@ -1,25 +1,30 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2017-07-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SoftMotionBlur_640.png
 
 /**
-This blur is actually a simple directional blur.  It is extremely soft because it uses a
-radially-sampled blur engine.
+ This blur is actually a simple directional blur.  It is extremely soft because it uses a
+ radially-sampled blur engine.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SoftMotionBlur.fx
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified by LW user jwrl 26 September 2018.
 // Added notes to header.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -112,8 +117,6 @@ float Amount
 #define PI      3.1415927
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

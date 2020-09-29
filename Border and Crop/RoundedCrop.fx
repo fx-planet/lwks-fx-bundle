@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-05-16
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2020-05-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/RoundedCrop_640.png
@@ -11,6 +11,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect RoundedCrop.fx
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

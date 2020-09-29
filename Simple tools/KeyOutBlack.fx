@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-15
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2020-01-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/KeyOutBlack_640.png
@@ -32,6 +32,9 @@
 // opacity parameter allows for dissolving the foreground in or out.
 //
 // Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //
 // Modified 2020-06-15 jwrl:
 // Changed "Black offset" in Offset parameter to read "Black clip".

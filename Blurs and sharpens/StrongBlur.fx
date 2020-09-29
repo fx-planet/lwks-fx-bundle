@@ -1,36 +1,41 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/SuperBlur_640.png
 
 /**
-This is a spin-off from my radial blur as used in several other effects.  To ensure
-ps_2_b compliance for Windows users this is a three or five pass effect.  This is
-achieved by taking two or five passes through the one shader, then in the case of the
-standard blur, ending in a second shader.
+ This is a spin-off from my radial blur as used in several other effects.  To ensure
+ ps_2_b compliance for Windows users this is a three or five pass effect.  This is
+ achieved by taking two or five passes through the one shader, then in the case of the
+ standard blur, ending in a second shader.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect StrongBlur.fx
 //
-// Modified 2 July 2016
-// This version modified at khaver's suggestion to reduce the number of render targets.
+// Version history:
 //
-// Modified for version 14 11 February 2017.
-// Added subcategory "Blurs and Sharpens"
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by LW user jwrl 30 June 2018.
-// Changed blur calculation to be based on a fixed percentage of frame size rather than
-// based on pixel size.  The problem was identified by schrauber, for which, thanks.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
 // Modified by LW user jwrl 1 July 2018.
 // Doubled the values of the radii used to calculate the blur to allow maximum blur to
 // be stronger.  Also added a "standard blur" option which approximates the range that
 // the Lightworks blur effect covers.
+//
+// Modified by LW user jwrl 30 June 2018.
+// Changed blur calculation to be based on a fixed percentage of frame size rather than
+// based on pixel size.  The problem was identified by schrauber, for which, thanks.
+//
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//
+// Modified for version 14 11 February 2017.
+// Added subcategory "Blurs and Sharpens"
+//
+// Modified 2 July 2016
+// This version modified at khaver's suggestion to reduce the number of render targets.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

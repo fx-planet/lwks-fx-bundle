@@ -1,31 +1,40 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2016-04-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/PeakDesat_640.png
 
 /**
-This is a tool designed to quickly and easily desaturate whites and blacks, which can
-easily become contaminated during other grading operations.  The turnover point and
-blend smoothness of both black and white desaturation are adjustable.
+ This is a tool designed to quickly and easily desaturate whites and blacks, which can
+ easily become contaminated during other grading operations.  The turnover point and
+ blend smoothness of both black and white desaturation are adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PeakDesaturate.fx
 //
-// Cross platform compatibility check 30 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified jwrl 2020-08-05
+// Clamped video levels on entry to the effect.  Floating point processing can result in
+// video level overrun which can impact exports poorly.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Changed subcategory.
+// Formatted the descriptive block so that it can automatically be read.
+//
+// Modified by LW user jwrl 26 September 2018.
+// Added notes to header.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
+// Cross platform compatibility check 30 July 2017 jwrl.
+// Explicitly defined samplers to fix cross platform default sampler state differences.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -126,16 +135,16 @@ float BlkDesat
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 RGBval = tex2D (FgSampler, xy);
+   float4 RGBval = saturate (tex2D (FgSampler, xy));
 
-// This oversamples the luma value so that we don't get hard contouring.
-// We also get some colour noise reduction without the expense of a blur routine.
+   // This oversamples the luma value so that we don't get hard contouring.
+   // We also get some colour noise reduction without the expense of a blur routine.
 
    float Blevel = RGBval.g + RGBval.g + Rmatrix * RGBval.r + Bmatrix * RGBval.b;
 
    float4 LumaValue = float2 (saturate (Blevel / matScale), 1.0).xxxy;
 
-// Get the turnover point for white desaturation and set the level.
+   // Get the turnover point for white desaturation and set the level.
 
    float Wpoint = (1.0 - WhtPnt) * pSc;
    float Wlevel = clamp (Blevel * Wpoint, 0.0, matScale) - matScale + 1.0;
@@ -151,7 +160,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    Blevel  = 1.0 - saturate (Blevel - BlkRng);
    Blevel *= BlkDesat;
 
-// Desaturate the blacks, then the whites.
+   // Desaturate the blacks, then the whites.
 
    float4 retval = lerp (RGBval, LumaValue, Blevel);
    retval = lerp (retval, LumaValue, Wlevel);

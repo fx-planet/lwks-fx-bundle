@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-05-12
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2019-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaOpq_640.png
@@ -16,6 +16,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AlphaOpq.fx
+//
+// Version history:
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -91,4 +96,3 @@ technique AlphaOpq_1
    pass P_1
    { PixelShader = compile PROFILE ps_main_1 (); }
 }
-

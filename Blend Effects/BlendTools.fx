@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-25
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2018-07-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blend_Tools_640.png
@@ -26,7 +26,10 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BlendTools.fx
 //
-// Revision history:
+// Version history:
+//
+// Modified jwrl 2020-09-29:
+// Revised header block.
 //
 // Modified 2020-07-25 jwrl.
 // Added the ability to unpremultiply after feathering.

@@ -1,27 +1,27 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2017-06-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/SoftSpinBlur_640.png
 
 /**
-During the development of this effect particular attention has been given to the blur
-sample rate.  The effect achieves 108 samples by using three consecutive passes of
-36 samples each at finer and finer pitch.  This is an oversampling technique which
-results in a theoretical sample rate of greater than 45,000.  As a result a full 180
-degrees of arc can be blurred without the sampling becoming too obvious even if the
-blur centre is at the corner of the frame.
+ During the development of this effect particular attention has been given to the blur
+ sample rate.  The effect achieves 108 samples by using three consecutive passes of
+ 36 samples each at finer and finer pitch.  This is an oversampling technique which
+ results in a theoretical sample rate of greater than 45,000.  As a result a full 180
+ degrees of arc can be blurred without the sampling becoming too obvious even if the
+ blur centre is at the corner of the frame.
 
-The blur arc method used is bi-directional and produces a symmetrical blur.  For
-example, a 30 degree arc is produced by applying dual 15 degree clockwise and anti-
-clockwise blurs.  A level tracking parameter has been included to compensate for the
-inevitable upward drift in blacks and downward drift in whites that such a strong
-blur can cause.
+ The blur arc method used is bi-directional and produces a symmetrical blur.  For
+ example, a 30 degree arc is produced by applying dual 15 degree clockwise and anti-
+ clockwise blurs.  A level tracking parameter has been included to compensate for the
+ inevitable upward drift in blacks and downward drift in whites that such a strong
+ blur can cause.
 
-Blur density reduces the blur effect to zero.  Blur aspect ratio is set in percentage
-change values and swings between 1:5 and 5:1.  The blur centring can be set either by
-means of the sliders or by dragging with the mouse in the edit sequence viewer.  Blurs
-cannot be dragged off screen, but manually entering values will allow this if desired.
+ Blur density reduces the blur effect to zero.  Blur aspect ratio is set in percentage
+ change values and swings between 1:5 and 5:1.  The blur centring can be set either by
+ means of the sliders or by dragging with the mouse in the edit sequence viewer.  Blurs
+ cannot be dragged off screen, but manually entering values will allow this if desired.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -33,16 +33,21 @@ cannot be dragged off screen, but manually entering values will allow this if de
 // made to match the parameters in that effect.  Due to other design decisions that has
 // not been completely possible.
 //
-// Re-arranged the user interface 6 July 2017.
+// Version history:
 //
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
+//
+// Modified by LW user jwrl 23 December 2018.
+// Formatted the descriptive block so that it can automatically be read.
 //
 // Modified by LW user jwrl 26 September 2018.
 // Added notes to header.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
+// Modified by LW user jwrl 5 April 2018.
+// Metadata header block added to better support GitHub repository.
+//
+// Re-arranged the user interface 6 July 2017.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -157,8 +162,6 @@ float Tracking
 #define WT_DIFF 0.0555556
 
 float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

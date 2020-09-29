@@ -1,30 +1,33 @@
-// @Maintainer hugly
-// @Released 2019-08-10
+// @Maintainer jwrl
+// @Released 2020-09-29
 // @Author hugly
 // @Author schrauber
 // @Created 2019-08-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/EasyOverlay_640a.png
 
 /**
- 'Easy overlay' is a luminance keyer for overlays which show luminance
- for transparency, i.e. full transparency appears as solid black in
- the overlay. The keyer works also on overlays with an alpha channel.
- It reveals transparency using a black&white mask created from the
- foreground.
+ 'Easy overlay' is a luminance keyer for overlays which show luminance for transparency,
+ i.e. full transparency appears as solid black in the overlay.  The keyer works also on
+ overlays with an alpha channel.  It reveals transparency using a black&white mask created
+ from the foreground.
 
- The presets should work for most material of that kind with good
- looking results. If adjustments should be necessary, start with
- 'MaskGain'. 'Fg Lift' influences overall brightness of the overlay
- while preserving highlights. 'Fg Opacity' is e.g. useful to
+ The presets should work for most material of that kind with good looking results. If
+ adjustments should be necessary, start with 'MaskGain'.  'Fg Lift' influences overall
+ brightness of the overlay while preserving highlights.  'Fg Opacity' is e.g. useful to
  dissolve from/to the overlay using keyframes.
 */
 
-//--------------------------------------------------------------//
-// EasyOverlay.fx
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect EasyOverlay.fx
 //
 // Version history:
-// ...
-//--------------------------------------------------------------//
+//
+// Update 2020-09-29 jwrl.
+// Revised header block.
+//
+// Modified 2020-06-15 jwrl:
+// Removed redundant TEXCOORD3 input to oa_main().
+//-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <  string EffectGroup = "GenericPixelShader";
@@ -34,9 +37,9 @@ int _LwksEffectInfo
    string Notes       = "For overlays where luminance represents transparency";
 > = 0;
 
-//--------------------------------------------------------------//
-// Params
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
 
 float MaskGain
 <  string Description = "Mask Gain";
@@ -56,9 +59,9 @@ float FgOpacity
    float MaxVal = 1.0;
 > = 1;
 
-//--------------------------------------------------------------//
-// Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
 
 texture fg;
 texture bg;
@@ -66,9 +69,9 @@ texture bg;
 sampler FgSampler   = sampler_state { Texture = <fg>; };
 sampler BgSampler   = sampler_state { Texture = <bg>; };
 
-//--------------------------------------------------------------//
-// Code
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
 float4 setFgLift (float4 x, float lift)
 {  lift *= 0.55;
@@ -79,7 +82,11 @@ float4 setFgLift (float4 x, float lift)
    return float4 (gamma.rgb, x.a);
 }
 
-float4 oa_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3 ) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Samplers
+//-----------------------------------------------------------------------------------------//
+
+float4 oa_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
    float4 fg = tex2D( FgSampler, xy1 );
    float4 bg = tex2D( BgSampler, xy2 );
@@ -93,9 +100,8 @@ float4 oa_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEX
    return ret;
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique ps { pass SinglePass { PixelShader = compile PROFILE oa_main(); } }
-

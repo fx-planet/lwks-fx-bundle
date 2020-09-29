@@ -1,16 +1,16 @@
 // @Maintainer jwrl
-// @Released 2018-12-23
+// @Released 2020-09-29
 // @Author baopao
 // @Created 2016-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/SineLights_640.png
 
 /**
-Sinusoidal lights is a semi-abstract pattern generator created for Mac and Linux systems
-by Lightworks user baopao.  This version has been converted for cross-platform use by
-Lightworks user jwrl.
+ Sinusoidal lights is a semi-abstract pattern generator created for Mac and Linux systems
+ by Lightworks user baopao.  This version has been converted for cross-platform use by
+ Lightworks user jwrl.
 
-NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
-A legacy version is available for users in that position.
+ NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
+ A legacy version is available for users in that position.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,23 +19,28 @@ A legacy version is available for users in that position.
 // Based on: http://glslsandbox.com/e#9996.0, conversion for Lightworks Linux/Mac by
 // baopao.  Windows conversion of baopao's code by jwrl.
 //
-// This revision for version 14 by jwrl 6 February 2017.
-// Changed category to "Mattes" and added subcategory "Patterns".
+// Version history:
 //
-// LW 14.5 update by jwrl 30 March 2018
-// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
-// care of in versions of LW higher than 14.0.  If using an older version under
-// Windows the Legacy version must be used.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Modified jwrl 2020-09-29:
+// Reformatted the effect header.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
 // Added creation date.
 // Added "Notes".
 // Formatted the descriptive block so that it can automatically be read.
+//
+// Modified 8 April 2018 jwrl.
+// Added authorship and description information for GitHub, and reformatted the original
+// code to be consistent with other Lightworks user effects.
+//
+// LW 14.5 update by jwrl 30 March 2018
+// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
+// care of in versions of LW higher than 14.0.  If using an older version under
+// Windows the Legacy version must be used.
+//
+// This revision for version 14 by jwrl 6 February 2017.
+// Changed category to "Mattes" and added subcategory "Patterns".
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo

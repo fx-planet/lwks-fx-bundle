@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-04-23
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2020-04-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhiteBalance_640.png
@@ -13,6 +13,12 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect WhiteBalance.fx
+//
+// Version history:
+//
+// Modified jwrl 2020-09-29
+// Clamped video levels on exit from the effect.  Floating point processing can result
+// in video level overrun which can impact exports poorly.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -99,7 +105,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       retval.a = alpha;
    }
 
-   return retval;
+   return saturate (retval);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -111,4 +117,3 @@ technique WhiteBalance
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

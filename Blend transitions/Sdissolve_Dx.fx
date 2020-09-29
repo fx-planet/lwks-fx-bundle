@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2020-09-29
 // @Author jwrl
 // @Created 2017-03-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Scurve_640.png
@@ -15,7 +15,7 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
+// Modified 2020-09-29 jwrl.
 // Reformatted the effect header.
 //
 // Modified 28 Dec 2018 by user jwrl:

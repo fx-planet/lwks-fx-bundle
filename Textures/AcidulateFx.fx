@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-10-01
 // @Author jwrl
 // @Created 2016-05-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Acidulate_640.png
@@ -10,6 +10,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AcidulateFx.fx
+//
+// Version history:
+//
+// Update 2020-10-01 jwrl.
+// Revised header block.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.

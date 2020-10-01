@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-10
+// @Released 2020-10-01
 // @Author jwrl
 // @Created 2016-05-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/70s_psych_640.png
@@ -16,6 +16,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect 70sPsychedelia.fx
+//
+// Version history:
+//
+// Modified jwrl 2020-10-01:
+// Reformatted the effect header.
 //
 // Major rewrite 10 June 2020 jwrl.
 // Changed sampler addressing to defaults.  On some GPUs apparently the mirror addressing

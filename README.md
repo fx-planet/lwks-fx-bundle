@@ -283,7 +283,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Binocular mask                |BinocularMask.fx        |
 |Double vision                 |DoubleVision.fx         |
 |Fireballs                     |Fireballs.fx            |
-|Glitch                        |Glitch                  |
+|Glitch                        |Glitch.fx               |
 |Kaleido A                     |KaleidoA.fx             |
 |Kaleido B                     |KaleidoB.fx             |
 |Kaleidoscope                  |KaleidoscopeFx.fx       |

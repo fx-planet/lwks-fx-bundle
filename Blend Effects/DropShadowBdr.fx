@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-10-13
 // @Author jwrl
 // @Created 2018-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
@@ -19,6 +19,10 @@
 // Lightworks effect DropShadowBdr.fx
 //
 // Version history:
+//
+// Update 2020-10-13 jwrl.
+// Corrected compile bug introduced when "Source" settings were updated.  Apparently
+// 2020.1.1 doesn't always like nested conditionals.
 //
 // Update 2020-09-27 jwrl.
 // Updated "Source" settings.
@@ -75,10 +79,6 @@ texture Shadow : RenderColorTarget;
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
 
 sampler s_Foreground = sampler_state {
    Texture   = <Fg>;
@@ -253,6 +253,14 @@ int Source
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
+#ifndef _LENGTH
+Bad_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
 #define X_SCALE 0.5
 
 #define OFFSET  0.04
@@ -281,13 +289,13 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
    float4 Fgd = tex2D (s_Sampler, uv);
 
+   if (Fgd.a == 0.0) return Fgd.aaaa;
+
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
    }
    else if (Source == 2) {
-      if (Fgd.a == 0.0) return 0.0.xxxx;
-
       float4 Bgd = tex2D (s_Background, uv);
 
       float kDiff = distance (Fgd.g, Bgd.g);
@@ -308,12 +316,14 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 
 float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
 {
-   if (B_amount <= 0.0) return fn_tex2D (s_Foreground, uv);
+   float4 retval = fn_tex2D (s_Foreground, uv);
+
+   if (B_amount <= 0.0) return retval;
 
    float2 offset, edge = float2 (1.0, _OutputAspectRatio);
    float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5) * 2.0;
 
-   float alpha = fn_tex2D (s_Foreground, xy).a;
+   float alpha = retval.a;
 
    edge *= B_lock ? B_width.xx : float2 (B_width, B_height);
 
@@ -346,12 +356,14 @@ float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
 {
-   if (B_amount <= 0.0) return fn_tex2D (s_Foreground, uv);
+   float4 retval = fn_tex2D (s_Foreground, uv);
+
+   if (B_amount <= 0.0) return retval;
 
    float2 offset, edge = float2 (1.0, _OutputAspectRatio);
    float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5);
 
-   float alpha = fn_tex2D (s_Foreground, xy).a;
+   float alpha = retval.a;
 
    edge *= B_lock ? B_width.xx : float2 (B_width, B_height);
 

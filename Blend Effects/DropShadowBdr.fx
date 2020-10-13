@@ -21,6 +21,8 @@
 // Version history:
 //
 // Update 2020-10-13 jwrl.
+// Set border and drop shadow alpha colour to 1.0 even though it's not used.  Unless
+// that's done the colour is invisible in the settings dialogue.
 // Corrected compile bug introduced when "Source" settings were updated.  Apparently
 // 2020.1.1 doesn't always like nested conditionals.
 //
@@ -196,7 +198,7 @@ float4 B_colour
    string Group = "Border";
    string Description = "Colour";
    bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, 0.0 };
+> = { 0.0, 0.0, 0.0, 1.0 };
 
 float S_amount
 <
@@ -235,7 +237,7 @@ float4 S_colour
    string Group = "Shadow";
    string Description = "Colour";
    bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, 0.0 };
+> = { 0.0, 0.0, 0.0, 1.0 };
 
 int AlphaMode
 <

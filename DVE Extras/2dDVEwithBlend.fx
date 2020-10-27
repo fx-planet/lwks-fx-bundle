@@ -1,19 +1,21 @@
 // @Maintainer jwrl
-// @Released 2020-10-27
+// @Released 2020-10-28
 // @Author jwrl
 // @Created 2020-10-27
-// @see https://www.lwks.com/media/kunena/attachments/6375/DVE_blend_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/DVEwithBlend_640.png
 
 /**
- This a 2D DVE that performs as the Lightworks version does, but with some differences.
- The first is that, unlike the Lightworks effect, any foreground with transparency will
- be blended with the background.  The second is the fact the foreground alpha channel is
- used to calculate the drop shadow.  This means that the drop shadow will only appear
- where it should and not just at the edge of frame, as it did with earlier versions of
- the Lightworks 2D DVE.
+ This a 2D DVE that performs as the Lightworks version does, but with one major
+ difference. Instead of the drop shadow being calculated from the cropped frame edges
+ the foreground alpha channel is used to calculate the drop shadow. This means that
+ the drop shadow will only appear where it should and not just at the edge of frame,
+ as it does with the Lightworks 2D DVE. Since that behaviour in the Lightworks effect
+ is unlikely to be changed for backwards compatibility reasons, this DVE is a useful
+ alternative.
 
  The image that leaves the effect has a composite alpha channel built from a combination
- of the background, foreground and drop shadow.
+ of the background, foreground and drop shadow.  If the background has transparency it
+ will be preserved wherever the foreground and/or drop shadow isn't present.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -26,7 +28,8 @@
 //
 // Version history:
 //
-// Built by jwrl 2020-10-27.
+// Modified jwrl 2020-10-28.
+// Changed the screen grab example in the header.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,7 +38,7 @@ int _LwksEffectInfo
    string Description = "2D DVE with blend";
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
-   string Notes       = "A 2D DVE that blends transparent foregrounds with backgrounds with an appropriate drop shadow";
+   string Notes       = "A 2D DVE that blends transparent images and creates a drop shadow derived from the transparency";
    bool CanSize       = true;
 > = 0;
 

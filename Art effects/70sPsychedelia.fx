@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-10-01
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2016-05-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/70s_psych_640.png
@@ -19,8 +19,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-10-01:
-// Reformatted the effect header.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Major rewrite 10 June 2020 jwrl.
 // Changed sampler addressing to defaults.  On some GPUs apparently the mirror addressing
@@ -38,6 +38,9 @@
 // Increased Smudger's blur amount and clamped it to go no lower than 0.0.
 // Changed Saturation to run from 0% to 200%, using the "DisplayAsPercentage" flag.
 // Replaced Monochrome parameter with Gain.
+//
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Changed filename and subcategory.
@@ -67,6 +70,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
    string Notes       = "An extreme highly adjustable posterization effect";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

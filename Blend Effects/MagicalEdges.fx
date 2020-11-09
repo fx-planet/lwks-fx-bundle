@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-08
 // @Author jwrl
-// @Author Robert Schütze
+// @Author Robert Schï¿½tze
 // @Created 2016-05-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Magic_Edges_640.png
 
@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect MagicalEdges.fx
 //
-// The fractal generation component was created by Robert Schütze in GLSL sandbox
+// The fractal generation component was created by Robert Schï¿½tze in GLSL sandbox
 // (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better suit the
 // needs of its use in this context.
 //
@@ -26,8 +26,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl:
-// Updated "Source" settings.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Update 11 July 2020 jwrl.
 // Added a delta key to separate blended effects from the background.
@@ -73,6 +73,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Fractal edges with star-shaped radiating blurs";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -162,28 +163,28 @@ sampler s_Sample_2 = sampler_state
 
 float Amount
 <
-   string Description = "Opacity";   
+   string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
 float EdgeWidth
 <
-   string Description = "Edge width";   
+   string Description = "Edge width";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
 
 float Rate
 <
-   string Description = "Speed";   
+   string Description = "Speed";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
 
 float StartPoint
 <
-   string Description = "Start point";   
+   string Description = "Start point";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.0;
@@ -309,13 +310,13 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
    float4 Fgd = tex2D (s_Sampler, uv);
 
+   if (Fgd.a == 0.0) return Fgd.aaaa;
+
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
    }
    else if (Source == 2) {
-      if (Fgd.a == 0.0) return 0.0.xxxx;
-
       float4 Bgd = tex2D (s_Background, uv);
 
       float kDiff = distance (Fgd.g, Bgd.g);

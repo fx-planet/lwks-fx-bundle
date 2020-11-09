@@ -1,10 +1,10 @@
 // @Maintainer jwrl
 // @Released 2020-11-09
-// @Author Renaud Bédard
+// @Author Renaud BÃ©dard
 // @Author Tanner Helland
 // @Author Ian Taylor
 // @Created 2019-06-15
-// @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ColourTempK_640.png
 
 /**
  This effect adjusts the colour balance of the input in degrees Kelvin.
@@ -13,7 +13,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ColourTemp.fx
 //
-// Ported by Renaud Bédard (@renaudbedard) from original code from Tanner Helland
+// Ported by Renaud BÃ©dard (@renaudbedard) from original code from Tanner Helland
 // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
 //
 // Colour space functions translated from HLSL versions on Chilli Ant (by Ian Taylor)

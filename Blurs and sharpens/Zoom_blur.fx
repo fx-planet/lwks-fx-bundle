@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author khaver
 // @Created 2012-01-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/ZoomBlur_640.png
@@ -13,8 +13,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Modified jwrl 2020-11-09:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Added creation date.
@@ -40,6 +40,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "A radial blur effect that simulates the motion of a zoom in or out";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -48,18 +49,10 @@ int _LwksEffectInfo
 
 texture Input;
 
-#ifdef LINUX
-#define Clamp ClampToEdge
-#endif
-
-#ifdef OSX
-#define Clamp ClampToEdge
-#endif
-
 sampler InputSampler = sampler_state {
-	Texture = <Input>;
-	AddressU = Clamp;
-	AddressV = Clamp;
+	Texture   = <Input>;
+	AddressU  = ClampToEdge;
+	AddressV  = ClampToEdge;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;

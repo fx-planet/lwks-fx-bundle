@@ -110,7 +110,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |2 axis vector balance         |2AxisVectorBalance.fx   |
 |3 axis colour balance         |3AxisColourBalance.fx   |
 |ALE smooth chroma             |ALEsmoothChroma.fx      |
-|Colour temp K                 |ColourTempK.fx          |
 |Hue rotate                    |Hue_Rotate.fx           |
 |Midtone kicker                |MidKicker.fx            |
 |Peak desaturate               |PeakDesaturate.fx       |

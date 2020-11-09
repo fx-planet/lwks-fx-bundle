@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2017-05-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/BorderCrop_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Reformatted header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
@@ -46,6 +46,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Border and crop";
    string Notes       = "A crop tool with border, feathering and drop shadow.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

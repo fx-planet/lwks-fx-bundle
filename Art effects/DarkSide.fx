@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2017-02-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/TheDarkSide_640.png
@@ -43,8 +43,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 11 July 2020 jwrl.
 // Explicitly set SupportsAlpha boolean value in colour parameter to false.
@@ -71,6 +71,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
    string Notes       = "Creates a shadow enhancing soft darkness spread.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

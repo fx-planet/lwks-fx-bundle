@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author juhartik
 // @AuthorEmail "juha@linearteam.org"
 // @Created 2011-04-29
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Reformatted header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 6 January 2019 jwrl.
 // Added colour setting for the surround.
@@ -49,6 +49,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Border and crop";
    string Notes       = "A lens vignette effect created by Juha Hartikainen";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -60,8 +61,8 @@ texture Input;
 sampler FgSampler = sampler_state
 {
    Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

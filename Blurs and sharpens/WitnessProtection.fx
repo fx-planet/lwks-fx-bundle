@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2020-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/WitnessProtection_640.png
@@ -41,8 +41,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Modified jwrl 2020-11-09:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-06-05
 // Added a choice of rectangular or oval mask shapes.
@@ -57,6 +57,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and sharpens";
    string Notes       = "A classic witness protection effect.";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

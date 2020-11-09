@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SoftFoggyBlur_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Modified jwrl 2020-11-09:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified by LW user jwrl 2020-05-16:
 // Reduced maths operations required to set up blur strength and aspect ratio.
@@ -39,6 +39,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "This blur effect mimics the classic 'petroleum jelly on the lens' look";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

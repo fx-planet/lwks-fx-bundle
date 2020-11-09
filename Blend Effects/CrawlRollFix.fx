@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-19
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2020-07-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/SmoothRoll_640.png
@@ -19,7 +19,8 @@
 //
 // Version history:
 //
-// Built 2020-07-19 by jwrl.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,6 +30,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Blend Effects";
    string Notes       = "Directionally blurs a roll or crawl to smooth its motion";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -221,4 +223,3 @@ technique CrawlRollFix_3
    pass P_2
    { PixelShader = compile PROFILE ps_main_C (); }
 }
-

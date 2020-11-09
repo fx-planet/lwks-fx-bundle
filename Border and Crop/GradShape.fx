@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-09
 // @Author jwrl
 // @Author LWKS Software Ltd
 // @Created 2020-03-29
@@ -29,8 +29,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Reformatted header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified April 2 2020 jwrl:
 // Restructured the rectangle and ellipse shaders to simplify the execution slightly.
@@ -47,6 +47,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Border and Crop";
    string Notes       = "Creates colour gradients inside or outside an ellipsoid or rectangular shape";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

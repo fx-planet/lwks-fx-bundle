@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-14
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2020-09-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/3Dbevel_640.png
@@ -25,7 +25,8 @@
 //
 // Version history:
 //
-// Built jwrl 2020-09-14.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,6 +36,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Border and crop";
    string Notes       = "This provides a simple crop with an inner 3D bevelled edge and a flat coloured outer border";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -207,7 +209,7 @@ float4 Light
 
 #define EMPTY  0.0.xxxx
 
-#define SCALE  0.1
+#define BEVEL  0.1
 #define BORDER 0.0125
 
 float _OutputAspectRatio;
@@ -263,124 +265,55 @@ float3 fn_hsv2rgb (float3 hsv)
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
-   // Get the foreground but discard the alpha channel
-
    float3 retval = tex2D (s_Foreground, uv).rgb;
-
-   // Now set up the crop boundaries, the size of the border and the  bevel.
 
    float2 cropAspect = float2 (1.0, _OutputAspectRatio);
    float2 centreCrop = float2 (abs (CropRight - CropLeft), abs (CropTop - CropBottom));
-   float2 cropBevel  = centreCrop - (cropAspect * Bevel * SCALE);
+   float2 cropBevel  = centreCrop - (cropAspect * Bevel * BEVEL);
    float2 cropBorder = centreCrop + (cropAspect * Border * BORDER);
 
-   // Because we have to be able to obtain an accurate 45 degree angle at the corners
-   // of the bevel we need to set up several xy coordinates.  For ease of later maths
-   // we swing uv around the mid point of the crop and put that value in xy1.  This
-   // will be used later to determine which quadrant we're working in.
-
    float2 xy1 = uv - float2 (CropRight + CropLeft, 2.0 - CropTop - CropBottom) / 2.0;
-
-   // The absolute value of xy1 is doubled and stored in xy2.  This can be used to
-   // help produce the crop very simply.
-
    float2 xy2 = abs (xy1) * 2.0;
-
-   // The bevel size is then subtracted from xy2 and clamped between 0 and 1.  By
-   // doing this we can reliably calculate the corner angle without resorting to
-   // trig functions or distance calculations.  The X coordinate is corrected for
-   // the project aspect ratio.
-
    float2 xy3 = saturate (xy2 - cropBevel);
 
    xy3.x *= _OutputAspectRatio;
 
-   // The next section calculates the bevel colours.  If either component of xy2 exceeds
-   // the bevel boundary we replace the border colour in retval with our derived bevel
-   // colour.  This is reasonably complex to do because we need to be able to change the
-   // angle of the bevel lighting in a way logical for the user.
-
    if ((xy2.x > cropBevel.x) || (xy2.y > cropBevel.y)) {
-
-      // Bevel lighting is calculated in the hue/sat/value domain.  While it would be
-      // possible to do this in the RGB domain, this way is much simpler.  Luminance
-      // and saturation values are reduced to make the colour a light wash.
-
       float3 hsv = fn_rgb2hsv (Light.rgb);
 
       hsv.y *= 0.25;
-      hsv.z *= 0.75;
-
-      // The lit values of the X and Y planes are calculated trigonometrically.  This
-      // is the only time that a trig function is required in this routine.  Instead of
-      // swinging between +1 and -1 we need to swing from 0 to 1 for later level maths.
+      hsv.z *= 0.375;
 
       float2 lit;
 
       sincos (radians (Angle), lit.x, lit.y);
       lit = (lit + 1.0.xx) * 0.5;
 
-      // This sets up the amount by which to adjust the bevel colour.  If xy1.y is less
-      // than zero we're in the lower half of the border, and the light amount, amt, can
-      // be set to lit.y.  Otherwise it is inverted by subtracting lit.y from 1.0.
-
       float amt = (xy1.y > 0.0) ? 1.0 - lit.y : lit.y;
-
-      // The values of amt at either side are now set up.  If we're on the left hand
-      // side and if xy3.x is greater than xy3.y we invert the value in lit.x and put
-      // it in amt.  Because of the earlier clamping and scaling of xy3 this gives us
-      // an accurate 45 degree angle at top and bottom left corners.  A similar test
-      // is used to replace amt with the value in lit.x on the right hand side.
 
       if (xy3.x > xy3.y) { amt = (xy1.x > 0.0) ? lit.x : 1.0 - lit.x; }
 
-      // The border amount is now scaled by the intensity and the fill is added.  Both
-      // are adjusted before application so that the parameter settings make sense to
-      // the user.  The result is then inverted, clamped and scaled by 6.
-
-      amt = (amt * Intensity * 2.0) + 0.55;
-      amt = saturate (1.5 - amt) * 6.0;
-
-      // This test converts amt to swing between 0.25 and 1.0 for positive exposure
-      // values, and between 1.0 and 4.0 for negative exposure.
-
+      amt = saturate (0.95 - (amt * Intensity * 2.0)) * 6.0;
       amt = (amt >= 3.0) ? amt - 2.0 : 1.0 / (4.0 - amt);
-
-      // The border value is halved and amt is used as the power to raise it to.  It's
-      // then checked for overflow to see if we also need to desaturate then doubled.
-      // Both value and saturation are clamped between 0 and 1 after adjustment.
-
-      hsv.z = pow (hsv.z * 0.5, amt);
+      hsv.z = pow (hsv.z, amt);
 
       if (hsv.z > 0.5) hsv.y = saturate (hsv.y - hsv.z + 0.5);
 
       hsv.z = saturate (hsv.z * 2.0);
 
-      // The completed border including the bevel is converted and placed in retval.
-
       retval = lerp (retval, fn_hsv2rgb (hsv), (Bstrength * 0.5) + 0.25);
    }
 
-   // We now apply the border colour outside the cropped area.
-
    if ((xy2.x > centreCrop.x) || (xy2.y > centreCrop.y)) { retval = Colour.rgb; }
-
-   // Alpha is turned on, outside the border is blanked and the result is returned.
 
    return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? EMPTY : float4 (retval, 1.0);
 }
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   // We first calculate the position offset and scale factor and put it in xy.
-
    float2 xy = ((uv - float2 (PosX, 1.0 - PosY)) / max (1e-6, Scale)) + 0.5.xx;
 
-   // The foreground is recovered from s_Bevel using the positioned and scaled xy.
-
    float4 Fgnd = tex2D (s_Bevel, xy);
-
-   // The result is overlaid over the background.
 
    return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
 }
@@ -398,4 +331,3 @@ technique Bevel3D
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

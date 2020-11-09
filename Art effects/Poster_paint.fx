@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2018-11-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/PosterPaint_640.png
@@ -17,8 +17,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 11 July 2020 jwrl.
 // Removed pointless settings bypass.
@@ -41,6 +41,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Art Effects";
    string Notes       = "A fully adjustable posterize effect";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

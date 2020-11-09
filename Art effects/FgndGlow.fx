@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-10-16
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2020-10-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/FgndGlow_640.png
@@ -24,7 +24,8 @@
 //
 // Version history:
 //
-// Built 2020-10-16 jwrl.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,6 +35,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
    string Notes       = "An effect that applies a Lightworks-style glow to the foreground of a keyed or blended image";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -392,4 +394,3 @@ technique Setup
    pass P_1
    { PixelShader = compile PROFILE ps_keygen (); }
 }
-

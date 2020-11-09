@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/EdgeGlow_640.png
@@ -18,8 +18,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Formatted the descriptive block so that it can automatically be read.
@@ -54,6 +54,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
    string Notes       = "Adds a level-based or edge-based glow to an image";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -114,7 +115,7 @@ sampler s_Glow_2 = sampler_state
 
 float Amount
 <
-   string Description = "Amount";   
+   string Description = "Amount";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;

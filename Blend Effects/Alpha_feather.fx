@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author khaver
 // @Created 2012-12-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaFeather_640.png
@@ -18,8 +18,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
@@ -43,6 +43,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Helps bed an externally generated graphic with transparency into a background";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -140,10 +141,10 @@ float4 Composite(float2 xy1 : TEXCOORD1) : COLOR
 {
 	float4 fg = tex2D( FgSampler, xy1 );
 	float4 bg = tex2D( BgSampler, xy1 );
-	
+
 	float4 ret = lerp( bg, fg, fg.a * Opacity );
 	ret.a = fg.a;
-	
+
 	return ret;
 }
 
@@ -182,7 +183,7 @@ float4 AlphaFeather(float2 uv : TEXCOORD1) : COLOR
 		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i] * -1.0)*Feather)) * weight[i];
 		else color += orig * (weight[i]);
 	}
-		
+
 	color.a = 1.0;
 	orig.a = 1.0;
 
@@ -203,7 +204,7 @@ technique Alph
 	{
 		PixelShader = compile PROFILE Composite();
 	}
-	
+
 	pass two
 	{
 		PixelShader = compile PROFILE AlphaFeather();

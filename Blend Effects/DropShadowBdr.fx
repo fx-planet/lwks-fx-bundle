@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-10-13
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2018-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
@@ -19,6 +19,9 @@
 // Lightworks effect DropShadowBdr.fx
 //
 // Version history:
+//
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Update 2020-10-13 jwrl.
 // Set border and drop shadow alpha colour to 1.0 even though it's not used.  Unless
@@ -65,6 +68,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Drop shadow and border generator for text graphics";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

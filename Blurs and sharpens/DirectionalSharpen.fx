@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2019-01-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalSharpen_640.png
@@ -18,8 +18,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Modified jwrl 2020-11-09:
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,6 +29,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "This is a directional unsharp mask useful where directional blurring must be compensated for";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,4 +1,4 @@
-# Lightworks user Fx library, October 27, 2020.
+# Lightworks user Fx library, November 9, 2020.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -110,11 +110,14 @@ If you need to use two effects that have the same name, simply open one of them 
 |2 axis vector balance         |2AxisVectorBalance.fx   |
 |3 axis colour balance         |3AxisColourBalance.fx   |
 |ALE smooth chroma             |ALEsmoothChroma.fx      |
+|Colour temp K                 |ColourTempK.fx          |
 |Hue rotate                    |Hue_Rotate.fx           |
+|Midtone kicker                |MidKicker.fx            |
 |Peak desaturate               |PeakDesaturate.fx       |
 |Poly grade                    |PolyGrade.fx            |
 |RGB-CMY correction            |RGBCMYcorrection.fx     |
 |S-Curve                       |S_Curve.fx              |
+|Three zone trim               |ThreeZoneTrim.fx        |
 
 ## CATEGORY FOLDER: Distortion
 |EFFECT                        |FILE NAME               |

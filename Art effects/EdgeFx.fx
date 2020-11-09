@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-11
+// @Released 2020-11-08
 // @Author khaver
 // @Created 2011-07-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Edge_640.png
@@ -19,6 +19,9 @@
 // Lightworks user effect EdgeFx.fx
 //
 // Version history:
+//
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified by LW user jwrl 11 July 2020.
 // Added "DisplayAsPercentage" flag to threshold for LW 2020.1 and higher.
@@ -47,6 +50,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
    string Notes       = "Detects edges to give a similar result to the well known art program effect";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -137,48 +141,48 @@ float4 main( float2 uv : TEXCOORD1 ) : COLOR
    float K20 = -K00;
    float K21 = -K01;
    float K22 = -K02;
-   
+
     float2 offX = float2(TextureSizeInv.x, 0);
     float2 offY = float2(0, TextureSizeInv.y);
-    
+
     // Sample texture
 	// Top row
 	float2 texCoord = uv - offY;
     float4 c00 = tex2D(TexSampler, texCoord - offX);
     float4 c01 = tex2D(TexSampler, texCoord);
     float4 c02 = tex2D(TexSampler, texCoord + offX);
-    
+
 	// Middle row
 	texCoord = uv;
     float4 c10 = tex2D(TexSampler, texCoord - offX);
     float4 c12 = tex2D(TexSampler, texCoord + offX);
-    
+
 	// Bottom row
 	texCoord = uv + offY;
     float4 c20 = tex2D(TexSampler, texCoord - offX);
     float4 c21 = tex2D(TexSampler, texCoord);
     float4 c22 = tex2D(TexSampler, texCoord + offX);
-    
+
     // Convolution
     float4 sx = 0;
     float4 sy = 0;
-    
+
 	// Convolute X
     sx += c00 * K00;
     sx += c01 * K01;
     sx += c02 * K02;
     sx += c20 * K20;
     sx += c21 * K21;
-    sx += c22 * K22; 
-    
+    sx += c22 * K22;
+
 	// Convolute Y
     sy += c00 * K00;
     sy += c02 * K20;
     sy += c10 * K01;
     sy += c12 * K21;
     sy += c20 * K02;
-    sy += c22 * K22;     
-    
+    sy += c22 * K22;
+
 	// Add and apply Threshold
     float4 s = sx * sx + sy * sy;
     float4 edge = 1.0.xxxx;

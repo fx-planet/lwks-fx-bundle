@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author baopao
 // @Created 2013-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
@@ -19,8 +19,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-08-05
 // Clamped video levels on entry to and exit from the effect.  Floating point processing
@@ -49,6 +49,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Colour Tools";
    string Notes       = "This smooths the colour component of video media leaving the luminance unaffected";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

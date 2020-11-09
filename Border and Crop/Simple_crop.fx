@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2017-03-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCrop_640.png
@@ -17,8 +17,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Reformatted header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
@@ -39,6 +39,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Border and crop";
    string Notes       = "A simple crop tool with blend.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -55,8 +56,8 @@ texture Bgd;
 sampler FgSampler = sampler_state
 {
    Texture   = <Fgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -65,8 +66,8 @@ sampler FgSampler = sampler_state
 sampler BgSampler = sampler_state
 {
    Texture   = <Bgd>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

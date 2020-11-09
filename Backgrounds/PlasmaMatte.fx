@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2018-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/Plasma_640.png
@@ -18,8 +18,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 3 August 2019 jwrl.
 // Corrected matte generation so that it remains stable without an input.
@@ -36,6 +36,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "Generates soft plasma clouds";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

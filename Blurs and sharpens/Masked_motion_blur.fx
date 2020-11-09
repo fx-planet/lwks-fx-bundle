@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author baopao
 // @Created 2015-10-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMotionBlur_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Modified jwrl 2020-11-09:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Added creation date.
@@ -39,6 +39,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "An extremely strong directional blur with an external mask input";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

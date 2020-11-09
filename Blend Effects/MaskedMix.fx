@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2020-05-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedMix_640.png
@@ -37,8 +37,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-26:
-// Updated "Source" settings.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified jwrl 2020-08-02:
 // Reformatted the effect header.
@@ -65,6 +65,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "This is a variant of masked blend that allows the masked fill to be mixed with the mask colour.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

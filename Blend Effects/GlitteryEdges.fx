@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2016-05-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/GlitterEdge_640.png
@@ -20,8 +20,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl:
-// Updated "Source" settings
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Update 11 July 2020 jwrl.
 // Added a delta key to separate blended effects from the background.
@@ -67,6 +67,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Sparkly edges, best over darker backgrounds";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -150,30 +151,30 @@ sampler s_Sample_2 = sampler_state {
 
 float Amount
 <
-   string Description = "Master opacity";   
+   string Description = "Master opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
 float Opacity
 <
-   string Description = "Fgd opacity";   
+   string Description = "Fgd opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
 float EdgeOpacity
 <
-   string Group = "Edges";   
-   string Description = "Opacity";   
+   string Group = "Edges";
+   string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
 float EdgeWidth
 <
-   string Group = "Edges";   
-   string Description = "Width";   
+   string Group = "Edges";
+   string Description = "Width";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
@@ -213,7 +214,7 @@ float Rotation
 float Rate
 <
    string Group = "Stars";
-   string Description = "Speed";   
+   string Description = "Speed";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
@@ -221,7 +222,7 @@ float Rate
 float StartPoint
 <
    string Group = "Stars";
-   string Description = "Noise seed";   
+   string Description = "Noise seed";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.0;
@@ -261,13 +262,13 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
    float4 Fgd = tex2D (s_Sampler, uv);
 
+   if (Fgd.a == 0.0) return Fgd.aaaa;
+
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
    }
    else if (Source == 2) {
-      if (Fgd.a == 0.0) return 0.0.xxxx;
-
       float4 Bgd = tex2D (s_Background, uv);
 
       float kDiff = distance (Fgd.g, Bgd.g);

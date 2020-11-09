@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2018-07-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blend_Tools_640.png
@@ -28,8 +28,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Revised header block.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 2020-07-25 jwrl.
 // Added the ability to unpremultiply after feathering.
@@ -51,6 +51,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Provides a wide range of blend and key adjustments including generation of alpha from black";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -100,7 +101,7 @@ int a_Premul
 <
    string Group = "Alpha fine tuning";
    string Description = "Unpremultiply";
-   string Enum = "None,Before level adjustment,After level adjustment,After feathering"; 
+   string Enum = "None,Before level adjustment,After level adjustment,After feathering";
 > = 0;
 
 float a_Amount
@@ -154,7 +155,7 @@ float a_Feather
 int a_Mode
 <
    string Description = "Output mode";
-   string Enum = "Blend foreground over background,Export foreground with alpha,Show alpha channel"; 
+   string Enum = "Blend foreground over background,Export foreground with alpha,Show alpha channel";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

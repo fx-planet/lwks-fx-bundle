@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2016-06-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/Two_Axis_Vector_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-08-05
 // Clamped video levels on entry to the effect.  Floating point processing can result in
@@ -68,6 +68,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Colour Tools";
    string Notes       = "Designed for fast efficient two-axis colour cast removal";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -82,8 +83,8 @@ texture Input;
 
 sampler InputSampler = sampler_state {
    Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;

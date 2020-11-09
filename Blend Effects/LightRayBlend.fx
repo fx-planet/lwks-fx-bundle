@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2016-03-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
@@ -25,8 +25,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl:
-// Updated "Source" settings.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Update 11 July 2020 jwrl.
 // Added a delta key to separate blended effects from the background.
@@ -79,6 +79,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Adds directional blurs to a key or any image with an alpha channel";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -237,13 +238,13 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 {
    float4 Fgd = tex2D (s_Sampler, uv);
 
+   if (Fgd.a == 0.0) return Fgd.aaaa;
+
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
    }
    else if (Source == 2) {
-      if (Fgd.a == 0.0) return 0.0.xxxx;
-
       float4 Bgd = tex2D (s_Background, uv);
 
       float kDiff = distance (Fgd.g, Bgd.g);

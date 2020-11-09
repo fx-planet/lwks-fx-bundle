@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author khaver
 // @Created 2014-11-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/PolyGrad_640.png
@@ -23,8 +23,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-08-05
 // Clamped video levels on entry to and exit from the effect.  Floating point processing
@@ -50,6 +50,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Colour Tools";
    string Notes       = "Emulates to a degree the operation of power windows";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -66,24 +67,24 @@ texture Tex2 : RenderColorTarget;
 
 sampler BGround = sampler_state {
         Texture = <bg>;
-        AddressU = Clamp;
-        AddressV = Clamp;
+        AddressU = ClampToEdge;
+        AddressV = ClampToEdge;
         MinFilter = Linear;
         MagFilter = Linear;
         MipFilter = Linear;
  };
 sampler Samp1 = sampler_state {
         Texture = <Tex1>;
-        AddressU = Clamp;
-        AddressV = Clamp;
+        AddressU = ClampToEdge;
+        AddressV = ClampToEdge;
         MinFilter = Linear;
         MagFilter = Linear;
         MipFilter = Linear;
  };
 sampler Samp2 = sampler_state {
         Texture = <Tex2>;
-        AddressU = Clamp;
-        AddressV = Clamp;
+        AddressU = ClampToEdge;
+        AddressV = ClampToEdge;
         MinFilter = Linear;
         MagFilter = Linear;
         MipFilter = Linear;

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author idealsceneprod (Val Gameiro)
 // @Created 2014-12-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/FourTone_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 11 July 2020 jwrl.
 // Explicitly declared SupportsAlpha flag to be false in each colour parameter.
@@ -51,6 +51,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Art Effects";
    string Notes       = "Extends the existing Lightworks Two Tone and Tri-Tone effects to provide four tonal values";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -170,7 +171,7 @@ float4 threshold_main( float2 xy1 : TEXCOORD1 ) : COLOR
 		src1.rgb = BlendOpacity * MidColour2.rgb + (1 - BlendOpacity) * src1.rgb;
 	else
 		src1.rgb = BlendOpacity * LightColour.rgb + (1 - BlendOpacity) * src1.rgb;
-	
+
    return src1;
 }
 

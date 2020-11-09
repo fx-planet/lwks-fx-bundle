@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author khaver
 // @Author Daniel Taylor
 // @Created 2018-05-24
@@ -30,8 +30,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Formatted the descriptive block so that it can automatically be read.
@@ -44,6 +44,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
    string Notes       = "Pencil sketch effect with sat/gamma/cont/bright/gain/overlay/alpha controls";
+   bool CanSize       = true;
 > = 0;
 
 #ifdef WINDOWS

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author jwrl
 // @Author trirop
 // @Created 2016-05-14
@@ -12,14 +12,14 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMatte2.fx
 //
-// The fractal generation component was first created by Robert Schütze (trirop) in GLSL
+// The fractal generation component was first created by Robert Schï¿½tze (trirop) in GLSL
 // sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better
 // suit its use in this effect.
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 3 August 2019 jwrl.
 // Corrected matte generation so that it remains stable without an input.
@@ -49,6 +49,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "Produces fractal patterns for background generation";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -77,28 +78,28 @@ sampler s_Matte = sampler_state { Texture = <Matte>; };
 
 float Opacity
 <
-   string Description = "Opacity";   
+   string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
 float Amount
 <
-   string Description = "Distortion";   
+   string Description = "Distortion";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
 
 float Rate
 <
-   string Description = "Speed";   
+   string Description = "Speed";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
 
 float StartPoint
 <
-   string Description = "Start point";   
+   string Description = "Start point";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.0;

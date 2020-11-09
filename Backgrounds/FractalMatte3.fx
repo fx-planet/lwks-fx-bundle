@@ -1,29 +1,20 @@
 // @Maintainer jwrl
 // @Released 2020-11-08
 // @Author jwrl
-// @Author baopao
-// @Created 2016-05-14
-// @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou_640.png
+// @Author trirop
+// @Created 2016-05-22
+// @see https://www.lwks.com/media/kunena/attachments/6375/Fractal3_640.png
 
 /**
- Lissajou sparkles is based on Sinusoidal lights, a semi-abstract pattern generator created
- for Mac and Linux systems by Lightworks user baopao.  This version adds either external
- video or a colour gradient background to the pattern.  That has meant that the range and
- type of some parameters were changed from baopao's original to allow their interactive
- adjustment in the edit viewer.
-
- NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
- A legacy version is available for users in that position.
+ Fractal matte 3 produces backgrounds generated from fractal patterns.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect LissajouSparkles.fx
+// Lightworks user effect FractalMatte3.fx
 //
-// Lissajou sparkles is based on Sinusoidal lights, a semi-abstract pattern generator
-// created for Mac and Linux systems by Lightworks user baopao.  That was in turn based
-// on the Lissajou code at http://glslsandbox.com/e#9996.0
-//
-// Windows conversion was carried out by Lightworks user jwrl.
+// The fractal generation component was first created by Robert Schï¿½tze (trirop) in GLSL
+// sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better
+// suit its use in this effect.
 //
 // Version history:
 //
@@ -35,39 +26,26 @@
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
-// Inverted speed setting.
 // Formatted the descriptive block so that it can automatically be read.
 //
 // Modified 29 September 2018 jwrl.
 // Added notes to header.
 //
-// Modified 31 May 2018 jwrl.
-// Changed Num description from "Number" to "Star number".
-// Changed Level description from "Intensity" to "Glow intensity".
-// Reversed direction of action of CentreX parameter.
-// Fixed default colours not displaying.
-// Performed general code cleanup to improve efficiency.
-//
 // Modified 8 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
 // code to be consistent with other Lightworks user effects.
 //
-// LW 14.5 update by jwrl 30 March 2018
-// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
-// care of in versions of LW higher than 14.0.  If using an older version under
-// Windows the Legacy version must be used.
-//
 // LW 14+ version by jwrl 12 February 2017
-// Category changed from "Generators" to "Mattes", SubCategory "Patterns" added.
+// SubCategory "Patterns" added.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Lissajou sparkles";
+   string Description = "Fractal matte 3";
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
-   string Notes       = "A pattern generator that creates coloured stars in Lissajou curves over a coloured background";
+   string Notes       = "Produces fractal patterns for background generation";
    bool CanSize       = false;
 > = 0;
 
@@ -77,214 +55,189 @@ int _LwksEffectInfo
 
 texture Inp;
 
-texture Bgd : RenderColorTarget;
+texture Matte : RenderColorTarget;
 
 //-----------------------------------------------------------------------------------------//
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
 sampler s_Input = sampler_state { Texture = <Inp>; };
-sampler s_Background = sampler_state { Texture = <Bgd>; };
+sampler s_Matte = sampler_state { Texture = <Matte>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float StarNumber
+float Opacity
 <
-   string Description = "Star number";
-   string Group = "Pattern";
+   string Description = "Opacity";
    float MinVal = 0.0;
-   float MaxVal = 400;
-> = 200;
+   float MaxVal = 1.0;
+> = 1.0;
 
-float Speed
+float FracOffs
 <
-   string Description = "Speed";
-   string Group = "Pattern";
+   string Description = "Fractal offset";
    float MinVal = 0.00;
    float MaxVal = 1.00;
-> = 0.50;
+> = 0.0;
 
-float Scale
+float FracRate
 <
-   string Description = "Scale";
-   string Group = "Pattern";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.33;
-
-float Level
-<
-   string Description = "Glow intensity";
-   string Group = "Pattern";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.50;
-
-float CentreX
-<
-   string Description = "Position";
-   string Group = "Pattern";
-   string Flags = "SpecifiesPointX";
+   string Description = "Fractal rate";
    float MinVal = 0.00;
    float MaxVal = 1.00;
 > = 0.5;
 
-float CentreY
+float4 Colour
 <
-   string Description = "Position";
-   string Group = "Pattern";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
+   string Description = "Mix colour";
+   string Group = "Colour";
+   bool SupportsAlpha = true;
+> = { 1.0, 0.77, 0.19, 1.0 };
 
-float ResX
+float ColourMix
 <
-   string Description = "Size";
-   string Group = "Pattern";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.01;
-   float MaxVal = 2.0;
-> = 0.4;
-
-float ResY
-<
-   string Description = "Size";
-   string Group = "Pattern";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.01;
-   float MaxVal = 2.0;
-> = 0.4;
-
-float SineX
-<
-   string Description = "Frequency";
-   string Group = "Pattern";
-   string Flags = "SpecifiesPointX";
+   string Description = "Mix level";
+   string Group = "Colour";
    float MinVal = 0.0;
-   float MaxVal = 12.0;
-> = 4.00;
+   float MaxVal = 1.0;
+> = 0.0;
 
-float SineY
+float HueParam
 <
-   string Description = "Frequency";
-   string Group = "Pattern";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 12.0;
-> = 8.00;
+   string Description = "Hue";
+   string Group = "Colour";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
 
-float4 fgdColour
+float SatParam
 <
-   string Description = "Colour";
-   string Group = "Pattern";
-   bool SupportsAlpha = false;
-> = { 0.85, 0.75, 0.0, 1.0 };
+   string Description = "Saturation";
+   string Group = "Colour";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
 
-float extBgd
+float Gain
 <
-   string Description = "External Video";
-   string Group = "Background";
+   string Description = "Gain";
+   string Group = "Luminance";
    float MinVal = 0.00;
+   float MaxVal = 4.00;
+> = 1.0;
+
+float Gamma
+<
+   string Description = "Gamma";
+   string Group = "Luminance";
+   float MinVal = 0.0;
+   float MaxVal = 4.00;
+> = 1.00;
+
+float Brightness
+<
+   string Description = "Brightness";
+   string Group = "Luminance";
+   float MinVal = -1.00;
    float MaxVal = 1.00;
-> = 0.00;
+> = 0.0;
 
-float4 topLeft
+float Contrast
 <
-   string Description = "Top Left";
-   string Group = "Background";
-   bool SupportsAlpha = false;
-> = { 0.375, 0.5, 0.75, 0.0 };
-
-float4 topRight
-<
-   string Description = "Top Right";
-   string Group = "Background";
-   bool SupportsAlpha = false;
-> = { 0.375, 0.375, 0.75, 0.0 };
-
-float4 botLeft
-<
-   string Description = "Bottom Left";
-   string Group = "Background";
-   bool SupportsAlpha = false;
-> = { 0.375, 0.625, 0.75, 0.0 };
-
-float4 botRight
-<
-   string Description = "Bottom Right";
-   string Group = "Background";
-   bool SupportsAlpha = false;
-> = { 0.375, 0.5625, 0.75, 0.0 };
+   string Description = "Contrast";
+   string Group = "Luminance";
+   float MinVal = 0.00;
+   float MaxVal = 4.00;
+> = 1.0;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
+#define PI_2     6.283185
+
+#define INVSQRT3 0.57735
+
+#define R_WEIGHT 0.2989
+#define G_WEIGHT 0.5866
+#define B_WEIGHT 0.1145
 
 float _Progress;
 
 //-----------------------------------------------------------------------------------------//
-// Shader
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_background (float2 uv : TEXCOORD, float2 xy : TEXCOORD1) : COLOR
+float4 ps_fractal (float2 xy : TEXCOORD) : COLOR
 {
-   float4 topRow = lerp (topLeft, topRight, uv.x);
-   float4 botRow = lerp (botLeft, botRight, uv.x);
-   float4 cField = lerp (topRow, botRow, uv.y);
+   float speed = _Progress * FracRate;
+   float4 retval = 1.0.xxxx;
+   float3 f = float3 (xy, FracOffs);
 
-   return lerp (cField, tex2D (s_Input, xy), extBgd);
+   for (int i = 0; i < 75; i++) {
+      f.xzy = float3 (1.3, 0.999, 0.7) * (abs ((abs (f) / dot (f, f) - float3 (1.0, 1.0, speed * 0.5))));
+   }
+
+   retval.rgb = f;
+
+   return retval;
 }
 
-float4 ps_main (float2 uv : TEXCOORD, float2 UV : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD, float2 xy : TEXCOORD1) : COLOR
 {
-   float4 fgdPat = fgdColour;
+   float4 Fgd    = tex2D (s_Input, xy);
+   float4 retval = tex2D (s_Matte, uv);
 
-   float2 xy = uv + float2 (0.5 - CentreX, CentreY - 0.5) * 2.0;
-   float2 position;
+   float luma   = dot (retval.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
+   float buffer = dot (Colour.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
 
-   float scale_X    = Scale * 3.0;
-   float scale_Y    = scale_X * ResY;
-   float sum        = 0.0;
-   float time       = _Progress * (1.0 - Speed) * 10.0;
-   float Curve      = SineX * 12.5;
-   float keyClip    = scale_X / ((19.0 - (Level * 14.0)) * 100.0);
-   float curve_step = 0.0;
-   float time_step;
+   buffer = saturate (buffer - 0.5);
+   buffer = 1 / (buffer + 0.5);
 
-   scale_X *= ResX;
+   float4 temp = Colour * luma * buffer;
 
-   for (int i = 0; i < StarNumber; ++i) {
-      time_step = (float (i) + time) / 5.0;
+   retval = lerp (retval, temp, ColourMix);
+   luma = (retval.r + retval.g + retval.b) / 3.0;
 
-      position.x = sin (SineY * time_step + curve_step) * scale_X;
-      position.y = sin (time_step) * scale_Y;
+   float RminusG = retval.r - retval.g;
+   float RminusB = retval.r - retval.b;
+   float GammVal = (Gamma > 1.0) ? Gamma : Gamma * 0.9 + 0.1;
+   float Hue_Val = acos ((RminusG + RminusB) / (2.0 * sqrt (RminusG * RminusG + RminusB * (retval.g - retval.b)))) / PI_2;
+   float Sat_Val = 1.0 - min (min (retval.r, retval.g), retval.b) / luma;
 
-      sum += keyClip / length (xy - position - 0.5.xx);
-      curve_step += Curve;
-      }
+   if (retval.b > retval.g) Hue_Val = 1.0 - Hue_Val;
 
-   fgdPat.rgb *= sum;
-   sum = saturate ((sum * 1.5) - 0.25);
+   Hue_Val = frac (Hue_Val + (HueParam * 0.5));
+   Sat_Val = saturate (Sat_Val * (SatParam + 1.0));
 
-   return lerp (tex2D (s_Background, UV), fgdPat, sum);
+   float Hrange = Hue_Val * 3.0;
+   float Hoffst = (2.0 * floor (Hrange) + 1.0) / 6.0;
+
+   buffer = INVSQRT3 * tan ((Hue_Val - Hoffst) * PI_2);
+   temp.x = (1.0 - Sat_Val) * luma;
+   temp.y = ((3.0 * (buffer + 1.0)) * luma - (3.0 * buffer + 1.0) * temp.x) / 2.0;
+   temp.z = 3.0 * luma - temp.y - temp.x;
+
+   retval = (Hrange < 1.0) ? temp.zyxw : (Hrange < 2.0) ? temp.xzyw : temp.yxzw;
+   temp   = (((pow (retval, 1.0 / GammVal) * Gain) + Brightness.xxxx - 0.5.xxxx) * Contrast) + 0.5.xxxx;
+   retval = lerp (Fgd, temp, Opacity);
+
+   retval.a = Fgd.a;
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
-//  Techniques
+// Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique LissajouSparkles
+technique FractalMatte3
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_background (); }
+   < string Script = "RenderColorTarget0 = Matte;"; >
+   { PixelShader = compile PROFILE ps_fractal (); }
 
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }

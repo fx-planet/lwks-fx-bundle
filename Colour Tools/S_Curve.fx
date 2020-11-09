@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jMovie
 // @Created 2011-05-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/SCurve_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-08-05
 // Clamped video levels on entry to and exit from the effect.  Floating point processing
@@ -53,6 +53,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Colour Tools";
    string Notes       = "Adjusts RGB or HSV levels to give a smooth S-curve by means of fader controls";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

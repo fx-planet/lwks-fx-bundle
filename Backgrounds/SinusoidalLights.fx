@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author baopao
 // @Created 2016-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/SineLights_640.png
@@ -21,8 +21,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Changed subcategory.
@@ -50,6 +50,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "A pattern generator that creates stars in Lissajou curves";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -189,8 +190,8 @@ float4 ps_main (float2 uv : TEXCOORD) : COLOR
 
 technique SinglePass
 {
-   pass Single_Pass 
-   { 
-      PixelShader = compile PROFILE ps_main (); 
+   pass Single_Pass
+   {
+      PixelShader = compile PROFILE ps_main ();
    }
 }

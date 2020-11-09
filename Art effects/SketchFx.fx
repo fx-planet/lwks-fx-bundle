@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-11
+// @Released 2020-11-08
 // @Author khaver
 // @Created 2012-08-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Sketch_640.png
@@ -16,6 +16,9 @@
 // Lightworks user effect SketchFx.fx
 //
 // Version history:
+//
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Modified by LW user jwrl 11 July 2020.
 // Changed addressing from Clamp to ClampToEdge for cross-platform compatibility. I'm
@@ -55,6 +58,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Art Effects";
    string Notes       = "Converts any standard video source or graphic to a simple sketch";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -243,7 +247,7 @@ float4 threshold_main (float2 xy1 : TEXCOORD1) : COLOR
 
    if (Swap) src1.rgb = (srcLum <= Level) ? LightColor.rgb : DarkColor.rgb;
    else src1.rgb = (srcLum > Level) ? LightColor.rgb : DarkColor.rgb;
-      
+
    if (InvBack) src1 = 1.0.xxxx - src1;
 
    return src1;

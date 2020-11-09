@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author rakusan/windsturm
 // @Created 2012-05-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxSpinBlur_640.png
@@ -23,8 +23,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Modified jwrl 2020-11-09:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified by LW user jwrl 23 December 2018.
 // Added creation date.
@@ -50,6 +50,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "This applies a rotary blur with adjustable aspect ratio and centring";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

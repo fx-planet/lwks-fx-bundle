@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author baopao
 // @Created 2015-11-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Unpremultiply_640.png
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Update 23 December 2018 jwrl.
 // Converted to version 14.5 and up.
@@ -46,6 +46,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Removes the hard outline you can get with some blend effects";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -72,12 +73,12 @@ sampler s_Input = sampler_state
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 main (float2 uv : TEXCOORD1) : COLOR 
+float4 main (float2 uv : TEXCOORD1) : COLOR
 {
     float4 color = tex2D (s_Input, uv);
 
     color.rgb /= color.a;
-    
+
     return color;
 }
 

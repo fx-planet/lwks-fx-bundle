@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author rhinox202
 // @Created 2012-11-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Border_640.png
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Reformatted header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Changed category and subcategory.
@@ -41,6 +41,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Border and crop";
    string Notes       = "Creates a coloured hard border over a cropped image.  The border is created inside the image being bordered";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -51,8 +52,8 @@ texture Input;
 
 sampler2D TextureSampler = sampler_state {
    Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Point;
    MagFilter = Linear;
    MipFilter = Linear;

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2016-06-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/SuperBlur_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Modified jwrl 2020-11-09:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified by LW user jwrl 1 July 2018.
 // Doubled the values of the radii used to calculate the blur to allow maximum blur to
@@ -45,6 +45,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "This is an extremely smooth blur with two ranges, standard and super";
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

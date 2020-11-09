@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author gr00by
 // @Created 2016-06-14
 // @OriginalAuthor "Mark Ransom"
@@ -19,8 +19,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-08-05
 // Clamped video levels on exit from the effect.  Floating point processing can result
@@ -50,6 +50,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Colour Tools";
    string Notes       = "A quick method to correct hue errors on archival NTSC media and the like";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

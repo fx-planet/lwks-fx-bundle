@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-09
 // @Author jwrl
 // @Created 2020-05-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/RoundedCrop_640.png
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-09 jwrl:
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -25,6 +25,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Border and crop";
    string Notes       = "A bordered, drop shadowed crop with rounded corners.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

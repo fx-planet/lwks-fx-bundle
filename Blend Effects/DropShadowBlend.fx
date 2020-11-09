@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2018-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowPlus_640.png
@@ -25,8 +25,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Updated "Source" settings.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Update 11 July 2020 jwrl.
 // Added a delta key to separate blended effects from the background.  THIS MAY BREAK
@@ -72,6 +72,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Drop shadow and border generator for text graphics with blend modes";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

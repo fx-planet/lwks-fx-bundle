@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2016-11-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FloatImages_640.png
@@ -19,8 +19,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-09-29:
-// Reformatted the effect header.
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
 //
 // Update 23 December 2018 jwrl.
 // Converted to version 14.5 and up.
@@ -59,6 +59,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Generates up to four coloured outlines from a foreground graphic";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -81,49 +82,49 @@ texture Bg_3 : RenderColorTarget;
 #endif
 
 sampler s_Fgnd    = sampler_state {
-        Texture   = <Fg>;
+   Texture   = <Fg>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
-        };
+};
 
 sampler s_Bgnd    = sampler_state {
-        Texture   = <Bg>;
+   Texture   = <Bg>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
-        };
+};
 
 sampler s_Bgnd_1  = sampler_state {
-        Texture   = <Bg_1>;
+   Texture   = <Bg_1>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
-        };
+};
 
 sampler s_Bgnd_2  = sampler_state {
-        Texture   = <Bg_2>;
+   Texture   = <Bg_2>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
-        };
+};
 
 sampler s_Bgnd_3  = sampler_state {
-        Texture   = <Bg_3>;
+   Texture   = <Bg_3>;
 	AddressU  = Mirror;
 	AddressV  = Mirror;
 	MinFilter = Linear;
 	MagFilter = Linear;
 	MipFilter = Linear;
-        };
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters

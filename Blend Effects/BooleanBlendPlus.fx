@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-03
+// @Released 2020-11-08
 // @Author jwrl
 // @Created 2020-02-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/BooleanBlendPlus_640.png
@@ -36,6 +36,9 @@
 //
 // Version history:
 //
+// Update 2020-11-08 jwrl.
+// Added CanSize switch for 2021 support.
+//
 // Modified jwrl 2020-07-03:
 // Changed alpha mode settings to a single int enumeration instead of two bools.
 // Added a background input and the blend shaders to support that input.
@@ -51,6 +54,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
    string Notes       = "Combines two images using an analogue equivalent of boolean logic then blends the result over background video.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -80,7 +84,7 @@ sampler s_Foreground = sampler_state { Texture = <Fg>; };
 int Logic
 <
    string Description = "Boolean function";
-   string Enum = "AND,OR,NAND,NOR,XOR,Mask B with A"; 
+   string Enum = "AND,OR,NAND,NOR,XOR,Mask B with A";
 > = 0;
 
 int SetTechnique
@@ -107,8 +111,8 @@ float Amount_A
 int Alpha_A
 <
    string Group = "A video";
-   string Description = "Transparency"; 
-   string Enum = "Standard,Premultiply,Alpha from RGB"; 
+   string Description = "Transparency";
+   string Enum = "Standard,Premultiply,Alpha from RGB";
 > = 1;
 
 float Amount_B
@@ -122,8 +126,8 @@ float Amount_B
 int Alpha_B
 <
    string Group = "B video";
-   string Description = "Transparency"; 
-   string Enum = "Standard,Premultiply,Alpha from RGB"; 
+   string Description = "Transparency";
+   string Enum = "Standard,Premultiply,Alpha from RGB";
 > = 1;
 
 //-----------------------------------------------------------------------------------------//

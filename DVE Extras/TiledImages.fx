@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author windsturm
 // @Created 2012-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTile_640.png
@@ -26,8 +26,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize definition to support original media resolution.
 //
 // Modified jwrl 2020-04-12:
 // Changed clamp addressing to ClampToEdge for compatibility reasons.
@@ -54,6 +54,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
    string Notes       = "Creates tile patterns from the image, which can be rotated";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

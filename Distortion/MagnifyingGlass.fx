@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author schrauber
 // @Created 2017-01-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/magnifying_glass_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
@@ -37,6 +37,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Distortion";
    string Notes       = "Similar in operation to a bulge effect, but performs a flat linear zoom";
+   bool CanSize       = true;
 > = 0;
 
 

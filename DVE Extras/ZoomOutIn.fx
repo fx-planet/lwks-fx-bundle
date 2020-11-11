@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author schrauber
 // @Created 2016-07-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/zoom-out-in_640.png
@@ -18,8 +18,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize definition to support original media resolution.
 //
 // Modified jwrl 2018-12-23:
 // Changed subcategory.
@@ -42,6 +42,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
    string Notes       = "This is an effect which allows zooming without going outside the frame boundary";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

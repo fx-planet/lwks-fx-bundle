@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author jwrl
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_640.png
@@ -24,8 +24,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize definition to support original media resolution.
 //
 // Modified 16 April 2020 jwrl.
 // Explicitly set SupportsAlpha flag for the border colours to false.
@@ -58,6 +58,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
    string Notes       = "Background, foreground and the overall effect each have independent DVE adjustment.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

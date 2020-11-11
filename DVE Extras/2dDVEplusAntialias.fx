@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-11
 // @Author schrauber
 // @Author jwrl
 // @Author LWKS Software Ltd
@@ -46,8 +46,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize definition to support original media resolution.
 //
 // Modified jwrl 2020-04-12:
 // Added linear filtering to s_Foreground to improve antialiasing.
@@ -90,6 +90,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
    string Notes       = "A 2D DVE with antialiasing that fully respects foreground, background and drop shadow transparency";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

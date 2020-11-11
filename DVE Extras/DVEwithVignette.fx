@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author jwrl
 // @Created 2017-05-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_vignette_640.png
@@ -28,8 +28,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize definition to support original media resolution.
 //
 // Modified jwrl 2020-04-12:
 // Added linear filtering to s_Background to improve smoothness.
@@ -69,6 +69,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
    string Notes       = "A simple DVE with circular, diamond or square shaped masking";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author khaver
 // @Created 2011-06-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Perspective_640.png
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
@@ -47,6 +47,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Distortion";
    string Notes       = "A neat, simple effect for adding a perspective illusion to a flat plane";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

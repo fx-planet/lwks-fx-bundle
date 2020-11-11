@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author jwrl
 // @Created 2018-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlagWave_640.png
@@ -22,8 +22,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 2018-12-23 jwrl:
 // Changed subcategory.
@@ -42,6 +42,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Distortion";
    string Notes       = "Simulates a waving flag.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

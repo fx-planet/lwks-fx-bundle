@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author jwrl
 // @Created 2017-04-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Deco_DVE_640.png
@@ -24,8 +24,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize definition to support original media resolution.
 //
 // Modified jwrl 2018-12-23:
 // Changed subcategory.
@@ -59,6 +59,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
    string Notes       = "Art Deco flash lines are overlaid over a DVE effect, which uses a second DVE to resize the result.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

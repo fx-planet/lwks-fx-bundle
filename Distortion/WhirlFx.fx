@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author schrauber
 // @Created 2017-11-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/whirl20171106_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Changed category.
@@ -40,6 +40,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Distortion";
    string Notes       = "Simulates what happens when water empties out of a sink";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author windsturm
 // @OriginalAuthor "Evan Wallace"
 // @Created 2017-05-03
@@ -48,8 +48,8 @@ THE SOFTWARE.
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Formatted the descriptive block so that it can automatically be read.
@@ -68,6 +68,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Distortion";
    string Notes       = "Warps one rectangle to another using a perspective transform";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author schrauber
 // @Created 2016-03-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/RegionalZoom_640.jpg
@@ -16,8 +16,8 @@
 //
 // Version history.
 //
-// Update 2020-09-26 jwrl.
-// Updated header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Update 23 December 2018 jwrl:
 // Added creation date.
@@ -38,6 +38,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Distortion";
    string Notes       = "This is designed to allow you to apply localised distortion to any region of the frame";
+   bool CanSize       = true;
 > = 0;
 
 

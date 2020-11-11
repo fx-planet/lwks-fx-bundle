@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-10-24
+// @Released 2020-11-11
 // @Author schrauber
 // @Created 2020-10-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/Liquify_640.png
@@ -18,6 +18,9 @@
 // Lightworks user effect  Liquify.fx
 //
 // Version history:
+//
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Optimised 2020-10-23 by jwrl.
 // The visual impact of the effect is unchanged after the optimisation.  This has been
@@ -39,6 +42,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Distortion";
    string Notes       = "Distorts the image in a soft liquid manner";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -191,4 +195,3 @@ technique Liquify
 {
    pass P_1  { PixelShader = compile PROFILE ps_main (); }
 }
-

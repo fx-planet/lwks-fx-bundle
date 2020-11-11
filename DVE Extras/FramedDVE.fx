@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author jwrl
 // @Created 2018-11-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Framed_DVE_640.png
@@ -22,8 +22,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize definition to support original media resolution.
 //
 // Modified jwrl 2018-12-23:
 // Changed subcategory.
@@ -53,6 +53,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
    string Notes       = "Creates a textured frame around the foreground image and resizes and positions the result.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

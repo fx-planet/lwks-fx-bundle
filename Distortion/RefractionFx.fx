@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author windsturm
 // @OriginalAuthor "Ian McEwan"
 // @Created 2012-10-25
@@ -46,8 +46,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 2018-12-23 jwrl:
 // Changed subcategory.
@@ -76,6 +76,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Distortion";
    string Notes       = "Simulates the distortion effect of an image seen through textured glass";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

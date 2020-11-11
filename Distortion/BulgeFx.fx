@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-26
+// @Released 2020-11-11
 // @Author schrauber
 // @Created 2016-03-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/bulge-2018_640.png
@@ -21,8 +21,8 @@
 //
 // Version history:
 //
-// Update 2020-09-26 jwrl.
-// Updated the header block.
+// Update 2020-11-11 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Update 23 Dec 2018 by LW user jwrl:
 // Changed category.
@@ -43,6 +43,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Distortion";
    string Notes       = "This effect allows a variable area of the frame to have a concave or convex bulge applied";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

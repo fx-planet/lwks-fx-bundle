@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-13
 // @Author baopao
 // @Created 2013-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ale_ChromaKey_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 23 Dec 2018 by user jwrl:
 // Added creation date.
@@ -45,6 +45,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "A sophisticated chromakey that is particularly effective on fine detail";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-12
 // @Author khaver
 // @Created 2014-07-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/GradNDFilter_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Added creation date.
@@ -40,6 +40,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Filters";
    string Notes       = "A tintable neutral density filter which can have its blend modes adjusted";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

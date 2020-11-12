@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-30
+// @Released 2020-11-12
 // @Author jwrl
 // @Created 2020-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmLab_640.png
@@ -45,6 +45,9 @@
 //
 // Version history:
 //
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
+//
 // Modified 2020-07-30 jwrl.
 // Rolled both HSL functions into in-line code in shader.
 // Added range limiting to the hue.  Theoretically an issue, it's probably unnecessary.
@@ -57,6 +60,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Film Effects";
    string Notes       = "This is a colour film processing lab for video";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

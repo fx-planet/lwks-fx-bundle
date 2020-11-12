@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-12
 // @Author khaver
 // @Author toninoni
 // @Created 2018-06-12
@@ -25,8 +25,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2018-12-23:
 // Changed subcategory.
@@ -40,6 +40,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Filters";
    string Notes       = "Basic lens flare";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

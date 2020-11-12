@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-13
 // @Author khaver
 // @Released 2016-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeltaMask_640.png
@@ -15,9 +15,9 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
-// 
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
+//
 // Modified 3 September 2020 by user jwrl:
 // Corrected "Notes" text.
 // Corrected the descriptive text, which related to an entirely different effect.
@@ -44,6 +44,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "This delta mask effect removes the background from the foreground.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

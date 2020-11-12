@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-12
 // @Author baopao
 // @Created 2014-07-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SkinSmooth_640.png
@@ -17,8 +17,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 30 May 2018 jwrl.
 // Corrected a potential divide by zero bug when using the Amount parameter.
@@ -56,6 +56,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Filters";
    string Notes       = "Smooths flesh tones to reduce visible skin blemishes";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

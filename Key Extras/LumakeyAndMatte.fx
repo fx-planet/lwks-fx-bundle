@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-13
 // @Author jwrl
 // @Created 2018-06-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumaMatte_640.png
@@ -22,8 +22,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 22 Feb 2019 by user jwrl:
 // Modified the key generation so that selecting key alpha bypasses the key clip.
@@ -51,6 +51,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "Generates a key from video, fills it with colour or other video and generates a border and/or drop shadow.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

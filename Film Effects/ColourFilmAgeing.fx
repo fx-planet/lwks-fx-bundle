@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-12
 // @Author jwrl
 // @Created 2017-02-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColourFilmAge_640.png
@@ -44,8 +44,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 23 December 2018 jwrl.
 // Removed spurious debug lines from ps_weave() causing uncontrolled flicker.
@@ -74,6 +74,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Film Effects";
    string Notes       = "This effect comprehensively mimics the aging of colour film stock";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

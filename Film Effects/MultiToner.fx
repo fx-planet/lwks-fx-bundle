@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-03
+// @Released 2020-11-12
 // @Author jwrl
 // @Created 2020-08-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/MultiToner_640.png
@@ -32,7 +32,8 @@
 //
 // Version history:
 //
-// Built 2020-08-03 jwrl.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,6 +43,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Film Effects";
    string Notes       = "Select from sepia, selenium, gold, copper and ferro toners to simulate darkroom processes";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -262,4 +264,3 @@ technique MultiToner_5
    pass P_1
    { PixelShader = compile PROFILE ps_main_5 (); }
 }
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-12
 // @Author jwrl
 // @Created 2019-01-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeBlemish_640.png
@@ -20,8 +20,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2019-01-31:
 // Relabelled "White levels" to "White clip" and changed the direction of operation.
@@ -44,6 +44,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Filters";
    string Notes       = "Smooths skin tones to reduce visible skin blemishes using a radial blur";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

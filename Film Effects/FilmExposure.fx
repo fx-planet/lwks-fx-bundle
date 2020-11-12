@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-12
 // @Author jwrl
 // @Author abelmilanes
 // @Created 2017-03-04
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 16 April 2020 jwrl.
 // Removed buggy "all()" Cg expression.  Both "all()" and "any()" suffer from this Cg
@@ -64,6 +64,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Film Effects";
    string Notes       = "Simulates exposure adjustment using a Cineon profile";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

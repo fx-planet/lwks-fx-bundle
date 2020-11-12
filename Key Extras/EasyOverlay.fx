@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-13
 // @Author hugly
 // @Author schrauber
 // @Created 2019-08-09
@@ -22,8 +22,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 2020-06-15 jwrl:
 // Removed redundant TEXCOORD3 input to oa_main().
@@ -35,6 +35,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "For overlays where luminance represents transparency";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-13
 // @Author jwrl
 // @Created 2016-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCkey_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 2018-12-23 jwrl:
 // Reformatted the effect description for markup purposes.
@@ -51,6 +51,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "An extremely simple chromakeyer with feathering and spill reduction";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

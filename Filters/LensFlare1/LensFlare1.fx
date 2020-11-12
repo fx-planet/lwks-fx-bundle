@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-12
 // @Author khaver
 // @Author mu6k
 // @Author Icecool
@@ -41,8 +41,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-12 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2018-12-23:
 // Changed subcategory.
@@ -66,6 +66,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Filters";
    string Notes       = "Multicolor lens flare with secondary reflections and animated rays";
+   bool CanSize       = true;
 > = 0;
 
 #ifdef WINDOWS

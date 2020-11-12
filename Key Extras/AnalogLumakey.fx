@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-13
 // @Author jwrl
 // @Created 2019-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/AnalogLumakey_640.png
@@ -30,8 +30,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,6 +41,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "A digital keyer which behaves in a similar way to an analogue keyer";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

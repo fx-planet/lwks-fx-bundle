@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-13
 // @Author jwrl
 // @Created 2016-09-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyPlus_640.png
@@ -20,8 +20,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 23 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -70,6 +70,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Key Extras";
    string Notes       = "Chromakey with a comprehensive range of key fine tuning adjustments, masks and cropping.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-13
 // @Author khaver
 // @Created 2011-05-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromaticAbberationFixer_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Amended header block.
+// Update 2020-11-13 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -46,6 +46,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Repair tools";
    string Notes       = "Generates or removes chromatic aberration";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

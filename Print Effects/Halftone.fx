@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-13
 // @Author windsturm
 // @Created 2012-12-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxHalfTone2_640.png
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -43,6 +43,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Print Effects";
    string Notes       = "Simulates the dot pattern used in a black and white half-tone print image";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

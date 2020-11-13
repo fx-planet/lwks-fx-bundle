@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-06-22
+// @Released 2020-11-13
 // @Author schrauber
 // @Created 2020-06-07
 // @see: https://www.lwks.com/media/kunena/attachments/6375/QuadDynamic_640.png
@@ -30,6 +30,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuadScreenZ.fx
+//
+// Version history:
+//
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,6 +44,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Multiscreen Effects";
    string Notes       = "Revised version of 7 June 2020";
+   bool CanSize       = true;
 > = 0;
 
 
@@ -628,5 +634,3 @@ technique tech_filterAlpha
    pass P_5_4  < string Script = "RenderColorTarget0 = renderMix;";   > { PixelShader = compile PROFILE  ps_AlphaBlur2 (RADIUS_3b, false); }
    pass P_5_5  { PixelShader = compile PROFILE  ps_AlphaBlur2 (RADIUS_4b, true); } //  If necessary, the alpha values are applied to the RGB values
 }
-
-

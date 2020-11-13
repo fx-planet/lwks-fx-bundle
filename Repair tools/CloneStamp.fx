@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-13
 // @Author nouanda
 // @Created 2014-10-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/CloneStamp_640.png
@@ -24,8 +24,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Amended header block.
+// Update 2020-11-13 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -73,6 +73,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Repair tools";
    string Notes       = "A means of cloning sections of the image into other sections similarly to art software";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

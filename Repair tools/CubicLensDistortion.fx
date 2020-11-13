@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-13
 // @Author brdloush
 // @Created 2013-02-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/CubicLensDistortion_640.png
@@ -56,8 +56,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Amended header block.
+// Update 2020-11-13 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -88,6 +88,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Repair tools";
    string Notes       = "Can be used for reducing fish-eye distortion with wide angle lenses";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

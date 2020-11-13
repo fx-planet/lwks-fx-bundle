@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-04
+// @Released 2020-11-13
 // @Author jwrl
 // @Created 2020-06-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadSplitPlus_640.png
@@ -32,6 +32,9 @@
 //
 // Version history:
 //
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
+//
 // Modified 2020-07-04 jwrl:
 // Allow individual crop/size settings to be ungrouped from A group settings.
 //
@@ -46,6 +49,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Multiscreen Effects";
    string Notes       = "Produces four split screen images with borders over an optional daisy-chained background";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

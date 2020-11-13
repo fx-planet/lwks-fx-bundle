@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-13
 // @Author windsturm
 // @Author jwrl
 // @Created 2012-05-23
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 5 December 2018 jwrl.
 // Added creation date.
@@ -59,6 +59,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Print Effects";
    string Notes       = "This simulates the star pattern and hard contours used to create tonal values in a Manga half-tone image";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

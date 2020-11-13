@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-13
 // @Author khaver
 // @Created 2011-12-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Polymask_640.png
@@ -14,8 +14,8 @@
 //
 // Version history.
 //
-// Update 2020-09-27 jwrl.
-// Revised header block.
+// Update 2020-11-13 jwrl.
+// Added Cansize switch for LW 2021 support.
 //
 // Modified 2 December 2018 jwrl.
 // Changed subcategory.
@@ -37,6 +37,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Polymasks";
    string Notes       = "A four sided adjustable mask with feathered edges and optional background colour";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

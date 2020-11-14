@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-02-29
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-02-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/AutoMask_640.png
@@ -17,6 +17,11 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect AutoMask.fx
+//
+// Version history:
+//
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -26,6 +31,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Simple tools";
    string Notes       = "Masks the background using the foreground layer.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -98,4 +104,3 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 //-----------------------------------------------------------------------------------------//
 
 technique AutoMask { pass P_1 { PixelShader = compile PROFILE ps_main (); } }
-

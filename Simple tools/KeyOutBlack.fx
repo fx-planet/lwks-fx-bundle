@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-01-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/KeyOutBlack_640.png
@@ -33,8 +33,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 2020-06-15 jwrl:
 // Changed "Black offset" in Offset parameter to read "Black clip".
@@ -52,6 +52,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Simple tools";
    string Notes       = "This generates keys from absolute (super) black";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

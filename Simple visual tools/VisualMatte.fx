@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-15
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-07-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/VisualMatte_640.png
@@ -15,7 +15,8 @@
 //
 // Version history:
 //
-// Built 2020-07-15 by jwrl.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -25,6 +26,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Simple visual tools";
    string Notes       = "A simple crop tool that can be set up visually over a flat colour background.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

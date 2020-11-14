@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2018-03-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flip_Flop_640.png
@@ -17,8 +17,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Modified header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 4 January 2020 by user jwrl:
 // Renamed subcategory to "Simple tools", changed notes to be more explicit.
@@ -44,6 +44,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Simple tools";
    string Notes       = "Rotates video by 180 degrees.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

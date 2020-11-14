@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2019-05-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FastBleachBypassRev_640.png
@@ -16,6 +16,9 @@
 // version is all original and designed from first principles.
 //
 // Version history:
+//
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-09-29
 // Clamped video levels on entry to and exit from the effect.  Floating point processing
@@ -36,6 +39,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Simple tools";
    string Notes       = "Mimics the contrast and saturation changes caused by skipping film bleach processing";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

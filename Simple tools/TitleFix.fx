@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2019-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/TitleFix_640.png
@@ -24,8 +24,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Modified header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 2020-07-02 jwrl:
 // Changed the gaussian blur default to zero to bypass the gaussian blur.
@@ -41,6 +41,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Simple tools";
    string Notes       = "Enhances Lightworks titles when they are used with DVEs and other effects";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

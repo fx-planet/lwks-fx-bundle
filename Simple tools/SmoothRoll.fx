@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-07
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-01-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/SmoothRoll_640.png
@@ -17,8 +17,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Modified header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 6 January 2020 by user jwrl:
 // Changed blur from linear to a bi-directional 6 tap gaussian blur.
@@ -31,6 +31,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Simple tools";
    string Notes       = "Directionally blurs a roll or crawl to smooth its motion";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

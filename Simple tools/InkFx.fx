@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-14
 // @Author "Nicholas Carroll"
 // @Created 2016-05-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/INK_640.png
@@ -25,8 +25,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Modified header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 14 Jan 2020 by user jwrl:
 // Changed subcategory from "Key Extras" to "Simple tools".
@@ -55,6 +55,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Simple tools";
    string Notes       = "INK is a quick, simple and effective proportionate colour difference keyer";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

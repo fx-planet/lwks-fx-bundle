@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-14
 // @Maintainer jwrl
 // @Created 2020-04-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Simple_star_640.png
@@ -38,8 +38,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Modified header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 2020-04-12 jwrl
 // Explicitly defined linear filtration in target samplers.  This fixes a problem with
@@ -53,6 +53,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Simple tools";
    string Notes       = "Creates a single rotatable star glint, with 4, 5, 6, 7 or 8 arms";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

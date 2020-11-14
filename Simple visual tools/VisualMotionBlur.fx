@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-10
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-07-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/VisMotionBlur_640.png
@@ -15,6 +15,9 @@
 //
 // Version history:
 //
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
+//
 // Modified 2020-07-10 jwrl.
 // Corrected cross-platform discrepancy in float/float2 calculation in distance().
 // Fully commented the effect (finally!!!)
@@ -27,6 +30,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Simple visual tools";
    string Notes       = "A directional blur that can be quickly set up by visually dragging a central pin point.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -150,4 +154,3 @@ technique VisualMotionBlur
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-02
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-08-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/TruerSepia_640.png
@@ -49,7 +49,8 @@
 //
 // Version history:
 //
-// Built 2020-08-01 jwrl.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,6 +60,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Simple tools";
    string Notes       = "This produces an adjustable sepia tone that matches the process in real filmstocks";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

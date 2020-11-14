@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-14
 // @Author gr00by
 // @OriginalAuthor LWKS Software Ltd
 // @Created 2016-11-26
@@ -18,8 +18,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 8 January 2020 jwrl.
 // Changed subcategory (again)!
@@ -48,6 +48,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Simple visual tools";
    string Notes       = "This is a quick simple cropping tool that you can set up by dragging corner pins around on the screen";
+   bool CanSize       = true;
 > = 0;
 
 float _OutputAspectRatio;

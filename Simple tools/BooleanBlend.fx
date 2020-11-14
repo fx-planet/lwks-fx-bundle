@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-02-25
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-02-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/BooleanBlend_640.png
@@ -21,6 +21,11 @@
 // from my private original are the addition of NOR logic and the definition of "Category",
 // "Subcategory" and "Notes".  It was originally categorised as "User" with no subcategory
 // or notes, since the latter two weren't supported when it was written.
+//
+// Version history:
+//
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -30,6 +35,7 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Simple tools";
    string Notes       = "Combines two images with transparency using boolean logic.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -154,4 +160,3 @@ technique OR   { pass P_1 { PixelShader = compile PROFILE ps_OR (); } }
 technique NAND { pass P_1 { PixelShader = compile PROFILE ps_NAND (); } }
 technique NOR  { pass P_1 { PixelShader = compile PROFILE ps_NOR (); } }
 technique XOR  { pass P_1 { PixelShader = compile PROFILE ps_XOR (); } }
-

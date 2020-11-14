@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-05-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Mirrors_640.png
@@ -21,8 +21,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Modified header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -32,6 +32,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Simple tools";
    string Notes       = "Creates mirrored top/bottom or left/right images.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

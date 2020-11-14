@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-27
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-04-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/RadialGrad_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-27 jwrl.
-// Modified header block.
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 2020-05-15 - jwrl.
 // Simplified code generally.
@@ -35,6 +35,7 @@ int _LwksEffectInfo
    string Category    = "Mattes";
    string SubCategory = "Simple tools";
    string Notes       = "Creates a colour field with a radial gradiant";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

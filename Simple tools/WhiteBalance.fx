@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-04-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhiteBalance_640.png
@@ -16,6 +16,9 @@
 //
 // Version history:
 //
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
+//
 // Modified jwrl 2020-09-29
 // Clamped video levels on exit from the effect.  Floating point processing can result
 // in video level overrun which can impact exports poorly.
@@ -28,6 +31,7 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Simple tools";
    string Notes       = "A simple black and white balance utility";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

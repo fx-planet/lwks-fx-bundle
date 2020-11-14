@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-08
+// @Released 2020-11-14
 // @Author jwrl
 // @Created 2020-07-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/VisualQuad_640.png
@@ -38,6 +38,9 @@
 //
 // Version history:
 //
+// Updated 2020-11-14 jwrl.
+// Added CanSize switch for LW 2021 support.
+//
 // Modified 2020-07-08 jwrl.
 // Placed the border settings immediately under the opacity settings.  This was done to
 // give the channel settings the lowest priority in the UI.
@@ -49,8 +52,9 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Visual quad split";
    string Category    = "DVE";
-   string SubCategory = "Ss";
+   string SubCategory = "Simple visual tools";
    string Notes       = "Produces four split screen images with borders using visual dragging to set size, crop and position";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -546,4 +550,3 @@ technique VisualQuadSplit
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

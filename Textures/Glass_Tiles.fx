@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author khaver
 // @Created 2011-06-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/GlassTiles_2018.png
@@ -14,14 +14,15 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 7 December 2018 jwrl.
 // Added creation date.
 // Changed subcategory.
 //
-// GitHub-relevant modification, 18 April 2018 schrauber
+// Modified 18 April 2018 schrauber
+// GitHub-relevant modification.
 //
 // Modified 7 April 2018 jwrl.
 // Added authorship and description information for GitHub, and reformatted the original
@@ -41,6 +42,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Textures";
    string Notes       = "Breaks the image into glass tiles";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

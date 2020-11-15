@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author khaver
 // @Created 2011-05-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/Shrink16_235_640.png
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified by LW user jwrl 6 December 2018.
 // Added creation date.
@@ -36,6 +36,7 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Technical";
    string Notes       = "Shrinks full gamut RGB signals to broadcast legal video";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

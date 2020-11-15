@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2019-04-10
+// @Released 2019-11-15
 // @Author jwrl
 // @Created 2019-04-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightningFlash_640.png
@@ -7,7 +7,7 @@
 
 /**
  As the name says, this is a lightning flash effect.  The number of flash cycles can be
- adjusted from one to five and the flash duration can bet set from one to three frames.
+ adjusted from one to five and the flash duration can be set from one to three frames.
  A colour cast can be added to the flash - blue for high energy, purple for even higher
  energy would probably be good - and the duration of the fade back to normal can be set
  from two to thirty frames.  Although decimal numbers of frames can be entered they will
@@ -26,7 +26,10 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LightningFlash.fx
 //
-// Original version - no amendments (yet).
+// Version history:
+//
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,6 +39,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Special Effects";
    string Notes       = "Simulates a high energy lightning flash at the cut point";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -129,4 +133,3 @@ technique Lightning
    pass P_1
    { PixelShader = compile PROFILE ps_main (); }
 }
-

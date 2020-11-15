@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2018-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lower3rdA_640.png
@@ -18,8 +18,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 26 December 2018 jwrl.
 // Formatted description for md.
@@ -50,6 +50,7 @@ int _LwksEffectInfo
    string Category    = "Text";
    string SubCategory = "User Lower 3rds";
    string Notes       = "Moves a coloured bar from the edge of screen and lowers or raises it to reveal text";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

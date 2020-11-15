@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2020-08-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/BinocularMask_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -26,6 +26,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Special Effects";
    string Notes       = "Creates the classic binocular effect";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

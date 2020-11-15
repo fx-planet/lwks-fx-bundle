@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2018-08-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/RandomSwitch_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 6 December 2018 jwrl.
 // Changed category and subcategory.
@@ -35,23 +35,8 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Switches";
    string Notes       = "Does a pseudo random switch between two inputs.";
+   bool CanSize       = true;
 > = 0;
-
-//-------------------------------------------------------------------------------------//
-// Preamble - sets version flag
-//-------------------------------------------------------------------------------------//
-
-#ifdef WINDOWS
-#define LW_14_5_PLUS
-#endif
-
-#ifdef LINUX
-#define LW_14_5_PLUS
-#endif
-
-#ifdef OSX
-#define LW_14_5_PLUS
-#endif
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -100,7 +85,7 @@ float Random
 
 float _Progress;
 
-#ifdef LW_14_5_PLUS
+#ifdef _LENGTHFRAMES
 
 float _LengthFrames;
 

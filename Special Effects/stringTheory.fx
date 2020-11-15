@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-15
 // @Author khaver
 // @Created 2018-08-01
 // @OriginalAuthor Martijn Steinrucken 2018
@@ -26,8 +26,9 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.  Since it's set to false because there is no
+// input it's here just for consistency.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -43,6 +44,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Special Effects";
    string Notes       = "You really have to try this to see what it does";
+   bool CanSize       = false;
 > = 0;
 
 #ifdef WINDOWS

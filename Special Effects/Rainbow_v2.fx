@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-08-12
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2020-08-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rainbow_v_2_640.png
@@ -36,6 +36,9 @@
 //
 // Version history:
 //
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
+//
 // Modified jwrl 2020-08-12:
 // Improved width and falloff calculations for the secondary rainbow.
 // Tightened mask recovery code.
@@ -49,6 +52,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Special Effects";
    string Notes       = "Here's why there are so many songs about rainbows, frog";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

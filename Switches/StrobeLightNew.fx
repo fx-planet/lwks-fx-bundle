@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2018-03-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/NewStrobe_640.png
@@ -24,8 +24,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -55,23 +55,8 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Switches";
    string Notes       = "This strobe effect when compiled and run in version 14.5 or higher is frame accurate";
+   bool CanSize       = true;
 > = 0;
-
-//-------------------------------------------------------------------------------------//
-// Preamble - sets version flag
-//-------------------------------------------------------------------------------------//
-
-#ifdef WINDOWS
-#define LW_14_5_PLUS
-#endif
-
-#ifdef LINUX
-#define LW_14_5_PLUS
-#endif
-
-#ifdef OSX
-#define LW_14_5_PLUS
-#endif
 
 //-------------------------------------------------------------------------------------//
 // Inputs
@@ -108,7 +93,7 @@ sampler s_Bgnd = sampler_state {
 
 float _Progress;
 
-#ifdef LW_14_5_PLUS
+#ifdef _LENGTHFRAMES
 
 float _LengthFrames;
 
@@ -163,9 +148,9 @@ int StrobeBgd
 
 float StrobeDuration
 <
-	string Description = "Flash duration";
-	float MinVal = 0.0;
-	float MaxVal = 1.0;
+   string Description = "Flash duration";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 bool SwapFirst

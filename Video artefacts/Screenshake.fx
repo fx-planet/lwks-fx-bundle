@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-15
 // @Author hugly
 // @Author flyingrub https://www.shadertoy.com/view/wsBXWW
 // @Created 2019-09-07
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified jwrl 2020-05-19.
 // Changed frac (time) to frac (time / 13.0) and scaled the result by 13.  Since it was
@@ -50,6 +50,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Video artefacts";
    string Notes       = "Random screen shake, slightly zoomed in, no motion blur";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

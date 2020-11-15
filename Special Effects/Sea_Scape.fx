@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author khaver
 // @Created 2018-05-05
 // @OriginalAuthor Alexander Alekseev 2014
@@ -30,8 +30,9 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.  It's a little pointles, but this effect has
+// an input, even if it doesn't use it.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -47,6 +48,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Special Effects";
    string Notes       = "Seascape produces a very realistic ocean simulation";
+   bool CanSize       = true;
 > = 0;
 
 #ifdef WINDOWS

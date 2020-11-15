@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2018-09-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR_640.png
@@ -24,8 +24,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -80,6 +80,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Video artefacts";
    string Notes       = "Emulates the faults that could occur with Quadruplex videotape playback";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-29
+// @Released 2020-11-15
 // @Author jwrl
 // @Author Unknown
 // @Created 2020-06-28
@@ -20,7 +20,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Fireball.fx
+// Lightworks user effect Fireballs.fx
 //
 // Author's note 2020-06-28:
 // This effect is based on a matchbook fireball effect called CPGP_Fireball.glsl found
@@ -34,6 +34,9 @@
 //
 // Version history:
 //
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
+//
 // Modified jwrl 2020-09-29
 // Improved alpha channel generation.
 // Isolated non-input from input/overlay version.
@@ -45,10 +48,11 @@
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Fireball";
+   string Description = "Fireballs";
    string Category    = "Stylize";
    string SubCategory = "Special Effects";
    string Notes       = "Produces a hot fireball and optionally blends it with a background image";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -298,13 +302,13 @@ float4 ps_main_1 (float2 uv : TEXCOORD0) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Fireball_0
+technique Fireballs_0
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main_0 (); }
 }
 
-technique Fireball_1
+technique Fireballs_1
 {
    pass P_1
    { PixelShader = compile PROFILE ps_main_1 (); }

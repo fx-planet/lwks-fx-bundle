@@ -1,5 +1,5 @@
 // @maintainer jwrl
-// @released 2020-09-29
+// @released 2020-11-15
 // @author jwrl
 // @author LWKS Software Ltd
 // @created 2018-04-02
@@ -31,8 +31,8 @@
 //
 // Version history:
 //
-// Update 2020-09-29 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -54,6 +54,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Special Effects";
    string Notes       = "A modified chromakey to provide a Star Trek-like transporter effect";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-10-04
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2020-10-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/Glitch_640.png
@@ -27,6 +27,9 @@
 //
 // Version history:
 //
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
+//
 // Modified 2020-10-04 jwrl.
 // Added glitch rate, rotation and modulation.
 // Changed "Glitch channels > Normal colour" to "Glitch channels > Full colour".
@@ -44,6 +47,7 @@ int _LwksEffectInfo
    string Category    = "Key";
    string SubCategory = "Special Effects";
    string Notes       = "Applies a glitch to titles or keys.  Just apply on top of your effect.";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

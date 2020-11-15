@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2015-12-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640a.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 12 Feb 2019 by user jwrl:
 // Changed input addressing to defaults.  This allows it to be used on older LW versions.
@@ -53,6 +53,7 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Technical";
    string Notes       = "Can be used to display individual RGB channels, luminance, summed RGB, U, V and alpha channels";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

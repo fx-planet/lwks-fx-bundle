@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-09-28
+// @Released 2020-11-15
 // @Author jwrl
 // @Created 2016-05-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/AntiAlias_640.png
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-09-28 jwrl.
-// Revised header block.
+// Update 2020-11-15 jwrl.
+// Added CanSize switch for LW 2021 support.
 //
 // Modified 10 Aug 2019 by user jwrl:
 // Changed sampler addressing to mirror.  This improves handling of frame edges.
@@ -45,6 +45,7 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Technical";
    string Notes       = "A two pass rotary anti-alias tool that gives a very smooth result";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//

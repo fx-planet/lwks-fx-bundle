@@ -5,13 +5,17 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_repeat_640.png
 
 /**
- This a 2D DVE that performs in the same way as the Lightworks version does, but with
- some significant differences. First, there is no drop shadow support.  Second, the
- image can be duplicated as you zoom out either directly or as a mirrored image.  And
- third, all size adjustment now follows a square law.  The range you will see in your
+ This is a 2D DVE that has been engineered from the ground up to support Lightworks
+ 2021.1's resolution independence.  It will also compile on version 14.5 and 2020.1
+ without that ability.  It performs in the same way as the Lightworks version does,
+ but with some significant differences.  First, there is no drop shadow support.
+ Second, instead of the drop shadow you get a border. And third and most importantly,
+ the image can be duplicated as you zoom out either directly or as a mirrored image.
+
+ Fourth, all size adjustment now follows a square law.  The range you will see in your
  sequence is identical to what you see in the Lightworks effect, but the adjustment
- settings are from zero to the square root of ten.  This has been done to make size
- reduction more easily controllable.
+ settings are from zero to the square root of ten - a little over three.  This has been
+ done to make size reduction more easily controllable.
 
  The image that leaves the effect has a composite alpha channel built from a combination
  of the background and foreground.  If the background has transparency it will be
@@ -210,6 +214,9 @@ float _FgYScale = 1.0;     // pre-loaded values will be used in place of the rea
 float _FgWidth = 5000.0;
 float _FgHeight = 5000.0;
 
+float _BgXScale = 1.0;
+float _BgYScale = 1.0;
+
 float _OutputAspectRatio;
 
 #define BLACK float2(0.0, 1.0).xxxy
@@ -315,10 +322,16 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
    scaleX = max (0.001, scaleX * XScale * XScale / _FgXScale);
 
-   // We now scale uv1 by the X and Y scale factors and put the result in xy1.  At this stage
-   // we also include the position values in PosX and PosY, centred around the middle of frame.
+   // This next ensures that the Fg image position is centred around the Bg centre.
 
-   float2 xy1 = uv1 + float2 (0.5 - PosX, PosY - 0.5);
+   float Xpos = (0.5 - PosX) * _BgXScale / _FgXScale;
+   float Ypos = (PosY - 0.5) * _BgYScale / _FgYScale;
+
+   // Add the revised centred position values in Xpos and Ypos to uv1 and store in xy1.
+
+   float2 xy1 = uv1 + float2 (Xpos, Ypos);
+
+   // Scale xy1 by the previously calculated X and Y scale factors.
 
    xy1.x = ((xy1.x - 0.5) / scaleX) + 0.5;
    xy1.y = ((xy1.y - 0.5) / scaleY) + 0.5;

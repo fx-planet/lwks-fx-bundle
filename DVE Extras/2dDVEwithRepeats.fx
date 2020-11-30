@@ -11,6 +11,7 @@
  but with some significant differences.  First, there is no drop shadow support.
  Second, instead of the drop shadow you get a border. And third and most importantly,
  the image can be duplicated as you zoom out either directly or as a mirrored image.
+ Mirroring can be horizontal or vertical only, or both axes.
 
  Fourth, all size adjustment now follows a square law.  The range you will see in your
  sequence is identical to what you see in the Lightworks effect, but the adjustment
@@ -31,6 +32,7 @@
 // Version history:
 //
 // Modified jwrl 2020-11-30.
+// Two additional mirror modes added.
 // Borders are now calculated outside the crop area rather than inside.
 // Converted the frame duplication into in-line code in ps_main().  Previously it was a
 // separate function which then called another function.  This is simpler.
@@ -71,7 +73,7 @@ sampler s_Cropped = sampler_state { Texture = <Crop>; };
 int Repeats
 <
    string Description = "Repeat mode";
-   string Enum = "No repeats,Repeat mirrored,Repeat duplicated";
+   string Enum = "No repeats,Repeat mirrored,Repeat duplicated,Horizontal mirror,Vertical mirror";
 > = 0;
 
 float PosX
@@ -291,22 +293,20 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    // If Repeats isn't set to zero (false) we perform the required image duplication.
 
    if (Repeats) {
-
-      // To compensate for possible foreground geometry differences we centre the X
-      // and Y pixel coordinates and scale them so that 0,0 is the top left and 1,1
-      // is the bottom right regardless of the actual frame size.
-
       float2 Fs = float2 (_FgXScale, _FgYScale);
 
       xy1 = ((xy1 - 0.5.xx) / Fs) + 0.5.xx;
 
-      // If we are simply duplicating images we now simply get the fractional part
-      // of the address.  Mirroring requires every alternate overflowed address
-      // range to be inverted.  This does that.   Once duplicating or mirroring is
-      // completed the X-Y coordinates are scaled back to their original ranges.
+      float2 xy2 = frac (xy1);
 
-      xy1 = (Repeats == 2) ? frac (xy1) : 1.0.xx - abs (2.0 * (frac (xy1 / 2.0) - 0.5.xx));
-      xy1 = ((xy1 - 0.5.xx) * Fs) + 0.5.xx;
+      if (Repeats != 2) {
+         float2 xy3 = 1.0.xx - abs (2.0 * (frac (xy1 / 2.0) - 0.5.xx));
+
+         if (Repeats <= 3) xy2.x = xy3.x;
+         if (Repeats != 3) xy2.y = xy3.y;
+      }
+
+      xy1 = ((xy2 - 0.5.xx) * Fs) + 0.5.xx;
    }
 
    // The value in xy1 is now used to index into the foreground using fn_tex2D().

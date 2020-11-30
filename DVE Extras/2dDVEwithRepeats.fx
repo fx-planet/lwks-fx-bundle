@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-29
+// @Released 2020-11-30
 // @Author jwrl
 // @Created 2020-11-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_repeat_640.png
@@ -30,7 +30,10 @@
 //
 // Version history:
 //
-// Built jwrl 2020-11-29.
+// Modified jwrl 2020-11-30.
+// Borders are now calculated outside the crop area rather than inside.
+// Converted the frame duplication into in-line code in ps_main().  Previously it was a
+// separate function which then called another function.  This is simpler.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -56,35 +59,10 @@ texture Crop : RenderColorTarget;
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Foreground = sampler_state { Texture = <Fg>; };
+sampler s_Background = sampler_state { Texture = <Bg>; };
 
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Cropped = sampler_state
-{
-   Texture   = <Crop>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+sampler s_Cropped = sampler_state { Texture = <Crop>; };
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -209,13 +187,13 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-float _FgXScale = 1.0;     // If this is compiled in a version of Lightworks before 2021.1 the
-float _FgYScale = 1.0;     // pre-loaded values will be used in place of the real scale factor.
-float _FgWidth = 5000.0;
-float _FgHeight = 5000.0;
+float _BgXScale = 1.0;     // If this is compiled in a version of Lightworks before 2021.1
+float _BgYScale = 1.0;     // the pre-loaded values will be used in place of the real scale
+float _FgXScale = 1.0;     // factor.  Multiplying or dividing by one won't change a thing.
+float _FgYScale = 1.0;
 
-float _BgXScale = 1.0;
-float _BgYScale = 1.0;
+float _FgWidth = 5000.0;   // In earlier versions of Lightworks these values will produce
+float _FgHeight = 5000.0;  // an offset of 0.0001 instead of half a pixel when cropping.
 
 float _OutputAspectRatio;
 
@@ -234,33 +212,6 @@ float4 fn_tex2D (sampler s, float2 uv)
    float2 xy = abs (uv - 0.5.xx);
 
    return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-// This function performs any required duplication of the images as set in Repeats.
-
-float4 fn_dup2D (sampler s, float2 uv)
-{
-   // If Repeats is set to zero (false) we just exit through the legal pixel function.
-
-   if (!Repeats) return fn_tex2D (s, uv);
-
-   // To adjust for the foreground geometry we centre the X and Y pixel coordinates and
-   // scale them.  The X and Y ranges are then offset from the top left reference point.
-
-   float2 Fs = float2 (_FgXScale, _FgYScale);
-   float2 xy = ((uv - 0.5.xx) / Fs) + 0.5.xx;
-
-   // If we are simply duplicating images we now get the fractional part of the address.
-   // This gives us a range from zero to just under one.  Mirroring is more complex: it
-   // requires every alternate overflow value to be inverted.  This does that.  Once
-   // either is completed the X-Y coordinates are scaled back to their original ranges.
-
-   xy = (Repeats == 2) ? frac (xy) : 1.0.xx - abs (2.0 * (frac (xy / 2.0) - 0.5.xx));
-   xy = ((xy - 0.5.xx) * Fs) + 0.5.xx;
-
-   // Now we exit through the legal pixel recovery function.
-
-   return fn_tex2D (s, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -292,24 +243,25 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    float Tcrop = saturate (CropT) - V_fix;
    float Bcrop = 1.0 - saturate (CropB) + V_fix;
 
-   // If we fall outside crop boundaries we return transparent black and quit here.
+   // If we fall inside crop boundaries we return the selected pixel.
+
+   if ((uv.x >= Lcrop) && (uv.x <= Rcrop) && (uv.y >= Tcrop) && (uv.y <= Bcrop))
+      return tex2D (s_Foreground, uv);
+
+   // Now we wind the crop values out by the precalculated border thickness.
+
+   Rcrop += BorderH;
+   Lcrop -= BorderH;
+   Tcrop -= BorderV;
+   Bcrop += BorderV;
+
+   // If we land outside the border zone we simply return transparent black and quit.
 
    if ((uv.x < Lcrop) || (uv.x > Rcrop) || (uv.y < Tcrop) || (uv.y > Bcrop)) return EMPTY;
 
-   // Now we wind the crop values in by the precalculated border thickness.
+   // After all that we get what's left - the border colour.
 
-   Rcrop -= BorderH;
-   Lcrop += BorderH;
-   Tcrop += BorderV;
-   Bcrop -= BorderV;
-
-   // If we land within the border zone we simply return the border colour and quit.
-
-   if ((uv.x < Lcrop) || (uv.x > Rcrop) || (uv.y < Tcrop) || (uv.y > Bcrop)) return Colour;
-
-   // After all that we get what's left - the cropped, bordered image.
-
-   return tex2D (s_Foreground, uv);
+   return Colour;
 }
 
 float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
@@ -336,13 +288,34 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    xy1.x = ((xy1.x - 0.5) / scaleX) + 0.5;
    xy1.y = ((xy1.y - 0.5) / scaleY) + 0.5;
 
-   // The value in xy1 is now used to recover the duplicated pixels using function fn_dup2D().
-   // At the same time the background is recovered and mixed with opaque black.
+   // If Repeats isn't set to zero (false) we perform the required image duplication.
 
-   float4 Fgnd = fn_dup2D (s_Cropped, xy1);
+   if (Repeats) {
+
+      // To compensate for possible foreground geometry differences we centre the X
+      // and Y pixel coordinates and scale them so that 0,0 is the top left and 1,1
+      // is the bottom right regardless of the actual frame size.
+
+      float2 Fs = float2 (_FgXScale, _FgYScale);
+
+      xy1 = ((xy1 - 0.5.xx) / Fs) + 0.5.xx;
+
+      // If we are simply duplicating images we now simply get the fractional part
+      // of the address.  Mirroring requires every alternate overflowed address
+      // range to be inverted.  This does that.   Once duplicating or mirroring is
+      // completed the X-Y coordinates are scaled back to their original ranges.
+
+      xy1 = (Repeats == 2) ? frac (xy1) : 1.0.xx - abs (2.0 * (frac (xy1 / 2.0) - 0.5.xx));
+      xy1 = ((xy1 - 0.5.xx) * Fs) + 0.5.xx;
+   }
+
+   // The value in xy1 is now used to index into the foreground using fn_tex2D().
+   // The background is also recovered the same way and mixed with opaque black.
+
+   float4 Fgnd = fn_tex2D (s_Cropped, xy1);
    float4 Bgnd = lerp (BLACK, fn_tex2D (s_Background, uv2), Background);
 
-   // he foreground is finally mixed over the background with alpha chnnel support.
+   // The duplicated foreground is finally blended with the background.
 
    return lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
 }
@@ -360,4 +333,3 @@ technique DVEwithRepeats
    pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }
-

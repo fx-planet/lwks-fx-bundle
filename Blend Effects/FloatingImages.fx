@@ -1,17 +1,23 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Created 2016-11-11
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/FloatImages_640.png
 
 /**
- "Floating images" generates up to four floating coloured outlines from a foreground
+ "Floating images" generates up to four floating images from a single foreground
  image.  The foreground may have an alpha channel, a bad alpha channel or no alpha
- channel at all, the effect will still work.  The colour, position and size of the
- floating outlines are fully adjustable.
+ channel at all, the effect will still work.  The position, size and density of the
+ floating images are fully adjustable.
 
- The original effect came about because of a need to create a custom title treatment
- in production.
+ Unlike the earlier version, the size adjustment now follows a square law.  Range
+ settings are from zero to the square root of ten (a little over three) but the scale
+ facor is actually from zero to ten.  This has been done to make size adjustment more
+ readily controllable.
+
+ NOTE:  This effect is resolution independent but the overlay positions will not
+ necessarily track.  This is deliberate - during testing with differing image sizes
+ and resolutions the overlayed images jumped as we played across cuts.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,37 +25,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 25 November 2018 jwrl.
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-//
-// Modified 30 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 23 June 2018 jwrl.
-// Added unpremultiply to the alpha channel procesing for Lightworks titles.  Moved the
-// alpha test into its own function, which simplifies ps_main() considerably.
-//
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.5 update 24 March 2018
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect should now function correctly when used with
-// current and previous Lightworks versions.
-//
-// Bug fix 26 July 2017
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
-// have now been explicitly declared.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -58,83 +35,54 @@ int _LwksEffectInfo
    string Description = "Floating images";
    string Category    = "Mix";
    string SubCategory = "Blend Effects";
-   string Notes       = "Generates up to four coloured outlines from a foreground graphic";
+   string Notes       = "Generates up to four overlayed images from a foreground graphic";
    bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-texture Bg_1 : RenderColorTarget;
-texture Bg_2 : RenderColorTarget;
-texture Bg_3 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-sampler s_Fgnd    = sampler_state {
-   Texture   = <Fg>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-sampler s_Bgnd    = sampler_state {
-   Texture   = <Bg>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+#define EMPTY  (0.0).xxxx
 
-sampler s_Bgnd_1  = sampler_state {
-   Texture   = <Bg_1>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
 
-sampler s_Bgnd_2  = sampler_state {
-   Texture   = <Bg_2>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
-
-sampler s_Bgnd_3  = sampler_state {
-   Texture   = <Bg_3>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int KeyMode
+int Source
 <
-   string Group = "Disconnect the video input to Lightworks titles if used.";
-   string Description = "Type of foreground layer";
-   string Enum = "Solid video,Video with alpha channel,Lightworks title or effect";
+   string Group = "Disconnect the video input to titles and image keys if used.";
+   string Description = "Source selection";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = 1;
 
 float A_Opac
@@ -149,8 +97,8 @@ float A_Zoom
 <
    string Group = "Overlay 1 (always enabled)";
    string Description = "Scale";
-   float MinVal = 0.0001;
-   float MaxVal = 10.00;
+   float MinVal = 0.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float A_Xc
@@ -158,8 +106,8 @@ float A_Xc
    string Group = "Overlay 1 (always enabled)";
    string Description = "Position";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float A_Yc
@@ -167,8 +115,8 @@ float A_Yc
    string Group = "Overlay 1 (always enabled)";
    string Description = "Position";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 bool B_On
@@ -189,8 +137,8 @@ float B_Zoom
 <
    string Group = "Overlay 2";
    string Description = "Scale";
-   float MinVal = 0.0001;
-   float MaxVal = 10.00;
+   float MinVal = 0.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float B_Xc
@@ -198,8 +146,8 @@ float B_Xc
    string Group = "Overlay 2";
    string Description = "Position";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float B_Yc
@@ -207,8 +155,8 @@ float B_Yc
    string Group = "Overlay 2";
    string Description = "Position";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 bool C_On
@@ -229,8 +177,8 @@ float C_Zoom
 <
    string Group = "Overlay 3";
    string Description = "Scale";
-   float MinVal = 0.0001;
-   float MaxVal = 10.00;
+   float MinVal = 0.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float C_Xc
@@ -238,8 +186,8 @@ float C_Xc
    string Group = "Overlay 3";
    string Description = "Position";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float C_Yc
@@ -247,8 +195,8 @@ float C_Yc
    string Group = "Overlay 3";
    string Description = "Position";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 bool D_On
@@ -269,8 +217,8 @@ float D_Zoom
 <
    string Group = "Overlay 4";
    string Description = "Scale";
-   float MinVal = 0.0001;
-   float MaxVal = 10.00;
+   float MinVal = 0.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float D_Xc
@@ -278,8 +226,8 @@ float D_Xc
    string Group = "Overlay 4";
    string Description = "Position";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float D_Yc
@@ -287,60 +235,88 @@ float D_Yc
    string Group = "Overlay 4";
    string Description = "Position";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define A_On  true
-
-#define SOLID  0
-#define NORMAL 0
-
-#define EMPTY  (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler Vsample, float2 uv)
+float4 fn_tex2D (sampler s, float2 uv)
 {
-   if ((uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0)) return EMPTY;
+   float2 xy = abs (uv - 0.5.xx);
 
-   float4 retval = tex2D (Vsample, uv);
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
-   if (KeyMode == NORMAL) return retval;
-   else if (KeyMode == SOLID) return float4 (retval.rgb, 1.0);
+float4 fn_key2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-   retval.a = pow (retval.a, 0.5);
+   if (max (xy.x, xy.y) > 0.5) return EMPTY;
 
-   return float4 (retval.rgb / retval.a, retval.a);
+   float4 Fgd = tex2D (s, uv);
+
+   if (Fgd.a == 0.0) return EMPTY;
+
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+
+      return Fgd;
+   }
+
+   if (Source == 1) return Fgd;
+
+   float4 Bgd = fn_tex2D (s_Background, uv);
+
+   float kDiff = distance (Fgd.g, Bgd.g);
+
+   kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+   kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+   Fgd.a = smoothstep (0.0, 0.25, kDiff);
+   Fgd.rgb *= Fgd.a;
+
+   return Fgd;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1, uniform sampler img,
-                uniform float Opac, uniform float Zoom,
-                uniform float Xc, uniform float Yc,
-                uniform bool use_it) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 bgdImage = tex2D (img, xy);
+   float4 Fgnd, Bgnd = fn_tex2D (s_Background, uv2);
+   float2 xy;
 
-   if (!use_it) return bgdImage;
+   if (D_On) {
+      xy = ((uv1 - float2 (D_Xc, 1.0 - D_Yc)) / (D_Zoom *  D_Zoom)) + 0.5.xx;
 
-   float scale = 1.0 / max (Zoom, 0.0001);
+      Fgnd = fn_key2D (s_Foreground, xy);
+      Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * D_Opac);
+   }
 
-   float2 zoomCentre = float2 (1.0 - Xc, Yc);
-   float2 uv = ((xy - zoomCentre) * scale) + zoomCentre;
+   if (C_On) {
+      xy = ((uv1 - float2 (C_Xc, 1.0 - C_Yc)) / (C_Zoom *  C_Zoom)) + 0.5.xx;
 
-   float4 fgdImage = fn_tex2D (s_Fgnd, uv);
+      Fgnd = fn_key2D (s_Foreground, xy);
+      Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * C_Opac);
+   }
 
-   return lerp (bgdImage, fgdImage, fgdImage.a * Opac);
+   if (B_On) {
+      xy = ((uv1 - float2 (B_Xc, 1.0 - B_Yc)) / (B_Zoom *  B_Zoom)) + 0.5.xx;
+
+      Fgnd = fn_key2D (s_Foreground, xy);
+      Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * B_Opac);
+   }
+
+   xy = ((uv1 - float2 (A_Xc, 1.0 - A_Yc)) / (A_Zoom *  A_Zoom)) + 0.5.xx;
+
+   Fgnd = fn_key2D (s_Foreground, xy);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * A_Opac);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -350,17 +326,5 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform sampler img,
 technique FloatingImages
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Bg_1;"; >
-   { PixelShader = compile PROFILE ps_main (s_Bgnd, D_Opac, D_Zoom, D_Xc, D_Yc, D_On); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Bg_2;"; >
-   { PixelShader = compile PROFILE ps_main (s_Bgnd_1, C_Opac, C_Zoom, C_Xc, C_Yc, C_On); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Bg_3;"; >
-   { PixelShader = compile PROFILE ps_main (s_Bgnd_2, B_Opac, B_Zoom, B_Xc, B_Yc, B_On); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (s_Bgnd_3, A_Opac, A_Zoom, A_Xc, A_Yc, A_On); }
+   { PixelShader = compile PROFILE ps_main (); }
 }

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Created 2020-07-19
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/SmoothRoll_640.png
 
 /**
@@ -19,8 +19,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,30 +34,61 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Title : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define STRENGTH  0.00125
+
+float _OutputAspectRatio;
+
+float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
+
+#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-sampler s_Title = sampler_state
-{
-   Texture   = <Title>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Title, s_Title);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -78,14 +109,15 @@ float Smoothing
 > = 0.2;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-#define STRENGTH  0.00125
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-float _OutputAspectRatio;
-
-float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -93,7 +125,7 @@ float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0
 
 float4 ps_effect (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Foreground, uv);
+   float4 retval = fn_tex2D (s_Foreground, uv);
 
    retval.a    = pow (retval.a, 0.5);
    retval.rgb /= retval.a;
@@ -103,81 +135,81 @@ float4 ps_effect (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_video (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (s_Foreground, uv);
+   return fn_tex2D (s_Foreground, uv);
 }
 
 float4 ps_main_R (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = tex2D (s_Title, xy1) * _gaussian [0];
+   float4 Fgnd = fn_tex2D (s_Title, xy1) * _gaussian [0];
 
    float2 uv = float2 (0.0, Smoothing * _OutputAspectRatio * STRENGTH);
    float2 xy = xy1 + uv;
 
-   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
 
    xy = xy1 - uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
 
    Fgnd.a = pow (Fgnd.a, 0.5);
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return lerp (fn_tex2D (s_Background, xy2), Fgnd, Fgnd.a);
 }
 
 float4 ps_main_C (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = tex2D (s_Title, xy1) * _gaussian [0];
+   float4 Fgnd = fn_tex2D (s_Title, xy1) * _gaussian [0];
 
    float2 uv = float2 (Smoothing * STRENGTH, 0.0);
    float2 xy = xy1 + uv;
 
-   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
    xy += uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
 
    xy = xy1 - uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [1];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [2];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [3];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [4];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [5];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
    xy -= uv;
-   Fgnd += tex2D (s_Title, xy) * _gaussian [6];
+   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
 
    Fgnd.a = pow (Fgnd.a, 0.5);
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return lerp (fn_tex2D (s_Background, xy2), Fgnd, Fgnd.a);
 }
 
 //-----------------------------------------------------------------------------------------//

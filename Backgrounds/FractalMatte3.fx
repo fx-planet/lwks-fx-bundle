@@ -1,42 +1,30 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
 // @Author trirop
-// @Created 2016-05-22
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Fractal3_640.png
 
 /**
- Fractal matte 3 produces backgrounds generated from fractal patterns.
+ Fractal matte 3 produces backgrounds generated from fractal patterns.  Because those
+ backgrounds are newly created  media they will be produced at the sequence resolution.
+ This means that any background video will also be locked to that resolution.
+
+ NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
+ This means that any background video will also be locked at that resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMatte3.fx
 //
-// The fractal generation component was first created by Robert Schï¿½tze (trirop) in GLSL
+// The fractal generation component was first created by Robert Schütze (trirop) in GLSL
 // sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better
 // suit its use in this effect.
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 3 August 2019 jwrl.
-// Corrected matte generation so that it remains stable without an input.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// LW 14+ version by jwrl 12 February 2017
-// SubCategory "Patterns" added.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,19 +38,63 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Matte : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineSampler(S, T) \
+                            \
+ sampler S = sampler_state  \
+ {                          \
+   Texture   = <T>;         \
+   AddressU  = ClampToEdge; \
+   AddressV  = ClampToEdge; \
+   MinFilter = Linear;      \
+   MagFilter = Linear;      \
+   MipFilter = Linear;      \
+ }
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ DefineSampler (SAMPLER, TEXTURE);
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ DefineSampler (TSAMPLE, TARGET);
+
+#define PI_2     6.28318530718
+
+#define INVSQRT3 0.57735026919
+
+#define R_WEIGHT 0.2989
+#define G_WEIGHT 0.5866
+#define B_WEIGHT 0.1145
+
+float _Progress;
+float _Length;
+
+float _OutputAspectRatio;
+
+#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and target
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state { Texture = <Inp>; };
-sampler s_Matte = sampler_state { Texture = <Matte>; };
+DefineInput (Inp, s_Input);
+
+DefineTarget (Matte, s_Matte);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -70,23 +102,23 @@ sampler s_Matte = sampler_state { Texture = <Matte>; };
 
 float Opacity
 <
-   string Description = "Opacity";
+   string Description = "Opacity";   
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
 float FracOffs
 <
-   string Description = "Fractal offset";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   string Description = "Fractal offset";   
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float FracRate
 <
-   string Description = "Fractal rate";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   string Description = "Fractal rate";   
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float4 Colour
@@ -124,8 +156,8 @@ float Gain
 <
    string Description = "Gain";
    string Group = "Luminance";
-   float MinVal = 0.00;
-   float MaxVal = 4.00;
+   float MinVal = 0.0;
+   float MaxVal = 4.0;
 > = 1.0;
 
 float Gamma
@@ -133,38 +165,35 @@ float Gamma
    string Description = "Gamma";
    string Group = "Luminance";
    float MinVal = 0.0;
-   float MaxVal = 4.00;
+   float MaxVal = 4.0;
 > = 1.00;
 
 float Brightness
 <
    string Description = "Brightness";
    string Group = "Luminance";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Contrast
 <
    string Description = "Contrast";
    string Group = "Luminance";
-   float MinVal = 0.00;
-   float MaxVal = 4.00;
+   float MinVal = 0.0;
+   float MaxVal = 4.0;
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-#define PI_2     6.283185
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-#define INVSQRT3 0.57735
-
-#define R_WEIGHT 0.2989
-#define G_WEIGHT 0.5866
-#define B_WEIGHT 0.1145
-
-float _Progress;
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -172,8 +201,10 @@ float _Progress;
 
 float4 ps_fractal (float2 xy : TEXCOORD) : COLOR
 {
-   float speed = _Progress * FracRate;
+   float speed = _Progress * FracRate * _Length / 5.0;
+
    float4 retval = 1.0.xxxx;
+
    float3 f = float3 (xy, FracOffs);
 
    for (int i = 0; i < 75; i++) {
@@ -185,16 +216,42 @@ float4 ps_fractal (float2 xy : TEXCOORD) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv : TEXCOORD, float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 {
-   float4 Fgd    = tex2D (s_Input, xy);
-   float4 retval = tex2D (s_Matte, uv);
+   float4 Fgd = fn_tex2D (s_Input, uv1);
+
+   float2 xy = uv0;
+
+   if (_OutputAspectRatio <= 1.0) {
+      xy.x = (xy.x - 0.5) * _OutputAspectRatio;
+
+      if (_OutputAspectRatio < 1.0) {
+         xy.y -= 0.5;
+         xy   *= _OutputAspectRatio;
+         xy.y += 0.5;
+      }
+
+      xy.x += 0.5;
+   }
+   else {
+      xy.y = (xy.y - 0.5) / _OutputAspectRatio;
+
+      if (_OutputAspectRatio < 1.0) {
+         xy.x -= 0.5;
+         xy   /= _OutputAspectRatio;
+         xy.x += 0.5;
+      }
+
+      xy.y += 0.5;
+   }
+
+   float4 retval = fn_tex2D (s_Matte, xy);
 
    float luma   = dot (retval.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
    float buffer = dot (Colour.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
 
    buffer = saturate (buffer - 0.5);
-   buffer = 1 / (buffer + 0.5);
+   buffer = 1.0 / (buffer + 0.5);
 
    float4 temp = Colour * luma * buffer;
 

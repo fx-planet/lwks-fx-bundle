@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Created 2018-06-15
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/EnhancedBlend_640.png
 
 /**
@@ -16,27 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Update 11 July 2020 jwrl.
-// Added a delta key to separate blended effects from the background.
-// THIS MAY (BUT SHOULDN'T) BREAK BACKWARD COMPATIBILITY!!!
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Update 8 December 2018 jwrl.
-// Replaced blend thumbnail.
-//
-// Update 25 November 2018 jwrl.
-// Changed subcategory to "Blend Effects".
-//
-// Modified 28 October 2018 jwrl:
-// Several effects rewritten to streamline code and improve cross-platform performance.
-// "Colour" and "Luminosity" rewritten to better match Photoshop.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,49 +31,30 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture fg;
-texture bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-sampler s_Foreground = sampler_state { Texture = <fg>; };
-sampler s_Background = sampler_state { Texture = <bg>; };
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int Source
-<
-   string Description = "Source selection (disconnect title and image key inputs)";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
-> = 1;
-
-float Amount
-<
-   string Description = "Fg Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-int SetTechnique
-<
-   string Description = "Blend mode";
-   string Enum = "Normal,Export fg with alpha,____________________,Darken,Multiply,Colour Burn,Linear Burn,Darker Colour,____________________,Lighten,Screen,Colour Dodge,Linear Dodge (Add),Lighter Colour,____________________,Overlay,Soft Light,Hard Light,Vivid Light,Linear Light,Pin Light,Hard Mix,____________________,Difference,Exclusion,Subtract,Divide,____________________,Hue,Saturation,Colour,Luminosity";
-> = 0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
 #define CrR    0.439
 #define CrG    0.368
@@ -113,8 +75,74 @@ int SetTechnique
 #define LUMA    float4(0.2989, 0.5866, 0.1145, 0.0)
 
 //-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (fg, s_Foreground);
+DefineInput (bg, s_Background);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+int Source
+<
+   string Description = "Source selection (disconnect title and image key inputs)";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground (delta key)";
+> = 1;
+
+float Amount
+<
+   string Description = "Fg Opacity";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
+
+int SetTechnique
+<
+   string Description = "Blend mode";
+   string Enum = "Normal,Export fg with alpha,____________________,Darken,Multiply,Colour Burn,Linear Burn,Darker Colour,____________________,Lighten,Screen,Colour Dodge,Linear Dodge (Add),Lighter Colour,____________________,Overlay,Soft Light,Hard Light,Vivid Light,Linear Light,Pin Light,Hard Mix,____________________,Difference,Exclusion,Subtract,Divide,____________________,Hue,Saturation,Colour,Luminosity";
+> = 0;
+
+//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
+
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
+
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
+
+float4 fn_key2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
+
+   if (max (xy.x, xy.y) > 0.5) return EMPTY;
+
+   float4 Fgd = tex2D (s, uv);
+
+   if (Fgd.a == 0.0) return EMPTY;
+
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      float4 Bgd = fn_tex2D (s_Background, uv);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
+   }
+
+   return Fgd;
+}
 
 float4 fn_rgb2hsv (float4 rgb)
 {
@@ -157,58 +185,33 @@ float4 fn_hsv2rgb (float4 hsv)
    return float4 (hsv.z, p, q, hsv.w);
 }
 
-float4 fn_tex2D (sampler s_Sampler, float2 uv)
-{
-   float4 Fgd = tex2D (s_Sampler, uv);
-
-   if (Fgd.a == 0.0) return Fgd.aaaa;
-
-   if (Source == 0) {
-      Fgd.a    = pow (Fgd.a, 0.5);
-      Fgd.rgb /= Fgd.a;
-   }
-   else if (Source == 2) {
-      float4 Bgd = tex2D (s_Background, uv);
-
-      float kDiff = distance (Fgd.g, Bgd.g);
-
-      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
-
-      Fgd.a = smoothstep (0.0, 0.25, kDiff);
-      Fgd.rgb *= Fgd.a;
-   }
-
-   return Fgd;
-}
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a * Amount);
+   return lerp (fn_tex2D (s_Background, xy2), Fgnd, Fgnd.a * Amount);
 }
 
 float4 ps_export (float2 uv : TEXCOORD1) : COLOR
 {
-   return fn_tex2D (s_Foreground, uv);
+   return fn_key2D (s_Foreground, uv);
 }
 
 float4 ps_dummy (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (s_Background, uv);
+   return fn_tex2D (s_Background, uv);
 }
 
 //--------------------------------------- GROUP 1 -----------------------------------------//
 
 float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = min (Fgnd.rgb, Bgnd.rgb);
 
@@ -217,8 +220,8 @@ float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_multiply (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb *= Bgnd.rgb;
 
@@ -227,8 +230,8 @@ float4 ps_multiply (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    if (Fgnd.r > 0.0) Fgnd.r = 1.0 - ((1.0 - Bgnd.r) / Fgnd.r);
    if (Fgnd.g > 0.0) Fgnd.g = 1.0 - ((1.0 - Bgnd.g) / Fgnd.g);
@@ -239,8 +242,8 @@ float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = max (Fgnd.rgb + Bgnd.rgb - 1.0.xxx, 0.0.xxx);
 
@@ -249,8 +252,8 @@ float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float luma = dot (Bgnd, LUMA);
 
@@ -263,8 +266,8 @@ float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = max (Fgnd.rgb, Bgnd.rgb);
 
@@ -273,8 +276,8 @@ float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb));
 
@@ -283,8 +286,8 @@ float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.r = (Fgnd.r == 1.0) ? 1.0 : Bgnd.r / (1.0 - Fgnd.r);
    Fgnd.g = (Fgnd.g == 1.0) ? 1.0 : Bgnd.g / (1.0 - Fgnd.g);
@@ -295,8 +298,8 @@ float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_linearDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = min (Fgnd.rgb + Bgnd.rgb, 1.0.xxx);
 
@@ -305,8 +308,8 @@ float4 ps_linearDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float  luma = dot (Bgnd, LUMA);
 
@@ -319,8 +322,8 @@ float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float3 retMin = 2.0 * Bgnd.rgb * Fgnd.rgb;
    float3 retMax = 1.0.xxx - 2.0 * (1.0.xxx - Fgnd.rgb) * (1.0.xxx - Bgnd.rgb);
@@ -334,8 +337,8 @@ float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float3 retMax = (2.0 * Fgnd.rgb) - 1.0.xxx;
    float3 retMin = Bgnd.rgb * (retMax * (1.0.xxx - Bgnd.rgb) + 1.0.xxx);
@@ -352,8 +355,8 @@ float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float3 retMin = saturate (2.0 * Bgnd.rgb * Fgnd.rgb);
    float3 retMax = saturate (1.0.xxx - 2.0 * (1.0.xxx - Bgnd.rgb) * (1.0.xxx - Fgnd.rgb));
@@ -367,8 +370,8 @@ float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float3 retMax, retMin;
 
@@ -392,8 +395,8 @@ float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
    float4 retMin = max ((2.0 * Fgnd) + Bgnd - WHITE, EMPTY);
    float4 retMax = min ((2.0 * Fgnd) + Bgnd - WHITE, WHITE);
 
@@ -406,8 +409,8 @@ float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float3 retMax = 2.0 * Fgnd.rgb;
    float3 retMin = retMax - 1.0.xxx;
@@ -421,8 +424,8 @@ float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    float3 ref = 1.0.xxx - Bgnd.rgb;
 
@@ -437,8 +440,8 @@ float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = abs (Fgnd.rgb - Bgnd.rgb);
 
@@ -447,8 +450,8 @@ float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_exclusion (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb * (1.0.xxx - (2.0 * Fgnd.rgb)));
 
@@ -457,8 +460,8 @@ float4 ps_exclusion (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.rgb = max (Bgnd.rgb - Fgnd.rgb, 0.0.xxx);
 
@@ -467,8 +470,8 @@ float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
 
    Fgnd.r = (Fgnd.r == 0.0) ? 1.0 : min (Bgnd.r / Fgnd.r, 1.0);
    Fgnd.g = (Fgnd.g == 0.0) ? 1.0 : min (Bgnd.g / Fgnd.g, 1.0);
@@ -481,8 +484,8 @@ float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
    blnd.xw = (fn_rgb2hsv (Fgnd)).xw;
@@ -492,8 +495,8 @@ float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
    blnd.yw = fn_rgb2hsv (Fgnd).yw;
@@ -503,8 +506,8 @@ float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
    float4 blnd = fn_rgb2hsv (Fgnd);
 
    blnd.x = (fn_rgb2hsv (Bgnd)).x;
@@ -514,8 +517,8 @@ float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 float4 ps_luminosity (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Fgnd = fn_key2D (s_Foreground, xy1);
+   float4 Bgnd = fn_tex2D (s_Background, xy2);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
    blnd.zw = (fn_rgb2hsv (Fgnd)).zw;

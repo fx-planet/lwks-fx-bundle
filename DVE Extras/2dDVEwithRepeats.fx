@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-30
+// @Released 2020-12-28
 // @Author jwrl
 // @Created 2020-11-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_repeat_640.png
@@ -31,7 +31,10 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-30.
+// Updated jwrl 2020-12-28.
+// Corrected an issue that caused wrapped pixels to be displayed on Intel GPUs.
+//
+// Modified jwrl 2020-12-15.
 // Two additional mirror modes added.
 // Borders are now calculated outside the crop area rather than inside.
 // Converted the frame duplication into in-line code in ps_main().  Previously it was a
@@ -49,22 +52,66 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Crop : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+float _BgXScale = 1.0;     // If this is compiled in a version of Lightworks before 2021.1
+float _BgYScale = 1.0;     // the pre-loaded values will be used in place of the real scale
+float _FgXScale = 1.0;     // factor.  Multiplying or dividing by one won't change a thing.
+float _FgYScale = 1.0;
+
+float _FgWidth = 5000.0;   // In earlier versions of Lightworks these values will produce
+float _FgHeight = 5000.0;  // an offset of 0.0001 instead of half a pixel when cropping.
+
+float _OutputAspectRatio;
+
+#define BLACK float2(0.0, 1.0).xxxy
+#define EMPTY 0.0.xxxx
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-sampler s_Cropped = sampler_state { Texture = <Crop>; };
+DefineTarget (Crop, s_Cropped);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -178,31 +225,6 @@ float Background
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-float _BgXScale = 1.0;     // If this is compiled in a version of Lightworks before 2021.1
-float _BgYScale = 1.0;     // the pre-loaded values will be used in place of the real scale
-float _FgXScale = 1.0;     // factor.  Multiplying or dividing by one won't change a thing.
-float _FgYScale = 1.0;
-
-float _FgWidth = 5000.0;   // In earlier versions of Lightworks these values will produce
-float _FgHeight = 5000.0;  // an offset of 0.0001 instead of half a pixel when cropping.
-
-float _OutputAspectRatio;
-
-#define BLACK float2(0.0, 1.0).xxxy
-#define EMPTY 0.0.xxxx
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -248,7 +270,7 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    // If we fall inside crop boundaries we return the selected pixel.
 
    if ((uv.x >= Lcrop) && (uv.x <= Rcrop) && (uv.y >= Tcrop) && (uv.y <= Bcrop))
-      return tex2D (s_Foreground, uv);
+      return fn_tex2D (s_Foreground, uv);
 
    // Now we wind the crop values out by the precalculated border thickness.
 
@@ -276,14 +298,12 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
    scaleX = max (0.001, scaleX * XScale * XScale / _FgXScale);
 
-   // This next ensures that the Fg image position is centred around the Bg centre.
+   // Now ensure that the Fg image position is centred around the Bg centre then add the
+   // revised centred position values to uv1.  The result is then stored in xy1.
 
-   float Xpos = (0.5 - PosX) * _BgXScale / _FgXScale;
-   float Ypos = (PosY - 0.5) * _BgYScale / _FgYScale;
-
-   // Add the revised centred position values in Xpos and Ypos to uv1 and store in xy1.
-
-   float2 xy1 = uv1 + float2 (Xpos, Ypos);
+   float2 BgS = float2 (_BgXScale, _BgYScale);
+   float2 FgS = float2 (_FgXScale, _FgYScale);
+   float2 xy1 = uv1 + (float2 (0.5 - PosX, PosY - 0.5) * BgS / FgS);
 
    // Scale xy1 by the previously calculated X and Y scale factors.
 
@@ -293,9 +313,7 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    // If Repeats isn't set to zero (false) we perform the required image duplication.
 
    if (Repeats) {
-      float2 Fs = float2 (_FgXScale, _FgYScale);
-
-      xy1 = ((xy1 - 0.5.xx) / Fs) + 0.5.xx;
+      xy1 = ((xy1 - 0.5.xx) / FgS) + 0.5.xx;
 
       float2 xy2 = frac (xy1);
 
@@ -306,7 +324,7 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
          if (Repeats != 3) xy2.y = xy3.y;
       }
 
-      xy1 = ((xy2 - 0.5.xx) * Fs) + 0.5.xx;
+      xy1 = ((xy2 - 0.5.xx) * FgS) + 0.5.xx;
    }
 
    // The value in xy1 is now used to index into the foreground using fn_tex2D().

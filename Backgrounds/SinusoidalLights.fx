@@ -1,16 +1,18 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author baopao
-// @Created 2016-05-12
+// @Created 2020-11-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/SineLights_640.png
 
 /**
  Sinusoidal lights is a semi-abstract pattern generator created for Mac and Linux systems
  by Lightworks user baopao.  This version has been converted for cross-platform use by
- Lightworks user jwrl.
+ Lightworks user jwrl.  Because this backgrounds is newly created media it is be produced
+ at the sequence resolution. This means that any background video will also be locked to
+ that resolution.
 
- NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
- A legacy version is available for users in that position.
+ NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
+ This means that any background video will also be locked at that resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -21,26 +23,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Added creation date.
-// Added "Notes".
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// LW 14.5 update by jwrl 30 March 2018
-// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
-// care of in versions of LW higher than 14.0.  If using an older version under
-// Windows the Legacy version must be used.
-//
-// This revision for version 14 by jwrl 6 February 2017.
-// Changed category to "Mattes" and added subcategory "Patterns".
+// Update 2020-12-28 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,19 +38,34 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Declarations and definitions
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+float _Progress;
+
+float _OutputAspectRatio;
+
+#define EMPTY    (0.0).xxxx
+
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
 texture Input;
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler Image = sampler_state {
+sampler Image = sampler_state
+{
    Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
    MinFilter = Linear;
    MagFilter = Linear;
    MipFilter = Linear;
@@ -75,6 +74,13 @@ sampler Image = sampler_state {
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
+
+float Amount
+<
+   string Description = "Opacity";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
 
 float Num
 <
@@ -86,14 +92,14 @@ float Num
 float Speed
 <
    string Description = "Speed";
-   float MinVal = 0.00;
-   float MaxVal = 10.00;
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
 > = 5.0;
 
 float Scale
 <
    string Description = "Scale";
-   float MinVal = 0.00;
+   float MinVal = 0.0;
    float MaxVal = 3.0;
 > = 1;
 
@@ -108,16 +114,16 @@ float CentreX
 <
    string Description = "Position";
    string Flags = "SpecifiesPointX";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float CentreY
 <
    string Description = "Position";
    string Flags = "SpecifiesPointY";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float ResX
@@ -149,19 +155,58 @@ float Curve
 > = 4.00;
 
 //-----------------------------------------------------------------------------------------//
-// Declarations and definitions
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-float _Progress;
+float2 range_adjust (float2 uv)
+{
+   float2 xy = uv;
+
+   if (_OutputAspectRatio <= 1.0) {
+      xy.x = (xy.x - CentreX - 0.5) * _OutputAspectRatio;
+      xy.y +=  CentreY;
+
+      if (_OutputAspectRatio < 1.0) {
+         xy.y -= 0.5;
+         xy   *= _OutputAspectRatio;
+         xy.y += 0.5;
+      }
+
+      xy.x += 0.5;
+   }
+   else {
+      xy.x -= CentreX;
+      xy.y = (xy.y + CentreY - 0.5) / _OutputAspectRatio;
+
+      if (_OutputAspectRatio < 1.0) {
+         xy.x -= 0.5;
+         xy   /= _OutputAspectRatio;
+         xy.x += 0.5;
+      }
+
+      xy.y += 0.5;
+   }
+
+   return xy;
+}
+
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
+
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD) : COLOR
+float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 {
+   float4 retval = fn_tex2D (Image, uv1);
+
    float2 position;
-   float2 vidPoint = uv + float2 (CentreX, CentreY);
+   float2 vidPoint = range_adjust (uv0);
 
    float crv  = 0.0;
    float size = Scale / ((20.0 - Size) * 100.0);
@@ -177,16 +222,12 @@ float4 ps_main (float2 uv : TEXCOORD) : COLOR
       time += 0.2;
     }
 
-   return min (sum, 1.0).xxxx;
+   return lerp (retval, min (sum, 1.0).xxxx, Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
 
 technique SinglePass
 {

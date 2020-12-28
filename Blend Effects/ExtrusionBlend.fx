@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Created 2016-04-02
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/ExtrusionMatte_640.png
 
 /**
@@ -16,47 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Update 11 July 2020 jwrl.
-// Added a delta key to separate blended effects from the background.
-// THIS MAY (BUT SHOULDN'T) BREAK BACKWARD COMPATIBILITY!!!
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Update 25 November 2018 jwrl.
-// Changed name to "Extrusion blend".
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-// Added alpha boost for Lightworks titles.
-//
-// Modified 30 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 5 April 2018
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Bug fix 26 March 2018
-// Corrected a hue problem with the extrusion generation.
-//
-// Bug fix 26 July 2017
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers
-// they have now been explicitly declared.
-//
-// Bug fix 26 February 2017
-// This corrects for a bug in the way that Lightworks handles interlaced media.  It
-// returns only half the actual frame height when interlaced media is stationary.
-//
-// LW 14+ version 11 January 2017
-// Subcategory "Edge Effects" added.
-//
-// Modified 6 May 2016.
-// Extrusion anti-ailasing added.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -70,73 +31,78 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-texture blurPre  : RenderColorTarget;
-texture colorPre : RenderColorTarget;
-texture blurProc : RenderColorTarget;
-
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-sampler s_Blur = sampler_state
-{
-   Texture   = <blurPre>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define SAMPLE   80
+#define HALFWAY  40              // SAMPLE / 2
+#define SAMPLES  81              // SAMPLE + 1.0
 
-sampler s_Colour = sampler_state
-{
-   Texture   = <colorPre>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define DELTANG  25
+#define ALIASFIX 50              // DELTANG * 2
+#define ANGLE    0.125664
 
-sampler s_Processed = sampler_state
-{
-   Texture   = <blurProc>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define B_SCALE  0.0075
+#define L_SCALE  0.05
+#define R_SCALE  0.00125
+
+#define DEFAULT  0
+#define COLOUR   1
+#define MONO     2
+
+#define LIN_OFFS 0.667333
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+#define EMPTY    (0.0).xxxx
+
+//-----------------------------------------------------------------------------------------//
+// Inputs and targets
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
+
+DefineTarget (blurPre, s_Blur);
+DefineTarget (colorPre, s_Colour);
+DefineTarget (blurProc, s_Processed);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -190,7 +156,7 @@ float4 colour
    string Group = "Colour setup";
    string Description = "Edge colour";
    bool SupportsAlpha = true;
-> = { 1.0, 0.3804, 1.0, 0.0 };
+> = { 1.0, 0.3804, 1.0, -1.0 };
 
 bool invShade
 <
@@ -209,55 +175,44 @@ int Source
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define SAMPLE   80
-#define HALFWAY  40              // SAMPLE / 2
-#define SAMPLES  81              // SAMPLE + 1.0
-
-#define DELTANG  25
-#define ALIASFIX 50              // DELTANG * 2
-#define ANGLE    0.125664
-
-#define B_SCALE  0.0075
-#define L_SCALE  0.05
-#define R_SCALE  0.00125
-
-#define DEFAULT  0
-#define COLOUR   1
-#define MONO     2
-
-#define LIN_OFFS 0.667333
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s_Sampler, float2 uv)
+float4 fn_tex2D (sampler s, float2 uv)
 {
-   float4 Fgd = tex2D (s_Sampler, uv);
+   float2 xy = abs (uv - 0.5.xx);
 
-   if (Fgd.a == 0.0) return Fgd.aaaa;
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
+
+float4 fn_key2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
+
+   if (max (xy.x, xy.y) > 0.5) return EMPTY;
+
+   float4 Fgd = tex2D (s, uv);
+
+   if (Fgd.a == 0.0) return EMPTY;
 
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
+
+      return Fgd;
    }
-   else if (Source == 2) {
-      float4 Bgd = tex2D (s_Background, uv);
 
-      float kDiff = distance (Fgd.g, Bgd.g);
+   if (Source == 1) return Fgd;
 
-      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+   float4 Bgd = fn_tex2D (s_Background, uv);
 
-      Fgd.a = smoothstep (0.0, 0.25, kDiff);
-      Fgd.rgb *= Fgd.a;
-   }
+   float kDiff = distance (Fgd.g, Bgd.g);
+
+   kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+   kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+   Fgd.a = smoothstep (0.0, 0.25, kDiff);
+   Fgd.rgb *= Fgd.a;
 
    return Fgd;
 }
@@ -268,7 +223,7 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 
 float4 ps_radial (float2 uv : TEXCOORD1, uniform int mode) : COLOR
 {
-   float4 retval = fn_tex2D (s_Foreground, uv);
+   float4 retval = fn_key2D (s_Foreground, uv);
 
    if (zoomAmount == 0.0) return retval;
 
@@ -281,7 +236,7 @@ float4 ps_radial (float2 uv : TEXCOORD1, uniform int mode) : COLOR
    retval.rgb = 1.0.xxx - retval.rgb;
 
    for (int i = 0; i <= SAMPLE; i++) {
-      retval += fn_tex2D (s_Foreground, xy1);
+      retval += fn_key2D (s_Foreground, xy1);
       xy1 += xy2;
    }
 
@@ -299,7 +254,7 @@ float4 ps_radial (float2 uv : TEXCOORD1, uniform int mode) : COLOR
 
 float4 ps_linear (float2 uv : TEXCOORD1, uniform int mode) : COLOR
 {
-   float4 retval = fn_tex2D (s_Foreground, uv);
+   float4 retval = fn_key2D (s_Foreground, uv);
 
    float2 offset, xy = uv;
 
@@ -315,7 +270,7 @@ float4 ps_linear (float2 uv : TEXCOORD1, uniform int mode) : COLOR
    offset *= depth * B_SCALE;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += fn_tex2D (s_Foreground, xy);
+      retval += fn_key2D (s_Foreground, xy);
       xy += offset;
       }
 
@@ -333,8 +288,8 @@ float4 ps_linear (float2 uv : TEXCOORD1, uniform int mode) : COLOR
 
 float4 ps_shaded (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 blurImg = tex2D (s_Blur, uv);
-   float4 colrImg = tex2D (s_Colour, uv);
+   float4 blurImg = fn_tex2D (s_Blur, uv);
+   float4 colrImg = fn_tex2D (s_Colour, uv);
 
    float alpha   = blurImg.a;
    float minColr = min (colrImg.r, min (colrImg.g, colrImg.b));
@@ -378,7 +333,7 @@ float4 ps_shaded (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 fgImage = fn_tex2D (s_Foreground, xy1);
+   float4 fgImage = fn_key2D (s_Foreground, xy1);
    float4 retval  = 0.0.xxxx;
 
    float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
@@ -389,8 +344,8 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      retval += tex2D (s_Processed, xy1 + offset);
-      retval += tex2D (s_Processed, xy1 - offset);
+      retval += fn_tex2D (s_Processed, xy1 + offset);
+      retval += fn_tex2D (s_Processed, xy1 - offset);
       angle += ANGLE;
    }
 
@@ -401,7 +356,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    if (expAlpha) return retval;
 
-   float4 bgImage = tex2D (s_Background, xy2);
+   float4 bgImage = fn_tex2D (s_Background, xy2);
 
    retval = lerp (bgImage, retval, retval.a);
 

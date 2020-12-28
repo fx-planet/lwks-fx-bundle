@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author khaver
 // @Created 2012-12-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaFeather_640.png
@@ -18,22 +18,11 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
+// Rewrite 2020-12-28 jwrl.
+// Modification of the original effect to support LW 2021 resolution independence.
 //
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory to "Blend Effects".
-// Added "Notes" section.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects on GitHub.
-//
-// Cross platform compatibility check 26 July 2017 jwrl.
-// Explicitly defined samplers to correct a cross-platform default sampler bug.
-// Added workaround for the interlaced media height bug in Lightworks effects.
+// Upgrades before 2020-11-08:
+// Modifications primarily related cross-platform issues.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,44 +36,53 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture fg;
-texture bg;
+#define DeclareInput( TEXTURE, SAMPLER ) \
+                                         \
+   texture TEXTURE;                      \
+                                         \
+   sampler SAMPLER = sampler_state       \
+   {                                     \
+      Texture   = <TEXTURE>;             \
+      AddressU  = Mirror;                \
+      AddressV  = Mirror;                \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
 
-texture composite : RenderColorTarget;
+#define DeclareTarget( TARGET, TSAMPLE ) \
+                                         \
+   texture TARGET : RenderColorTarget;   \
+                                         \
+   sampler TSAMPLE = sampler_state       \
+   {                                     \
+      Texture   = <TARGET>;              \
+      AddressU  = Mirror;                \
+      AddressV  = Mirror;                \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+float _OutputWidth;
+float _OutputAspectRatio;
+
+float offset[5] = {0.0, 1.0, 2.0, 3.0, 4.0 };
+float weight[5] = {0.2734375, 0.21875 / 4.0, 0.109375 / 4.0,0.03125 / 4.0, 0.00390625 / 4.0};
+
+#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
-   Texture   = <fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DeclareInput (fg, FgSampler);
+DeclareInput (bg, BgSampler);
 
-sampler BgSampler = sampler_state {
-   Texture   = <bg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler CompSampler = sampler_state {
-   Texture   = <composite>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DeclareTarget (composite, CompSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -124,28 +122,29 @@ bool Show
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-float _OutputWidth;
-float _OutputAspectRatio;
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-float offset[5] = {0.0, 1.0, 2.0, 3.0, 4.0 };
-float weight[5] = {0.2734375, 0.21875 / 4.0, 0.109375 / 4.0,0.03125 / 4.0, 0.00390625 / 4.0};
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 Composite(float2 xy1 : TEXCOORD1) : COLOR
+float4 Composite (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-	float4 fg = tex2D( FgSampler, xy1 );
-	float4 bg = tex2D( BgSampler, xy1 );
+   float4 fg = fn_tex2D (FgSampler, uv1);
+   float4 bg = fn_tex2D (BgSampler, uv2);
+   float4 ret = lerp (bg, fg, fg.a * Opacity);
 
-	float4 ret = lerp( bg, fg, fg.a * Opacity );
-	ret.a = fg.a;
+   ret.a = fg.a;
 
-	return ret;
+   return ret;
 }
 
 float4 AlphaFeather(float2 uv : TEXCOORD1) : COLOR
@@ -154,33 +153,33 @@ float4 AlphaFeather(float2 uv : TEXCOORD1) : COLOR
 	float4 color;
 	float4 Cout;
 	float check;
-	float4 orig = tex2D(CompSampler,uv);
+	float4 orig = fn_tex2D(CompSampler,uv);
 	check = orig.a;
-	color = tex2D(CompSampler, uv) * (weight[0]);
+	color = fn_tex2D(CompSampler, uv) * (weight[0]);
 	for (int i=1; i<5; i++) {
-		Cout = tex2D(CompSampler, uv + (float2(pixel.x * offset[i],0.0)*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv + (float2(pixel.x * offset[i],0.0f)*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i],0.0)*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i],0.0f)*Feather)) * weight[i];
 		else color += orig * (weight[i]);
-		Cout = tex2D(CompSampler, uv - (float2(pixel.x * offset[i],0.0)*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv - (float2(pixel.x * offset[i],0.0)*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv - (float2(pixel.x * offset[i],0.0)*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv - (float2(pixel.x * offset[i],0.0)*Feather)) * weight[i];
 		else color += orig * (weight[i]);
-		Cout = tex2D(CompSampler, uv + (float2(0.0,pixel.y * offset[i])*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv + (float2(0.0,pixel.y * offset[i])*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv + (float2(0.0,pixel.y * offset[i])*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv + (float2(0.0,pixel.y * offset[i])*Feather)) * weight[i];
 		else color += orig * (weight[i]);
-		Cout = tex2D(CompSampler, uv - (float2(0.0,pixel.y * offset[i])*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv - (float2(0.0,pixel.y * offset[i])*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv - (float2(0.0,pixel.y * offset[i])*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv - (float2(0.0,pixel.y * offset[i])*Feather)) * weight[i];
 		else color += orig * (weight[i]);
-		Cout = tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather)) * weight[i];
 		else color += orig * (weight[i]);
-		Cout = tex2D(CompSampler, uv - (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv - (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv - (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv - (float2(pixel.x * offset[i],pixel.y * offset[i])*Feather)) * weight[i];
 		else color += orig * (weight[i]);
-		Cout = tex2D(CompSampler, uv + (float2(pixel.x * offset[i] * -1.0,pixel.y * offset[i])*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv + (float2(pixel.x * offset[i] * -1.0,pixel.y * offset[i])*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i] * -1.0,pixel.y * offset[i])*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i] * -1.0,pixel.y * offset[i])*Feather)) * weight[i];
 		else color += orig * (weight[i]);
-		Cout = tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i] * -1.0)*Feather));
-		if (abs(check-Cout.a) > thresh) color += tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i] * -1.0)*Feather)) * weight[i];
+		Cout = fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i] * -1.0)*Feather));
+		if (abs(check-Cout.a) > thresh) color += fn_tex2D(CompSampler, uv + (float2(pixel.x * offset[i],pixel.y * offset[i] * -1.0)*Feather)) * weight[i];
 		else color += orig * (weight[i]);
 	}
 

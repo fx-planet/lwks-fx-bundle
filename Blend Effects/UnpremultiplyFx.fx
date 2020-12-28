@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author baopao
 // @Created 2015-11-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Unpremultiply_640.png
@@ -14,29 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-//
-// Modified 25 November 2018 jwrl.
-// Added creation date.
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-// Added "Notes" section to header.
-// Changed "FG" node to "Inp" for consistency.
-//
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// LW 14+ version 11 January 2018
-// Category changed from "Mixes" to "Key", subcategory "User Effects" added.
-//
-// Bug fix 26 July 2017
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
-// have now been explicitly declared.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,18 +29,14 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
 sampler s_Input = sampler_state
 {
-   Texture = <Inp>;
+   Texture   = <Inp>;
    AddressU  = ClampToEdge;
    AddressV  = ClampToEdge;
    MinFilter = Linear;
@@ -70,16 +45,34 @@ sampler s_Input = sampler_state
 };
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define EMPTY   0.0.xxxx
+
+//-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
 float4 main (float2 uv : TEXCOORD1) : COLOR
 {
-    float4 color = tex2D (s_Input, uv);
+   float2 xy = abs (uv - 0.5.xx);
 
-    color.rgb /= color.a;
+   if (max (xy.x, xy.y) > 0.5) return EMPTY;
 
-    return color;
+   float4 color = tex2D (s_Input, uv);
+
+   color.rgb /= color.a;
+
+   return color;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -88,10 +81,6 @@ float4 main (float2 uv : TEXCOORD1) : COLOR
 
 technique SimpleTechnique
 {
-pass MainPass
-
-   {
-      PixelShader = compile PROFILE main();
-   }
-
+   pass MainPass
+   { PixelShader = compile PROFILE main (); }
 }

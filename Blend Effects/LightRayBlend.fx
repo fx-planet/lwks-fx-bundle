@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Created 2016-03-04
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
 
 /**
@@ -25,51 +25,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Update 11 July 2020 jwrl.
-// Added a delta key to separate blended effects from the background.
-// THIS MAY (BUT SHOULDN'T) BREAK BACKWARDS COMPATIBILITY!!!
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 25 November 2018 jwrl.
-// Renamed effect from "Light ray keys" to "Light ray blend".
-// Changed category from "Key" to "Mix".
-// Changed subcategory from "Edge Effects" to "Blend Effects".
-// Added alpha boost for Lightworks titles.
-//
-// Modified 30 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 5 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// LW 14+ version 11 January 2018
-// Subcategory "Edge Effects" added.
-//
-// Modified 5 December 2017
-// Corrected an addressing mode bug which could have effected the way that transitions
-// behaved with this effect on Linux and OS-X.
-//
-// Bug fix 26 July 2017
-// Because Windows and Linux-OS/X have differing defaults for undefined samplers they
-// have now been explicitly declared.
-//
-// Modified May 7 2016
-// Extended the foreground blend mdoes to include add and subtract, and changed the ray
-// blend modes to be add, screen, darken and subtract.  "Add" effectively replaces the
-// original "lighten" mode.  Also added the ability to independently fade out the
-// foreground image and improved the linear fall-off.
-//
-// Modified April 3 2016
-// Added the ability to set the foreground blend to solid, screen, darken, or none, and
-// to make the rays darken or lighter the background.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -83,51 +40,78 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-texture blurProc : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-sampler s_Processed  = sampler_state
-{
-   Texture   = <blurProc>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define R_VAL    0.2989
+#define G_VAL    0.5866
+#define B_VAL    0.1145
+
+#define SAMPLE   80.0
+
+#define SAMPLES  SAMPLE + 1.0
+
+#define B_SCALE  0.0075
+
+#define L_SCALE  0.00375
+#define LIN_OFFS 1.001
+#define LUMAOFFS 0.015
+#define L_SAMPLE 20.0
+
+#define ADD      0
+#define SCREEN   1
+#define DARKEN   2
+#define SUBTRACT 3
+#define SOLID    4
+
+float _OutputAspectRatio;
+
+#define EMPTY    (0.0).xxxx
+
+//-----------------------------------------------------------------------------------------//
+// Inputs and targets
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
+
+DefineTarget (blurProc, s_Processed);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -154,8 +138,8 @@ int rayType
 float zoomAmount
 <
    string Description = "Length";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Opacity
@@ -185,16 +169,16 @@ float Xcentre
 <
    string Description = "Effect centre";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Ycentre
 <
    string Description = "Effect centre";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 int Source
@@ -204,57 +188,44 @@ int Source
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define R_VAL    0.2989
-#define G_VAL    0.5866
-#define B_VAL    0.1145
-
-#define SAMPLE   80.0
-
-#define SAMPLES  SAMPLE + 1.0
-
-#define B_SCALE  0.0075
-
-#define L_SCALE  0.00375
-#define LIN_OFFS 1.001
-#define LUMAOFFS 0.015
-#define L_SAMPLE 20.0
-
-#define ADD      0
-#define SCREEN   1
-#define DARKEN   2
-#define SUBTRACT 3
-#define SOLID    4
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s_Sampler, float2 uv)
+float4 fn_tex2D (sampler s, float2 uv)
 {
-   float4 Fgd = tex2D (s_Sampler, uv);
+   float2 xy = abs (uv - 0.5.xx);
 
-   if (Fgd.a == 0.0) return Fgd.aaaa;
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
+
+float4 fn_key2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
+
+   if (max (xy.x, xy.y) > 0.5) return EMPTY;
+
+   float4 Fgd = tex2D (s, uv);
+
+   if (Fgd.a == 0.0) return EMPTY;
 
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
+
+      return Fgd;
    }
-   else if (Source == 2) {
-      float4 Bgd = tex2D (s_Background, uv);
 
-      float kDiff = distance (Fgd.g, Bgd.g);
+   if (Source == 1) return Fgd;
 
-      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+   float4 Bgd = fn_tex2D (s_Background, uv);
 
-      Fgd.a = smoothstep (0.0, 0.25, kDiff);
-      Fgd.rgb *= Fgd.a;
-   }
+   float kDiff = distance (Fgd.g, Bgd.g);
+
+   kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+   kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+   Fgd.a = smoothstep (0.0, 0.25, kDiff);
+   Fgd.rgb *= Fgd.a;
 
    return Fgd;
 }
@@ -269,19 +240,19 @@ float4 ps_out (float2 xy : TEXCOORD1) : COLOR
 
    float scale;
 
-   if (zoomAmount == 0.0) { retval = fn_tex2D (s_Foreground, xy); }
+   if (zoomAmount == 0.0) { retval = fn_key2D (s_Foreground, xy); }
    else {
       float z_Amount = zoomAmount / 2;
 
       float2 zoomCentre = float2 ((Xcentre * 3) - 1.0, 2.0 - (Ycentre * 3));
       float2 uv = xy - zoomCentre;
 
-      retval = 0.0.xxxx;
+      retval = EMPTY;
 
       for (int i = SAMPLE; i >= 0.0; i--) {
          scale = 1.0 - z_Amount * (i / SAMPLE);
 
-         retval += fn_tex2D (s_Foreground, uv * scale + zoomCentre);
+         retval += fn_key2D (s_Foreground, uv * scale + zoomCentre);
       }
 
       retval /= SAMPLES;
@@ -296,17 +267,17 @@ float4 ps_in (float2 xy : TEXCOORD1) : COLOR
 
    float scale;
 
-   if (zoomAmount == 0.0) { retval = fn_tex2D (s_Foreground, xy); }
+   if (zoomAmount == 0.0) { retval = fn_key2D (s_Foreground, xy); }
    else {
       float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
       float2 uv = xy - zoomCentre;
 
-      retval = 0.0.xxxx;
+      retval = EMPTY;
 
       for (int i = 0; i <= SAMPLE; i++) {
          scale = 1.0 + zoomAmount * (i / SAMPLE);
 
-         retval += fn_tex2D (s_Foreground, uv * scale + zoomCentre);
+         retval += fn_key2D (s_Foreground, uv * scale + zoomCentre);
       }
 
       retval /= SAMPLES;
@@ -324,7 +295,7 @@ float4 ps_linear (float2 xy : TEXCOORD1) : COLOR
    offset.y = saturate (Ycentre * LIN_OFFS) - 0.5;
 
    if ((max (abs (offset.x), abs (offset.y)) == 0.0) || (zoomAmount == 0.0)) {
-      retval = fn_tex2D (s_Foreground, xy);
+      retval = fn_key2D (s_Foreground, xy);
    }
    else {
       offset *= 1.0 / sqrt ((offset.x * offset.x) + (offset.y * offset.y));
@@ -336,7 +307,7 @@ float4 ps_linear (float2 xy : TEXCOORD1) : COLOR
       float luminosity = 1.0;
 
       for (int i = 0; i < SAMPLES; i++) {
-         retval += fn_tex2D (s_Foreground, uv) * luminosity;
+         retval += fn_key2D (s_Foreground, uv) * luminosity;
          uv += offset;
          luminosity -= LUMAOFFS;
          }
@@ -347,11 +318,11 @@ float4 ps_linear (float2 xy : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR
 {
-   float4 fgImage = fn_tex2D (s_Foreground, xy);
-   float4 bgImage = tex2D (s_Background, xy);
-   float4 blurred = tex2D (s_Processed, xy);
+   float4 fgImage = fn_key2D (s_Foreground, xy1);
+   float4 bgImage = fn_tex2D (s_Background, xy2);
+   float4 blurred = fn_tex2D (s_Processed, xy3);
 
    float inv_luma = 1.0 - dot (blurred.rgb, float3 (R_VAL, G_VAL, B_VAL));
 

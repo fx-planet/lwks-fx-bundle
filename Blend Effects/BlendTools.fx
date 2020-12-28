@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Created 2018-07-02
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blend_Tools_640.png
 
 /**
@@ -28,20 +28,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 2020-07-25 jwrl.
-// Added the ability to unpremultiply after feathering.
-//
-// Modified 2 August 2019 jwrl.
-// Added the ability to generate the alpha channel from luminance.
-// Added the ability to export just the foreground with the processed alpha.
-//
-// Modified 23 December 2018 jwrl.
-// Renamed effect from "Key tools" to "Blend tools".
-// Changed subcategory to "Blend Effects".
-// Formatted the descriptive block so that it can automatically be read.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,30 +43,63 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Key : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DeclareInput( TEXTURE, SAMPLER ) \
+                                         \
+   texture TEXTURE;                      \
+                                         \
+   sampler SAMPLER = sampler_state       \
+   {                                     \
+      Texture   = <TEXTURE>;             \
+      AddressU  = ClampToEdge;           \
+      AddressV  = ClampToEdge;           \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define DeclareTarget( TARGET, TSAMPLE ) \
+                                         \
+   texture TARGET : RenderColorTarget;   \
+                                         \
+   sampler TSAMPLE = sampler_state       \
+   {                                     \
+      Texture   = <TARGET>;              \
+      AddressU  = ClampToEdge;           \
+      AddressV  = ClampToEdge;           \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define LOOP   12
+#define DIVIDE 49
+
+#define RADIUS 0.00125
+#define ANGLE  0.2617993878
+
+float _OutputAspectRatio;
+
+#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DeclareInput (Fg, s_Foreground);
+DeclareInput (Bg, s_Background);
 
-sampler s_Key = sampler_state
-{
-   Texture   = <Key>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DeclareTarget (Key, s_Key);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -159,16 +180,15 @@ int a_Mode
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-#define LOOP   12
-#define DIVIDE 49
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-#define RADIUS 0.00125
-#define ANGLE  0.2617993878
-
-float _OutputAspectRatio;
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -176,7 +196,7 @@ float _OutputAspectRatio;
 
 float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 Fgd = fn_tex2D (s_Foreground, uv);
    float4 K = (pow (Fgd, 1.0 / a_Gamma) * a_Gain) + a_Bright.xxxx;
 
    int unpremul = a_Premul;
@@ -201,9 +221,10 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
    return Fgd;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd = tex2D (s_Key, uv);
+   float4 Fgd = fn_tex2D (s_Key, uv1);
+   float4 Bgd = fn_tex2D (s_Background, uv2);
 
    float alpha = Fgd.a;
 
@@ -215,11 +236,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       for (int i = 0; i < LOOP; i++) {
          sincos (angle, xy.x, xy.y);
          xy *= radius;
-         alpha += tex2D (s_Key, uv + xy).a;
-         alpha += tex2D (s_Key, uv - xy).a;
+         alpha += fn_tex2D (s_Key, uv1 + xy).a;
+         alpha += fn_tex2D (s_Key, uv1 - xy).a;
          xy += xy;
-         alpha += tex2D (s_Key, uv + xy).a;
-         alpha += tex2D (s_Key, uv - xy).a;
+         alpha += fn_tex2D (s_Key, uv1 + xy).a;
+         alpha += fn_tex2D (s_Key, uv1 - xy).a;
          angle += ANGLE;
       }
 
@@ -237,7 +258,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    if (a_Mode == 2) return float4 (Fgd.aaa, 1.0);
 
-   return float4 (lerp (tex2D (s_Background, uv), Fgd, Fgd.a).rgb, 1.0);
+   return float4 (lerp (Bgd, Fgd, Fgd.a).rgb, max (Bgd.a, Fgd.a));
 }
 
 //-----------------------------------------------------------------------------------------//

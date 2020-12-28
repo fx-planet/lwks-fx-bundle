@@ -1,14 +1,16 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Created 2018-10-21
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/DropShadowAndBorder_640.png
 
 /**
  "Drop shadow and border" is a drop shadow and border generator.  It provides drop shadow
  softness and independent colour settings for border and shadow.  Two border generation
  modes and full border anti-aliassing are provided.  The border centering can be offset
- to make the border assymetrical (thanks Igor for the suggestion).
+ to make the border assymetrical (thanks Igor for the suggestion).  In previous builds of
+ this effect the range of centering adjustment was absurd.  In this version it has been
+ considerably reduced.
 
  The effect can also output the foreground, border and/or drop shadow alone, with the
  appropriate alpha channel.  When doing so any background input to the effect will not
@@ -20,45 +22,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Update 2020-10-13 jwrl.
-// Set border and drop shadow alpha colour to 1.0 even though it's not used.  Unless
-// that's done the colour is invisible in the settings dialogue.
-// Corrected compile bug introduced when "Source" settings were updated.  Apparently
-// 2020.1.1 doesn't always like nested conditionals.
-//
-// Update 2020-09-27 jwrl.
-// Updated "Source" settings.
-//
-// Update 2020-08-02 jwrl.
-// Added a delta key to separate blended effects from the background.
-//
-// Update 30 April 2019 jwrl.
-// Added a fade mode to the foreground so it can be dropped out leaving just the border
-// and/or drop shadow.
-//
-// Update 23 December 2018 jwrl.
-// Converted to version 14.5 and up.
-// Modified Windows version to compile as ps_3_0.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Update 25 November 2018 jwrl.
-// Added alpha boost function for Lightworks titles.
-// Changed category to "Mix".
-// Changed subcategory to "Blend Effects".
-//
-// Rewritten 21 October 2018 jwrl.
-// In the previous version of this effect there had been quite a lot of bug fixes and so
-// it had grown considerably over its lifetime.  This rewrite aims to reduce that bloat.
-// The six passes of the earlier version are now four and the maths has also been somewhat
-// simplified.  An extremely minor cross-platform bug was also found and fixed and a small
-// variation in border depth between fully sampled and square edged borders has also been
-// corrected.
-//
-// This version is functionally identical to the version of 4 July 2018.  That was the
-// last release of the original effect.
+// Rewrite 2020-12-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -72,57 +37,79 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture RawBdr : RenderColorTarget;
-texture Border : RenderColorTarget;
-texture Shadow : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SQRT_2  0.7071067812
+
+float _OutputAspectRatio;
+float _OutputWidth;
+float _OutputHeight;
+
+float _BgXScale = 1.0;
+float _BgYScale = 1.0;
+float _FgXScale = 1.0;
+float _FgYScale = 1.0;
+
+float _square [] = { { 0.0 }, { 0.003233578364 }, { 0.006467156728 }, { 0.009700735092 } };
+
+float2 _rot_0 [] = { { 0.0, 0.01 },
+                     { 0.002588190451, 0.009659258263 }, { 0.005, 0.008660254038 },
+                     { 0.007071067812, 0.007071067812 }, { 0.008660254038, 0.005 },
+                     { 0.009659258263, 0.002588190451 }, { 0.01, 0.0 } };
+
+float2 _rot_1 [] = { { 0.001305261922, 0.009914448614 }, { 0.003826834324, 0.009238795325 },
+                     { 0.006087614290, 0.007933533403 }, { 0.007933533403, 0.006087614290 },
+                     { 0.009238795325, 0.003826834324 }, { 0.009914448614, 0.001305261922 } };
+
+#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state {
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_RawBorder = sampler_state {
-   Texture   = <RawBdr>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Border = sampler_state {
-   Texture   = <Border>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Shadow = sampler_state {
-   Texture = <Shadow>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawBdr, s_RawBorder);
+DefineTarget (Border, s_Border);
+DefineTarget (Shadow, s_Shadow);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -183,18 +170,18 @@ float B_centre_X
 <
    string Group = "Border";
    string Description = "Border centre";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
+   float MinVal = 0.45;
+   float MaxVal = 0.55;
 > = 0.5;
 
 float B_centre_Y
 <
    string Group = "Border";
    string Description = "Border centre";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
+   float MinVal = 0.45;
+   float MaxVal = 0.55;
 > = 0.5;
 
 float4 B_colour
@@ -216,25 +203,28 @@ float S_feather
 <
    string Group = "Shadow";
    string Description = "Feather";
+   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.33333333;
+   float MaxVal = 0.5;
+> = 0.15;
 
 float S_offset_X
 <
    string Group = "Shadow";
    string Description = "X offset";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.2;
+   string Flags = "DisplayAsPercentage";
+   float MinVal = -0.05;
+   float MaxVal = 0.05;
+> = 0.01;
 
 float S_offset_Y
 <
    string Group = "Shadow";
    string Description = "Y offset";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = -0.2;
+   string Flags = "DisplayAsPercentage";
+   float MinVal = -0.05;
+   float MaxVal = 0.05;
+> = -0.01;
 
 float4 S_colour
 <
@@ -256,64 +246,42 @@ int Source
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Bad_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define X_SCALE 0.5
-
-#define OFFSET  0.04
-
-#define SQRT_2  0.7071067812
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-float _square [] = { { 0.0 }, { 0.003233578364 }, { 0.006467156728 }, { 0.009700735092 } };
-
-float2 _rot_0 [] = { { 0.0, 0.01 },
-                     { 0.002588190451, 0.009659258263 }, { 0.005, 0.008660254038 },
-                     { 0.007071067812, 0.007071067812 }, { 0.008660254038, 0.005 },
-                     { 0.009659258263, 0.002588190451 }, { 0.01, 0.0 } };
-
-float2 _rot_1 [] = { { 0.001305261922, 0.009914448614 }, { 0.003826834324, 0.009238795325 },
-                     { 0.006087614290, 0.007933533403 }, { 0.007933533403, 0.006087614290 },
-                     { 0.009238795325, 0.003826834324 }, { 0.009914448614, 0.001305261922 } };
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s_Sampler, float2 uv)
+float4 fn_tex2D (sampler s, float2 uv)
 {
-   float4 Fgd = tex2D (s_Sampler, uv);
+   float2 xy = abs (uv - 0.5.xx);
 
-   if (Fgd.a == 0.0) return Fgd.aaaa;
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
-   if (Source == 0) {
-      Fgd.a    = pow (Fgd.a, 0.5);
-      Fgd.rgb /= Fgd.a;
-   }
-   else if (Source == 2) {
-      float4 Bgd = tex2D (s_Background, uv);
+float fn_alpha (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-      float kDiff = distance (Fgd.g, Bgd.g);
+   return (max (xy.x, xy.y) > 0.5) ? 0.0 : tex2D (s, uv).a;
+}
 
-      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+float fn_key2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-      Fgd.a = smoothstep (0.0, 0.25, kDiff);
-      Fgd.rgb *= Fgd.a;
-   }
+   if (max (xy.x, xy.y) > 0.5) return 0.0;
 
-   return Fgd;
+   float4 Fgd = tex2D (s, uv);
+
+   if ((Fgd.a == 0.0) || (Source == 1)) return Fgd.a;
+   if (Source == 0) return pow (Fgd.a, 0.5);
+
+   float4 Bgd = fn_tex2D (s_Background, uv);
+
+   float kDiff = distance (Fgd.g, Bgd.g);
+
+   kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+   kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+   return smoothstep (0.0, 0.25, kDiff);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -322,39 +290,40 @@ float4 fn_tex2D (sampler s_Sampler, float2 uv)
 
 float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = fn_tex2D (s_Foreground, uv);
+   if (B_amount <= 0.0) return fn_tex2D (s_Foreground, uv);
 
-   if (B_amount <= 0.0) return retval;
+   float Xpos = (0.5 - B_centre_X) * _BgXScale  / _FgXScale;
+   float Ypos = (B_centre_Y - 0.5) * _BgYScale / _FgYScale;
 
    float2 offset, edge = float2 (1.0, _OutputAspectRatio);
-   float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5) * 2.0;
+   float2 xy = uv + edge * float2 (Xpos, Ypos);
 
-   float alpha = retval.a;
+   float alpha = fn_key2D (s_Foreground, uv);
 
    edge *= B_lock ? B_width.xx : float2 (B_width, B_height);
 
    for (int i = 0; i < 7; i++) {
       offset = edge * _rot_0 [i];
 
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy + offset).a);
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy - offset).a);
+      alpha = max (alpha, fn_key2D (s_Foreground, xy + offset));
+      alpha = max (alpha, fn_key2D (s_Foreground, xy - offset));
 
       offset.y = -offset.y;
 
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy + offset).a);
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy - offset).a);
+      alpha = max (alpha, fn_key2D (s_Foreground, xy + offset));
+      alpha = max (alpha, fn_key2D (s_Foreground, xy - offset));
    }
 
    for (int i = 0; i < 6; i++) {
       offset = edge * _rot_1 [i];
 
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy + offset).a);
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy - offset).a);
+      alpha = max (alpha, fn_key2D (s_Foreground, xy + offset));
+      alpha = max (alpha, fn_key2D (s_Foreground, xy - offset));
 
       offset.y = -offset.y;
 
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy + offset).a);
-      alpha = max (alpha, fn_tex2D (s_Foreground, xy - offset).a);
+      alpha = max (alpha, fn_key2D (s_Foreground, xy + offset));
+      alpha = max (alpha, fn_key2D (s_Foreground, xy - offset));
    }
 
    return alpha.xxxx;
@@ -362,14 +331,15 @@ float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = fn_tex2D (s_Foreground, uv);
+   if (B_amount <= 0.0) return fn_tex2D (s_Foreground, uv);
 
-   if (B_amount <= 0.0) return retval;
+   float Xpos = (0.5 - B_centre_X) * _BgXScale  / _FgXScale;
+   float Ypos = (B_centre_Y - 0.5) * _BgYScale / _FgYScale;
 
    float2 offset, edge = float2 (1.0, _OutputAspectRatio);
-   float2 xy = uv + edge * float2 (0.5 - B_centre_X, B_centre_Y - 0.5);
+   float2 xy = uv + edge * float2 (Xpos, Ypos);
 
-   float alpha = retval.a;
+   float alpha = fn_key2D (s_Foreground, uv);
 
    edge *= B_lock ? B_width.xx : float2 (B_width, B_height);
 
@@ -379,13 +349,13 @@ float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
       for (int j = 0; j < 4; j++) {
          offset.y = edge.y * _square [j];
 
-         alpha = max (alpha, fn_tex2D (s_Foreground, xy + offset).a);
-         alpha = max (alpha, fn_tex2D (s_Foreground, xy - offset).a);
+         alpha = max (alpha, fn_key2D (s_Foreground, xy + offset));
+         alpha = max (alpha, fn_key2D (s_Foreground, xy - offset));
 
          offset.y = -offset.y;
 
-         alpha = max (alpha, fn_tex2D (s_Foreground, xy + offset).a);
-         alpha = max (alpha, fn_tex2D (s_Foreground, xy - offset).a);
+         alpha = max (alpha, fn_key2D (s_Foreground, xy + offset));
+         alpha = max (alpha, fn_key2D (s_Foreground, xy - offset));
       }
    }
 
@@ -396,26 +366,31 @@ float4 ps_antialias (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Fgnd = fn_tex2D (s_Foreground, uv);
 
+   Fgnd.a = fn_key2D (s_Foreground, uv);
+
+   if (Source == 0) Fgnd.rgb /= Fgnd.a;
+   else if (Source == 2) Fgnd.rgb *= Fgnd.a;
+
    if (B_amount <= 0.0) return Fgnd;
 
-   float alpha = tex2D (s_RawBorder, uv).a;
+   float alpha = fn_alpha (s_RawBorder, uv);
 
-   float3 xyz = float3 (1.0, 0.0, _OutputAspectRatio) / _OutputWidth;
+   float3 xyz = float3 (1.0 / _OutputWidth, 0.0, 1.0 / _OutputHeight);
 
    float2 xy = xyz.xz * SQRT_2;
 
-   alpha += tex2D (s_RawBorder, uv + xyz.xy).a;
-   alpha += tex2D (s_RawBorder, uv - xyz.xy).a;
-   alpha += tex2D (s_RawBorder, uv + xyz.yz).a;
-   alpha += tex2D (s_RawBorder, uv - xyz.yz).a;
+   alpha += fn_alpha (s_RawBorder, uv + xyz.xy);
+   alpha += fn_alpha (s_RawBorder, uv - xyz.xy);
+   alpha += fn_alpha (s_RawBorder, uv + xyz.yz);
+   alpha += fn_alpha (s_RawBorder, uv - xyz.yz);
 
-   alpha += tex2D (s_RawBorder, uv + xy).a;
-   alpha += tex2D (s_RawBorder, uv - xy).a;
+   alpha += fn_alpha (s_RawBorder, uv + xy);
+   alpha += fn_alpha (s_RawBorder, uv - xy);
 
    xy.x = -xy.x;
 
-   alpha += tex2D (s_RawBorder, uv + xy).a;
-   alpha += tex2D (s_RawBorder, uv - xy).a;
+   alpha += fn_alpha (s_RawBorder, uv + xy);
+   alpha += fn_alpha (s_RawBorder, uv - xy);
    alpha /= 9.0;
 
    alpha = max (Fgnd.a, alpha * B_amount);
@@ -428,9 +403,14 @@ float4 ps_direct (float2 uv : TEXCOORD1) : COLOR
 {
    float4 Fgnd = fn_tex2D (s_Foreground, uv);
 
+   Fgnd.a = fn_key2D (s_Foreground, uv);
+
+   if (Source == 0) Fgnd.rgb /= Fgnd.a;
+   else if (Source == 2) Fgnd.rgb *= Fgnd.a;
+
    if (B_amount <= 0.0) return Fgnd;
 
-   float alpha = max (Fgnd.a, tex2D (s_RawBorder, uv).a * B_amount);
+   float alpha = max (Fgnd.a, fn_alpha (s_RawBorder, uv) * B_amount);
 
    Fgnd  = lerp (B_colour, Fgnd, Fgnd.a);
 
@@ -439,24 +419,24 @@ float4 ps_direct (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFSET;
+   float2 xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y);
 
-   float alpha = tex2D (s_Border, xy1).a;
+   float alpha = fn_alpha (s_Border, xy1);
 
    if ((S_amount > 0.0) && (S_feather > 0.0)) {
-      float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
+      float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather;
       float2 xy2;
 
       for (int i = 0; i < 7; i++) {
          xy2 = scale * _rot_0 [i];
 
-         alpha += tex2D (s_Border, xy1 + xy2).a;
-         alpha += tex2D (s_Border, xy1 - xy2).a;
+         alpha += fn_alpha (s_Border, xy1 + xy2);
+         alpha += fn_alpha (s_Border, xy1 - xy2);
 
          xy2.y = -xy2.y;
 
-         alpha += tex2D (s_Border, xy1 + xy2).a;
-         alpha += tex2D (s_Border, xy1 - xy2).a;
+         alpha += fn_alpha (s_Border, xy1 + xy2);
+         alpha += fn_alpha (s_Border, xy1 - xy2);
       }
 
    alpha /= 29.0;
@@ -467,22 +447,22 @@ float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float alpha = tex2D (s_Shadow, xy1).a;
+   float alpha = fn_alpha (s_Shadow, xy1);
 
    if ((S_amount > 0.0) && (S_feather > 0.0)) {
-      float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
+      float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather;
       float2 uv;
 
       for (int i = 0; i < 6; i++) {
          uv = scale * _rot_1 [i];
 
-         alpha += tex2D (s_Shadow, xy1 + uv).a;
-         alpha += tex2D (s_Shadow, xy1 - uv).a;
+         alpha += fn_alpha (s_Shadow, xy1 + uv);
+         alpha += fn_alpha (s_Shadow, xy1 - uv);
 
          uv.y = -uv.y;
 
-         alpha += tex2D (s_Shadow, xy1 + uv).a;
-         alpha += tex2D (s_Shadow, xy1 - uv).a;
+         alpha += fn_alpha (s_Shadow, xy1 + uv);
+         alpha += fn_alpha (s_Shadow, xy1 - uv);
       }
 
    alpha /= 25.0;
@@ -490,17 +470,17 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    alpha *= S_amount;
 
-   float4 retval = tex2D (s_Border, xy1);
+   float4 retval = fn_tex2D (s_Border, xy1);
 
    alpha  = max (alpha, retval.a);
-   alpha  = lerp (alpha, 0.0, fn_tex2D (s_Foreground, xy1).a * (1.0 - F_amount));
+   alpha  = lerp (alpha, 0.0, fn_key2D (s_Foreground, xy1) * (1.0 - F_amount));
    retval = lerp (S_colour, retval, retval.a);
    retval.a = alpha;
    alpha *= Amount;
 
-   if (AlphaMode == 1) return float4 (retval.rgb, alpha);
+   if (AlphaMode == 1) return retval;
 
-   return lerp (tex2D (s_Background, xy2), retval, alpha);
+   return lerp (fn_tex2D (s_Background, xy2), retval, alpha);
 }
 
 //-----------------------------------------------------------------------------------------//

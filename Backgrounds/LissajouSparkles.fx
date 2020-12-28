@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2020-12-28
 // @Author jwrl
-// @Author baopao
-// @Created 2016-05-14
+// @Created 2020-12-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou_640.png
 
 /**
@@ -12,53 +11,22 @@
  type of some parameters were changed from baopao's original to allow their interactive
  adjustment in the edit viewer.
 
- NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
- A legacy version is available for users in that position.
+ Because backgrounds are newly created media they are produced at the sequence resolution.
+ This means that any background video will also be locked to that resolution.
+
+ NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
+ This means that any background video will also be locked at that resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect LissajouSparkles.fx
 //
-// Lissajou sparkles is based on Sinusoidal lights, a semi-abstract pattern generator
-// created for Mac and Linux systems by Lightworks user baopao.  That was in turn based
-// on the Lissajou code at http://glslsandbox.com/e#9996.0
-//
-// Windows conversion was carried out by Lightworks user jwrl.
+// Lissajou sparkles is based on the Lissajou code at http://glslsandbox.com/e#9996.0
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 3 August 2019 jwrl.
-// Corrected matte generation so that it remains stable without an input.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Inverted speed setting.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 31 May 2018 jwrl.
-// Changed Num description from "Number" to "Star number".
-// Changed Level description from "Intensity" to "Glow intensity".
-// Reversed direction of action of CentreX parameter.
-// Fixed default colours not displaying.
-// Performed general code cleanup to improve efficiency.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// LW 14.5 update by jwrl 30 March 2018
-// Under Windows this must compile as ps_3.0 or better.  This is automatically taken
-// care of in versions of LW higher than 14.0.  If using an older version under
-// Windows the Legacy version must be used.
-//
-// LW 14+ version by jwrl 12 February 2017
-// Category changed from "Generators" to "Mattes", SubCategory "Patterns" added.
+// Rewrite 2020-12-28 jwrl.
+// Complete rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -72,19 +40,39 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+float _Progress;
+float _Length;
+
+float _OutputAspectRatio;
+
+#define EMPTY    (0.0).xxxx
+
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
 texture Inp;
 
-texture Bgd : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
-sampler s_Background = sampler_state { Texture = <Bgd>; };
+sampler s_Input = sampler_state
+{
+   Texture   = <Inp>;
+   AddressU  = ClampToEdge;
+   AddressV  = ClampToEdge;
+   MinFilter = Linear;
+   MagFilter = Linear;
+   MipFilter = Linear;
+};
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -102,24 +90,24 @@ float Speed
 <
    string Description = "Speed";
    string Group = "Pattern";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.50;
 
 float Scale
 <
    string Description = "Scale";
    string Group = "Pattern";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.33;
 
 float Level
 <
    string Description = "Glow intensity";
    string Group = "Pattern";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.50;
 
 float CentreX
@@ -127,8 +115,8 @@ float CentreX
    string Description = "Position";
    string Group = "Pattern";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float CentreY
@@ -136,8 +124,8 @@ float CentreY
    string Description = "Position";
    string Group = "Pattern";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float ResX
@@ -181,14 +169,14 @@ float4 fgdColour
    string Description = "Colour";
    string Group = "Pattern";
    bool SupportsAlpha = false;
-> = { 0.85, 0.75, 0.0, 1.0 };
+> = { 0.85, 0.75, 0.0, -1.0 };
 
 float extBgd
 <
    string Description = "External Video";
    string Group = "Background";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.00;
 
 float4 topLeft
@@ -196,63 +184,76 @@ float4 topLeft
    string Description = "Top Left";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = { 0.375, 0.5, 0.75, 0.0 };
+> = { 0.375, 0.5, 0.75, -1.0 };
 
 float4 topRight
 <
    string Description = "Top Right";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = { 0.375, 0.375, 0.75, 0.0 };
+> = { 0.375, 0.375, 0.75, -1.0 };
 
 float4 botLeft
 <
    string Description = "Bottom Left";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = { 0.375, 0.625, 0.75, 0.0 };
+> = { 0.375, 0.625, 0.75, -1.0 };
 
 float4 botRight
 <
    string Description = "Bottom Right";
    string Group = "Background";
    bool SupportsAlpha = false;
-> = { 0.375, 0.5625, 0.75, 0.0 };
+> = { 0.375, 0.5625, 0.75, -1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   float2 xy = abs (uv - 0.5.xx);
 
-float _Progress;
+   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_background (float2 uv : TEXCOORD, float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 {
-   float4 topRow = lerp (topLeft, topRight, uv.x);
-   float4 botRow = lerp (botLeft, botRight, uv.x);
-   float4 cField = lerp (topRow, botRow, uv.y);
+   float4 fgdPat = float4 (fgdColour.rgb, 1.0);
 
-   return lerp (cField, tex2D (s_Input, xy), extBgd);
-}
+   float2 position, xy = uv0;
 
-float4 ps_main (float2 uv : TEXCOORD, float2 UV : TEXCOORD1) : COLOR
-{
-   float4 fgdPat = fgdColour;
+   if (_OutputAspectRatio <= 1.0) {
+      xy.x = (xy.x - CentreX) * _OutputAspectRatio;
+      xy.y += CentreY - 0.5;
 
-   float2 xy = uv + float2 (0.5 - CentreX, CentreY - 0.5) * 2.0;
-   float2 position;
+      if (_OutputAspectRatio < 1.0) {
+         xy.y -= 0.5;
+         xy   *= _OutputAspectRatio;
+         xy.y += 0.5;
+      }
+
+      xy.x += 0.5;
+   }
+   else {
+      xy.x -= CentreX;
+      xy.y = (xy.y + CentreY - 1.0) / _OutputAspectRatio;
+
+      if (_OutputAspectRatio < 1.0) xy /= _OutputAspectRatio;
+
+      xy.x += 0.5;
+      xy.y += 0.5;
+   }
 
    float scale_X    = Scale * 3.0;
    float scale_Y    = scale_X * ResY;
    float sum        = 0.0;
-   float time       = _Progress * (1.0 - Speed) * 10.0;
+   float time       = _Progress * (1.0 - Speed) * _Length;
    float Curve      = SineX * 12.5;
    float keyClip    = scale_X / ((19.0 - (Level * 14.0)) * 100.0);
    float curve_step = 0.0;
@@ -273,7 +274,12 @@ float4 ps_main (float2 uv : TEXCOORD, float2 UV : TEXCOORD1) : COLOR
    fgdPat.rgb *= sum;
    sum = saturate ((sum * 1.5) - 0.25);
 
-   return lerp (tex2D (s_Background, UV), fgdPat, sum);
+   float4 topRow = lerp (topLeft, topRight, uv0.x);
+   float4 botRow = lerp (botLeft, botRight, uv0.x);
+   float4 cField = float4 (lerp (topRow, botRow, uv0.y).rgb, 1.0);
+   float4 Bgnd   = lerp (cField, fn_tex2D (s_Input, uv1), extBgd);
+
+   return lerp (Bgnd, fgdPat, sum);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -283,9 +289,5 @@ float4 ps_main (float2 uv : TEXCOORD, float2 UV : TEXCOORD1) : COLOR
 technique LissajouSparkles
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Bgd;"; >
-   { PixelShader = compile PROFILE ps_background (); }
-
-   pass P_2
    { PixelShader = compile PROFILE ps_main (); }
 }

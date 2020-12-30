@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2020-12-30
 // @Author jwrl
 // @Created 2020-11-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_repeat_640.png
@@ -23,7 +23,7 @@
  preserved wherever the foreground isn't present.
 
  There is one final difference when compared with the Lightworks 2D DVE: the background
- can be faded to black.
+ can be faded to opaque black.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -31,8 +31,9 @@
 //
 // Version history:
 //
-// Updated jwrl 2020-12-28.
-// Corrected an issue that caused wrapped pixels to be displayed on Intel GPUs.
+// Updated jwrl 2020-12-30.
+// Corrected an issue that caused wrapped pixels to be intermittently displayed at frame
+// boundaries as the foreground zoomed out.
 //
 // Modified jwrl 2020-12-15.
 // Two additional mirror modes added.
@@ -70,8 +71,8 @@ Wrong_Lightworks_version
  sampler SAMPLER = sampler_state      \
  {                                    \
    Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
    MinFilter = Linear;                \
    MagFilter = Linear;                \
    MipFilter = Linear;                \
@@ -84,25 +85,28 @@ Wrong_Lightworks_version
  sampler TSAMPLE = sampler_state      \
  {                                    \
    Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
    MinFilter = Linear;                \
    MagFilter = Linear;                \
    MipFilter = Linear;                \
  }
 
+#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
 float _BgXScale = 1.0;     // If this is compiled in a version of Lightworks before 2021.1
 float _BgYScale = 1.0;     // the pre-loaded values will be used in place of the real scale
-float _FgXScale = 1.0;     // factor.  Multiplying or dividing by one won't change a thing.
-float _FgYScale = 1.0;
+float _FgXScale = 1.0;     // factor.  Multiplying or dividing by one won't change a thing,
+float _FgYScale = 1.0;     // so this is a safe way of accessing these variables.
 
 float _FgWidth = 5000.0;   // In earlier versions of Lightworks these values will produce
 float _FgHeight = 5000.0;  // an offset of 0.0001 instead of half a pixel when cropping.
 
+float _OutputWidth;
+float _OutputHeight;
 float _OutputAspectRatio;
 
 #define BLACK float2(0.0, 1.0).xxxy
-#define EMPTY 0.0.xxxx
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and targets
@@ -228,14 +232,17 @@ float Background
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-// This is my standard legal pixel recovery function.  Anything that falls outside the
-// legal address range is ignored and instead transparent black is returned.
+// This is a revised legal pixel recovery function.  Anything that falls outside the
+// legal address range is ignored and instead transparent black is returned.  At the
+// frame boundaries a proportional value within plus or minus a pixel is returned.
 
 float4 fn_tex2D (sampler s, float2 uv)
 {
-   float2 xy = abs (uv - 0.5.xx);
+   float4 retval = tex2D (s, uv);
 
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
+   float2 xy = saturate ((abs (uv - 0.5.xx) - 0.5.xx) * float2 (_OutputWidth, _OutputHeight));
+
+   return float4 (retval.rgb, retval.a * (1.0 - max (xy.x, xy.y)));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -244,7 +251,7 @@ float4 fn_tex2D (sampler s, float2 uv)
 
 float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 {
-   // We first calculate the border theickness, allowing for all image scaling.
+   // We first calculate the border thickness, allowing for all image scaling.
 
    float BorderH = Border * 0.25;
    float BorderV = BorderH * _OutputAspectRatio / _FgYScale;
@@ -260,17 +267,17 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
 
    // Crop values are limited to run between 0.0 and 1.0, then offset by plus or minus
    // half a pixel (see above).  Normally this will do nothing, but with an odd number
-   // of pixels in the foreground width or height the extra pixel will be duplicated.
+   // of pixels in the foreground width and/or height, border pixels will be duplicated.
 
    float Rcrop = 1.0 - saturate (CropR) + H_fix;
    float Lcrop = saturate (CropL) - H_fix;
    float Tcrop = saturate (CropT) - V_fix;
    float Bcrop = 1.0 - saturate (CropB) + V_fix;
 
-   // If we fall inside crop boundaries we return the selected pixel.
+   // If we fall inside the crop we get the selected pixel, otherwise the border colour.
 
-   if ((uv.x >= Lcrop) && (uv.x <= Rcrop) && (uv.y >= Tcrop) && (uv.y <= Bcrop))
-      return fn_tex2D (s_Foreground, uv);
+   float4 retval = ((uv.x >= Lcrop) && (uv.x <= Rcrop) && (uv.y >= Tcrop) && (uv.y <= Bcrop))
+      ? fn_tex2D (s_Foreground, uv) : Colour;
 
    // Now we wind the crop values out by the precalculated border thickness.
 
@@ -279,13 +286,11 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    Tcrop -= BorderV;
    Bcrop += BorderV;
 
-   // If we land outside the border zone we simply return transparent black and quit.
+   // If we land outside the border region we make alpha transparent.
 
-   if ((uv.x < Lcrop) || (uv.x > Rcrop) || (uv.y < Tcrop) || (uv.y > Bcrop)) return EMPTY;
+   if ((uv.x < Lcrop) || (uv.x > Rcrop) || (uv.y < Tcrop) || (uv.y > Bcrop)) retval.a = 0.0;
 
-   // After all that we get what's left - the border colour.
-
-   return Colour;
+   return retval;
 }
 
 float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
@@ -315,23 +320,23 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    if (Repeats) {
       xy1 = ((xy1 - 0.5.xx) / FgS) + 0.5.xx;
 
-      float2 xy2 = frac (xy1);
+      float2 xy2 = frac (xy1);               // xy2 now wraps to duplicate the image.
 
       if (Repeats != 2) {
          float2 xy3 = 1.0.xx - abs (2.0 * (frac (xy1 / 2.0) - 0.5.xx));
 
-         if (Repeats <= 3) xy2.x = xy3.x;
-         if (Repeats != 3) xy2.y = xy3.y;
+         if (Repeats <= 3) xy2.x = xy3.x;    // xy2 now has horizontal mirroring.
+         if (Repeats != 3) xy2.y = xy3.y;    // xy2 now has vertical mirroring.
       }
 
       xy1 = ((xy2 - 0.5.xx) * FgS) + 0.5.xx;
    }
 
    // The value in xy1 is now used to index into the foreground using fn_tex2D().
-   // The background is also recovered the same way and mixed with opaque black.
+   // The background is also recovered and mixed with opaque black.
 
    float4 Fgnd = fn_tex2D (s_Cropped, xy1);
-   float4 Bgnd = lerp (BLACK, fn_tex2D (s_Background, uv2), Background);
+   float4 Bgnd = lerp (BLACK, tex2D (s_Background, uv2), Background);
 
    // The duplicated foreground is finally blended with the background.
 
@@ -344,10 +349,8 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
 technique DVEwithRepeats
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Crop;"; > 
-   { PixelShader = compile PROFILE ps_crop (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Crop;"; >
+   CompileShader (ps_crop)
 
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_2 CompileShader (ps_main)
 }

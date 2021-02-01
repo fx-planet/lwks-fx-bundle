@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-02-01
 // @Author schrauber
 // @Created 2017-01-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/magnifying_glass_640.png
@@ -15,19 +15,11 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
+// Update 2021-02-01 jwrl.
 // Added CanSize switch for LW 2021 support.
 //
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed category.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Added subcategory for LW14 - jwrl 18 February 2017
+// Prior to 2020-08-05:
+// Version locked.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,7 +29,7 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Distortion";
    string Notes       = "Similar in operation to a bulge effect, but performs a flat linear zoom";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
 
 
@@ -121,6 +113,14 @@ sampler FgSampler = sampler_state
 ///////////////////////////////////////////////
 // Definitions  and declarations             //
 ///////////////////////////////////////////////
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
 float _OutputAspectRatio; 
 

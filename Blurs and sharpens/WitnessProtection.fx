@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-02-11
 // @Author jwrl
 // @Created 2020-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/WitnessProtection_640.png
@@ -32,8 +32,11 @@
  At this point you should not be too precise.  Experiment.  A little experience will quickly
  guide you.  Once you are satisfied with what you have play through the clip and check for
  discrepancies.  Correct the position where necessary.  You may also choose to enable curved
- keyframe to help path smoothing in the effect graph display, but this is often unnecessary
- when using this technique.
+ keyframe paths to help path smoothing in the effect graph display, but this can often be
+ unnecessary when using this technique.
+
+ NOTE: This effect won't handle resolution independence perfectly.  As with Lightworks'
+ standard blur effects, it produces the blur and/or mosaic at the sequence resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -41,8 +44,8 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Updated 2021-02-11 jwrl:
+// Rewrite to handle resolution independence for version 2021 and higher.
 //
 // Modified jwrl 2020-06-05
 // Added a choice of rectangular or oval mask shapes.
@@ -55,53 +58,65 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Witness protection";
    string Category    = "Stylize";
-   string SubCategory = "Blurs and sharpens";
+   string SubCategory = "Blurs and Sharpens";
    string Notes       = "A classic witness protection effect.";
    bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Ps_1 : RenderColorTarget;
-texture Ps_2 : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DeclareInput(TEXTURE, SAMPLER) \
+ \
+texture TEXTURE; \
+ \
+sampler SAMPLER = sampler_state \
+{ \
+   Texture   = <TEXTURE>; \
+   AddressU  = ClampToEdge; \
+   AddressV  = ClampToEdge; \
+   MinFilter = Linear; \
+   MagFilter = Linear; \
+   MipFilter = Linear; \
+}
+
+#define DeclareTarget(TARGET, SAMPLER) \
+ \
+texture TARGET : RenderColorTarget; \
+ \
+sampler SAMPLER = sampler_state \
+{ \
+   Texture   = <TARGET>; \
+   AddressU  = ClampToEdge; \
+   AddressV  = ClampToEdge; \
+   MinFilter = Linear; \
+   MagFilter = Linear; \
+   MipFilter = Linear; \
+}
+
+#define Execute(SHADER) {PixelShader = compile PROFILE SHADER ();}
+
+#define EMPTY   (0.0).xxxx
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DeclareInput (Inp, s_Input);
 
-sampler s_PassOne = sampler_state
-{
-   Texture   = <Ps_1>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_PassTwo = sampler_state
-{
-   Texture   = <Ps_2>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DeclareTarget (Ps_1, s_PassOne);
+DeclareTarget (Ps_2, s_PassTwo);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -186,24 +201,22 @@ float PosY
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY   (0.0).xxxx
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s_Sampler, float2 xy)
+float4 fn_tex2D (sampler s, float2 uv)
 {
-   float2 xy1 = abs (xy - 0.5.xx);
+   float2 xy = abs (uv - 0.5.xx);
 
-   if ((xy1.x > 0.5) || (xy1.y > 0.5)) return EMPTY;
+   if ((xy.x > 0.5) || (xy.y > 0.5)) return EMPTY;
 
-   return tex2D (s_Sampler, xy);
+   return tex2D (s, uv);
+}
+
+float2 fn_size (float M, float X, float Y)
+{
+   return (_OutputAspectRatio > 1.0) ? M * float2 (X / _OutputAspectRatio, Y)
+                                     : M * float2 (X, Y * _OutputAspectRatio);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -216,7 +229,7 @@ float4 ps_rectangle_crop (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy  = abs (uv - float2 (PosX, 1.0 - PosY));
 
-   xy -= MasterSize * float2 (SizeX, SizeY * _OutputAspectRatio) * 0.5;
+   xy -= fn_size (MasterSize, SizeX, SizeY) * 0.5;
 
    if ((xy.x > 0.0) || (xy.y > 0.0)) retval.a = 0.0;
 
@@ -229,7 +242,7 @@ float4 ps_ellipse_crop (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy = (uv - float2 (PosX, 1.0 - PosY)) * 1.77245;
 
-   xy /= MasterSize * float2 (SizeX, SizeY * _OutputAspectRatio);
+   xy /= fn_size (MasterSize, SizeX, SizeY);
 
    if (dot (xy, xy) > 1.0) retval.a = 0.0;
 
@@ -245,12 +258,12 @@ float4 ps_mosaic (float2 uv : TEXCOORD1) : COLOR
    if (amount > 0.0) {
       float2 xy1 = (Tracking == 0) ? 0.5.xx : float2 (PosX, 1.0 - PosY);
 
-      xy = amount * float2 (1.0, _OutputAspectRatio) * 0.03;
+      xy = fn_size (amount * 0.1, 1.0, 1.0);
       xy = (floor ((uv - xy1) / xy) * xy) + xy1;
    }
    else xy = uv;
 
-   return tex2D (s_PassOne, xy);
+   return fn_tex2D (s_PassOne, xy);
 }
 
 float4 ps_blur_sub (float2 uv : TEXCOORD1) : COLOR
@@ -261,7 +274,7 @@ float4 ps_blur_sub (float2 uv : TEXCOORD1) : COLOR
 
    if (amount <= 0.0) return retval;
 
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * amount;
+   float2 xy, radius = fn_size (amount, 1.0, 1.0);
 
    for (int i = 0; i < 12; i++) {
       sincos ((i * 0.2617993878), xy.x, xy.y);
@@ -278,13 +291,13 @@ float4 ps_blur_sub (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Bgd = tex2D (s_Input, uv);
+   float4 Bgd = fn_tex2D (s_Input, uv);
    float4 retval = fn_tex2D (s_PassOne, uv);
 
    float amount = Master * Blurriness * 0.0193;
 
    if (amount > 0.0) {
-      float2 xy, radius = float2 (1.0, _OutputAspectRatio) * amount;
+      float2 xy, radius = fn_size (amount, 1.0, 1.0);
 
       for (int i = 0; i < 12; i++) {
          sincos ((i * 0.2617993878), xy.x, xy.y);
@@ -310,35 +323,27 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 technique WitnessProtection_0
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Ps_1;"; > 
-   { PixelShader = compile PROFILE ps_rectangle_crop (); }
+   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_rectangle_crop)
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Ps_2;"; > 
-   { PixelShader = compile PROFILE ps_mosaic (); }
+   < string Script = "RenderColorTarget0 = Ps_2;"; > Execute (ps_mosaic)
 
    pass P_3
-   < string Script = "RenderColorTarget0 = Ps_1;"; > 
-   { PixelShader = compile PROFILE ps_blur_sub (); }
+   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_blur_sub)
 
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_4 Execute (ps_main)
 }
 
 technique WitnessProtection_1
 {
    pass P_1
-   < string Script = "RenderColorTarget0 = Ps_1;"; > 
-   { PixelShader = compile PROFILE ps_ellipse_crop (); }
+   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_ellipse_crop)
 
    pass P_2
-   < string Script = "RenderColorTarget0 = Ps_2;"; > 
-   { PixelShader = compile PROFILE ps_mosaic (); }
+   < string Script = "RenderColorTarget0 = Ps_2;"; > Execute (ps_mosaic)
 
    pass P_3
-   < string Script = "RenderColorTarget0 = Ps_1;"; > 
-   { PixelShader = compile PROFILE ps_blur_sub (); }
+   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_blur_sub)
 
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_4 Execute (ps_main)
 }

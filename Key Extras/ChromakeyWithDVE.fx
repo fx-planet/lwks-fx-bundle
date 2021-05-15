@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2021-05-11
+// @Released 2021-05-15
 // @Author jwrl
 // @Created 2021-05-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyDVE_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyWithDVE_640.png
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
@@ -14,6 +14,12 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromakeyWithDVE.fx
 //
+// Version history:
+//
+// Update 2021-05-15 jwrl.
+// Corrected the screen grab associated with this effect to match this version.
+//
+// Rewrite 2021-05-11 jwrl.
 // This is a complete rewrite of the original effect with the same name.  That was
 // broken by the 2021 upgrade.
 //-----------------------------------------------------------------------------------------//
@@ -68,13 +74,12 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define BLACK        float4(0.0.xxx, 1.0)    // Opaque black
-#define EMPTY        0.0.xxxx                // Transparent black
+#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx                // Transparent black
 
 #define OutOfRange(X)    any(saturate(X) - X)
 #define GetPixel(S, X)   (OutOfRange(X) ? EMPTY : tex2D(S, X))
-
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
 
 #define SHADOW_SCALE 0.2   // Carryover from the Lightworks original to match scaling
 
@@ -267,8 +272,8 @@ float4 ps_DVE (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float Xpos = (0.5 - CentreX) * _BgXScale / _FgXScale;
    float Ypos = (CentreY - 0.5) * _BgYScale / _FgYScale;
-   float scaleX = MasterScale * XScale / _FgXScale;
-   float scaleY = MasterScale * YScale / _FgYScale;
+   float scaleX = max (0.00001, MasterScale * XScale / _FgXScale);
+   float scaleY = max (0.00001, MasterScale * YScale / _FgYScale);
    float Rcrop  = 1.0 - CropR;
    float Bcrop  = 1.0 - CropB;
 
@@ -277,8 +282,8 @@ float4 ps_DVE (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    xy1.x = ((xy1.x - 0.5) / scaleX) + 0.5;
    xy1.y = ((xy1.y - 0.5) / scaleY) + 0.5;
 
-   float4 Fgnd   = GetPixel (s_Foreground, xy1);
-   float4 Bgnd   = GetPixel (s_Background, uv2);
+   float4 Fgnd = GetPixel (s_Foreground, xy1);
+   float4 Bgnd = GetPixel (s_Background, uv2);
    float4 retval;
 
    if ((xy1.x >= CropL) && (xy1.x <= Rcrop) && (xy1.y >= CropT) && (xy1.y <= Bcrop)) {

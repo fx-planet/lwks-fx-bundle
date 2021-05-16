@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-05-15
+// @Released 2021-05-16
 // @Author jwrl
 // @Created 2021-05-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyWithDVE_640.png
@@ -16,8 +16,9 @@
 //
 // Version history:
 //
-// Update 2021-05-15 jwrl.
+// Update 2021-05-16 jwrl.
 // Corrected the screen grab associated with this effect to match this version.
+// Simplified the DVE component.
 //
 // Rewrite 2021-05-11 jwrl.
 // This is a complete rewrite of the original effect with the same name.  That was
@@ -76,10 +77,10 @@ Wrong_Lightworks_version
 
 #define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
 
-#define EMPTY 0.0.xxxx                // Transparent black
+#define BadPos(P, p1, p2) (P < max (0.0, p1)) || (P > min (1.0, 1.0 - p2))
+#define Bad_XY(XY, L, R, T, B)  (BadPos (XY.x, L, R) || BadPos (XY.y, T, B))
 
-#define OutOfRange(X)    any(saturate(X) - X)
-#define GetPixel(S, X)   (OutOfRange(X) ? EMPTY : tex2D(S, X))
+#define EMPTY 0.0.xxxx                // Transparent black
 
 #define SHADOW_SCALE 0.2   // Carryover from the Lightworks original to match scaling
 
@@ -170,8 +171,7 @@ bool Reveal
 
 float CentreX
 <
-   string Group = "DVE";
-   string Description = "Position";
+   string Description = "DVE Position";
    string Flags = "SpecifiesPointX";
    float MinVal = -1.0;
    float MaxVal = 2.0;
@@ -179,8 +179,7 @@ float CentreX
 
 float CentreY
 <
-   string Group = "DVE";
-   string Description = "Position";
+   string Description = "DVE Position";
    string Flags = "SpecifiesPointY";
    float MinVal = -1.0;
    float MaxVal = 2.0;
@@ -265,33 +264,27 @@ bool allPositive (float4 pixel)
 //-----------------------------------------------------------------------------------------//
 // ps_DVE
 //
-// A cutdown version of the standard 2D DVE effect, this version doesn't include drop
-// shadow generation which would be pointless in this configuration.
+// A much cutdown version of the standard 2D DVE effect, this version doesn't include
+// drop shadow generation which would be pointless in this configuration.
 //-----------------------------------------------------------------------------------------//
-float4 ps_DVE (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_DVE (float2 uv : TEXCOORD1) : COLOR
 {
+   // The first section adjusts the position allowing for the foreground resolution.
+   // A resolution corrected scale factor is also created and applied.
+
    float Xpos = (0.5 - CentreX) * _BgXScale / _FgXScale;
    float Ypos = (CentreY - 0.5) * _BgYScale / _FgYScale;
    float scaleX = max (0.00001, MasterScale * XScale / _FgXScale);
    float scaleY = max (0.00001, MasterScale * YScale / _FgYScale);
-   float Rcrop  = 1.0 - CropR;
-   float Bcrop  = 1.0 - CropB;
 
-   float2 xy1 = uv1 + float2 (Xpos, Ypos);
+   float2 xy = uv + float2 (Xpos, Ypos);
 
-   xy1.x = ((xy1.x - 0.5) / scaleX) + 0.5;
-   xy1.y = ((xy1.y - 0.5) / scaleY) + 0.5;
+   xy.x = ((xy.x - 0.5) / scaleX) + 0.5;
+   xy.y = ((xy.y - 0.5) / scaleY) + 0.5;
 
-   float4 Fgnd = GetPixel (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, uv2);
-   float4 retval;
+   // Now the scaled, positioned and cropped foreground is recovered.
 
-   if ((xy1.x >= CropL) && (xy1.x <= Rcrop) && (xy1.y >= CropT) && (xy1.y <= Bcrop)) {
-      retval = lerp (EMPTY, Fgnd, Fgnd.a);
-   }
-   else retval = EMPTY;
-
-   return retval;
+   return Bad_XY (xy, CropL, CropR, CropT, CropB) ? EMPTY : tex2D (s_Foreground, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -308,7 +301,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
    float4 tolerance2 = tolerance1 + ToleranceSoftness;
 
    float4 hsva = 0.0;
-   float4 rgba = GetPixel (s_DVEvideo, xy1);
+   float4 rgba = tex2D (s_DVEvideo, xy1);
 
    float maxComponentVal = max (max (rgba.r, rgba.g), rgba.b);
    float minComponentVal = min (min (rgba.r, rgba.g), rgba.b);
@@ -335,20 +328,19 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : T
 
    // Work out the opacity of the corrected pixel
 
-   if (allPositive (tolerance2 - diff)) {
-      if (allPositive (tolerance1 - diff)) { keyVal = 0.0; }
+   tolerance2 -= diff;
+   diff -= tolerance1;
+
+   if (allPositive (tolerance2)) {
+      if (allPositive (-diff)) { keyVal = 0.0; }
       else {
-         diff -= tolerance1;
          hueSimilarity = diff [HUE_IDX];
          diff /= ToleranceSoftness;
          keyVal = max (diff [HUE_IDX], max (diff [SAT_IDX], diff [VAL_IDX]));
          keyVal = pow (keyVal, 0.25);
          }
       }
-   else {
-      diff -= tolerance1;
-      hueSimilarity = diff [HUE_IDX];
-      }
+   else hueSimilarity = diff [HUE_IDX];
 
    return float4 (keyVal.xxx, 1.0 - hueSimilarity);
 }
@@ -411,8 +403,8 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEX
 {
    float4 retval;
 
-   float4 fg  = GetPixel (s_DVEvideo, xy1);
-   float4 bg  = GetPixel (s_Background, xy2);
+   float4 fg  = tex2D (s_DVEvideo, xy1);
+   float4 bg  = tex2D (s_Background, xy2);
    float4 key = tex2D (s_FullKey, xy3);
 
    // key.r = blurred key

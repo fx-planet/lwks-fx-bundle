@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-05-16
 // @Author jwrl
-// @Created 2018-03-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyDVE_640.png
+// @Created 2021-05-16
+// @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyWithDVE_640.png
 
 /**
  DESCRIPTION:
@@ -21,18 +21,14 @@
  from black at 0% to white at 100%.  In the Lightworks effect the equivalent setting changes
  sense when the key is inverted.  This is unexpected to say the least and has been avoided.
  Key softness in this effect is symmetrical around the key edge.  This is consistent with the
- way that a traditional analog luminance keyer works.  The alpha signal produced can either
- replace any existing foreground alpha or be gated with it.  It can then be used to key the
- foreground over the background or passed on to other effects.  Any background image will be
- suppressed in this mode.
+ way that a traditional analog luminance keyer works.  The background image can be suppressed
+ so that the alpha signal produced can be passed on to other effects.
 
  DVE AND CROP COMPONENTS:
  Cropping can be set up by dragging the upper left and lower right corners of the crop area
  on the edit viewer, or in the normal way by dragging the sliders.  The crop is a simple hard
- edged one, and operates before the DVE.  The DVE is a simple 2D DVE, but zooming is achieved
- by Z-axis adjustment.  This is treated as an offset from zero, and has limted range only.
- Negative values give size reduction which strictly speaking is incorrect, but feels more
- natural - smaller numbers equal smaller images.
+ edged one, and operates before the DVE.  The DVE is a simple 2D DVE, and unlike the earlier
+ version of this effect scaling is now implemented identically to the Lightworks 2D DVE.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -43,32 +39,9 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
-//
-// Modified 4 May 2020 by user jwrl:
-// Combined crop with main luminance key and DVE code.
-//
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 22 April 2018 jwrl.
-// Merged DVE operation with main shader, reducing the number of passes required by one
-// and the samplers required by one also.
-// No longer explicitly define addressing/filtering of Fg and Bg.  Defaults are OK here.
-// Changed the exit implementation - logically the same, cosmetically different.
-// Range limited the crop settings.  It's no longer possible to exceed frame boundaries.
-// Restored comments to the code to assist anyone trying to work out what on earth I did.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-05-16 jwrl.
+// Complete rewrite of the original effect to make it fully compliant with the resolution
+// independent model used in Lightworks 2021 and higher.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -82,58 +55,74 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define BadPos(P, p1, p2) (P < max (0.0, p1)) || (P > min (1.0, 1.0 - p2))
+#define Bad_XY(XY, L, R, T, B)  (BadPos (XY.x, L, R) || BadPos (XY.y, T, B))
+
+#define EMPTY 0.0.xxxx
+
+#define R_LUMA 0.2989
+#define G_LUMA 0.5866
+#define B_LUMA 0.1145
+
+#define SHOW_BGD 1
+
+float _BgXScale = 1.0;
+float _BgYScale = 1.0;
+float _FgXScale = 1.0;
+float _FgYScale = 1.0;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Opacity";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 1.0;
-
-int KeyMode
-<
-   string Group = "Key settings";
-   string Description = "Mode";
-   string Enum = "Lumakey,Lumakey and Fg alpha,Lumakey (no background),Lumakey and Fg alpha (no Bg)";
-> = 0;
-
 float KeyClip
 <
    string Group = "Key settings";
    string Description = "Key clip";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Softness
 <
    string Group = "Key settings";
    string Description = "Key softness";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 bool InvertKey
@@ -148,126 +137,134 @@ bool ShowAlpha
    string Description = "Display alpha channel";
 > = false;
 
+bool HideBg
+<
+   string Group = "Key settings";
+   string Description = "Hide background";
+> = false;
+
 float CentreX
 <
-   string Description = "DVE position";
+   string Description = "DVE Position";
    string Flags = "SpecifiesPointX";
    float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+   float MaxVal = 2.0;
+> = 0.5;
 
 float CentreY
 <
-   string Description = "DVE position";
+   string Description = "DVE Position";
    string Flags = "SpecifiesPointY";
    float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+   float MaxVal = 2.0;
+> = 0.5;
 
-float CentreZ
+float MasterScale
 <
-   string Description = "DVE position";
-   string Flags = "SpecifiesPointZ";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+   string Group = "DVE Scale";
+   string Description = "Master";
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
+> = 1.0;
 
-float CropLeft
+float XScale
 <
-   string Group = "Crop";
-   string Description = "Top left";
-   string Flags = "SpecifiesPointX";
+   string Group = "DVE Scale";
+   string Description = "X";
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
+> = 1.0;
+
+float YScale
+<
+   string Group = "DVE Scale";
+   string Description = "Y";
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
+> = 1.0;
+
+float CropL
+<
+   string Group = "DVE Crop";
+   string Description = "Left";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.0;
 
-float CropTop
+float CropT
 <
-   string Group = "Crop";
-   string Description = "Top left";
-   string Flags = "SpecifiesPointY";
+   string Group = "DVE Crop";
+   string Description = "Top";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float CropR
+<
+   string Group = "DVE Crop";
+   string Description = "Right";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float CropB
+<
+   string Group = "DVE Crop";
+   string Description = "Bottom";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
+
+float Opacity
+<
+   string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
-
-float CropRight
-<
-   string Group = "Crop";
-   string Description = "Bottom right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float CropBottom
-<
-   string Group = "Crop";
-   string Description = "Bottom right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define R_LUMA    0.2989
-#define G_LUMA    0.5866
-#define B_LUMA    0.1145
-
-#define EMPTY     (0.0).xxxx
-
-#define ADD_ALPHA_W_BGD  1
-#define HIDE_BGD         2
-#define ADD_ALPHA_NO_BGD 3
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   // Calculate the crop boundaries.  These are limited to the edge of frame so that no
-   // illegal addresses for the input sampler ranges can ever be produced.
+   // This DVE section is a much cutdown version of the Lightworks 2D DVE.  It doesn't
+   // include drop shadow generation which would be pointless in this configuration.
+   // The first section adjusts the position allowing for the foreground resolution.
+   // A resolution corrected scale factor is also created and applied.
 
-   float L = max (0.0, CropLeft);
-   float R = min (1.0, CropRight);
-   float T = max (0.0, 1.0 - CropTop);
-   float B = min (1.0, 1.0 - CropBottom);
+   float Xpos = (0.5 - CentreX) * _BgXScale / _FgXScale;
+   float Ypos = (CentreY - 0.5) * _BgYScale / _FgYScale;
+   float scaleX = max (0.00001, MasterScale * XScale / _FgXScale);
+   float scaleY = max (0.00001, MasterScale * YScale / _FgYScale);
 
-   // Set up range limited DVE scaling.  Values of zero or below will be ignored if
-   // input manually.  The minimum value will be limited to 0.0001.
+   float2 xy = uv1 + float2 (Xpos, Ypos);
 
-   float scale = pow (max ((CentreZ + 2.0) * 0.5, 0.0001), 4.0);
+   xy.x = ((xy.x - 0.5) / scaleX) + 0.5;
+   xy.y = ((xy.y - 0.5) / scaleY) + 0.5;
 
-   // Set up pixel addressing for the Fgd parameter to produce the DVE effect
+   // Now the scaled, positioned and cropped Fg is recovered along with Bg.
 
-   float2 xy3 = ((xy1 - 0.5.xx) / scale) + float2 (-CentreX, CentreY) + 0.5.xx;
+   float4 Fgd = Bad_XY (xy, CropL, CropR, CropT, CropB) ? EMPTY : tex2D (s_Foreground, xy);
+   float4 Bgd = HideBg ? EMPTY : tex2D (s_Background, uv2);
 
-   // Recover background and foreground, limiting the foreground to legal addresses.  This
-   // is done to ensure that the differences in cross platform edge clamping are bypassed.
-   // It also gives us the cropping that we want.
-
-   float4 Bgd = (KeyMode < HIDE_BGD) ? tex2D (s_Background, xy2) : EMPTY;
-   float4 Fgd = (xy3.x >= L) && (xy3.x <= R) && (xy3.y >= T) && (xy3.y <= B)
-              ? tex2D (s_Foreground, xy3) : EMPTY;
-
-   // Set up the key clip and softness from the Fgd luminance
+   // From now on is the lumakey.  We first set up the key clip and softness from the
+   // Fgd luminance.
 
    float luma  = dot (Fgd.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
    float edge  = max (0.00001, Softness);
    float clip  = (KeyClip * 1.0002) - (edge * 0.5) - 0.0001;
    float alpha = saturate ((luma - clip) / edge);
 
-   // Invert the alpha if needed and optionally gate it with Fgd.a then quit
+   // Now invert the alpha channel if necessary and combine it with Fgd.a.
 
    if (InvertKey) alpha = 1.0 - alpha;
 
-   if ((KeyMode == ADD_ALPHA_W_BGD) || (KeyMode == ADD_ALPHA_NO_BGD))
-      alpha = min (Fgd.a, alpha);
+   alpha = min (Fgd.a, alpha);
 
-   return (ShowAlpha) ? float4 (alpha.xxx, 1.0) : lerp (Bgd, Fgd, alpha * Amount);
+   // Exit, showing the composite result or the alpha channel as opaque white on black.
+
+   return (ShowAlpha) ? float4 (alpha.xxx, 1.0) : lerp (Bgd, Fgd, alpha * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -276,6 +273,5 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique LumakeyWithDVE
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 CompileShader (ps_main)
 }

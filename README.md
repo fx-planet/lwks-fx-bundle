@@ -1,4 +1,4 @@
-# Lightworks user Fx library,May 30, 2021.
+# Lightworks user Fx library, June 4, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -419,9 +419,9 @@ If you need to use two effects that have the same name, simply open one of them 
 |:------------------------ |:---------------------- |:---------------------- |:----------------------- |
 |Barn door squeeze         |BarndoorSqueeze_Dx.fx   |BarndoorSqueeze_Ax.fx   |BarndoorSqueeze_Adx.fx   |
 |Corner squeeze            |CornerSqueeze_Dx.fx     |CornerSqueeze_Ax.fx     |CornerSqueeze_Adx.fx     |
-|H split with zoom         |HsplitZoom_Dx.fx        |                        |                         |
 |Pinch transition          |Pinch_Dx.fx             |Pinch_Ax.fx             |Pinch_Adx.fx             |
 |Radial pinch              |rPinch_Dx.fx            |rPinch_Ax.fx            |rPinch_Adx.fx            |
+|Split and zoom            |SplitAndZoom_Dx.fx      |                        |                         |
 |Squeeze transition        |                        |Squeeze_Ax.fx           |Squeeze_Adx.fx           |
 |Stretch dissolve          |Stretch_Dx.fx           |Stretch_Ax.fx           |Stretch_Adx.fx           |
 |X-pinch                   |xPinch_Dx.fx            |xPinch_Ax.fx            |xPinch_Adx.fx            |

@@ -4,11 +4,12 @@
 // @Created 2021-06-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_SplitAndZoom_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/SplitAndZoom.mp4
+// @see https://www.lwks.com/media/kunena/attachments/6375/SplitAndZoom_2.mp4
 
 /**
  This effect splits the outgoing video horizontally or vertically to reveal the incoming
  shot, which zooms up out of an opaque black background.  It is a rewrite of an earlier
- effect, H split with zoom, which has been withdrawn.  Instead of the colopur background
+ effect, H split with zoom, which has been withdrawn.  Instead of the colour background
  provided with the earlier effect transparent black has been used.  This gives maximum
  flexibility when using aspect ratios that don't match the sequence.
 */

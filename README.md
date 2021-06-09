@@ -316,8 +316,9 @@ If you need to use two effects that have the same name, simply open one of them 
 |Colour swizzler               |ColourSwizzler.fx       |
 |Expand 16-235 to 0-255        |Expand_16_235.fx        |
 |Exposure leveller             |ExposureLeveller.fx     |
+|Frame lock                    |FrameLock.fx            |
 |HSV wheel                     |HSVwheel.fx             |
-|Safe area and crosshatch      |SafeAreaCrosshatch.fx   |
+|Safe area                     |SafeArea.fx             |
 |Show highs and lows           |ShowHiLo.fx             |
 |Shrink 0-255 to 16-235        |Shrink_16_235.fx        |
 |Tenderizer                    |Tenderizer.fx           |

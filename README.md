@@ -1,4 +1,4 @@
-# Lightworks user Fx library, June 4, 2021.
+# Lightworks user Fx library, June 9, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.

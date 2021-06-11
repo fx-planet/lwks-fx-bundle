@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-06-10
 // @Author jwrl
 // @Author abelmilanes
 // @Created 2017-03-04
@@ -16,45 +16,11 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-06-10 jwrl.
+// Updated for LW 2021 resolution independence support.
 //
-// Modified 16 April 2020 jwrl.
-// Removed buggy "all()" Cg expression.  Both "all()" and "any()" suffer from this Cg
-// documented bug.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Bug fix 10 July 2017 by jwrl.
-// Corrected ambiguous declaration affecting Linux and Mac versions only.
-//
-// Completed 4 March 2017 by jwrl.
-// This effect was started by user abelmilanes as FilmFx.fx in 2011 but was never
-// completed.  This version was completed by jwrl.  Hopefully abelmilane's original
-// intentions have been preserved.  In the process there has been considerable code
-// cleanup for efficiency and speed reasons.  The alpha channel is now passed which
-// the unfinished original didn't do.  The "amount" parameter is an addition so that
-// the effect can now be faded out.
-//
-// The explicit profile declaration ps_2_0 was changed to the generic PROFILE for
-// cross-platform reasons.  It now runs on all supported Lightworks platforms.
-//
-// The original version had a soft clip function which did not work - in fact it was
-// commented out by abelmilanes.  It's hard to see a need for it in this current form,
-// so it has been discarded.  The natural clipping in the GPU made this difficult to
-// implement in any case.
-//
-// The "magic numbers" used in the original have been kept at their original depths of
-// up to seven decimal places.  That surely can't really be necessary!!!
+// Prior to 2020-04-16:
+// Various cross-platform upgrades.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -68,16 +34,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define EMPTY 0.0.xxxx
+
+#define IsOutOfBounds(XY) any(saturate(XY) - XY)
+#define GetPixel(S,XY) (IsOutOfBounds(XY) ? EMPTY : tex2D (S, XY))
+
+#define DeclareInput( TEXTURE, SAMPLER ) \
+                                         \
+   texture TEXTURE;                      \
+                                         \
+   sampler SAMPLER = sampler_state       \
+   {                                     \
+      Texture   = <TEXTURE>;             \
+      AddressU  = ClampToEdge;           \
+      AddressV  = ClampToEdge;           \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler InpSampler = sampler_state { Texture = <Input>; };
+DeclareInput (Input, InpSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -128,7 +121,7 @@ float Amount
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval, Src = tex2D (InpSampler, uv);
+   float4 retval, Src = GetPixel (InpSampler, uv);
 
    // Convert RGB to linear
 
@@ -153,7 +146,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    test = max (lin.r, max (lin.g, lin.b));
 
    retval.rgb = (test < 0.0031308) ? lin * 12.92 : (1.055 * pow (lin, 0.4166667)) - 0.055;
-   retval = { saturate (retval.rgb), Src.a };
+   retval = float4 (saturate (retval.rgb), Src.a);
 
    return lerp (retval, Src, Amount);
 }
@@ -164,8 +157,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique FilmExposure
 {
-   pass pass_one
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass pass_one CompileShader (ps_main)
 }

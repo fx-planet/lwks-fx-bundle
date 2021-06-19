@@ -1,4 +1,4 @@
-# Lightworks user Fx library, June 9, 2021.
+# Lightworks user Fx library, June 19, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -401,9 +401,9 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: Blur transitions
 |EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
 |:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Blur dissolve             |Blurs_Dx.fx             |Blurs_Ax.fx             |Blurs_Adx.fx             |
+|Blur dissolve             |Blur_Dx.fx              |Blur_Bx.fx              |Blur_Bx.fx               |
 |Spin dissolve             |Spin_Dx.fx              |Spin_Ax.fx              |Spin_Adx.fx              |
-|Swirl mix                 |SwirlMix_Dx.fx          |                        |                         |
+|Swirl mix                 |SwirlMix_Dx.fx          |SwirlMix_Ax.fx          |SwirlMix_Adx.fx          |
 |Whip pan                  |WhipPan_Dx.fx           |WhipPan_Ax.fx           |WhipPan_Adx.fx           |
 |Zoom dissolve             |Zoom_Dx.fx              |Zoom_Ax.fx              |Zoom_Adx.fx              |
 

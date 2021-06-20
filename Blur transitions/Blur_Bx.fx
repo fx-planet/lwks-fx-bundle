@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-06-19
+// @Released 2021-06-20
 // @Author jwrl
 // @Created 2021-06-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blur_Bx_640.png
@@ -13,6 +13,9 @@
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Blur_Bx.fx
+//
+// Modified 2021-06-20 jwrl.
+// Slight rewording of SetTechnique parameter.
 //
 // Version history:
 //
@@ -74,7 +77,7 @@ sampler SAMPLER = sampler_state        \
    MipFilter = Linear;                 \
 }
 
-#define CompileShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
 #define PI        3.1415926536
 #define HALF_PI   1.5707963268
@@ -125,12 +128,12 @@ int Source
 int SetTechnique
 <
    string Description = "Transition position";
-   string Enum = "At start of clip,At end of clip,At start if delta key folded";
-> = 0;
+   string Enum = "At start of clip,At end of clip,At start of folded delta key";
+> = 2;
 
 float KeyGain
 <
-   string Description = "Delta key trim";
+   string Description = "Key trim";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
@@ -139,58 +142,45 @@ float KeyGain
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float4 Fgd = GetPixel (s_Foreground, uv1);
-
-   if (Fgd.a == 0.0) return Fgd.aaaa;
-
-   if (Source == 0) {
-      float4 Bgd = GetPixel (s_Background, uv2);
-
-      float kDiff = distance (Bgd.g, Fgd.g);
-
-      kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
-      kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
-
-      Fgd.a = smoothstep (0.0, KeyGain, kDiff);
-      Fgd.rgb = Bgd.rgb * Fgd.a;
-   }
-   else if (Source == 1) {
-      float key = max (1.0e-6, 2.0 * KeyGain);
-
-      Fgd.a = pow (Fgd.a, key);
-      Fgd.rgb /= Fgd.a;
-   }
-
-   return Fgd;
-}
-
 float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd = GetPixel (s_Foreground, uv1);
-
-   if (Fgd.a == 0.0) return Fgd.aaaa;
+   float4 retval = GetPixel (s_Foreground, uv1);
 
    if (Source == 0) {
-      float4 Bgd = GetPixel (s_Background, uv2);
+      float kDiff = distance (retval.rgb, GetPixel (s_Background, uv2).rgb);
 
-      float kDiff = distance (Bgd.g, Fgd.g);
-
-      kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
-      kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
-
-      Fgd.a = smoothstep (0.0, KeyGain, kDiff);
-      Fgd.rgb *= Fgd.a;
+      retval.a = smoothstep (0.0, KeyGain, kDiff);
    }
    else if (Source == 1) {
       float key = max (1.0e-6, 2.0 * KeyGain);
 
-      Fgd.a = pow (Fgd.a, key);
-      Fgd.rgb /= Fgd.a;
+      retval.a = pow (retval.a, key);
+      retval.rgb /= retval.a;
    }
 
-   return Fgd;
+   return (retval.a == 0.0) ? retval.aaaa : retval;
+}
+
+float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+{
+   float4 retval = GetPixel (s_Foreground, uv1);
+
+   if (Source == 0) {
+      float4 refrnc = GetPixel (s_Background, uv2);
+
+      float kDiff = distance (refrnc.rgb, retval.rgb);
+
+      retval.rgb = refrnc.rgb;
+      retval.a   = smoothstep (0.0, KeyGain, kDiff);
+   }
+   else if (Source == 1) {
+      float key = max (1.0e-6, 2.0 * KeyGain);
+
+      retval.a = pow (retval.a, key);
+      retval.rgb /= retval.a;
+   }
+
+   return (retval.a == 0.0) ? retval.aaaa : retval;
 }
 
 float4 ps_blurX_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
@@ -315,22 +305,21 @@ float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : T
 
 technique Blur_Bx_I
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > CompileShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > CompileShader (ps_blurX_I)
-   pass P_3 CompileShader (ps_main_I)
+   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_blurX_I)
+   pass P_3 ExecuteShader (ps_main_I)
 }
 
 technique Blur_Bx_O
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > CompileShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > CompileShader (ps_blurX_O)
-   pass P_3 CompileShader (ps_main_O)
+   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_blurX_O)
+   pass P_3 ExecuteShader (ps_main_O)
 }
 
 technique Blur_Bx_F
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > CompileShader (ps_keygen_F)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > CompileShader (ps_blurX_I)
-   pass P_3 CompileShader (ps_main_F)
+   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_keygen_F)
+   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_blurX_I)
+   pass P_3 ExecuteShader (ps_main_F)
 }
-

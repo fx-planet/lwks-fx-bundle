@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2021-07-28
 // @Author jwrl
-// @Created 2017-11-08
+// @Created 2021-07-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Twister.mp4
 
@@ -16,29 +16,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-31 jwrl.
-// Reformatted the effect header.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Bugfix 1 June 2018 jwrl.
-// Fixed implicit int to float conversion in fmod() which broke this effect in Linux and
-// Mac.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.1 update 5 December 2017 by jwrl.
-// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
-// those platforms.  It will now function correctly when used with Lightworks versions
-// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
-// as part of other transitions on those platforms.
+// Rewrite 2021-07-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,58 +28,74 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Special Fx transitions";
    string Notes       = "Performs a rippling twist to transition between two video images";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define RIPPLES  125.0
+#define SOFTNESS 0.45
+#define OFFSET   0.05
+#define SCALE    0.02
+
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-texture Halfway : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-#ifdef LINUX
-#define Clamp ClampToEdge
-#endif
-
-#ifdef OSX
-#define Clamp ClampToEdge
-#endif
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Border;
-   AddressV  = Border;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Border;
-   AddressV  = Border;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Halfway = sampler_state
-{
-   Texture   = <Halfway>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -117,7 +113,7 @@ float Amount
 int TransProfile
 <
    string Description = "Transition profile";
-   string Enum = "Left > right profile A,Left > right profile B,Right > left profile A,Right > left profile B"; 
+   string Enum = "Left > right,Right > left"; 
 > = 1;
 
 float Width
@@ -167,95 +163,51 @@ float Twist_Axis
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define RIPPLES  125.0
-#define SOFTNESS 0.45
-#define OFFSET   0.05
-#define SCALE    0.02
-
-#define BLACK    float2(0.0,1.0).xxxy
-#define EMPTY    (0.0).xxxx
-
-float _OutputHeight;
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_in (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   int  Mode = (int) fmod ((float)TransProfile, 2);                     // If TransProfile is odd it's mode B
-
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;                 // Calculate softness range of the effect
-   float maxVis = (Mode == TransProfile) ? uv.x : 1.0 - uv.x;           // If mode and profile match it's left > right
+   float maxVis = (TransProfile == 0) ? uv.x : 1.0 - uv.x;
+   float minVis = range + maxVis - (Amount * (1.0 + range));            // The sense of the Amount parameter also has to change
 
-   maxVis = Amount * (1.0 + range) - maxVis;                            // Set up the maximum visibility
+   maxVis = range - minVis;                                             // Set up the maximum visibility
 
    float amount = saturate (maxVis / range);                            // Calculate the visibility
-   float T_Axis = uv.y - Twist_Axis;                                    // Calculate the normalised twist axis
+   float twistAxis = 1.0 - Twist_Axis;                                  // Invert the twist axis setting
+   float T_Axis = uv.y - twistAxis;                                     // Calculate the normalised twist axis
 
-   float ripples = max (0.0, RIPPLES * (range - maxVis));               // Correct the ripples of the final effect
-   float spread  = ripples * Spread * SCALE;                            // Correct the spread
-   float modultn = pow (max (0.0, Ripples), 5.0) * ripples;             // Calculate the modulation factor
-   float offset  = sin (modultn) * spread;                              // Calculate the vertical offset from the modulation and spread
-   float twists  = cos (modultn * Twists * 4.0);                        // Calculate the twists using cos () instead of sin ()
+   float ripple_1 = max (0.0, RIPPLES * minVis);                        // Correct the ripples of the final effect
+   float ripple_2 = max (0.0, RIPPLES * maxVis);
+   float spread_1 = ripple_1 * Spread * SCALE;                          // Correct the spread
+   float spread_2 = ripple_2 * Spread * SCALE;
+   float modult_1 = pow (max (0.0, Ripples), 5.0) * ripple_1;           // Calculate the modulation factor
+   float modult_2 = pow (max (0.0, Ripples), 5.0) * ripple_2;
 
-   float2 xy = float2 (uv.x, Twist_Axis + (T_Axis / twists) - offset);  // Foreground X is uv.x, foreground Y is modulated uv.y
+   float offs_1 = sin (modult_1) * spread_1;                            // Calculate the vertical offset from the modulation and spread
+   float offs_2 = sin (modult_2) * spread_2;
+   float twst_1 = cos (modult_1 * Twists * 4.0);                        // Calculate the twists using cos () instead of sin ()
+   float twst_2 = cos (modult_2 * Twists * 4.0);
 
-   xy.y += offset * float (Mode * 2);                                   // If the transition profile is positive correct Y
+   float2 xy1 = float2 (uv.x, twistAxis + (T_Axis / twst_1) - offs_1);  // Foreground X is uv.x, foreground Y is modulated uv.y
+   float2 xy2 = float2 (uv.x, twistAxis + (T_Axis / twst_2) - offs_2);
 
-   float4 retval = fn_illegal (xy) ? EMPTY : tex2D (s_Background, xy);  // This version of the foreground has the modulation applied
+   float4 Bgnd = GetPixel (s_Background, xy1);                          // This version of the background has the modulation applied
+   float4 Fgnd = GetPixel (s_Foreground, xy2);                          // Get the second partial composite
+   float4 retval = lerp (Fgnd, Bgnd, amount);                           // Dissolve between the halves
 
-   return lerp (BLACK, retval, retval.a * amount);                      // Return the first partial composite blend
-}
+   if (Show_Axis) {
 
-float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
-{
-   int  Mode = (int) fmod ((float)TransProfile, 2);
+      // To help with line-up this section produces a two-pixel wide line from the twist axis.  It's added to the output, and the
+      // result is folded if it exceeds peak white.  This ensures that the line will remain visible regardless of the video content.
 
-   float range  = max (0.0, Width * SOFTNESS) + OFFSET;
-   float maxVis = (Mode == TransProfile) ? 1.0 - uv.x : uv.x;           // Here the sense of the x position is opposite to above
-
-   maxVis = (1.0 - Amount) * (1.0 + range) - maxVis;                    // The sense of the Amount parameter also has to change
-
-   float amount = saturate (maxVis / range);
-   float T_Axis = uv.y - Twist_Axis;
-
-   float ripples = max (0.0, RIPPLES * (range - maxVis));
-   float spread  = ripples * Spread * SCALE;
-   float modultn = pow (max (0.0, Ripples), 5.0) * ripples;
-   float offset  = sin (modultn) * spread;
-   float twists  = cos (modultn * Twists * 4.0);
-
-   float2 xy = float2 (uv.x, Twist_Axis + (T_Axis / twists) - offset);
-
-   xy.y += offset * float (Mode * 2);
-
-   float4 Fgd = fn_illegal (xy) ? EMPTY : tex2D (s_Foreground, xy);
-   float4 retval = lerp (tex2D (s_Halfway, uv), Fgd, Fgd.a * amount);
-
-   if (!Show_Axis) { return retval; }
-
-   // To help with line-up this section produces a two-pixel wide line
-   // from the twist axis.  That is then added to the output, and the
-   // result is folded if it exceeds peak white.  This ensures that
-   // the line will remain visible regardless of the video content.
-
-   float AxisLine = max (0.0, (1.0 - (abs (T_Axis) * _OutputHeight * 0.25)) * 3.0 - 2.0);
-
-   Fgd.rgb = retval.rgb - AxisLine.xxx;
-   retval.rgb = max (0.0.xxx, Fgd.rgb) - min (0.0.xxx, Fgd.rgb);
+      retval.rgb -= max (0.0, (1.0 - (abs (T_Axis) * _OutputHeight * 0.25)) * 3.0 - 2.0).xxx;
+      retval.rgb  = max (0.0.xxx, retval.rgb) - min (0.0.xxx, retval.rgb);
+   }
 
    return retval;
 }
@@ -266,10 +218,8 @@ float4 ps_main_out (float2 uv : TEXCOORD1) : COLOR
 
 technique Twister_Dx
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Halfway;"; > 
-   { PixelShader = compile PROFILE ps_main_in (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main_out (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_main)
 }
+

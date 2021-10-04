@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2021-07-25
 // @Author jwrl
-// @Created 2017-10-30
+// @Created 2021-07-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Sine_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DX_Sine.mp4
 
@@ -15,23 +15,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-31 jwrl.
-// Reformatted the effect header.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.
+// Rewrite 2021-07-25 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,36 +27,72 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Special Fx transitions";
    string Notes       = "Uses a sine distortion to do a left-right or right-left transition between the inputs";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define RIPPLES  125.0
+#define SOFTNESS 0.45
+#define OFFSET   0.05
+#define SCALE    0.02
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgSampler = sampler_state {
-   Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state {
-   Texture   = <Bg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -95,7 +117,7 @@ int Mode
 <
    string Group = "Ripples";
    string Description = "Distortion";
-   string Enum = "Upwards,Downwards"; 
+   string Enum = "Normal,Inverted"; 
 > = 0;
 
 float Width
@@ -123,38 +145,19 @@ float Spread
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define RIPPLES  125.0
-#define SOFTNESS 0.45
-#define OFFSET   0.05
-#define SCALE    0.02
-
-#define EMPTY    (0.0).xxxx
-
-#pragma warning ( disable : 3571 )
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float range  = max (0.0, Width * SOFTNESS) + OFFSET;
    float maxVis = Amount * (1.0 + range);
    float minVis = maxVis - range;
 
-   float x = (Direction == 0) ? xy2.x : 1.0 - xy2.x;
+   float x = (Direction == 0) ? uv.x : 1.0 - uv.x;
 
    float amount = (x <= minVis) ? 1.0
                 : (x >= maxVis) ? 0.0 : (maxVis - x) / range;
@@ -163,10 +166,10 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float spread  = ripples * Spread * SCALE;
    float offset  = sin (pow (max (0.0, Ripples), 5.0) * ripples) * spread;
 
-   float2 uv = (Mode == 0) ? float2 (xy2.x, xy2.y + offset) : float2 (xy2.x, xy2.y - offset);
+   float2 xy = (Mode == 0) ? float2 (uv.x, uv.y + offset) : float2 (uv.x, uv.y - offset);
 
-   float4 Fgd = tex2D (FgSampler, xy1);
-   float4 Bgd = fn_illegal (uv) ? EMPTY : tex2D (BgSampler, uv);
+   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 Bgd = GetPixel (s_Background, xy);
 
    return lerp (Fgd, Bgd, amount);
 }
@@ -177,5 +180,8 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique Sine_Dx
 {
-   pass P_1 { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_main)
 }
+

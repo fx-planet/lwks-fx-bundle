@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2016-08-05
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/Octagonal_Vignette_640.png
 
 /**
@@ -16,40 +16,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-06-17 jwrl:
-// Replace Cg's buggy any() function with macros ANYLT() and ANYGT().
-//
-// Modified 2018-12-23 jwrl:
-// Changed subcategory.
-// Formatted the descriptive block so that it can be automatically read.
-//
-// Modification 2018-07-07 jwrl:
-// Made blur calculation resolution independent.  Bug fix 2017-02-26 no longer applies.
-//
-// Modification 2018-04-04 jwrl:
-// Metadata header block added to better support GitHub repository.
-//
-// Bug fix 2017-02-26 jwrl:
-// Corrected for a bug in the way that Lightworks handles interlaced media.  When a height
-// parameter is needed one can not reliably use _OutputHeight with interlaced media unless
-// the media is in motion.  The output height is now obtained by dividing _OutputWidth by
-// _OutputAspectRatio.  This fix has been fully tested, and appears reliable regardless of
-// the pixel aspect ratio.
-//
-// LW 14+ modification 2017-02-11 jwrl:
-// Category "Masks" is no longer defined in 14+, so category "DVEs" has been used with
-// the subcategory "Crop Presets".
-//
-// Bug fix and enhancement 2016-08-17 jwrl:
-// Boundary calculation added to stop diagonals showing during repositioning.  This has
-// the added benefit of giving an extra four crop edges when scaling, allowing up to 12
-// convex crops to be applied at once.  At this stage concave crops are not possible.
-//
-// Bug fix 2016-08-06 jwrl:
-// X and Y position controls behaved unpredictably during effect rotation.  Fixed.
+// Rewrite 2021-08-31 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -63,41 +32,86 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define Execute2param(SHD,P1,P2) { PixelShader = compile PROFILE SHD (P1, P2); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define ZOOM      5.0
+#define AR_PLUS   4.0
+#define AR_MINUS  0.9
+
+#define WHITE      1.0.xxxx
+
+#define LOOP       6
+#define DIVIDE     49
+
+#define RADIUS_1   4.0
+#define RADIUS_2   10.0
+#define RADIUS_3   20.0
+
+#define ANGLE      0.2617993878
+
+#define LOOP_1     12
+#define RADIUS     0.0125
+#define ANGLE_1    0.1427996661
+#define OFFSET    -0.0475998887
+
+#define W_BLUR     0.0005
+
+#define PI         3.1415926536
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fgd;
-texture Bgd;
+DefineInput (Fgd, s_RawFg);
+DefineInput (Bgd, s_RawBg);
 
-texture Buffer_1 : RenderColorTarget;
-texture Buffer_2 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fgd>; };
-sampler s_Background = sampler_state { Texture = <Bgd>; };
-
-sampler s_Buffer_1 = sampler_state
-{
-   Texture   = <Buffer_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Buffer_2 = sampler_state
-{
-   Texture   = <Buffer_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (Buffer_1, s_Buffer_1);
+DefineTarget (Buffer_2, s_Buffer_2);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -235,7 +249,7 @@ int Mode
 <
    string Description = "Background";
    string Enum = "Black,Colour,Video";
-> = 0;
+> = 2;
 
 bool Phase
 <
@@ -246,14 +260,14 @@ float Border
 <
    string Description = "Border";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Feather
 <
    string Description = "Feathering";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Rotate
@@ -293,44 +307,16 @@ float4 Colour
 > = { 0.2, 0.1, 1.0, 0.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define ZOOM      5.0
-#define AR_PLUS   4.0
-#define AR_MINUS  0.9
-
-#define BLACK      0.0.xxxx
-#define WHITE      1.0.xxxx
-
-#define LOOP       6
-#define DIVIDE     49
-
-#define RADIUS_1   4.0
-#define RADIUS_2   10.0
-#define RADIUS_3   20.0
-
-#define ANGLE      0.2617993878
-
-#define LOOP_1     12
-#define RADIUS     0.0125
-#define ANGLE_1    0.1427996661
-#define OFFSET    -0.0475998887
-
-#define W_BLUR     0.0005
-
-#define PI         3.1415926536
-
-#define ANYLT(A,B) (A.x < B) || (A.y < B)
-#define ANYGT(A,B) (A.x > B) || (A.y > B)
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_mask (float2 uv : TEXCOORD1) : COLOR
+// These two passes map the foreground and background clips to TEXCOORD3, so that
+// variations in clip geometry and rotation are handled without too much effort.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_mask (float2 uv : TEXCOORD0) : COLOR
 {
    float2 aspectL, aspectR, cropBR, cropTL, xy = uv - 0.5.xx;
 
@@ -359,10 +345,10 @@ float4 ps_mask (float2 uv : TEXCOORD1) : COLOR
    diagL -= float2 (CropTL, CropBL) * aspectL;
    diagR -= (1.0 - float2 (CropTR, CropBR)) * aspectR;
 
-   return (ANYLT (diagL, 0.0) || ANYLT (cropTL, 0.0) || ANYGT (diagR, 0.0) || ANYGT (cropBR, 0.0)) ? BLACK : WHITE;
+   return (any (diagL < 0.0) || any (cropTL < 0.0) || any (diagR > 0.0) || any (cropBR > 0.0)) ? EMPTY : WHITE;
 }
 
-float4 ps_rotate_scale (float2 uv : TEXCOORD1) : COLOR
+float4 ps_rotate_scale (float2 uv : TEXCOORD3) : COLOR
 {
    float2 xy = uv - float2 (OffsX, 1.0 - OffsY);
 
@@ -383,12 +369,12 @@ float4 ps_rotate_scale (float2 uv : TEXCOORD1) : COLOR
 
    xy = (xy * Scale) + 0.5;
 
-   float4 retval = (ANYLT (xy, 0.0) || ANYGT (xy, 1.0)) ? BLACK : tex2D (s_Buffer_1, xy);
+   float4 retval = GetPixel (s_Buffer_1, xy);
 
    return float4 (Phase ? 1.0 - retval : retval);
 }
 
-float4 ps_border (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border (float2 uv : TEXCOORD3) : COLOR
 {
    float4 retval = tex2D (s_Buffer_2, uv);
 
@@ -411,39 +397,39 @@ float4 ps_border (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform float blurRadius) : COLOR
+float4 ps_blur (float2 uv : TEXCOORD3, uniform sampler s_blur, uniform float blurAmt) : COLOR
 {
-   float4 retval = tex2D (blurSampler, uv);
+   float4 retval = tex2D (s_blur, uv);
 
-   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * (Feather + 0.05) * blurRadius * W_BLUR;
+   float2 xy, radius = float2 (1.0, _OutputAspectRatio) * (Feather + 0.05) * blurAmt * W_BLUR;
 
    for (int i = 0; i < LOOP; i++) {
       sincos ((i * ANGLE), xy.x, xy.y);
       xy *= radius;
-      retval += tex2D (blurSampler, uv + xy);
-      retval += tex2D (blurSampler, uv - xy);
+      retval += tex2D (s_blur, uv + xy);
+      retval += tex2D (s_blur, uv - xy);
       xy.y = -xy.y;
-      retval += tex2D (blurSampler, uv + xy);
-      retval += tex2D (blurSampler, uv - xy);
+      retval += tex2D (s_blur, uv + xy);
+      retval += tex2D (s_blur, uv - xy);
       xy += xy;
-      retval += tex2D (blurSampler, uv + xy);
-      retval += tex2D (blurSampler, uv - xy);
+      retval += tex2D (s_blur, uv + xy);
+      retval += tex2D (s_blur, uv - xy);
       xy.y = -xy.y;
-      retval += tex2D (blurSampler, uv + xy);
-      retval += tex2D (blurSampler, uv - xy);
+      retval += tex2D (s_blur, uv + xy);
+      retval += tex2D (s_blur, uv - xy);
    }
 
    return retval / DIVIDE;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float2 Mask = tex2D (s_Buffer_2, uv).xy;
+   float2 Mask = GetPixel (s_Buffer_2, uv).xy;
 
-   float4 Fgnd = tex2D (s_Foreground, uv);
-   float4 Bgnd = (Mode == 0) ? BLACK :
+   float4 Fgnd = GetPixel (s_Foreground, uv);
+   float4 Bgnd = (Mode == 0) ? EMPTY :
                  (Mode == 1) ? float4 (Colour.rgb, 0.0) :
-                 tex2D (s_Background, uv);
+                 GetPixel (s_Background, uv);
 
    if (Border > 0.0) {
       Mask.x *= saturate (Border * 20.0);
@@ -460,30 +446,14 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique OctagonalVignette
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Buffer_1;"; >
-   { PixelShader = compile PROFILE ps_mask (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Buffer_2;"; >
-   { PixelShader = compile PROFILE ps_rotate_scale (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Buffer_1;"; >
-   { PixelShader = compile PROFILE ps_border (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Buffer_2;"; >
-   { PixelShader = compile PROFILE ps_blur (s_Buffer_1, RADIUS_1); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Buffer_1;"; >
-   { PixelShader = compile PROFILE ps_blur (s_Buffer_2, RADIUS_2); }
-
-   pass P_6
-   < string Script = "RenderColorTarget0 = Buffer_2;"; >
-   { PixelShader = compile PROFILE ps_blur (s_Buffer_1, RADIUS_3); }
-
-   pass P_7
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 < string Script = "RenderColorTarget0 = Buffer_1;"; > ExecuteShader (ps_mask)
+   pass P_2 < string Script = "RenderColorTarget0 = Buffer_2;"; > ExecuteShader (ps_rotate_scale)
+   pass P_3 < string Script = "RenderColorTarget0 = Buffer_1;"; > ExecuteShader (ps_border)
+   pass P_4 < string Script = "RenderColorTarget0 = Buffer_2;"; > Execute2param (ps_blur, s_Buffer_1, RADIUS_1)
+   pass P_5 < string Script = "RenderColorTarget0 = Buffer_1;"; > Execute2param (ps_blur, s_Buffer_2, RADIUS_2)
+   pass P_6 < string Script = "RenderColorTarget0 = Buffer_2;"; > Execute2param (ps_blur, s_Buffer_1, RADIUS_3)
+   pass P_7 ExecuteShader (ps_main)
 }
+

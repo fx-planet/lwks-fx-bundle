@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-09-01
 // @Author jwrl
-// @Created 2017-03-23
+// @Created 2021-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCrop_640.png
 
 /**
@@ -17,19 +17,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-09-01 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,35 +33,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fgd;
-texture Bgd;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define BLACK float4(0.0.xxx,1.0)
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state
-{
-   Texture   = <Fgd>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fgd, s_RawFg);
+DefineInput (Bgd, s_RawBg);
 
-sampler BgSampler = sampler_state
-{
-   Texture   = <Bgd>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -81,32 +101,32 @@ float CropLeft
 <
    string Description = "Top left";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 float CropTop
 <
    string Description = "Top left";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.9;
 
 float CropRight
 <
    string Description = "Bottom right";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.9;
 
 float CropBottom
 <
    string Description = "Bottom right";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 bool Swap
@@ -125,26 +145,27 @@ float Border
    string Group = "Border";
    string Description = "Thickness";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.1;
 
 float4 Colour
 <
    string Group = "Border";
    string Description = "Colour";
+   bool SupportsAlpha = true;
 > = { 1.0, 1.0, 1.0, 1.0 };
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+// These two passes map the foreground and background clips to TEXCOORD3, so that
+// variations in clip geometry and rotation are handled without too much effort.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return Overflow (uv) ? BLACK : tex2D (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float4 Fgnd, Bgnd;
    float2 brdrEdge = (Border * 0.05).xx;
@@ -157,18 +178,18 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float2 bordBR = saturate (cropBR + brdrEdge);
 
    if (Swap) {
-      Bgnd = tex2D (FgSampler, uv);
-      Fgnd = tex2D (BgSampler, uv);
+      Bgnd = GetPixel (s_Foreground, uv);
+      Fgnd = GetPixel (s_Background, uv);
    }
    else {
-      Fgnd = tex2D (FgSampler, uv);
-      Bgnd = tex2D (BgSampler, uv);
+      Fgnd = GetPixel (s_Foreground, uv);
+      Bgnd = GetPixel (s_Background, uv);
    }
 
    if (all (uv > bordTL) && all (uv < bordBR)) { Bgnd = Colour; }
    else if (AlphaMode == 4) Bgnd.a = 0.0;
 
-   if (any (uv < cropTL) || any (uv > cropBR)) { Fgnd = 0.0.xxxx; }
+   if (any (uv < cropTL) || any (uv > cropBR)) { Fgnd = EMPTY; }
 
    float alpha = (AlphaMode == 0) ? 1.0
                : (AlphaMode == 1) ? Bgnd.a
@@ -183,8 +204,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Simple_crop
 {
-   pass P_1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_main)
 }
+

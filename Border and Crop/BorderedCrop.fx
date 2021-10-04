@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-09-01
 // @Author jwrl
-// @Created 2017-05-03
+// @Created 2021-09-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/BorderCrop_640.png
 
 /**
@@ -15,28 +15,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect will now function correctly when used with
-// all current and previous Lightworks versions.
-//
-// Bug fix by LW user jwrl 20 July 2017
-// This effect didn't work on Linux/Mac platforms.  It now does.  In the process
-// significant code optimisation has been performed.
+// Rewrite 2021-09-01 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,44 +31,72 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fgd;
-texture Bgd;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture FgdCrop : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY  (0.0).xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define BORDER_SCALE   0.0666667
+#define BORDER_FEATHER 0.05
+
+#define SHADOW_SCALE   0.2
+#define SHADOW_FEATHER 0.1
+
+#define BLACK float4(0.0.xxx,1.0)
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
-   Texture   = <Fgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-sampler BgSampler = sampler_state {
-   Texture   = <Bgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler FcSampler = sampler_state {
-   Texture   = <FgdCrop>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (FgdCrop, s_FgdCrop);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -191,40 +200,20 @@ float Shadow_Y
 > = 0.4;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define BORDER_SCALE   0.0666667
-#define BORDER_FEATHER 0.05
-
-#define SHADOW_SCALE   0.2
-#define SHADOW_FEATHER 0.1
-
-#define BLACK          float4(0.0.xxx,1.0)
-#define EMPTY          (0.0).xxxx
-
-float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
+// These two passes map the foreground and background clips to TEXCOORD3, so that
+// variations in clip geometry and rotation are handled without too much effort.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return Overflow (uv) ? BLACK : tex2D (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
 {
    float bWidth = max (0.0, BorderWidth);
 
-   float4 Fgnd   = Swap ? tex2D (BgSampler, uv) : tex2D (FgSampler, uv);
+   float4 Fgnd   = Swap ? GetPixel (s_Background, uv) : GetPixel (s_Foreground, uv);
    float4 retval = lerp (Fgnd, BorderColour, min (1.0, bWidth * 50.0));
 
    float2 fx1 = float2 (1.0, _OutputAspectRatio) * max (0.0, BorderFeather) * BORDER_FEATHER;
@@ -244,15 +233,15 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    return lerp (retval, Fgnd, saturate (min (cAlpha.x, cAlpha.y)));
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float2 aspect = float2 (1.0, _OutputAspectRatio);
    float2 Border = aspect * max (0.0, BorderWidth) * BORDER_SCALE;
    float2 xy     = uv - float2 ((Shadow_X - 0.5), (0.5 - Shadow_Y) * _OutputAspectRatio) * SHADOW_SCALE;
 
-   float4 Bgnd   = Swap ? tex2D (FgSampler, uv) : tex2D (BgSampler, uv);
-   float4 Fgnd   = tex2D (FcSampler, uv);
-   float4 retval = fn_illegal (xy) ? EMPTY : tex2D (FcSampler, xy);
+   float4 Bgnd   = Swap ? GetPixel (s_Foreground, uv) : GetPixel (s_Background, uv);
+   float4 Fgnd   = GetPixel (s_FgdCrop, uv);
+   float4 retval = GetPixel (s_FgdCrop, xy);
 
    float2 shadowTL = xy - float2 (CropLeft, 1.0 - CropTop) + Border;
    float2 shadowBR = float2 (CropRight, 1.0 - CropBottom) - xy + Border;
@@ -271,16 +260,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique BorderedCrop
 {
-   pass P_1
-   <
-      string Script = "RenderColorTarget0 = FgdCrop;";
-   >
-   {
-      PixelShader = compile PROFILE ps_crop ();
-   }
-
-   pass P_2
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 < string Script = "RenderColorTarget0 = FgdCrop;"; > ExecuteShader (ps_crop)
+   pass P_2 ExecuteShader (ps_main)
 }
+

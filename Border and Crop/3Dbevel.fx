@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2020-09-14
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/3Dbevel_640.png
 
 /**
@@ -25,8 +25,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
+// Update 2021-08-31 jwrl:
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -40,47 +41,67 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Bvl : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY  0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define BEVEL  0.1
+#define BORDER 0.0125
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Bevel = sampler_state
-{
-   Texture   = <Bvl>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (Bvl, s_Bevel);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -204,17 +225,6 @@ float4 Light
 > = { 1.0, 0.66666667, 0.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY  0.0.xxxx
-
-#define BEVEL  0.1
-#define BORDER 0.0125
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -263,9 +273,15 @@ float3 fn_hsv2rgb (float3 hsv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
+// These two passes map the foreground and background clips to TEXCOORD3, so that
+// variations in clip geometry and rotation are handled without too much effort.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
 {
-   float3 retval = tex2D (s_Foreground, uv).rgb;
+   float3 retval = GetPixel (s_Foreground, uv).rgb;
 
    float2 cropAspect = float2 (1.0, _OutputAspectRatio);
    float2 centreCrop = float2 (abs (CropRight - CropLeft), abs (CropTop - CropBottom));
@@ -309,13 +325,13 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? EMPTY : float4 (retval, 1.0);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float2 xy = ((uv - float2 (PosX, 1.0 - PosY)) / max (1e-6, Scale)) + 0.5.xx;
 
-   float4 Fgnd = tex2D (s_Bevel, xy);
+   float4 Fgnd = GetPixel (s_Bevel, xy);
 
-   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a);
+   return lerp (GetPixel (s_Background, uv), Fgnd, Fgnd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -324,10 +340,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Bevel3D
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Bvl;"; > 
-   { PixelShader = compile PROFILE ps_crop (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 < string Script = "RenderColorTarget0 = Bvl;"; > ExecuteShader (ps_crop)
+   pass P_2 ExecuteShader (ps_main)
 }
+

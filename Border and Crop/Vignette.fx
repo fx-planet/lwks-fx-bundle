@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author juhartik
 // @AuthorEmail "juha@linearteam.org"
 // @Created 2011-04-29
@@ -14,32 +14,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 6 January 2019 jwrl.
-// Added colour setting for the surround.
-// Changed default values of radius and amount.
-// Renamed "Softness" to "Hardness" because reducing the value increases the softness.
-//
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed category and subcategory.
-// Changed name from jh_stylize_vignette.fx to Vignette.fx.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 4 April 2018.
-// Metadata header block added to better support GitHub repository.
-// VignettePS() now returns float4 instead of half4.  This ensures that 32 bit floats
-// will be properly supported as Lightworks moves into those areas.
-//
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Explicitly defined float3 variables to allow for the behavioural differences between
-// the D3D and Cg compilers.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Update 2021-08-31 jwrl:
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -53,20 +30,59 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler FgSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -98,19 +114,25 @@ float Hardness
 float4 Colour
 <
    string Description = "Colour";
+   bool SupportsAlpha = true;
 > = { 0.69, 0.78, 0.82, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 VignettePS (float2 xy : TEXCOORD1) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 VignettePS (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 c = tex2D (FgSampler, xy);
+   float2 xy = abs (uv - 0.5.xx);
 
-   float2 tc = xy - 0.5.xx;
+   float4 c = (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s_Input, uv);
 
-   float v = length (tc) / Radius;
+   float v = length (uv - 0.5.xx) / Radius;
 
    // Four new lines replace the original [c.rgb += (pow (v, Softness) * Amount).xxx] to
    // support the vignette colour.  Negative values of Amount still invert colour - jwrl.
@@ -130,8 +152,7 @@ float4 VignettePS (float2 xy : TEXCOORD1) : COLOR
 
 technique Vignette
 {
-   pass p0
-   {
-      PixelShader = compile PROFILE VignettePS();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (VignettePS)
 }
+

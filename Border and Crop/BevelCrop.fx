@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2019-11-06
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/BevelCrop_640.png
 
 /**
@@ -24,16 +24,13 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BevelCrop.fx
 //
-// This is copiously commented to make it as clear as possible to any poor devil who has
-// to maintain it.  That makes it look way more complex than it actually is.  Excluding
-// the two HSV functions, there's actually just thirty three lines of code to do it all.
-//
-// And it's all original work, so it probably could be done more efficiently than I have.
+// This is all original work, so it probably could be done more efficiently than I have.
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-08-31 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,53 +38,78 @@ int _LwksEffectInfo
    string EffectGroup = "GenericPixelShader";
    string Description = "Bevel edged crop";
    string Category    = "DVE";
-   string SubCategory = "Crop Presets";
+   string SubCategory = "Border and crop";
    string Notes       = "This provides a simple crop with a bevelled border and a hard-edged drop shadow";
    bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Bvl : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define SCALE  0.1
+#define SHADOW 0.025
+
+float _OutputAspectRatio;
+
+float _BgXScale = 1.0;
+float _BgYScale = 1.0;
+float _FgXScale = 1.0;
+float _FgYScale = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Bevel = sampler_state
-{
-   Texture   = <Bvl>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (Bvl, s_Bevel);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -233,17 +255,6 @@ float4 Shade
 > = { 0.125, 0.2, 0.25, 0.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY  0.0.xxxx
-
-#define SCALE  0.1
-#define SHADOW 0.025
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -292,11 +303,17 @@ float3 fn_hsv2rgb (float3 hsv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
+// These two passes map the foreground and background clips to TEXCOORD3, so that
+// variations in clip geometry and rotation are handled without too much effort.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
 {
    // Get the foreground but discard the alpha channel
 
-   float3 retval = tex2D (s_Foreground, uv).rgb;
+   float3 retval = GetPixel (s_Foreground, uv).rgb;
 
    // Now set up the crop boundaries, the size of the border and the percentage of the
    // border that we want to be bevelled.
@@ -406,25 +423,25 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? EMPTY : float4 (retval, 1.0);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   // We begin by calculating the position offset and put it in xy1.  A further offset
-   // is calculated for the drop shadow which is placed in xy2.  While it would be quite
-   // possible to use the bevel angle parameter to do this, it's much simpler this way.
+   // First we calculate the position offset and put it in xy1.  A further offset is
+   // calculated for the drop shadow and placed in xy2.  While it would be possible
+   // to use the bevel angle parameter to do this, it's much simpler this way.
 
-   float2 xy1 = uv - float2 (PosX - 0.5, 0.5 - PosY);
+   float2 xy1 = uv + float2 (0.5 - PosX, PosY - 0.5);
    float2 xy2 = xy1 - float2 (ShadowX, -ShadowY * _OutputAspectRatio) * SHADOW;
 
    // The alpha channel in s_Bevel is obtained using xy2 and scaled by the drop shadow
    // strength parameter.  This is used later to create our drop shadow.
 
-   float alpha = tex2D (s_Bevel, xy2).a * Strength;
+   float alpha = GetPixel (s_Bevel, xy2).a * Strength;
 
    // The foreground is recovered from s_Bevel using the position corrected xy1 and the
    // background is recovered using the uv coordinates directly.
 
-   float4 Fgnd = tex2D (s_Bevel, xy1);
-   float4 Bgnd = tex2D (s_Background, uv);
+   float4 Fgnd = GetPixel (s_Bevel, xy1);
+   float4 Bgnd = GetPixel (s_Background, uv);
 
    // The background now has the drop shadow applied.  Note that opacity is preserved.
 
@@ -441,10 +458,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique BevelCrop
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Bvl;"; > 
-   { PixelShader = compile PROFILE ps_crop (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 < string Script = "RenderColorTarget0 = Bvl;"; > ExecuteShader (ps_crop)
+   pass P_2 ExecuteShader (ps_main)
 }
+

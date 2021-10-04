@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
 // @Author LWKS Software Ltd
-// @Created 2020-03-29
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/GradShape_640.png
 
 /**
@@ -29,15 +29,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified April 2 2020 jwrl:
-// Restructured the rectangle and ellipse shaders to simplify the execution slightly.
-//
-// Modified April 1 2020 jwrl:
-// Corrected a bug that meant that scaling beyond full screen could return an incorrect
-// colour address if the position was panned up or left.
+// Rewrite 2021-08-31 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,19 +45,64 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Gradient : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define Cropped(XY,L,R,T,B) ((XY.x <= L) || (XY.x >= R) || (XY.y <= T) || (XY.y >= B))
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input  = sampler_state { Texture = <Inp>; };
-sampler s_Colour = sampler_state { Texture = <Gradient>; };
+DefineInput (Inp, s_RawInp);
+
+DefineTarget (FixInp, s_Input);
+DefineTarget (Gradient, s_Colour);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -167,16 +206,15 @@ bool Invert
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_make_gradient (float2 uv : TEXCOORD0) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_grad (float2 uv : TEXCOORD0) : COLOR
 {
    float2 xy = uv;
 
@@ -218,20 +256,20 @@ float4 ps_make_gradient (float2 uv : TEXCOORD0) : COLOR
    return lerp (retval, retsub, amount);
 }
 
-float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
+float4 ps_rectangle_main (float2 uv : TEXCOORD2) : COLOR
 {
+   float4 Fgnd, Bgnd;
+
    // Recover and assign the colour and video layers appropriately
 
-   float4 temp = tex2D (s_Colour, xy);
-   float4 Bgnd = tex2D (s_Input, xy1);
-   float4 Fgnd = lerp (Bgnd, temp, temp.a);
-
    if (Invert) {
-      // In full screen (inverted) mode the colour gradient and background are swapped.
-
-      temp = Bgnd;
-      Bgnd = Fgnd;
-      Fgnd = temp;
+      Bgnd = GetPixel (s_Colour, uv);
+      Fgnd = lerp (Bgnd, GetPixel (s_Input, uv), Bgnd.a);
+   }
+   else {
+      Fgnd = GetPixel (s_Colour, uv);
+      Bgnd = GetPixel (s_Input, uv);
+      Fgnd = lerp (Bgnd, Fgnd, Fgnd.a);
    }
 
    // Calculate the inner rectangle boundaries
@@ -244,7 +282,7 @@ float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
    // If the current position is entirely inside the rectangle return the foreground.
    // By forcing an early quit we avoid performing redundant conditional evaluations.
 
-   if ((xy.x >= innerL) && (xy.x <= innerR) && (xy.y >= innerT) && (xy.y <= innerB)) return Fgnd;
+   if (!Cropped (uv, innerL, innerR, innerT, innerB)) return Fgnd;
 
    // Now we get the softness, allowing for the aspect ratio
 
@@ -259,24 +297,24 @@ float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 
    // If the current position falls entirely outside the softness mix return the background.
 
-   if ((xy.x < outerL) || (xy.x > outerR) || (xy.y < outerT) || (xy.y > outerB)) return Bgnd;
+   if (Cropped (uv, outerL, outerR, outerT, outerB)) return Bgnd;
 
    float amount = 1.0;
 
    // Calculate the amount to mix the foreground and background
 
-   if (xy.x < innerL) {
-      if (xy.y < innerT) { amount -= length ((xy - float2 (innerL, innerT)) / softness); }
-      else if (xy.y > innerB) { amount -= length ((xy - float2 (innerL, innerB)) / softness); }
-      else amount = (xy.x - outerL) / softness.x;
+   if (uv.x < innerL) {
+      if (uv.y < innerT) { amount -= length ((uv - float2 (innerL, innerT)) / softness); }
+      else if (uv.y > innerB) { amount -= length ((uv - float2 (innerL, innerB)) / softness); }
+      else amount = (uv.x - outerL) / softness.x;
    }
-   else if (xy.x > innerR) {
-      if (xy.y < innerT) { amount -= length ((xy - float2 (innerR, innerT)) / softness); }
-      else if (xy.y > innerB) { amount -= length ((xy - float2 (innerR, innerB)) / softness); }
-      else amount = (outerR - xy.x) / softness.x;
+   else if (uv.x > innerR) {
+      if (uv.y < innerT) { amount -= length ((uv - float2 (innerR, innerT)) / softness); }
+      else if (uv.y > innerB) { amount -= length ((uv - float2 (innerR, innerB)) / softness); }
+      else amount = (outerR - uv.x) / softness.x;
    }
-   else if (xy.y < innerT) { amount = (xy.y - outerT) / softness.y; }
-   else amount = (outerB - xy.y) / softness.y;
+   else if (uv.y < innerT) { amount = (uv.y - outerT) / softness.y; }
+   else amount = (outerB - uv.y) / softness.y;
 
    // Return a mix of background and foreground depending on softness.  The mix amount can
    // go negative on the corners so it must be limited to zero to prevent artefacts there.
@@ -284,16 +322,20 @@ float4 ps_rectangle_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, max (amount, 0.0));
 }
 
-float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
+float4 ps_ellipse_main (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 temp = tex2D (s_Colour, xy);
-   float4 Bgnd = tex2D (s_Input, xy1);
-   float4 Fgnd = lerp (Bgnd, temp, temp.a);
+   float4 Fgnd, Bgnd;
+
+   // Recover and assign the colour and video layers appropriately
 
    if (Invert) {
-      temp = Bgnd;
-      Bgnd = Fgnd;
-      Fgnd = temp;
+      Bgnd = GetPixel (s_Colour, uv);
+      Fgnd = lerp (Bgnd, GetPixel (s_Input, uv), Bgnd.a);
+   }
+   else {
+      Fgnd = GetPixel (s_Colour, uv);
+      Bgnd = GetPixel (s_Input, uv);
+      Fgnd = lerp (Bgnd, Fgnd, Fgnd.a);
    }
 
    // From here on is largely the original Lightworks effect
@@ -304,7 +346,7 @@ float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
    float sa = a + (Softness / _OutputAspectRatio);
    float sb = b + Softness;
 
-   float2 pos = xy - float2 (CentreX, 1.0 - CentreY);
+   float2 pos = uv - float2 (CentreX, 1.0 - CentreY);
 
    // https://www.mathwarehouse.com/ellipse/equation-of-ellipse.php
    //
@@ -336,7 +378,7 @@ float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
    // I have replaced the original explicit sin() and cos() functions with sincos().  The atan2()
    // operation to produce theta has also been placed inside the sincos() function.  In the process
    // I have removed the pow() expressions used to square the sine and cosine values at the expense
-   // of two new variables, ab and sab.  This simplifies the calculations slightly - I think!
+   // of two new variables, ab and sab.  This simplifies the following maths slightly - I think!
 
    float ab  = a * b;
    float sab = sa * sb;
@@ -361,20 +403,15 @@ float4 ps_ellipse_main (float2 xy : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 
 technique GradShape_0
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Gradient;"; >
-   { PixelShader = compile PROFILE ps_make_gradient (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_rectangle_main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = Gradient;"; > ExecuteShader (ps_grad)
+   pass P_2 ExecuteShader (ps_rectangle_main)
 }
 
 technique GradShape_1
 {
-   pass P1
-   < string Script = "RenderColorTarget0 = Gradient;"; >
-   { PixelShader = compile PROFILE ps_make_gradient (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_ellipse_main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = Gradient;"; > ExecuteShader (ps_grad)
+   pass P_2 ExecuteShader (ps_ellipse_main)
 }
+

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2020-05-16
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/RoundedCrop_640.png
 
 /**
@@ -14,8 +14,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-08-31 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,30 +30,75 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Mk : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define HALF_PI       1.5707963268
+
+#define EDGE_SCALE    0.075
+#define RADIUS_SCALE  0.15
+
+#define SHADOW_DEPTH  0.1
+#define SHADOW_SOFT   0.025
+#define TRANSPARENCY  0.75
+
+#define MINIMUM       0.0001.xx
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-sampler s_MaskShape = sampler_state
-{
-   Texture   = <Mk>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (Mk, s_MaskShape);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -165,36 +211,16 @@ float ShadowY
 > = -0.25;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define HALF_PI       1.5707963268
-
-#define EDGE_SCALE    0.075
-#define RADIUS_SCALE  0.15
-
-#define SHADOW_DEPTH  0.1
-#define SHADOW_SOFT   0.025
-#define TRANSPARENCY  0.75
-
-#define MINIMUM       0.0001.xx
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_bad (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
+// These two passes map the foreground and background clips to TEXCOORD3, so that
+// variations in clip geometry and rotation are handled without too much effort.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
 {
    float adjust = max (0.0, max (CropL - CropR, CropB - CropT));
 
@@ -254,19 +280,20 @@ float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
    return Mask;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float2 xy = uv - (float2 (ShadowX / _OutputAspectRatio, -ShadowY) * SHADOW_DEPTH);
 
-   float4 Bgnd = tex2D (s_Background, uv);
-   float4 Mask = tex2D (s_MaskShape, uv);
+   float4 Fgnd = GetPixel (s_Foreground, uv);
+   float4 Bgnd = GetPixel (s_Background, uv);
+   float4 Mask = GetPixel (s_MaskShape, uv);
 
-   float3 Shad = fn_bad (xy) ? Bgnd.rgb : Bgnd.rgb * (1.0 - tex2D (s_MaskShape, xy).w);
+   float3 Shad = Overflow (xy) ? Bgnd.rgb : Bgnd.rgb * (1.0 - GetPixel (s_MaskShape, xy).w);
 
    float4 Colour = lerp (BorderColour_2, BorderColour_1, Mask.y);
    float4 retval = lerp (float4 (Shad, Bgnd.a), Colour, Mask.z);
 
-   return lerp (retval, tex2D (s_Foreground, uv), Mask.x);
+   return lerp (retval, Fgnd, Mask.x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -275,10 +302,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique RoundedCrop
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Mk;"; >
-   { PixelShader = compile PROFILE ps_crop (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 < string Script = "RenderColorTarget0 = Mk;"; > ExecuteShader (ps_crop)
+   pass P_2 ExecuteShader (ps_main)
 }
+

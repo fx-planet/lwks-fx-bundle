@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-01
 // @Author jwrl
-// @Created 2020-08-03
+// @Created 2021-10-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/MultiToner_640.png
 
 /**
@@ -32,8 +32,9 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-10-01 jwrl.
+// Rebuild of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,24 +48,52 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define LUMA       float3(0.217, 0.265, 0.518)  // A rough panchromatic profile
+
+#define SEPIA      float3(0.732, 0.899, 1.0)
+#define SELENIUM_1 float3(0.725, 0.950, 1.0)
+#define SELENIUM_2 float3(0.744, 1.0, 0.871)
+#define GOLD       float3(0.782, 0.983, 1.0)
+#define COPPER     float3(0.604, 0.968, 1.0)
+#define FERRO      float3(1.0, 0.776, 0.486)
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and shaders
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -101,25 +130,12 @@ float Exposure
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define LUMA       float3(0.217, 0.265, 0.518)  // A rough panchromatic profile
-
-#define SEPIA      float3(0.732, 0.899, 1.0)
-#define SELENIUM_1 float3(0.725, 0.950, 1.0)
-#define SELENIUM_2 float3(0.744, 1.0, 0.871)
-#define GOLD       float3(0.782, 0.983, 1.0)
-#define COPPER     float3(0.604, 0.968, 1.0)
-#define FERRO      float3(1.0, 0.776, 0.486)
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
@@ -137,7 +153,7 @@ float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
@@ -155,7 +171,7 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
@@ -173,7 +189,7 @@ float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_3 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
@@ -191,7 +207,7 @@ float4 ps_main_3 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
@@ -209,7 +225,7 @@ float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_5 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
@@ -229,38 +245,15 @@ float4 ps_main_5 (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique MultiToner_0
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_0 (); }
-}
+technique MultiToner_0 { pass P_1 ExecuteShader (ps_main_0) }
 
-technique MultiToner_1
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_1 (); }
-}
+technique MultiToner_1 { pass P_1 ExecuteShader (ps_main_1) }
 
-technique MultiToner_2
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_2 (); }
-}
+technique MultiToner_2 { pass P_1 ExecuteShader (ps_main_2) }
 
-technique MultiToner_3
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_3 (); }
-}
+technique MultiToner_3 { pass P_1 ExecuteShader (ps_main_3) }
 
-technique MultiToner_4
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_4 (); }
-}
+technique MultiToner_4 { pass P_1 ExecuteShader (ps_main_4) }
 
-technique MultiToner_5
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_5 (); }
-}
+technique MultiToner_5 { pass P_1 ExecuteShader (ps_main_5) }
+

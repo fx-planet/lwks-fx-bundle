@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-02
 // @Author msi
 // @OriginalAuthor "Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)"
 // @Created 2011-05-27
@@ -19,23 +19,12 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-10-02 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 31 July 2017 jwrl.
-// Explicitly define float4 variables to address the behavioural differences between
-// the D3D and Cg compilers.
-//
-// Added subcategory for LW14 18 Feb 2017 - jwrl.
+// Prior to 2018-12-23:
+// Various cross-platform upgrades.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -49,20 +38,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler MsiVintageSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -110,22 +122,25 @@ float CyanLevel
 	float MaxVal       = 1.00;
 > = 0.17;
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 VintageLookFX( float2 xy: TEXCOORD1 ) : COLOR
+float4 VintageLookFX (float2 uv: TEXCOORD1) : COLOR
 {
-	float4 source = tex2D( MsiVintageSampler, xy );
-	// BEGIN Vintage Look routine by Wojciech Toman
-	// (http://wtomandev.blogspot.com/2011/04/vintage-look.html)
-	float4 corrected = lerp( source, source * Yellow, YellowLevel );
-	corrected = lerp( corrected, (1.0.xxxx - ((1.0.xxxx - corrected) * (1.0.xxxx - Magenta))), MagentaLevel);
-	corrected = lerp( corrected, (1.0.xxxx - ((1.0.xxxx - corrected) * (1.0.xxxx - Cyan))), CyanLevel);
-	// END Vintage Look routine by Wojciech Toman
-	return corrected;	
+   float4 source = GetPixel (s_Input, uv);
+
+   // BEGIN Vintage Look routine by Wojciech Toman
+   // (http://wtomandev.blogspot.com/2011/04/vintage-look.html)
+
+   float4 corrected = lerp (source, source * Yellow, YellowLevel);
+
+   corrected = lerp (corrected, (1.0.xxxx - ((1.0.xxxx - corrected) * (1.0.xxxx - Magenta))),  MagentaLevel);
+   corrected = lerp (corrected, (1.0.xxxx - ((1.0.xxxx - corrected) * (1.0.xxxx - Cyan))), CyanLevel);
+
+   // END Vintage Look routine by Wojciech Toman
+
+   return corrected;	
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -134,8 +149,6 @@ float4 VintageLookFX( float2 xy: TEXCOORD1 ) : COLOR
 
 technique VintageLookFXTechnique
 {
-	pass SinglePass
-	{
-		PixelShader = compile PROFILE VintageLookFX();
-	}
+   pass SinglePass ExecuteShader (VintageLookFX)
 }
+

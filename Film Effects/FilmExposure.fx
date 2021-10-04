@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-06-10
+// @Released 2021-09-17
 // @Author jwrl
 // @Author abelmilanes
 // @Created 2017-03-04
@@ -16,8 +16,9 @@
 //
 // Version history:
 //
-// Update 2021-06-10 jwrl.
-// Updated for LW 2021 resolution independence support.
+// Update 2021-09-17 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
 // Prior to 2020-04-16:
 // Various cross-platform upgrades.
@@ -45,32 +46,32 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
 #define EMPTY 0.0.xxxx
 
-#define IsOutOfBounds(XY) any(saturate(XY) - XY)
-#define GetPixel(S,XY) (IsOutOfBounds(XY) ? EMPTY : tex2D (S, XY))
-
-#define DeclareInput( TEXTURE, SAMPLER ) \
-                                         \
-   texture TEXTURE;                      \
-                                         \
-   sampler SAMPLER = sampler_state       \
-   {                                     \
-      Texture   = <TEXTURE>;             \
-      AddressU  = ClampToEdge;           \
-      AddressV  = ClampToEdge;           \
-      MinFilter = Linear;                \
-      MagFilter = Linear;                \
-      MipFilter = Linear;                \
-   }
-
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define Overflow(XY) any(saturate(XY) - XY)
+#define GetPixel(S,XY) (Overflow(XY) ? EMPTY : tex2D (S, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-DeclareInput (Input, InpSampler);
+DefineInput (Input, InpSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -155,7 +156,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique FilmExposure
-{
-   pass pass_one CompileShader (ps_main)
-}
+technique FilmExposure { pass pass_one ExecuteShader (ps_main) }
+

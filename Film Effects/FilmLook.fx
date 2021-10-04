@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-01
 // @Author jwrl
-// @Created 2018-04-19
+// @Created 2021-10-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_640.png
 
 /**
@@ -39,23 +39,9 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 2018-07-06 jwrl.
-// Calculates halation based on frame size not pixel size.
-//
-// Bugfix and enhancement 2018-05-29 - jwrl.
-// Discovered a bug that affects Linux and Mac versions when setting colour temperature.
-// Highlights would invert when setting higher colour temperatures.  While correcting
-// that the way the function performed subjectively was also improved.
+// Rewrite 2021-10-01 jwrl.
+// Rebuild of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -69,41 +55,73 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Cgrade  : RenderColorTarget;
-texture Clipped : RenderColorTarget;
-texture Halo    : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define E_SCALE  0.25
+#define W_RANGE  0.07058825
+
+#define LUMACONV float3(0.2989, 0.5866, 0.1145)
+
+#define COOLTEMP float3(1.68861871, 0.844309355, 0.0)
+#define WARMTEMP float3(0.0, 0.95712098, 3.82848392)
+
+#define PIXEL    0.0005
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state { Texture = <Input>; };
-sampler s_Grade = sampler_state { Texture = <Cgrade>; };
+DefineInput (Input, s_Input);
 
-sampler s_Clip = sampler_state
-{
-   Texture   = <Clipped>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Halo  = sampler_state
-{
-   Texture   = <Halo>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Cgrade, s_Grade);
+DefineTarget (Clipped, s_Clip);
+DefineTarget (Halo, s_Halo);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -171,28 +189,12 @@ float Vibrance
 > = 0.25;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define E_SCALE  0.25
-#define W_RANGE  0.07058825
-
-#define LUMACONV float3(0.2989, 0.5866, 0.1145)
-
-#define COOLTEMP float3(1.68861871, 0.844309355, 0.0)
-#define WARMTEMP float3(0.0, 0.95712098, 3.82848392)
-
-#define PIXEL    0.0005
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_colourgrade (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    // Set up the exposure for a plus or minus one stop adjustment if needed.
 
@@ -242,7 +244,7 @@ float4 ps_colourgrade (float2 uv : TEXCOORD1) : COLOR
    return float4 (lerp (retRGB, maxval.xxx, vibval), retval.a);
 }
 
-float4 ps_clip_it (float2 uv : TEXCOORD1) : COLOR
+float4 ps_clip_it (float2 uv : TEXCOORD2) : COLOR
 {
    // This section creates a clipped version of the colourgraded video for use later in
    // creating the halation effect.
@@ -256,7 +258,7 @@ float4 ps_clip_it (float2 uv : TEXCOORD1) : COLOR
                         float4 ((retval.rgb *= (luma - 0.7) * 5.0), retval.a);
 }
 
-float4 ps_part_blur (float2 uv : TEXCOORD1) : COLOR
+float4 ps_part_blur (float2 uv : TEXCOORD2) : COLOR
 {
    float4 retval = tex2D (s_Clip, uv);
 
@@ -290,14 +292,14 @@ float4 ps_part_blur (float2 uv : TEXCOORD1) : COLOR
    return retval / 15.0;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s_Grade, uv);
+   float4 retval = tex2D (s_Grade, uv2);
 
    float alpha  = retval.a;
    float amount = max (Amount, 0.0);
 
-   retval = lerp (tex2D (s_Input, uv), retval, amount);
+   retval = lerp (GetPixel (s_Input, uv1), retval, amount);
 
    if (amount == 0.0) return retval;      // No changes, quit
 
@@ -305,7 +307,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    amount *= log10 ((Halation * 4.0) + 1.0);
 
-   float2 xy = uv;
+   float2 xy = uv2;
    float2 offset = float2 (0.0, _OutputAspectRatio * PIXEL);
 
    float4 gloVal = tex2D (s_Halo, xy);
@@ -318,7 +320,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    xy += offset; gloVal += tex2D (s_Halo, xy);
    xy += offset; gloVal += tex2D (s_Halo, xy);
 
-   xy = uv - offset;
+   xy = uv2 - offset;
    gloVal += tex2D (s_Halo, xy);
 
    xy -= offset; gloVal += tex2D (s_Halo, xy);
@@ -342,18 +344,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique FilmLook
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Cgrade;"; >
-   { PixelShader = compile PROFILE ps_colourgrade (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Clipped;"; >
-   { PixelShader = compile PROFILE ps_clip_it (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Halo;"; >
-   { PixelShader = compile PROFILE ps_part_blur (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Cgrade;"; > ExecuteShader (ps_colourgrade)
+   pass P_2 < string Script = "RenderColorTarget0 = Clipped;"; > ExecuteShader (ps_clip_it)
+   pass P_3 < string Script = "RenderColorTarget0 = Halo;"; > ExecuteShader (ps_part_blur)
+   pass P_4 ExecuteShader (ps_main)
 }
+

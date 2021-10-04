@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-01
 // @Author jwrl
-// @Created 2020-07-27
+// @Created 2021-10-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmLab_640.png
 
 /**
@@ -45,12 +45,9 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-07-30 jwrl.
-// Rolled both HSL functions into in-line code in shader.
-// Added range limiting to the hue.  Theoretically an issue, it's probably unnecessary.
+// Rewrite 2021-10-01 jwrl.
+// Rebuild of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -64,24 +61,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -209,14 +225,6 @@ float BlueGamma
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
@@ -224,7 +232,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float lin = (Linearity * 1.5) + 1.0;
 
-   float4 Inp = saturate (tex2D (s_Input, uv)); // Clamp RGB to prevent superwhites
+   float4 Inp = saturate (GetPixel (s_Input, uv)); // Clamp RGB to prevent superwhites
    float4 lab = lerp (0.01.xxxx, pow (Inp, lin), Contrast);
 
    float3 print = pow (lab.rgb, 1.0 / LumaGamma);
@@ -305,6 +313,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique FilmLab
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

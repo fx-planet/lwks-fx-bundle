@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-02
 // @Author jwrl
-// @Created 2017-02-05
+// @Created 2021-10-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/ColourFilmAge_640.png
 
 /**
@@ -18,6 +18,10 @@
  Sprocket hole wear and tear can be emulated with separate horizontal and vertical
  adjustments.  Fixed size grain can also be applied, and is added prior to the dye
  layer fade process for consistency of emulation.
+
+ NOTE: Noise and scratches are newly created  media and will be produced at the sequence
+ resolution.  This means that any video applied before or after this effect will also
+ be locked to that resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -44,27 +48,9 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Removed spurious debug lines from ps_weave() causing uncontrolled flicker.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 4 December 2018 jwrl.
-// Changed subcategory.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 6 July 2018 jwrl.
-// Made blurring and noise generation independent of pixel size.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// 31 July 2017 jwrl: Added flicker to the mix.
+// Rewrite 2021-10-02 jwrl.
+// Rebuild of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -74,84 +60,83 @@ int _LwksEffectInfo
    string Category    = "Colour";
    string SubCategory = "Film Effects";
    string Notes       = "This effect comprehensively mimics the aging of colour film stock";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-texture Dmg;
-texture Drt;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Noise : RenderColorTarget;
-texture Chem  : RenderColorTarget;
-texture Weave : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define PI      3.1415926536
+
+#define POS     0
+#define NEG     1
+
+#define MAGENTA 1
+
+#define F_SCALE 0.2
+#define S_SCALE 2000.0
+#define W_SCALE 0.0005
+
+#define LUMA    float3(0.25,0.65,0.11)
+
+float _Progress;
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_Input);
+DefineInput (Dmg, s_Damage);
+DefineInput (Drt, s_Dirt);
 
-sampler s_Damage = sampler_state
-{
-   Texture   = <Dmg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Dirt = sampler_state
-{
-   Texture   = <Drt>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Noise = sampler_state
-{
-   Texture   = <Noise>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Chemical = sampler_state
-{
-   Texture   = <Chem>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Weave = sampler_state
-{
-   Texture = <Weave>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Noise, s_Noise);
+DefineTarget (Chem, s_Chemical);
+DefineTarget (Weave, s_Weave);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -310,26 +295,6 @@ bool DamageTrack
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI      3.1415926536
-
-#define POS     0
-#define NEG     1
-
-#define MAGENTA 1
-
-#define F_SCALE 0.2
-#define S_SCALE 2000.0
-#define W_SCALE 0.0005
-
-#define LUMA    float3(0.25,0.65,0.11)
-
-float _Progress;
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
@@ -352,10 +317,10 @@ float4 ps_noise (float2 uv : TEXCOORD0) : COLOR
    return retval;
 }
 
-float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
+float4 ps_damage (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd = tex2D (s_Input, uv);
-   float4 grain = tex2D (s_Noise, uv);
+   float4 Fgd = GetPixel (s_Input, uv1);
+   float4 grain = GetPixel (s_Noise, uv2);
    float4 ret_1, ret_2;
 
    float lum;
@@ -391,7 +356,7 @@ float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
    }
 
    if ((DirtPhase == 1) && (DirtAmount > 0.0)) {
-      ret_1 = tex2D (s_Dirt, uv);
+      ret_1 = GetPixel (s_Dirt, uv2);
       ret_2 = (DirtSense == 0) ? 1.0.xxxx - ret_1 : ret_1;
       ret_1 = max (Fgd, ret_2);
       Fgd.rgb = lerp (Fgd.rgb, ret_1.rgb, DirtAmount);
@@ -399,10 +364,10 @@ float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
 
    float2 scratchSeed  = lerp (float2 (0.1, 0.9), float2 (0.9, 0.1), _Progress) * float2 (0.001, 0.4);
 
-   scratchSeed.x = frac (uv.x + scratchSeed.x);
+   scratchSeed.x = frac (uv1.x + scratchSeed.x);
 
-   float scratch = UseSource ? tex2D (s_Input, scratchSeed.yx).g
-                             : tex2D (s_Damage, scratchSeed.yx).g;
+   float scratch = UseSource ? GetPixel (s_Input, scratchSeed.yx).g
+                             : GetPixel (s_Damage, scratchSeed.yx).g;
 
    scratch = (2.0 * scratch) + NegDamage - 1.5;
    scratch = ((scratch > 0.0) && (scratch < 0.005)) ? 1.0 : 0.0;
@@ -411,7 +376,7 @@ float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
    if (DamageTrack) {
       if (UseSource) return (min (0.5 + scratch, 1.0)).xxxx;
 
-      return min (tex2D (s_Damage, uv) + scratch.xxxx, 1.0.xxxx);
+      return min (GetPixel (s_Damage, uv2) + scratch.xxxx, 1.0.xxxx);
    }
 
    Fgd.rgb = lerp (Fgd.rgb, min (Fgd.rgb + scratch.xxx, 1.0.xxx), NegDamageAmount);
@@ -419,7 +384,7 @@ float4 ps_damage (float2 uv : TEXCOORD1) : COLOR
    return Fgd;
 }
 
-float4 ps_weave (float2 uv : TEXCOORD1) : COLOR
+float4 ps_weave (float2 uv : TEXCOORD2) : COLOR
 {
    float2 xy = _Progress.xx;
    float2 dotProd = float2 (89.1298, 23.837);
@@ -434,7 +399,7 @@ float4 ps_weave (float2 uv : TEXCOORD1) : COLOR
    xy *= float2 (WeaveHoriz, WeaveVert) * 10.0;
    xy += uv;
 
-   float4 Fgd = tex2D (s_Chemical, xy);
+   float4 Fgd = GetPixel (s_Chemical, xy);
 
    if ((fadeDyes <= 0.0) && (Flicker <= 0.0)) return Fgd;
 
@@ -455,17 +420,17 @@ float4 ps_weave (float2 uv : TEXCOORD1) : COLOR
    return float4 (pow (retval.rgb, flkr.xxx), Fgd.a);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s_Weave, uv);
+   float4 retval = GetPixel (s_Weave, uv);
 
-   float2 scratchTex = tex2D (s_Noise, uv).rb;
+   float2 scratchTex = GetPixel (s_Noise, uv).rb;
    float2 scratchSeed  = lerp (float2 (0.1, 0.1), float2 (0.9, 0.9), _Progress) * float2 (0.001, 0.4);
 
    scratchSeed.x = frac (uv.x + scratchSeed.x);
 
-   float scratch = UseSource ? tex2D (s_Input, scratchSeed).g
-                             : tex2D (s_Damage, scratchSeed).g;
+   float scratch = UseSource ? GetPixel (s_Input, scratchSeed).g
+                             : GetPixel (s_Damage, scratchSeed).g;
 
    scratch = (2.0 * scratch) + PosDamage - 1.5;
    scratch = ((scratch > 0.0) && (scratch < 0.005)) ? 1.0 : 0.0;
@@ -476,7 +441,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    retval.rgb = lerp (retval.rgb, max (retval.rgb - scratch.xxx, 0.0.xxx), PosDamageAmount);
 
    if ((DirtPhase == 0) && (DirtAmount > 0.0)) {
-      float4 Fgd = tex2D (s_Dirt, uv);
+      float4 Fgd = GetPixel (s_Dirt, uv);
 
       if (DirtSense == 1) { Fgd = 1.0.xxxx - Fgd; }
 
@@ -494,18 +459,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique ColourFilmAgeing
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Noise;"; >
-   { PixelShader = compile PROFILE ps_noise (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Chem;"; >
-   { PixelShader = compile PROFILE ps_damage (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Weave;"; >
-   { PixelShader = compile PROFILE ps_weave (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Noise;"; > ExecuteShader (ps_noise)
+   pass P_2 < string Script = "RenderColorTarget0 = Chem;"; > ExecuteShader (ps_damage)
+   pass P_3 < string Script = "RenderColorTarget0 = Weave;"; > ExecuteShader (ps_weave)
+   pass P_4 ExecuteShader (ps_main)
 }
+

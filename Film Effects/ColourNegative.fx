@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-01
 // @Author jwrl
-// @Created 2016-05-14
+// @Created 2021-10-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmNeg_640.png
 
 /**
@@ -13,23 +13,9 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Renamed effect from "Film negative".
-// Changed subcategory.
-// Amended the Notes to be more descriptive.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Added subcategory for LW14 - jwrl 18 February 2017.
+// Rewrite 2021-10-01 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,26 +29,51 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-texture Input;
-
-sampler FgSampler = sampler_state { Texture = <Input>; };
-
-//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#pragma warning ( disable : 3571 )
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Input, FgSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (FgSampler, xy);
+   float4 retval = GetPixel (FgSampler, uv);
 
    retval.rgb  = (float3 (2.0, 1.33, 1.0) - retval.rgb) / 2.0;
 
@@ -75,8 +86,6 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique ColourNegative
 {
-   pass P_1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 ExecuteShader (ps_main)
 }
+

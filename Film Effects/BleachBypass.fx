@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-09-17
 // @Author msi
 // @Created 2011-05-27
 // @License "CC BY-NC-SA"
@@ -17,23 +17,12 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-09-17 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Bug fix 31 July 2017 by jwrl.
-// Explicitly defined sampler to ensure cross platform default sampler state
-// compatibility.
-//
-// Added subcategory for LW14 - jwrl, 18 Feb 2017.
+// prior to 2018-12-23:
+// Various cross-platform fixes and updates.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,20 +36,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler MsiBleachSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, MsiBleachSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -98,25 +110,29 @@ float BlendOpacity
 	float MaxVal       = 1.0;
 > = 1.0;
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 Bleach_v2_FX( float2 xy: TEXCOORD1 ) : COLOR
+float4 Bleach_v2_FX( float2 uv: TEXCOORD1 ) : COLOR
 {
-	float4 source = tex2D( MsiBleachSampler, xy );
-	// BEGIN Bleach bypass routine by NVidia
-	// (http://developer.download.nvidia.com/shaderlibrary/webpages/hlsl_shaders.html#post_bleach_bypass)
-	float lum = dot( float3( Red, Green, Blue ), source.rgb );
-	float3 result1 = 2.0f * source.rgb * lum.rrr;
-	float3 result2 = 1.0f - 2.0f * ( 1.0f - lum.rrr ) * ( 1.0f - source.rgb );
-	float3 newC = lerp( result1, result2, min( 1, max( 0, 10 * ( lum - 0.45 ) ) ) );
-	float3 mixRGB = ( BlendOpacity * source.a ) * newC.rgb;
-	mixRGB += ( ( 1.0f - ( BlendOpacity * source.a ) ) * source.rgb );
-	// END Bleach bypass routine by NVidia
-	return float4( mixRGB, source.a );
+   float4 source = GetPixel (MsiBleachSampler, uv);
+
+   // BEGIN Bleach bypass routine by NVidia
+   // (http://developer.download.nvidia.com/shaderlibrary/webpages/hlsl_shaders.html#post_bleach_bypass)
+
+   float lum = dot (float3 (Red, Green, Blue), source.rgb);
+
+   float3 result1 = 2.0 * source.rgb * lum.rrr;
+   float3 result2 = 1.0.xxx - 2.0 * (1.0.xxx - lum.rrr) * (1.0.xxx - source.rgb);
+   float3 newC = lerp (result1, result2, saturate (10.0 * (lum - 0.45)));
+   float3 mixRGB = (BlendOpacity * source.a) * newC.rgb;
+
+   mixRGB += ((1.0 - (BlendOpacity * source.a)) * source.rgb);
+
+   // END Bleach bypass routine by NVidia
+
+   return float4 (mixRGB, source.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -125,8 +141,6 @@ float4 Bleach_v2_FX( float2 xy: TEXCOORD1 ) : COLOR
 
 technique BleachBypassFXTechnique
 {
-	pass SinglePass
-	{
-		PixelShader = compile PROFILE Bleach_v2_FX();
-	}
+   pass SinglePass ExecuteShader (Bleach_v2_FX)
 }
+

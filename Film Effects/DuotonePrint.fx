@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-01
 // @Author jwrl
-// @Created 2016-04-12
+// @Created 2021-10-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_640.png
 
 /**
@@ -13,29 +13,9 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Changed name from "Duotone".
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 27 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Update 31 July 2017 jwrl.
-// Added an extra profile and two extra parameters.  It's now possible to mix between
-// the original profile and a new one that is better for flesh tones.  Additionally,
-// a gamma tweak has been added under the guise of a dye curve adjustment.
-//
-// Modified 14 April 2016 by jwrl.
-// This version has changed the axes slightly to better handle foliage and other
-// greenery, and has added a saturation control after requests for it.
+// Rewrite 2021-10-01 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -49,53 +29,37 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-texture Input;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Saturation
-<
-   string Description = "Saturation";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
-
-float Profile
-<
-   string Description = "Colour profile";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
-> = 1.0;
-
-float Curve
-<
-   string Description = "Dye curve";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.4;
-
-//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define R_LUMA 0.2989
 #define G_LUMA 0.5866
@@ -107,15 +71,44 @@ float Curve
 #define G_BGN  1.7472
 #define B_BGN  0.2528
 
-#pragma warning ( disable : 3571 )
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Input, s_Input);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+float Saturation
+<
+   string Description = "Saturation";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float Profile
+<
+   string Description = "Colour profile";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 1.0;
+
+float Curve
+<
+   string Description = "Dye curve";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.4;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (FgSampler, xy);
+   float4 retval = GetPixel (s_Input, uv);
 
    float gamma = (Curve > 0.0) ? 1.0 - Curve * 0.2 : 1.0;
    float luma  = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
@@ -146,6 +139,6 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique DuotonePrint
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

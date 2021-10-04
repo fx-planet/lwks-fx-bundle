@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-02
 // @Author khaver
 // @Created 2011-04-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Technicolor_640.png
@@ -13,19 +13,9 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Added subcategory for LW14 18 February 2017 - jwrl.
+// Update 2021-10-02 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,20 +29,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, FgSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -64,32 +77,33 @@ int SetTechnique
    string Enum = "Two_Strip,Three_Strip";
 > = 0;
 
-#pragma warning ( disable : 3571 )
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 Techni2( float2 xy : TEXCOORD1 ) : COLOR
+float4 Techni2 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 source = tex2D( FgSampler, xy );
-
+   float4 source = GetPixel (FgSampler, uv);
    float4 output;
+
    output.r = source.r;
    output.g = (source.g/2.0) + (source.b/2.0);
    output.b = (source.b/2.0) + (source.g/2.0);
    output.a = 0;
+
    return output;
 }
-float4 Techni3( float2 xy : TEXCOORD1 ) : COLOR
-{
-   float4 source = tex2D( FgSampler, xy );
 
+float4 Techni3 (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 source = GetPixel (FgSampler, uv);
    float4 output;
+
    output.r = source.r - (source.g/2.0) + (source.b/2.0);
    output.g = source.g - (source.r/2.0) + (source.b/2.0);
    output.b = source.b - (source.r/2.0) + (source.g/2.0);
    output.a = 0;
+
    return output;
 }
 
@@ -99,16 +113,11 @@ float4 Techni3( float2 xy : TEXCOORD1 ) : COLOR
 
 technique Two_Strip
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE Techni2();
-   }
+   pass SinglePass ExecuteShader (Techni2)
 }
 
 technique Three_Strip
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE Techni3();
-   }
+   pass SinglePass ExecuteShader (Techni3)
 }
+

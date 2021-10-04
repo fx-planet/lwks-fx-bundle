@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author jwrl
-// @Created 2016-06-05
+// @Created 2021-08-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/TwoAxis_640.png
 
 /**
@@ -15,24 +15,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-08-05
-// Clamped video levels on entry to and exit from the effect.  Floating point processing
-// can result in video level overrun which can impact exports poorly.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Changed subcategory.
-// Changed name from TwoAxis.fx
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
+// Rewrite 2021-08-18 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,24 +31,61 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define R_VALUE   0.2989
+#define G_VALUE   0.5866
+#define B_VALUE   0.1145
+
+#define RB_SCALE  0.25
+#define GM_SCALE  0.1333
+
+#define SAT_RANGE 5.0
+#define SAT_BREAK 4.0
+#define SAT_SCALE 2.5
+
+#define HALF_PI   1.570796
+
+float4 _RedCorrect = float4 (0.93, 0.38, 0.0, 1.0);
+float4 _GrnCorrect = float4 (0.0, 1.0, 0.0, 1.0);
+float4 _BluCorrect = float4 (0.0, 0.38, 0.93, 1.0);
+float4 _MagCorrect = float4 (1.0, 0.0, 1.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -98,34 +120,12 @@ float blackDesat
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define R_VALUE   0.2989
-#define G_VALUE   0.5866
-#define B_VALUE   0.1145
-
-#define RB_SCALE  0.25
-#define GM_SCALE  0.1333
-
-#define SAT_RANGE 5.0
-#define SAT_BREAK 4.0
-#define SAT_SCALE 2.5
-
-#define HALF_PI   1.570796
-
-float4 _RedCorrect = float4 (0.93, 0.38, 0.0, 1.0);
-float4 _GrnCorrect = float4 (0.0, 1.0, 0.0, 1.0);
-float4 _BluCorrect = float4 (0.0, 0.38, 0.93, 1.0);
-float4 _MagCorrect = float4 (1.0, 0.0, 1.0, 1.0);
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Image  = saturate (tex2D (InputSampler, uv));
+   float4 Image  = saturate (GetPixel (s_Input, uv));
    float4 retval = (redBlue > 0.0) ? lerp (Image, _BluCorrect, redBlue * RB_SCALE)
                                    : lerp (_RedCorrect, Image, 1.0 + (redBlue * RB_SCALE));
 
@@ -156,6 +156,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique TwoAxisColourBalance
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author baopao
 // @Created 2013-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
@@ -19,26 +19,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-08-05
-// Clamped video levels on entry to and exit from the effect.  Floating point processing
-// can result in video level overrun which can impact exports poorly.
-//
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 30 July 2017 jwrl.
-//
-// Modified 11 February 2017 by jwrl:
-// Added subcategory to Fx header.
+// Update 2021-08-18 jwrl:
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 
@@ -53,20 +36,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture fg;
-
-sampler InputSampler = sampler_state
-{
-   Texture = <fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (fg, s_Foreground);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -80,47 +86,44 @@ float BlurAmount
 > = 0.2;
 
 //-----------------------------------------------------------------------------------------//
-// Shader
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
+float4 ps_main (float2 xy1 : TEXCOORD1 ) : COLOR
 {
-   float4 ret = saturate (tex2D( InputSampler, xy1));
+   float4 ret = saturate (GetPixel (s_Foreground, xy1));
    float4 ret_NoBlur = ret;
 
    float amount = BlurAmount * 0.01;
 
-
    float4 blurred = ret;
-   blurred += tex2D( InputSampler, xy1 + float2( -amount,  0.000 ) );
-   blurred += tex2D( InputSampler, xy1 + float2(  amount,  0.000 ) );
-   blurred += tex2D( InputSampler, xy1 + float2(  0.000, -amount ) );
-   blurred += tex2D( InputSampler, xy1 + float2(  0.000,  amount ) );
-   blurred += tex2D( InputSampler, xy1 + float2( -amount*2,  0.000 ) );
-   blurred += tex2D( InputSampler, xy1 + float2(  amount*2,  0.000 ) );
-   blurred += tex2D( InputSampler, xy1 + float2(  0.000, -amount*2 ) );
-   blurred += tex2D( InputSampler, xy1 + float2(  0.000,  amount*2 ) );
+
+   blurred += GetPixel (s_Foreground, xy1 + float2 (-amount,  0.0));
+   blurred += GetPixel (s_Foreground, xy1 + float2 ( amount,  0.0));
+   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0, -amount));
+   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0,  amount));
+   blurred += GetPixel (s_Foreground, xy1 + float2 (-amount * 2.0,  0.0));
+   blurred += GetPixel (s_Foreground, xy1 + float2 ( amount * 2.0,  0.0));
+   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0, -amount*2));
+   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0,  amount*2));
    blurred /= 9.0;
 
    ret = blurred;
 
-
-//RGB2YCbCr
+   //RGB2YCbCr
   
-   float Y = 0.065 + ( ret_NoBlur.r * 0.257 ) + ( ret_NoBlur.g * 0.504 ) + ( ret_NoBlur.b * 0.098 );
-   float Cb = 0.5 - ( ret.r * 0.148 ) - ( ret.g * 0.291 ) + ( ret.b * 0.439 );
-   float Cr = 0.5 + ( ret.r * 0.439 ) - ( ret.g * 0.368 ) - ( ret.b * 0.071 );
+   float Y = 0.065 +  (ret_NoBlur.r * 0.257) +  (ret_NoBlur.g * 0.504) +  (ret_NoBlur.b * 0.098);
+   float Cb = 0.5 -  (ret.r * 0.148) -  (ret.g * 0.291) +  (ret.b * 0.439);
+   float Cr = 0.5 +  (ret.r * 0.439) -  (ret.g * 0.368) -  (ret.b * 0.071);
 
+   //YCbCr2RGB   
 
-
-//YCbCr2RGB   
    float4 o_color;
 
-   o_color.r = 1.164*(Y - 0.065) + 1.596*(Cr - 0.5);
-   o_color.g = 1.164*(Y - 0.065) - 0.813*(Cr - 0.5) - 0.392*(Cb - 0.5);
-   o_color.b = 1.164*(Y - 0.065) + 2.017*(Cb - 0.5);
-   o_color.a = 1;
-
+   o_color.r = 1.164 * (Y - 0.065) + 1.596 * (Cr - 0.5);
+   o_color.g = 1.164 * (Y - 0.065) - 0.813 * (Cr - 0.5) - 0.392 * (Cb - 0.5);
+   o_color.b = 1.164 * (Y - 0.065) + 2.017 * (Cb - 0.5);
+   o_color.a = 1.0;
 
    return saturate (o_color);
 }
@@ -129,4 +132,5 @@ float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique singletechnique { pass Single_Pass { PixelShader = compile PROFILE ps_main(); } }
+technique singletechnique { pass Single_Pass ExecuteShader (ps_main) }
+

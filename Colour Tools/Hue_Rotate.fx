@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author gr00by
 // @Created 2016-06-14
 // @OriginalAuthor "Mark Ransom"
@@ -19,28 +19,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-08-05
-// Clamped video levels on exit from the effect.  Floating point processing can result
-// in video level overrun which can impact exports poorly.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 30 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Subcategory added by jwrl for v.14 and up 10 Feb 2017
-//
-// Bug fix 4 January 2017 by jwrl.
-// Added missing comma to sincos (Hue * PI, s c).
+// Update 2021-08-18 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,6 +35,51 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define PI         3.14159
+
+#define ONE_THIRD  0.33333
+
+#define SQRT_THIRD 0.57735
+
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Input, s_Input);
+
+//-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
@@ -63,28 +89,6 @@ float Hue
    float MinVal = -1.0;
    float MaxVal = 1.0;
 > = 0.0;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-texture Input;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state { Texture = <Input>; };
-
-//-----------------------------------------------------------------------------------------//
-// Declarations and definitions
-//-----------------------------------------------------------------------------------------//
-
-#define PI         3.14159
-
-#define ONE_THIRD  0.33333
-
-#define SQRT_THIRD 0.57735
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -100,7 +104,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
    float4 gMat =float4 (ONE_THIRD * (1.0 - c) + SQRT_THIRD * s, c + ONE_THIRD * (1.0 - c), ONE_THIRD * (1.0 - c) - SQRT_THIRD * s, 1.0);
    float4 bMat =float4 (ONE_THIRD * (1.0 - c) - SQRT_THIRD * s, ONE_THIRD * (1.0 - c) + SQRT_THIRD * s, c + ONE_THIRD * (1.0 - c), 1.0);
 
-   float4 Image = tex2D (InputSampler, xy);
+   float4 Image = GetPixel (s_Input, xy);
 
    float4 retval = float4 (
       Image.r * rMat.r + Image.g * rMat.g + Image.b * rMat.b,
@@ -117,8 +121,6 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique ColourTemp
 {
-   pass pass_one
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass pass_one ExecuteShader (ps_main)
 }
+

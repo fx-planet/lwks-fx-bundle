@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author jMovie
 // @Created 2011-05-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/SCurve_640.png
@@ -15,35 +15,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-08-05
-// Clamped video levels on entry to and exit from the effect.  Floating point processing
-// can result in video level overrun which can impact exports poorly.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Lightworks version 14+ update by jwrl 21 January 2017.
-// The code has been optimised to reduce the number of passes required from six to two.
-// The number of function calls has also been reduced to minimise the significant
-// function call overhead in the original.  The number of variables required has been
-// reduced and the alpha channel has been preserved.
-//
-// The user interface has been improved to change the cryptic parameter labels to
-// something more meaningful.  Parameters have been logically grouped, and their ranges
-// have been altered to run from 0-100% instead of 0-255, consistent with Lightworks
-// effects useage.
-//
-// This version has been compared against the original jMovie version to confirm its
-// functional equivalence.
+// Update 2021-08-18 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -57,36 +31,59 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture HSVin : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler InpSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, InpSampler);
 
-sampler HSVsampler = sampler_state
-{
-   Texture   = <HSVin>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (HSVin, HSVsampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -230,7 +227,7 @@ float4 ps_input (float2 xy : TEXCOORD1) : COLOR
 {
    if (Visualize) return float4 (xy.x, 0.0, 0.0, 1.0);
 
-   float4 src_rgba = tex2D (InpSampler, xy);
+   float4 src_rgba = GetPixel (InpSampler, xy);
 
    if (!ValueChannel) return src_rgba;
 
@@ -258,14 +255,14 @@ float4 ps_input (float2 xy : TEXCOORD1) : COLOR
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 // Original Pass1_IndexInput altered to change the _FromIndexes function to in-line
-// code.  That and the seperate curve and output passes rolled into this one pass.
+// code.  That and the separate curve and output passes rolled into this one pass.
 // Original _HSVtoRGB function has been converted to in-line code to reduce overhead.
 // All float3 variables converted to float4 to preserve alpha channel - jwrl
 {
    float points [6] = { 0.0, InX * 0.2745, LowX * 0.6275, (HighX * 0.6667) + 0.3333, (OutX * 0.3333) + 0.6667, 1.0 };
 
-   float4 src_rgba = saturate (tex2D (InpSampler, xy));
-   float4 p2 = saturate (tex2D (HSVsampler, xy));
+   float4 src_rgba = saturate (GetPixel (InpSampler, xy));
+   float4 p2 = saturate (GetPixel (HSVsampler, xy));
    float4 src_hsv = p2, src_idx = 0.0;
 
    for (int i = 0; i < 6; ++i) {
@@ -317,10 +314,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique ScurveTechnique
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = HSVin;"; >
-   { PixelShader = compile PROFILE ps_input (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = HSVin;"; > ExecuteShader (ps_input)
+   pass P_2 ExecuteShader (ps_main)
 }
+

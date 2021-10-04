@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author khaver
 // @Created 2016-06-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/3AxisColTemp_640.png
@@ -15,24 +15,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-08-05
-// Clamped video levels on entry to and exit from the effect.  Floating point processing
-// can result in video level overrun which can impact exports poorly.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Changed subcategory.
-// Changed name from 3AxisColTemp.fx
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Subcategory added by jwrl for version 14 and up 10 Feb 2017
+// Update 2021-08-18 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,12 +31,50 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float4 _BlueColor = float4 (0.0, 0.0, 1.0, 1.0);
+float4 _RedColor = float4 (1.0, 0.0, 0.0, 1.0);
+float4 _GreenColor = float4 (0.0, 1.0, 0.0, 1.0);
+float4 _MagColor = float4 (1.0, 0.0, 1.0, 1.0);
+float4 _CyanColor = float4 (0.0, 1.0, 1.0, 1.0);
+float4 _YellowColor = float4 (1.0, 1.0, 0.0, 1.0);
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler InputSampler = sampler_state { Texture = <Input>; };
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -86,65 +109,35 @@ float Luma
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Descriptions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float4 _BlueColour = float4( 0.0, 0.0, 1.0, 1.0 );
-float4 _RedColour = float4( 1.0, 0.0, 0.0, 1.0 );
-float4 _GreenColour  = float4( 0.0, 1.0, 0.0, 1.0 );
-float4 _MagColour  = float4( 1.0, 0.0, 1.0, 1.0 );
-float4 _CyanColour  = float4( 0.0, 1.0, 1.0, 1.0 );
-float4 _YellowColour  = float4( 1.0, 1.0, 0.0, 1.0 );
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
 {
-   float4 src = saturate (tex2D( InputSampler, xy1));
-   float4 ret;
-   float4 chrom = float4(0,0,0,0);
-   float Lmin = min(src.r, min(src.g, src.b));
+   float4 src = saturate (GetPixel (s_Input, xy1));
+   float4 ret, chrom;
+
+   float Lmin = min (src.r, min (src.g, src.b));
    float Red = src.r - Lmin;
    float Green = src.g - Lmin;
    float Blue = src.b - Lmin;
-   float4 color = float4(Red, Green, Blue, Lmin) + 0.5;
 
-   if ( AmountRC > 0.0 )
-   {
-      chrom +=  (_CyanColour * (AmountRC / 5.0 ));
-   }
-   else
-   {
-      chrom += (_RedColour * abs( AmountRC / 5.0 ) );
-   }
+   float4 color = float4 (Red, Green, Blue, Lmin) + 0.5;
 
-   if ( AmountGM > 0.0 )
-   {
-      chrom += (_MagColour * (AmountGM / 5.0 ));
-   }
-   else
-   {
-      chrom += (_GreenColour * abs( AmountGM / 5.0 ) );
-   }
-   if ( AmountBY > 0.0 )
-   {
-      chrom += (_YellowColour * (AmountBY / 5.0 ));
-   }
-   else
-   {
-      chrom += (_BlueColour * abs( AmountBY / 5.0 ) );
-   }
+   chrom  = (AmountRC > 0.0) ? (_CyanColor * (AmountRC / 5.0)) : (_RedColor * abs (AmountRC / 5.0));
+   chrom += (AmountGM > 0.0) ? (_MagColor * (AmountGM / 5.0)) : (_GreenColor * abs (AmountGM / 5.0));
+   chrom += (AmountBY > 0.0) ? (_YellowColor * (AmountBY / 5.0)) : (_BlueColor * abs (AmountBY / 5.0));
 
    float L2min = min(chrom.r, min(chrom.g, chrom.b));
    float NRed = chrom.r - L2min;
    float NGreen = chrom.g - L2min;
    float NBlue = chrom.b - L2min;
-   float4 ncolor = float4(NRed, NGreen, NBlue, L2min);
+
+   float4 ncolor = float4 (NRed, NGreen, NBlue, L2min);
+
    ret = color + ncolor;
    Lmin += (Luma / 2.0);
-   ret = float4(ret.r + Lmin - 0.5, ret.g + Lmin - 0.5, ret.b + Lmin - 0.5, src.a);
+   ret = float4 (ret.r + Lmin - 0.5, ret.g + Lmin - 0.5, ret.b + Lmin - 0.5, src.a);
 
    return saturate (ret);
 }
@@ -153,4 +146,5 @@ float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique ColourTemp { pass Single_Pass { PixelShader = compile PROFILE main(); } }
+technique ColorTemp { pass Single_Pass ExecuteShader (main) }
+

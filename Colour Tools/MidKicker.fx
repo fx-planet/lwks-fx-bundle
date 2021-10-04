@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author jwrl
-// @Created 2020-11-09
+// @Created 2021-08-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/MidtoneKicker_640.png
 
 /**
@@ -17,7 +17,9 @@
 //
 // Version history:
 //
-// Built 2020-11-09 jwrl.
+// Rewrite 2021-08-18 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -31,12 +33,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -139,7 +172,7 @@ float fn_s_curve (float video, float curve, float level)
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 inp = tex2D (s_Input, uv);
+   float4 inp = GetPixel (s_Input, uv);
 
    if (!Reference) {
       inp.rgb = ((inp.rgb - BlackPoint.rgb) / WhitePoint.rgb);
@@ -177,6 +210,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique MidtoneKicker
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }

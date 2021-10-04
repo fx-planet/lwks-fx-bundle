@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author jwrl
-// @Created 2016-04-06
+// @Created 2021-08-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/PeakDesat_640.png
 
 /**
@@ -15,26 +15,9 @@
 //
 // Version history:
 //
-// Update 2020-11-09 jwrl:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-08-05
-// Clamped video levels on entry to the effect.  Floating point processing can result in
-// video level overrun which can impact exports poorly.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 30 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Rewrite 2021-08-18 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,24 +31,50 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+// Magic numbers for Y matrix calculation
+
+#define Rmatrix   1.0191
+#define Bmatrix   0.3904
+#define matScale  3.4095
+#define pSc       1.5
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -120,28 +129,17 @@ float BlkDesat
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-// Magic numbers for Y matrix calculation
-
-#define Rmatrix   1.0191
-#define Bmatrix   0.3904
-#define matScale  3.4095
-#define pSc       1.5
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 RGBval = saturate (tex2D (FgSampler, xy));
+   float4 RGBval = saturate (GetPixel (s_Input, xy));
 
    // This oversamples the luma value so that we don't get hard contouring.
    // We also get some colour noise reduction without the expense of a blur routine.
 
-   float Blevel = RGBval.g + RGBval.g + Rmatrix * RGBval.r + Bmatrix * RGBval.b;
+   float Blevel = (RGBval.g * RGBval.g) + (Rmatrix * RGBval.r) + (Bmatrix * RGBval.b);
 
    float4 LumaValue = float2 (saturate (Blevel / matScale), 1.0).xxxy;
 
@@ -177,8 +175,6 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique PeakDesaturate
 {
-   pass P_1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 ExecuteShader (ps_main)
 }
+

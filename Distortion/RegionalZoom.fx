@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-08-30
 // @Author schrauber
 // @Created 2016-03-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/RegionalZoom_640.jpg
@@ -16,19 +16,9 @@
 //
 // Version history.
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Update 23 December 2018 jwrl:
-// Added creation date.
-// Changed category.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Added subcategory for version 14, 18 Feb 2017 - jwrl.
+// Update 2021-08-30 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,8 +31,64 @@ int _LwksEffectInfo
    bool CanSize       = true;
 > = 0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+	
+#define AREA  (200-Area*201)
+
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Input, s_Input);
+
+SetTargetMode (Fg, FgSampler, Mirror);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -88,89 +134,42 @@ float Ycentre
 > = 0.5;
 
 
-bool Flip_edge
+int Mode
 <
-	string Description = "Flip edge";
-> = true;
+   string Description = "Flip edge";
+   string Enum = "No,Yes";
+> = 1;
 
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
+// This preamble pass means that we handle rotated video correctly.
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Inputs       Samplers
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+float4 ps_init (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_Input, uv); }
 
-// For each 'texture' declared here, Lightworks adds a matching
-// input to your effect (so for a four input effect, you'd need
-// to delcare four textures and samplers)
-
-texture Input;
-
-sampler FgSampler = sampler_state
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
-   Texture = <Input>;
-   AddressU = Mirror;
-   AddressV = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+   float2 xydist = float2 (Xcentre, 1.0 - Ycentre) - uv; 			 // XY Distance between the current position to the adjusted effect centering
 
-sampler FgSamplerBorder = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Border;
-   AddressV = Border;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+   float distance = length (float2 (xydist.x, xydist.y / _OutputAspectRatio));   // Hypotenuse of xydistance, the shortest distance between the currently processed pixels to the center of the distortion.
+   float distortion = (distance * ((distance * AREA) + 1.0) + 1);		 // Creates the distortion.  AREA is a macro that limits the range of the Area setting.
+   float zoom = Zoom;
 
+   if (Area != 1) zoom = zoom / max (distortion, 0.1);	 			 // If the area = 1, then normal zoom works. Otherwise, a local zoom is active.   "0.1" prevents a division by zero
 
-///////////////////////////////////////////////
-// Definitions  and declarations             //
-///////////////////////////////////////////////
+   float2 xy = uv + (zoom * xydist);						 // Get the distorted address.  It's the same whether mirrored or bordered.
 
-float _OutputAspectRatio;
-	
-#define AREA  (200-Area*201)
-
-
-
-
-//--------------------------------------------------------------
-// Pixel Shader
-//
-// This section defines the code which the GPU will
-// execute for every pixel in an output image.
-//--------------------------------------------------------------
-
-
-float4 zoom (float2 xy : TEXCOORD1) : COLOR
-{
- float2 xydist = float2 (Xcentre, 1.0 - Ycentre) - xy; 				// XY Distance between the current position to the adjusted effect centering
- float distance = length (float2 (xydist.x, xydist.y / _OutputAspectRatio)); 	// Hypotenuse of xydistance, the shortest distance between the currently processed pixels to the center of the distortion.
- 										// Macro, Pick up the rendered variable ( "strengthCycle" (-1 to +1) , 16-bit color by using two 8-bit colors)
- float zoom = Zoom;
- float distortion = (distance * ((distance * AREA) + 1.0) + 1);			// Creates the distortion
- if (Area != 1) zoom = zoom / max( distortion, 0.1 ); 				// If the area = 1, then normal zoom works. Otherwise, a local zoom is active.   "0.1" prevents a division by zero 
-
- if (!Flip_edge) return tex2D (FgSamplerBorder, zoom * xydist + xy);
- return tex2D (FgSampler, zoom * xydist + xy); 
-
+   return Mode ? tex2D (FgSampler, xy) : GetPixel (FgSampler, xy);		 // GetPixel() blanks anything outside legal addresses, which adds a border to the distorted but mirrored video
 } 
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
-
-//--------------------------------------------------------------
-// Technique
-//
-// Specifies the order of passes (we only have a single pass, so
-// there's not much to do)
-//--------------------------------------------------------------
-technique SampleFxTechnique
+technique RegionalZoom
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE zoom();
-   }
+   pass P_init < string Script = "RenderColorTarget0 = Fg;"; > ExecuteShader (ps_init)
+   pass SinglePass ExecuteShader (ps_main)
 }
+

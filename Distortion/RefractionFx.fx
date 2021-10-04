@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-08-30
 // @Author windsturm
 // @OriginalAuthor "Ian McEwan"
 // @Created 2012-10-25
@@ -46,27 +46,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2018-12-23 jwrl:
-// Changed subcategory.
-// Added creation date.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.5 update 5 December 2017 by jwrl.
-// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
-// those platforms.  It will now function correctly when used with Lightworks versions
-// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this
-// effect with transitions on those platforms.
-//
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
-//
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+// Update 2021-08-30 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -80,53 +62,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture InputTex;
-texture MaskTex;
+SetInputMode (Inp, s_RawInp, Mirror);
+SetInputMode (Mask, s_RawMask, Mirror);
 
-texture NoiseTex : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-#ifdef LINUX
-#define Clamp ClampToEdge
-#endif
-
-#ifdef OSX
-#define Clamp ClampToEdge
-#endif
-
-sampler InputSampler = sampler_state
-{
-	Texture   = <InputTex>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
-
-sampler maskSampler = sampler_state {
-	Texture   = <MaskTex>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
-
-sampler noiseSampler = sampler_state {
-	Texture   = <NoiseTex>;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetTargetMode (RawInp, InputSampler, Mirror);
+SetTargetMode (RawMask, maskSampler, Mirror);
+SetTargetMode (NoiseTex, noiseSampler, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -144,16 +138,16 @@ float noiseSize
 <
    string Group       = "Noise Parameter";
    string Description = "Size";
-   float MinVal = 0.00;
-   float MaxVal = 200.00;
+   float MinVal = 0.0;
+   float MaxVal = 200.0;
 > = 10.0;
 
 float strength
 <
    string Group       = "Noise Parameter";
    string Description = "Strength";
-   float MinVal = 0.0000;
-   float MaxVal = 2.0000;
+   float MinVal = 0.0;
+   float MaxVal = 2.0;
 > = 0.1;
 
 float noiseX
@@ -161,8 +155,8 @@ float noiseX
    string Group       = "Noise Parameter";
    string Description = "Position X";
    string Flags       = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float noiseY
@@ -170,8 +164,8 @@ float noiseY
    string Group       = "Noise Parameter";
    string Description = "Position Y";
    string Flags       = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float AR
@@ -179,7 +173,7 @@ float AR
    string Group       = "Noise Parameter";
    string Description = "AspectRatio 1:x";
    float MinVal = 0.01;
-   float MaxVal = 10.00;
+   float MaxVal = 10.0;
 > = 0.1;
 
 int exportImage
@@ -192,15 +186,6 @@ bool useExternalImage
 <
    string Description = "Use External Image";
 > = false;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -292,7 +277,12 @@ float snoise (float3 v)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 createNoise (float2 xy : TEXCOORD1) : COLOR
+// This preamble passes mean that we handle rotated video and coordinates correctly.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+float4 ps_initMask (float2 uv : TEXCOORD2) : COLOR { return tex2D (s_RawMask, uv); }
+
+float4 createNoise (float2 xy : TEXCOORD0) : COLOR
 {
    if (noiseSize <= 0.0) return float2 (0.0, 1.0).xxxy;
 
@@ -311,17 +301,17 @@ float4 createNoise (float2 xy : TEXCOORD1) : COLOR
    return float4 (n.xxx, 1.0);
 }
 
-float4 FxRefraction (float2 xy : TEXCOORD1) : COLOR
+float4 FxRefraction (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
 {
-   sampler nSampler;
+   if (Overflow (uv1)) return EMPTY;
 
-   if (exportImage == 1) return tex2D (InputSampler, xy);
+   if (exportImage == 1) return tex2D (InputSampler, uv3);
 
    if (exportImage == 2) {
 
-      if (useExternalImage) return tex2D (maskSampler,xy);
+      if (useExternalImage) return tex2D (maskSampler,uv3);
 
-      return tex2D(noiseSampler,xy);
+      return tex2D (noiseSampler,uv3);
    }
 
    float4 Color;
@@ -338,16 +328,16 @@ float4 FxRefraction (float2 xy : TEXCOORD1) : COLOR
    float3 shiftColor[4];
 
    if (useExternalImage) {
-      shiftColor[0] = 2.0 * tex2D (maskSampler, xy + shiftXY[0]) - 1.0;
-      shiftColor[1] = 2.0 * tex2D (maskSampler, xy + shiftXY[1]) - 1.0;
-      shiftColor[2] = 2.0 * tex2D (maskSampler, xy + shiftXY[2]) - 1.0;
-      shiftColor[3] = 2.0 * tex2D (maskSampler, xy + shiftXY[3]) - 1.0;
+      shiftColor[0] = 2.0 * tex2D (maskSampler, uv3 + shiftXY[0]) - 1.0;
+      shiftColor[1] = 2.0 * tex2D (maskSampler, uv3 + shiftXY[1]) - 1.0;
+      shiftColor[2] = 2.0 * tex2D (maskSampler, uv3 + shiftXY[2]) - 1.0;
+      shiftColor[3] = 2.0 * tex2D (maskSampler, uv3 + shiftXY[3]) - 1.0;
    }
    else {
-      shiftColor[0] = 2.0 * tex2D (noiseSampler, xy + shiftXY[0]) - 1.0;
-      shiftColor[1] = 2.0 * tex2D (noiseSampler, xy + shiftXY[1]) - 1.0;
-      shiftColor[2] = 2.0 * tex2D (noiseSampler, xy + shiftXY[2]) - 1.0;
-      shiftColor[3] = 2.0 * tex2D (noiseSampler, xy + shiftXY[3]) - 1.0;
+      shiftColor[0] = 2.0 * tex2D (noiseSampler, uv3 + shiftXY[0]) - 1.0;
+      shiftColor[1] = 2.0 * tex2D (noiseSampler, uv3 + shiftXY[1]) - 1.0;
+      shiftColor[2] = 2.0 * tex2D (noiseSampler, uv3 + shiftXY[2]) - 1.0;
+      shiftColor[3] = 2.0 * tex2D (noiseSampler, uv3 + shiftXY[3]) - 1.0;
    }
 
    float3 u = float3 (1.0, 0.0, 0.5 * (shiftColor[1].x - shiftColor[0].x));
@@ -355,12 +345,9 @@ float4 FxRefraction (float2 xy : TEXCOORD1) : COLOR
 
    float4 nColor = float4 (0.5 * normalize (cross (u, v)) + 0.5, 1.0);
 
-   float2 r;
+   float2 xy = uv3 + (cos (radians (nColor.r * 180.00)) * strength).xx;
 
-   r.x = xy.x + (cos (radians (nColor.r * 180)) * strength);
-   r.y = xy.y + (cos (radians (nColor.r * 180)) * strength);
-
-   return tex2D (InputSampler, r);
+   return tex2D (InputSampler, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -369,16 +356,9 @@ float4 FxRefraction (float2 xy : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   pass SinglePass0
-   <
-      string Script = "RenderColorTarget0 = NoiseTex;";
-   >
-   {
-      PixelShader = compile PROFILE createNoise ();
-   }
-
-   pass SinglePass1
-   {
-      PixelShader = compile PROFILE FxRefraction ();
-   }
+   pass Pfg < string Script = "RenderColorTarget0 = RawInp;"; > ExecuteShader (ps_initInp)
+   pass Pbg < string Script = "RenderColorTarget0 = RawMask;"; > ExecuteShader (ps_initMask)
+   pass P_0 < string Script = "RenderColorTarget0 = NoiseTex;"; > ExecuteShader (createNoise)
+   pass P_1 ExecuteShader (FxRefraction)
 }
+

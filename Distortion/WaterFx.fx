@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-08-30
 // @Author khaver
 // @Created 2014-11-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Water_640.png
@@ -14,19 +14,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2018-12-23 jwrl:
-// Added creation date.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
+// Update 2021-08-30 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -40,20 +30,63 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _Progress;
+
+int iSeed = 15;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler FgSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Mirror;
-   AddressV = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (FixInp, FgSampler, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -62,36 +95,36 @@ sampler FgSampler = sampler_state
 float Speed
 <
 	string Description = "Speed";
-	float MinVal = 0.00;
+	float MinVal = 0.0;
 	float MaxVal = 1000.0;
 > = 0.0;
 
 float WavesX
 <
 	string Description = "X Frequency";
-	float MinVal = 0.00;
+	float MinVal = 0.0;
 	float MaxVal = 100.0;
 > = 0.0;
 
 float StrengthX
 <
 	string Description = "X Strength";
-	float MinVal = 0.0000;
-	float MaxVal = 0.100;
+	float MinVal = 0.0;
+	float MaxVal = 0.1;
 > = 0.0;
 
 float WavesY
 <
 	string Description = "Y Frequency";
-	float MinVal = 0.00;
+	float MinVal = 0.0;
 	float MaxVal = 100.0;
 > = 0.0;
 
 float StrengthY
 <
 	string Description = "Y Strength";
-	float MinVal = 0.0000;
-	float MaxVal = 0.100;
+	float MinVal = 0.0;
+	float MaxVal = 0.1;
 > = 0.0;
 
 bool Flip
@@ -100,21 +133,17 @@ bool Flip
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _Progress;
-
-int iSeed = 15;
-
-#pragma warning ( disable : 3571 )
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 Wavey( float2 xy : TEXCOORD1 ) : COLOR
+// This preamble pass means that we handle rotated video correctly.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 Wavey (float2 uv : TEXCOORD1, float2 xy : TEXCOORD2) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
 	int xx;
 	int yy;
 	float wavesx = WavesX * 2.0;
@@ -137,8 +166,7 @@ float4 Wavey( float2 xy : TEXCOORD1 ) : COLOR
 
 technique Water
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE Wavey();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass SinglePass ExecuteShader (Wavey)
 }
+

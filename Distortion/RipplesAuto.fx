@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-08-30
 // @Author schrauber
 // @Created 2016-03-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ripples_automatic_expansion_640.png
@@ -14,19 +14,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed category.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Added subcatgory for LW14 - jwrl 18 Feb 2017.
+// Update 2021-08-30 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,6 +28,66 @@ int _LwksEffectInfo
    string Notes       = "Radiating ripples are produced under semi-automatic control";
    bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _InputWidthNormalised;
+float _OutputAspectRatio;
+	
+float _Progress;
+
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Input, s_RawInp);
+
+SetTargetMode (FixInp, FgSampler, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -162,52 +212,27 @@ bool Flip_edge
 > = true;
 
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-texture Input;
-
-sampler FgSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Mirror;
-   AddressV = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-	
-float _Progress;
-
-#pragma warning ( disable : 3571 )
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 universal (float2 xy : TEXCOORD1) : COLOR 
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 universal (float2 uv : TEXCOORD1, float2 xy : TEXCOORD2) : COLOR 
 { 
+   if (Overflow (uv)) return EMPTY;    // If we fall outside the original limits we don't see anything, so processing empty media is pointless - jwrl.
 
  float2 XYc = float2 (Xcentre, 1.0 - Ycentre);
  float2 xy1 = XYc - xy;
  float2 pos_zoom = float2 (xy1.x, xy1.y / _OutputAspectRatio);
- float _distance = distance ((0.0).xx, pos_zoom);
- float damping;
- float expansion;
+
+ float _distance = distance ((0.0).xx, pos_zoom) / _InputWidthNormalised;    // Partially corrects distance scale - jwrl
  float expansion_Rate = pow((expansionRate * 10),2);
- float expansion_limit = expansionLimit *10;
- float distortion;
- float duration;
- float phase = 0;
+ float expansion_limit = expansionLimit * 10.0;
  float freq = Frequency;
+ float phase = 0;
+ float damping, distortion, duration, expansion, zoom;
+
  if ((pulsing) || (pulse_negative)) freq = Frequency /2;							// Frequency adjustment, when the waveform was changed. ___________German: Frequenzanpassung, wenn die Wellenfom geÃ¤ndert wurde.
- float zoom;
   
  float progress = _Progress - start_time - (start_fine * 0.001); if (progress < 0) progress = 0;			// set start time of the first wave. ___________German: Startzeitpunkt der 1. Welle festlegen
  float cycles = progress / cycle_length;										// Calculation of previously launched wave cycles ___________German:  Berechnung der bereits eingeleiteten Wellenzyklen
@@ -235,12 +260,11 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
 
  if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
  if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
- 
+
  xy1 = distortion * xy1 + xy;
 
  if (!Flip_edge) {
-  if ((xy1.x < 0.0) || (xy1.x > 1.0) || (xy1.y < 0.0) || (xy1.y > 1.0)) 
-  return (0.0).xxxx;
+  if (Overflow (xy1)) return EMPTY;
  }
 
  return tex2D (FgSampler, xy1); 
@@ -252,8 +276,7 @@ float4 universal (float2 xy : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE universal();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass SinglePass ExecuteShader (universal)
 }
+

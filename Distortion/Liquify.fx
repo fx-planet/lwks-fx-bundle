@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-08-30
 // @Author schrauber
 // @Created 2020-10-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/Liquify_640.png
@@ -19,20 +19,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Optimised 2020-10-23 by jwrl.
-// The visual impact of the effect is unchanged after the optimisation.  This has been
-// confirmed by exhaustive comparisons between the optimised version and the original.
-// Optimisations are:
-// Where possible float2 variables were replaced with float variables
-// Maths functions were simplified
-// Redundant mathematical operations were removed
-// If division could be avoided it has been
-// Soft edge function was converted to in-line code
-// Instead of separate shaders for mirror and opaque/transparent operations a single
-// shader is used
+// Update 2021-08-30 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,20 +35,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and Samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler s_Input = sampler_state
- {
-   Texture   = <Input>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
- };
+SetTargetMode (FixInp, s_Input, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -128,27 +162,23 @@ int modeAlpha
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-#define PI      3.1415926536
-#define HALF_PI 1.5707963268
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+// This pass means that rotated video is handled correctly - jwrl.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
+   if (Overflow (uv1)) return EMPTY;                                // Quit if we're outside frame boundaries - applies with unmatched aspect ratios
+
    // This section is a heavily optimised version of the original shader ps_mirror()
 
    float2 offset = float2 (Xcentre, 1.0 - Ycentre);                 // Reference point offset
    float2 distortion = offset - float2 (Xdistort, 1.0 - Ydistort);  // Distance of the distortion point from the offset
 
-   offset = uv - offset;                                            // Calculate coordinates relative to offset point
+   offset = uv2 - offset;                                           // Calculate coordinates relative to offset point
    offset.x *= _OutputAspectRatio;                                  // Correct the X offset by the aspect ratio
 
    float displace = min (1.0, distance (0.0.xx, offset));           // Displacement of the chosen pixel from reference
@@ -162,13 +192,13 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    area *= Strength * Area * 1.5;                                   // Adjust the strength only within the active area
    distortion *= area / max (1e-9, displace);                       // Distortion decreases with distance from the effect centre
 
-   float4 retval = tex2D (s_Input, uv + distortion);                // Take a distorted pixel sample from the sampler
+   float4 retval = tex2D (s_Input, uv2 + distortion);               // Take a distorted pixel sample from the sampler
 
    if (modeAlpha == 0) return retval;                               // Return with mirrored frame edges if modeAlpha is zero
 
-   // From here on was originally executed in a separate function, fn_tex2D().  With code optimisations that is no longer necessary.
+   // From here on was originally executed in a separate function.  With code optimisations that is no longer necessary.
 
-   float2 xy = uv - 0.5.xx;                                         // Centre sampler coordinates around 0 as midpoint
+   float2 xy = uv2 - 0.5.xx;                                        // Centre sampler coordinates around 0 as midpoint
    float2 soft = float2 (1.0, _OutputAspectRatio);                  // Preload soft with aspect ratio adjustment
 
    soft *= Soft + (1.0 /_OutputWidth);                              // Calculate the softness range
@@ -178,13 +208,19 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    retval.a *= saturate (min (soft.x, soft.y));                     // Alpha edge softness ramps from 0 to 1
 
-   // We now exit using a slightly restructured version of the exit code from the original shader ps_border()
+   // We now exit using a slightly restructured version of the exit code from the original shader ps_border().  This gives a visible change when transparent
+   // mode is selected, which will result in exactly the same appearance if the result is blended with black as is obtained when opaque black is selected.
 
-   if (modeAlpha == 2) return retval;                               // Return with alpha transparency if modeAlpha is set to 2
+   if (modeAlpha == 2) {
+      retval.a = pow (retval.a, 0.5);                               // Getting the square root of alpha means that subsequent blends will look the same
+      retval.rgb *= retval.a;                                       // when we multiply by the RGB by alpha then use lerp to combine with a background
+   }
+   else {
+      retval.rgb *= retval.a;                                       // This is the original ps_border() exit condition for opaque black
+      retval.a = 1.0;
+   }
 
-   retval.rgb *= retval.a;                                          // Soft fade to black at frame edges by multiplying by alpha
-
-   return float4 (retval.rgb, 1.0);                                 // Remove all transparency by turning alpha fully on
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -193,5 +229,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Liquify
 {
-   pass P_1  { PixelShader = compile PROFILE ps_main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_main)
 }
+

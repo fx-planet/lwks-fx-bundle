@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-08-30
 // @Author jwrl
-// @Created 2018-07-27
+// @Created 2021-08-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlagWave_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flag_Wave.mp4
 
@@ -13,8 +13,6 @@
  way that the waveform tracks the DVE settings.  An accident originally, it was found
  to be useful since it shows the effect works.  For that reason it has been retained,
  but it can easily be trimmed out by adjusting the image scaling if necessary.
-
- ***********  WARNING: THIS EFFECT REQUIRES LIGHTWORKS 14.5 OR BETTER  ***********
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,17 +20,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2018-12-23 jwrl:
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 2018-08-11 jwrl:
-// Added a slight vertical ripple to the wave generation to improve realism somewhat.
-// Added a new parameter, "Orientation", to allow either edge to flutter.
-// Modified the wave generation component to support right or left edge fluttering.
+// Rewrite 2021-08-30 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,39 +36,79 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+
+float _Progress;
+float _LengthFrames;
+
+#define SCALE_F  9.999805263
+#define SCALE_P  3.3219
+
+#define LIMIT_Z 0.0000000001
+
+#define PI      3.1415926536
+
+#define OFFS_1  1.4827586207     // 43/29
+#define OFFS_2  1.3529411765     // 23/17
+#define OFFS_3  1.9473684211     // 37/19
+#define OFFS_4  1.5714285714     // 11/7
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-texture Waveforms : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_Waveforms = sampler_state
-{
-   Texture   = <Waveforms>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (Waveforms, s_Waveforms);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -210,42 +240,13 @@ float PositionY
 > = 0.035;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-
-float _Progress;
-float _LengthFrames;
-
-#define SCALE_F  9.999805263
-#define SCALE_P  3.3219
-
-#define LIMIT_Z 0.0000000001
-
-#define PI      3.1415926536
-
-#define OFFS_1  1.4827586207     // 43/29
-#define OFFS_2  1.3529411765     // 23/17
-#define OFFS_3  1.9473684211     // 37/19
-#define OFFS_4  1.5714285714     // 11/7
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler Vsample, float2 uv, float ret)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   if ((xy.x > 0.5) || (xy.y > 0.5)) return ret.xxxx;
-
-   return tex2D (Vsample, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+// These two preamble passes ensure that rotated video is handled correctly.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
 
 float4 ps_waves (float2 uv : TEXCOORD0) : COLOR
 {
@@ -277,7 +278,7 @@ float4 ps_waves (float2 uv : TEXCOORD0) : COLOR
    return xy1.xyxy;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv3 : TEXCOORD3) : COLOR
 {
    //  This first section is a standard 3D DVE.  This is the bulk of the effect
 
@@ -288,7 +289,7 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    rotate = abs (rotate);
 
    float2 pivot = float2 (PivotX, 1.0 - PivotY);
-   float2 xy = uv1 - pivot;
+   float2 xy = uv3 - pivot;
 
    if (scale > 0.0) { xy.y = -xy.y; }
 
@@ -333,17 +334,17 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    // ensures that the flag scaling tracks correctly with the image scaling.
 
    scale = Depth * 0.1;
-   xy2 = (fn_tex2D (s_Waveforms, xy1, 0.5).xy - 0.5.xx) * scale;
+   xy2 = (Overflow (xy1) ? 0.0.xx : tex2D (s_Waveforms, xy1).xx - 0.5.xx) * scale;
    xy = xy1 + xy2 - 0.5.xx;
    xy *= scale + 1.0;
    xy.y *= 1.0 + xy2.y;
    xy += 0.5.xx;
 
-   float4 Fgnd = fn_tex2D (s_Foreground, xy, 0.0);
+   float4 Fgnd = GetPixel (s_Foreground, xy);
 
    Fgnd.rgb = saturate (pow (Fgnd.rgb + xy2.xxx, 1.0 - (xy2.x * Shading * 15.0)));
 
-   return lerp (tex2D (s_Background, uv2), Fgnd, Fgnd.a * Opacity);
+   return lerp (GetPixel (s_Background, uv3), Fgnd, Fgnd.a * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -352,9 +353,10 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
 technique Flag_Wave
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Waveforms;"; > 
-   { PixelShader = compile PROFILE ps_waves (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
 
-   pass P_2 { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Waveforms;"; > ExecuteShader (ps_waves)
+   pass P_2 ExecuteShader (ps_main)
 }
+

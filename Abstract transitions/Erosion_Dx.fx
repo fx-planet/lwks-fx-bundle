@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-25
 // @Author jwrl
-// @Created 2016-12-10
+// @Created 2021-07-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Erosion_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Erosion.mp4
 
@@ -11,25 +11,17 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Erosion_Dx.fx
+// Lightworks user effect Erode_Dx.fx
+//
+// This is a rebuild of an earlier effect, Erosion_Dx.fx, to meet the needs of Lightworks
+// version 2021.1 and higher.  From a user's standpoint it is functionally identical to
+// that earlier effect.
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 2018-04-19 by jwrl.
-// The creation date is correct:  this was developed in its present form in late 2016,
-// but not released until this date.  The addition of a subcategory and cosmetic changes
-// to match my current formatting and naming practices are the only changes made prior
-// to this release.  I have no idea why I originally chose to withold it.
+// Rewrite 2021-07-25 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,22 +30,66 @@ int _LwksEffectInfo
    string Description = "Erosion";
    string Category    = "Mix";
    string SubCategory = "Abstract transitions";
-   string Notes       = "Transitions between two video sources using a mixed key";
+   string Notes       = "Transitions between two video sources using a mixed key based on both";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Outgoing = sampler_state { Texture = <Fg>; };
-sampler s_Incoming = sampler_state { Texture = <Bg>; };
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -72,15 +108,18 @@ float Amount
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float a_1 = Amount * 2.0;
-   float a_2 = max (0.0, a_1 - 1.0);
+   float a_1 = Amount * 1.5;
+   float a_2 = max (0.0, a_1 - 0.5);
 
    a_1 = min (a_1, 1.0);
 
-   float4 Fgd = tex2D (s_Outgoing, uv);
-   float4 Bgd = tex2D (s_Incoming, uv);
+   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 Bgd = tex2D (s_Background, uv);
    float4 m_1 = (Fgd + Bgd) * 0.5;
    float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= a_1 ? Fgd : m_1;
 
@@ -91,8 +130,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Erosion
+technique Erode_Dx
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_main)
 }

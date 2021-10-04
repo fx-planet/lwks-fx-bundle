@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-09-04
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-09-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Plasma_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Plasma.mp4
 
@@ -11,8 +11,8 @@
  this background is newly created  media it will be produced at the sequence resolution.
  This means that any background video will also be locked to that resolution.
 
- NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
- This means that any background video will also be locked at that resolution.
+ NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
+ They are then cropped to the background resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,8 +20,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-09-04 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -31,7 +32,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "Generates soft plasma clouds";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -46,51 +47,42 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-#define DefineSampler(S, T) \
-                            \
- sampler S = sampler_state  \
- {                          \
-   Texture   = <T>;         \
-   AddressU  = ClampToEdge; \
-   AddressV  = ClampToEdge; \
-   MinFilter = Linear;      \
-   MagFilter = Linear;      \
-   MipFilter = Linear;      \
- }
-
 #define DefineInput(TEXTURE, SAMPLER) \
                                       \
  texture TEXTURE;                     \
                                       \
- DefineSampler (SAMPLER, TEXTURE);
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- DefineSampler (TSAMPLE, TARGET);
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
-#define R_LUMA  0.2989
-#define G_LUMA  0.5866
-#define B_LUMA  0.1145
+#define EMPTY 0.0.xxxx
 
-#define TWO_PI  6.2831853072
-#define HALF_PI 1.5707963268
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define RGB_LUMA float3(0.2989, 0.5866, 0.1145)
+
+#define TWO_PI   6.2831853072
+#define HALF_PI  1.5707963268
 
 float _Progress;
 float _LengthFrames;
 
 float _OutputAspectRatio;
 
-#define EMPTY    (0.0).xxxx
-
 //-----------------------------------------------------------------------------------------//
 // Input and target
 //-----------------------------------------------------------------------------------------//
 
 DefineInput (Inp, s_Input);
-
-DefineTarget (Matte, s_Matte);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -153,23 +145,12 @@ float Saturation
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv0 : TEXCOORD, float2 uv1 : TEXCOORD1) : COLOR
 {
-   float4 Bgnd = fn_tex2D (s_Input, uv1);
+   float4 Bgnd = GetPixel (s_Input, uv1);
 
    float2 xy = uv0;
 
@@ -221,7 +202,7 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 
    retval = saturate (retval + Level.xxx);
 
-   float luma = dot (retval, float3 (R_LUMA, G_LUMA, B_LUMA));
+   float luma = dot (retval, RGB_LUMA);
 
    retval = lerp (luma.xxx, retval, Saturation * 2.0);
 
@@ -234,6 +215,6 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 
 technique PlasmaMatte
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

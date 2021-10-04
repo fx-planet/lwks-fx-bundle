@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-09-04
 // @Author baopao
 // @Created 2020-11-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/SineLights_640.png
@@ -11,8 +11,8 @@
  at the sequence resolution. This means that any background video will also be locked to
  that resolution.
 
- NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
- This means that any background video will also be locked at that resolution.
+ NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
+ They are then cropped to the background resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,8 +23,9 @@
 //
 // Version history:
 //
-// Update 2020-12-28 jwrl.
+// Update 2021-09-04 jwrl.
 // Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,11 +35,11 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "A pattern generator that creates stars in Lissajou curves";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Declarations and definitions
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
 #ifndef _LENGTH
@@ -49,27 +50,52 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
 float _Progress;
 
 float _OutputAspectRatio;
 
-#define EMPTY    (0.0).xxxx
-
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Inp, s_Input);
 
-sampler Image = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Img,  Image);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -190,20 +216,17 @@ float2 range_adjust (float2 uv)
    return xy;
 }
 
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
+// This preamble pass means that we handle rotated video correctly.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Input, uv); }
+
+float4 ps_main (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 retval = fn_tex2D (Image, uv1);
+   float4 retval = tex2D (Image, uv2);
 
    float2 position;
    float2 vidPoint = range_adjust (uv0);
@@ -231,8 +254,7 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 
 technique SinglePass
 {
-   pass Single_Pass
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_initInp)
+   pass Single_Pass ExecuteShader (ps_main)
 }
+

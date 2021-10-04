@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-09-04
 // @Author jwrl
 // @Author trirop
-// @Created 2020-12-28
+// @Created 2021-09-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Fractal3_640.png
 
 /**
@@ -10,21 +10,22 @@
  backgrounds are newly created  media they will be produced at the sequence resolution.
  This means that any background video will also be locked to that resolution.
 
- NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
- This means that any background video will also be locked at that resolution.
+ NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
+ They are then cropped to the background resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMatte3.fx
 //
-// The fractal generation component was first created by Robert SchÃ¼tze (trirop) in GLSL
+// The fractal generation component was first created by Robert Schütze (trirop) in GLSL
 // sandbox (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better
 // suit its use in this effect.
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-09-04 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,7 +35,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "Produces fractal patterns for background generation";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -49,44 +50,51 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-#define DefineSampler(S, T) \
-                            \
- sampler S = sampler_state  \
- {                          \
-   Texture   = <T>;         \
-   AddressU  = ClampToEdge; \
-   AddressV  = ClampToEdge; \
-   MinFilter = Linear;      \
-   MagFilter = Linear;      \
-   MipFilter = Linear;      \
- }
-
 #define DefineInput(TEXTURE, SAMPLER) \
                                       \
  texture TEXTURE;                     \
                                       \
- DefineSampler (SAMPLER, TEXTURE);
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define DefineTarget(TARGET, TSAMPLE) \
+#define DefineTarget(TARGET, SAMPLER) \
                                       \
  texture TARGET : RenderColorTarget;  \
                                       \
- DefineSampler (TSAMPLE, TARGET);
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define PI_2     6.28318530718
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
-#define INVSQRT3 0.57735026919
+#define EMPTY 0.0.xxxx
 
-#define R_WEIGHT 0.2989
-#define G_WEIGHT 0.5866
-#define B_WEIGHT 0.1145
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define TWO_PI     6.28318530718
+
+#define INVSQRT3   0.57735026919
+
+#define RGB_WEIGHT float3(0.2989, 0.5866, 0.1145)
 
 float _Progress;
 float _Length;
 
 float _OutputAspectRatio;
-
-#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
 // Input and target
@@ -185,21 +193,10 @@ float Contrast
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_fractal (float2 xy : TEXCOORD) : COLOR
+float4 ps_fractals (float2 xy : TEXCOORD) : COLOR
 {
    float speed = _Progress * FracRate * _Length / 5.0;
 
@@ -216,11 +213,11 @@ float4 ps_fractal (float2 xy : TEXCOORD) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd = fn_tex2D (s_Input, uv1);
+   float4 Fgd = GetPixel (s_Input, uv1);
 
-   float2 xy = uv0;
+   float2 xy = uv2;
 
    if (_OutputAspectRatio <= 1.0) {
       xy.x = (xy.x - 0.5) * _OutputAspectRatio;
@@ -245,10 +242,10 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
       xy.y += 0.5;
    }
 
-   float4 retval = fn_tex2D (s_Matte, xy);
+   float4 retval = tex2D (s_Matte, xy);
 
-   float luma   = dot (retval.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
-   float buffer = dot (Colour.rgb, float3 (R_WEIGHT, G_WEIGHT, B_WEIGHT));
+   float luma   = dot (retval.rgb, RGB_WEIGHT);
+   float buffer = dot (Colour.rgb, RGB_WEIGHT);
 
    buffer = saturate (buffer - 0.5);
    buffer = 1.0 / (buffer + 0.5);
@@ -261,7 +258,7 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
    float RminusG = retval.r - retval.g;
    float RminusB = retval.r - retval.b;
    float GammVal = (Gamma > 1.0) ? Gamma : Gamma * 0.9 + 0.1;
-   float Hue_Val = acos ((RminusG + RminusB) / (2.0 * sqrt (RminusG * RminusG + RminusB * (retval.g - retval.b)))) / PI_2;
+   float Hue_Val = acos ((RminusG + RminusB) / (2.0 * sqrt (RminusG * RminusG + RminusB * (retval.g - retval.b)))) / TWO_PI;
    float Sat_Val = 1.0 - min (min (retval.r, retval.g), retval.b) / luma;
 
    if (retval.b > retval.g) Hue_Val = 1.0 - Hue_Val;
@@ -272,30 +269,25 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
    float Hrange = Hue_Val * 3.0;
    float Hoffst = (2.0 * floor (Hrange) + 1.0) / 6.0;
 
-   buffer = INVSQRT3 * tan ((Hue_Val - Hoffst) * PI_2);
+   buffer = INVSQRT3 * tan ((Hue_Val - Hoffst) * TWO_PI);
+   temp.w = 1.0;
    temp.x = (1.0 - Sat_Val) * luma;
    temp.y = ((3.0 * (buffer + 1.0)) * luma - (3.0 * buffer + 1.0) * temp.x) / 2.0;
    temp.z = 3.0 * luma - temp.y - temp.x;
 
-   retval = (Hrange < 1.0) ? temp.zyxw : (Hrange < 2.0) ? temp.xzyw : temp.yxzw;
-   temp   = (((pow (retval, 1.0 / GammVal) * Gain) + Brightness.xxxx - 0.5.xxxx) * Contrast) + 0.5.xxxx;
-   retval = lerp (Fgd, temp, Opacity);
+   retval   = (Hrange < 1.0) ? temp.zyxw : (Hrange < 2.0) ? temp.xzyw : temp.yxzw;
+   temp.rgb = (((pow (retval.rgb, 1.0 / GammVal) * Gain) + Brightness.xxx - 0.5.xxx) * Contrast) + 0.5.xxx;
 
-   retval.a = Fgd.a;
-
-   return retval;
+   return lerp (Fgd, temp, Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique FractalMatte3
+technique FractalMatte_3
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Matte;"; >
-   { PixelShader = compile PROFILE ps_fractal (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Matte;"; > ExecuteShader (ps_fractals)
+   pass P_2 ExecuteShader (ps_main)
 }
+

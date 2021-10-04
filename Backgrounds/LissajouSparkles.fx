@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-09-04
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-09-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Lissajou_640.png
 
 /**
@@ -14,8 +14,8 @@
  Because backgrounds are newly created media they are produced at the sequence resolution.
  This means that any background video will also be locked to that resolution.
 
- NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
- This means that any background video will also be locked at that resolution.
+ NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
+ They are then cropped to the background resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -25,8 +25,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
-// Complete rewrite of the original effect to support LW 2021 resolution independence.
+// Rewrite 2021-09-04 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,7 +37,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "A pattern generator that creates coloured stars in Lissajou curves over a coloured background";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -51,28 +52,53 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
 float _Progress;
 float _Length;
 
 float _OutputAspectRatio;
 
-#define EMPTY    (0.0).xxxx
-
 //-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -208,25 +234,18 @@ float4 botRight
 > = { 0.375, 0.5625, 0.75, -1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
+// This preamble pass means that we handle rotated video correctly.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv2 : TEXCOORD2) : COLOR
 {
    float4 fgdPat = float4 (fgdColour.rgb, 1.0);
 
-   float2 position, xy = uv0;
+   float2 position, xy = uv2;
 
    if (_OutputAspectRatio <= 1.0) {
       xy.x = (xy.x - CentreX) * _OutputAspectRatio;
@@ -277,7 +296,7 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
    float4 topRow = lerp (topLeft, topRight, uv0.x);
    float4 botRow = lerp (botLeft, botRight, uv0.x);
    float4 cField = float4 (lerp (topRow, botRow, uv0.y).rgb, 1.0);
-   float4 Bgnd   = lerp (cField, fn_tex2D (s_Input, uv1), extBgd);
+   float4 Bgnd   = lerp (cField, tex2D (s_Input, uv2), extBgd);
 
    return lerp (Bgnd, fgdPat, sum);
 }
@@ -288,6 +307,7 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 
 technique LissajouSparkles
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_main)
 }
+

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-09-04
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-09-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Multigrad_640.png
 
 /**
@@ -16,8 +16,8 @@
  independence of 2021 it will need to be installed on that release of Lightworks.  Any earlier
  versions of this effect will need to be deleted before installing this version.
 
- NOTE: Backgrounds are newly created  media and will be produced at the sequence resolution.
- This means that any background video will also be locked at that resolution.
+ NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
+ They are then cropped to the background resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -25,8 +25,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-09-04 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,7 +37,7 @@ int _LwksEffectInfo
    string Category    = "Matte";
    string SubCategory = "Backgrounds";
    string Notes       = "Creates a colour field with a wide range of possible gradients";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -51,27 +52,52 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
 #define PI      3.1415926536
 
 #define HALF_PI 1.5707963268
-
-#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -135,33 +161,24 @@ float4 botRight
 > = { 0.05, 0.84, 0.92, -1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Pixel Shaders
 //-----------------------------------------------------------------------------------------//
 
+// This preamble pass means that we handle rotated video correctly.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
 float4 ps_flat (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 colour = float4 (topLeft.rgb, 1.0);
-
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (GetPixel (s_Input, uv), float4 (topLeft.rgb, 1.0), Amount);
 }
 
-float4 ps_horiz_LR (float2 uv : TEXCOORD1) : COLOR
+float4 ps_horiz_LR (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
    float buff_1, buff_2;
-   float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0)  ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0)  ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0)  ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -169,28 +186,28 @@ float4 ps_horiz_LR (float2 uv : TEXCOORD1) : COLOR
    float horiz = lerp (buff_1, buff_2, buff_0);
    float vert = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    float4 colour = float4 (lerp (topLeft, topRight, horiz).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_horiz_C (float2 uv : TEXCOORD1) : COLOR
+float4 ps_horiz_C (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
    float buff_1, buff_2;
-   float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0)  ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0)  ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0)  ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    float horiz = sin (PI * buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -198,15 +215,15 @@ float4 ps_horiz_C (float2 uv : TEXCOORD1) : COLOR
 
    float4 colour = float4 (lerp (topLeft, topRight, horiz).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_vert_TB (float2 uv : TEXCOORD1) : COLOR
+float4 ps_vert_TB (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
    float buff_1, buff_2;
-   float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0)  ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0)  ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0)  ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -214,9 +231,9 @@ float4 ps_vert_TB (float2 uv : TEXCOORD1) : COLOR
    float horiz = lerp (buff_1, buff_2, buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -224,15 +241,15 @@ float4 ps_vert_TB (float2 uv : TEXCOORD1) : COLOR
 
    float4 colour = float4 (lerp (topLeft, botLeft, vert).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_vert_C (float2 uv : TEXCOORD1) : COLOR
+float4 ps_vert_C (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
    float buff_1, buff_2;
-   float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0)  ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0)  ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0)  ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -240,23 +257,23 @@ float4 ps_vert_C (float2 uv : TEXCOORD1) : COLOR
    float horiz = lerp (buff_1, buff_2, buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    vert = sin (PI * buff_0);
 
    float4 colour = float4 (lerp (topLeft, botLeft, vert).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_4way (float2 uv : TEXCOORD1) : COLOR
+float4 ps_4way (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
    float buff_1, buff_2;
-   float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0)  ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0)  ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0)  ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -264,9 +281,9 @@ float4 ps_4way (float2 uv : TEXCOORD1) : COLOR
    float horiz = lerp (buff_1, buff_2, buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -276,21 +293,21 @@ float4 ps_4way (float2 uv : TEXCOORD1) : COLOR
    float4 botRow   = lerp (botLeft, botRight, horiz);
    float4 colour   = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_4way_C (float2 uv : TEXCOORD1) : COLOR
+float4 ps_4way_C (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0)  ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0)  ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0)  ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    float horiz = sin (PI * buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    vert = sin (PI * buff_0);
 
@@ -298,15 +315,15 @@ float4 ps_4way_C (float2 uv : TEXCOORD1) : COLOR
    float4 botRow   = lerp (botLeft, botRight, horiz);
    float4 colour   = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_4way_HC (float2 uv : TEXCOORD1) : COLOR
+float4 ps_4way_HC (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
    float buff_1, buff_2;
-   float buff_0 = (OffsX <= 0.0) ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0) ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0) ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0) ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -314,9 +331,9 @@ float4 ps_4way_HC (float2 uv : TEXCOORD1) : COLOR
    float horiz = lerp (buff_1, buff_2, buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    vert = sin (PI * buff_0);
 
@@ -324,22 +341,22 @@ float4 ps_4way_HC (float2 uv : TEXCOORD1) : COLOR
    float4 botRow   = lerp (botLeft, botRight, horiz);
    float4 colour   = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_4way_VC (float2 uv : TEXCOORD1) : COLOR
+float4 ps_4way_VC (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
    float buff_1, buff_2;
-   float buff_0 = (OffsX <= 0.0) ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0) ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0) ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0) ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    float horiz = sin (PI * buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    sincos (HALF_PI * buff_0, buff_1, buff_2);
    buff_2 = 1.0 - buff_2;
@@ -349,28 +366,28 @@ float4 ps_4way_VC (float2 uv : TEXCOORD1) : COLOR
    float4 botRow   = lerp (botLeft, botRight, horiz);
    float4 colour   = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
-float4 ps_radial (float2 uv : TEXCOORD1) : COLOR
+float4 ps_radial (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float buff_0 = (OffsX <= 0.0) ? (uv.x / 2.0) + 0.5 :
-                  (OffsX >= 1.0) ? uv.x / 2.0 :
-                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+   float buff_0 = (OffsX <= 0.0) ? (uv0.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0) ? uv0.x / 2.0 :
+                  (OffsX > uv0.x) ? uv0.x / (2.0 * OffsX) : ((uv0.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
 
    float horiz = sin (PI * buff_0);
    float vert  = 1.0 - OffsY;
 
-   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
-            (vert >= 1.0) ? uv.y / 2.0 :
-            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+   buff_0 = (vert <= 0.0) ? (uv0.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv0.y / 2.0 :
+            (vert > uv0.y) ? uv0.y / (2.0 * vert) : ((uv0.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
 
    vert = sin (PI * buff_0);
 
    float4 gradient = lerp (topLeft, topRight, horiz);
    float4 colour   = float4 (lerp (topLeft, gradient, vert).rgb, 1.0);
 
-   return lerp (fn_tex2D (s_Input, uv), colour, Amount);
+   return lerp (tex2D (s_Input, uv2), colour, Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -379,60 +396,60 @@ float4 ps_radial (float2 uv : TEXCOORD1) : COLOR
 
 technique Flat
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_flat (); }
+   pass P_1 ExecuteShader (ps_flat)
 }
 
 technique Horizontal_L_R
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_horiz_LR (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_horiz_LR)
 }
 
 technique Horizontal_C
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_horiz_C (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_horiz_C)
 }
 
 technique Vertical_T_B
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_vert_TB (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_vert_TB)
 }
 
 technique Vertical_C
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_vert_C (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_vert_C)
 }
 
 technique Four_way
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_4way (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_4way)
 }
 
 technique Four_way_C
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_4way_C (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_4way_C)
 }
 
 technique Four_way_H_C
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_4way_HC (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_4way_HC)
 }
 
 technique Four_way_V_C
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_4way_VC (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_4way_VC)
 }
 
 technique Radial
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_radial (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_radial)
 }
+

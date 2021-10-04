@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-25
 // @Author jwrl
-// @Created 2016-05-10
+// @Created 2021-07-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Transmogrify_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transmogrify.mp4
 
@@ -10,77 +10,86 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Transmogrify_Dx.fx
+// Lightworks user effect Transmogrify_Mix.fx
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
-//
-// Modified 23 December 2018 jwrl.
-// Added "Notes" section to _LwksEffectInfo.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 2018-07-09 jwrl:
-// Removed dependence on pixel size.  The bug fix of 2017-02-26 is now redundant.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from Transmogrify.fx for consistency across the dissolve range.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Swizzled two float variables to float2.  This addresses the behavioural differences
-// between D3D and Cg compilers.
-//
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
-//
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Rewrite 2021-07-25 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Transmogrify";
+   string Description = "Transmogrify burst";
    string Category    = "Mix";
    string SubCategory = "Abstract transitions";
-   string Notes       = "Breaks the outgoing image into a cloud of particles which blow apart while the incoming image materialises";
+   string Notes       = "Breaks the outgoing image into a cloud of particles which blow apart.";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define SCALE 0.000545
+
+float _OutputAspectRatio;
+float _Progress;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -96,26 +105,20 @@ float Amount
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define SCALE 0.000545
-
-float _OutputAspectRatio;
-float _Progress;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float2 pixSize = uv * float2 (1.0, _OutputAspectRatio) * SCALE ;
+   float2 pxS = uv * float2 (1.0, _OutputAspectRatio) * SCALE ;
 
-   float  rand = frac (sin (dot (pixSize, float2 (18.5475, 89.3723))) * 54853.3754);
+   float  rand = frac (sin (dot (pxS, float2 (18.5475, 89.3723))) * 54853.3754);
 
-   float2 xy1 = lerp (uv, saturate (pixSize + (sqrt (_Progress) - 0.5).xx + (uv * rand)), Amount);
-   float2 xy  = saturate (pixSize + (sqrt (1.0 - _Progress) - 0.5).xx + (uv * rand));
+   float2 xy1 = lerp (uv, saturate (pxS + (sqrt (_Progress) - 0.5).xx + (uv * rand)), Amount);
+   float2 xy  = saturate (pxS + (sqrt (1.0 - _Progress) - 0.5).xx + (uv * rand));
    float2 xy2 = lerp (float2 (xy.x, 1.0 - xy.y), uv, Amount);
 
    float4 Fgd = tex2D (s_Foreground, xy1);
@@ -128,8 +131,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Dx_Transmogrify
+technique Transmogrify_Dx
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_main)
 }

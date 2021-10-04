@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-18
 // @Author jwrl
-// @Created 2020-11-09
+// @Created 2021-08-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/ThreeZoneTrim_640.png
 
 /**
@@ -17,7 +17,9 @@
 //
 // Version history:
 //
-// Built 2020-11-09 jwrl.
+// Rewrite 2021-08-18 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -26,17 +28,50 @@ int _LwksEffectInfo
    string Description = "Three zone trim";
    string Category    = "Colour";
    string SubCategory = "Colour Tools";
-   string Notes       = "Adjusts low, mid and high range levels to enhance or reduce them";
+   string Notes       = "Independently adjusts low, mid and high range colour levels";
    bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define PI 3.1415926536
 
 //-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -125,12 +160,6 @@ float Trim_B
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI     3.1415926536
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -181,7 +210,7 @@ float4 fn_hsv2rgb (float4 hsv)
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 inp = tex2D (s_Input, uv);
+   float4 inp = GetPixel (s_Input, uv);
    float4 hsv = fn_rgb2hsv (inp);
 
    float mids = 0.5 + (cos (smoothstep (0.0, 0.5, abs (0.5 - hsv.z)) * PI) * 0.5);
@@ -211,6 +240,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique ThreeZoneTrim
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }

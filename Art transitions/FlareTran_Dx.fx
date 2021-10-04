@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-25
 // @Author khaver
 // @Created 2014-08-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FlareTran_640.png
@@ -8,7 +8,9 @@
 /**
  FlareTran is a transition that dissolves through an over-exposure style flare.  Amongst
  other things it can be used to simulate the burn out effect that happens when a film
- camera stops.
+ camera stops.  With mixed size and aspect ratio media it may be necessary to experiment
+ with swapping the target track and/or adjusting the strength of the effect to get the
+ best result.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,81 +18,83 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
+// Modified 2021-07-25 jwrl.
+// Added CanSize switch for 2021 support.
+// Restructured I/O coordinates and pixel recovery to support variable resolution.
 //
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-// Changed "InClip" input to "Fg" and "OutClip" input to "Bg".
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
-//
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Built 2014-08-30 khaver.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "FlareTran";
+   string Description = "Flare Tran";
    string Category    = "Mix";
    string SubCategory = "Art transitions";
    string Notes       = "Dissolves between images through an over-exposure style of flare";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+float _OutputWidth;
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-texture Sample : RenderColorTarget;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler OutputSampler = sampler_state
-{
-   Texture = <Bg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture = <Sample>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, InputSampler);
+DefineTarget (RawBg, OutputSampler);
+DefineTarget (Sample, Samp1);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -113,94 +117,88 @@ float CentreY
 <
    string Description = "Origin";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Strength
 <
    string Description = "Strength";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.2f;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.2;
 
 float stretch
 <
    string Description = "Stretch";
-   float MinVal = 0.0f;
-   float MaxVal = 10.0f;
-> = 5.0f;
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
+> = 5.0;
 
 float Timing
 <
    string Description = "Timing";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.5f;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
 
 float adjust
 <
    string Description = "Progress";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
    float KF0    = 0.0;
    float KF1    = 1.0;
-> = 0.5f;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
+> = 0.5;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_adjust ( float2 xy : TEXCOORD1 ) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 ps_adjust (float2 uv : TEXCOORD3) : COLOR
 {
-   float flare = (adjust * 2.0) - 1.0;
-   flare = 1.0 - abs(flare);
-   float4 Color;
-   if (Swap) Color = tex2D( OutputSampler, xy);
-   else Color = tex2D( InputSampler, xy);
-   if (Color.r < 1.0f-flare) Color.r = 0.0f;
-   if (Color.g < 1.0f-flare) Color.g = 0.0f;
-   if (Color.b < 1.0f-flare) Color.b = 0.0f;
+   float flare = 1.0 - abs ((adjust * 2.0) - 1.0);
+
+   float4 Color = (Swap) ? tex2D (OutputSampler, uv) : tex2D (InputSampler, uv);
+
+   if (Color.r < 1.0 - flare) Color.r = 0.0;
+   if (Color.g < 1.0 - flare) Color.g = 0.0;
+   if (Color.b < 1.0 - flare) Color.b = 0.0;
+
    return Color;
 }
 
-float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 ret;
    float Stretch = 10.0 - stretch;
-   float2 amount = float2 (1.0, _OutputAspectRatio) * Stretch / _OutputWidth;
 
-   float centreY = 1.0f - CentreY;
+   float2 xy0 = float2 (CentreX, 1.0 - CentreY);
+   float2 xy1 = uv - xy0;
 
-   float x = xy1.x - CentreX;
-   float y = xy1.y - centreY;
-
+   float2 amount = Stretch / float2 (_OutputWidth, _OutputHeight);
    float2 adj = amount;
-   float flare = Strength * 2.0;
-   if (flare > 1.0) flare = 2.0 - flare;
-   
-   float4 source;
-   if (adjust < Timing) source = tex2D( InputSampler, xy1 );
-   else source = tex2D( OutputSampler, xy1 );
-   //float4 negative = tex2D( Samp1, xy1 );
-   ret = tex2D( Samp1, float2( x * adj.x + CentreX, y * adj.y + centreY ) );
+
+   // jwrl: Rather than the hard cut between sources in khaver's original, I have amended
+   // it to be a dissolve that occupies 10% of the transition duration.  The original was
+   // source = (adjust < Timing) ? tex2D (InputSampler, xy1) : tex2D (OutputSampler, xy1);
+
+   float mid_trans = saturate ((adjust - (Timing * 0.5) - 0.25) * 10.0);
+
+   float4 source = lerp (tex2D (InputSampler, uv), tex2D (OutputSampler, uv), mid_trans);
+   float4 ret = tex2D (Samp1, xy0 + (xy1 * adj));
 
    for (int count = 1; count < 15; count++) {
-   adj += amount;
-   ret += tex2D( Samp1, float2( x * adj.x + CentreX, y * adj.y + centreY ) )*(count*Strength);
+      adj += amount;
+      ret += tex2D (Samp1, xy0 + (xy1 * adj)) * count * Strength;
    }
 
-   ret = ret / 17.0f;
+   ret /= 17.0;
    ret = ret + source;
 
-   return saturate(float4(ret.rgb,1.0f));
+   return saturate (float4 (ret.rgb, 1.0));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -209,16 +207,8 @@ float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
 
 technique Flare
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Sample;";
-   >
-   {
-      PixelShader = compile PROFILE ps_adjust();
-   }
-
-   pass Pass2
-   {
-      PixelShader = compile PROFILE ps_main();
-   }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pass1 < string Script = "RenderColorTarget0 = Sample;"; > ExecuteShader (ps_adjust)
+   pass Pass2 ExecuteShader (ps_main)
 }

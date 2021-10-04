@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2021-07-27
 // @Author jwrl
-// @Created 2018-04-04
+// @Created 2021-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Slice_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Slice.mp4
 
 /**
  This transition splits the outgoing image into strips which then move off either
- horizontally or vertically to reveal the incoming image.
+ horizontally or vertically to reveal the incoming image.  This updated version adds
+ the ability to choose whether to wipe the outgoing image out or the incoming image in.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,20 +16,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-31 jwrl.
-// Reformatted the effect header.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 14 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-// Changed "Fgd" input to "Fg" and "Bgd" input to "Bg".
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-07-27 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,39 +27,66 @@ int _LwksEffectInfo
    string Description = "Slice transition";
    string Category    = "Mix";
    string SubCategory = "Wipe transitions";
-   string Notes       = "Separates splits the image into strips which move on or off horizontally or vertically";
+   string Notes       = "Separates and splits the image into strips which move on or off horizontally or vertically";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state
-{ 
-   Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -96,6 +113,11 @@ int SetTechnique
    string Enum = "Right to left,Left to right,Top to bottom,Bottom to top";
 > = 1;
 
+bool Direction
+<
+   string Description = "Invert direction";
+> = false;
+
 float StripNumber
 <
    string Description = "Strip number";
@@ -104,86 +126,86 @@ float StripNumber
 > = 10.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY  (0.0).xxxx
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_islegal (float2 uv)
-{
-   return (uv.x >= 0.0) && (uv.y >= 0.0) && (uv.x <= 1.0) && (uv.y <= 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_right (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+// These two shaders are used to convert the sampler texture coordinates to sequence
+// texture coordinates.  This ensures that the wipe calculations aren't affected by
+// varying input sizes.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_right (float2 uv : TEXCOORD3) : COLOR
 {
    float strips   = max (2.0, round (StripNumber));
-   float amount_1 = (1.0 - pow (1.0 - Amount, 3.0)) / (strips * 2.0);
-   float amount_2 = pow (Amount, 3.0);
+   float amount_0 = Direction ? 1.0 - Amount : Amount;
+   float amount_1 = (1.0 - pow (1.0 - amount_0, 3.0)) / (strips * 2.0);
+   float amount_2 = pow (amount_0, 3.0);
 
-   float2 uv = xy1;
+   float2 xy = uv;
 
-   uv.x += (Mode == 1) ? (ceil (uv.y * strips) * amount_1) + amount_2
-                       : (ceil ((1.0 - uv.y) * strips) * amount_1) + amount_2;
+   xy.x += (Mode == 1) ? (ceil (xy.y * strips) * amount_1) + amount_2
+                       : (ceil ((1.0 - xy.y) * strips) * amount_1) + amount_2;
 
-   float4 Fgnd = fn_islegal (uv) ? tex2D (s_Foreground, uv) : EMPTY;
+   if (Direction)
+      return (Overflow (xy)) ? tex2D (s_Foreground, uv) : tex2D (s_Background, xy);
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return (Overflow (xy)) ? tex2D (s_Background, uv) : tex2D (s_Foreground, xy);
 }
 
-float4 ps_left (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_left (float2 uv : TEXCOORD3) : COLOR
 {
    float strips   = max (2.0, round (StripNumber));
-   float amount_1 = (1.0 - pow (1.0 - Amount, 3.0)) / (strips * 2.0);
-   float amount_2 = pow (Amount, 3.0);
+   float amount_0 = Direction ? 1.0 - Amount : Amount;
+   float amount_1 = (1.0 - pow (1.0 - amount_0, 3.0)) / (strips * 2.0);
+   float amount_2 = pow (amount_0, 3.0);
 
-   float2 uv = xy1;
+   float2 xy = uv;
 
-   uv.x -= (Mode == 1) ? (ceil (uv.y * strips) * amount_1) + amount_2
-                       : (ceil ((1.0 - uv.y) * strips) * amount_1) + amount_2;
+   xy.x -= (Mode == 1) ? (ceil (xy.y * strips) * amount_1) + amount_2
+                       : (ceil ((1.0 - xy.y) * strips) * amount_1) + amount_2;
 
-   float4 Fgnd = fn_islegal (uv) ? tex2D (s_Foreground, uv) : EMPTY;
+   if (Direction)
+      return (Overflow (xy)) ? tex2D (s_Foreground, uv) : tex2D (s_Background, xy);
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return (Overflow (xy)) ? tex2D (s_Background, uv) : tex2D (s_Foreground, xy);
 }
 
-float4 ps_top (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_top (float2 uv : TEXCOORD3) : COLOR
 {
    float strips   = max (2.0, round (StripNumber));
-   float amount_1 = (1.0 - pow (1.0 - Amount, 3.0)) / (strips * 2.0);
-   float amount_2 = pow (Amount, 3.0);
+   float amount_0 = Direction ? 1.0 - Amount : Amount;
+   float amount_1 = (1.0 - pow (1.0 - amount_0, 3.0)) / (strips * 2.0);
+   float amount_2 = pow (amount_0, 3.0);
 
-   float2 uv = xy1;
+   float2 xy = uv;
 
-   uv.y -= (Mode == 1) ? (ceil (uv.x * strips) * amount_1) + amount_2
-                       : (ceil ((1.0 - uv.x) * strips) * amount_1) + amount_2;
+   xy.y -= (Mode == 1) ? (ceil (xy.x * strips) * amount_1) + amount_2
+                       : (ceil ((1.0 - xy.x) * strips) * amount_1) + amount_2;
 
-   float4 Fgnd = fn_islegal (uv) ? tex2D (s_Foreground, uv) : EMPTY;
+   if (Direction)
+      return (Overflow (xy)) ? tex2D (s_Foreground, uv) : tex2D (s_Background, xy);
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return (Overflow (xy)) ? tex2D (s_Background, uv) : tex2D (s_Foreground, xy);
 }
 
-float4 ps_bottom (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_bottom (float2 uv : TEXCOORD3) : COLOR
 {
    float strips   = max (2.0, round (StripNumber));
-   float amount_1 = (1.0 - pow (1.0 - Amount, 3.0)) / (strips * 2.0);
-   float amount_2 = pow (Amount, 3.0);
+   float amount_0 = Direction ? 1.0 - Amount : Amount;
+   float amount_1 = (1.0 - pow (1.0 - amount_0, 3.0)) / (strips * 2.0);
+   float amount_2 = pow (amount_0, 3.0);
 
-   float2 uv = xy1;
+   float2 xy = uv;
 
-   uv.y += (Mode == 1) ? (ceil (uv.x * strips) * amount_1) + amount_2
-                       : (ceil ((1.0 - uv.x) * strips) * amount_1) + amount_2;
+   xy.y += (Mode == 1) ? (ceil (xy.x * strips) * amount_1) + amount_2
+                       : (ceil ((1.0 - xy.x) * strips) * amount_1) + amount_2;
 
-   float4 Fgnd = fn_islegal (uv) ? tex2D (s_Foreground, uv) : EMPTY;
+   if (Direction)
+      return (Overflow (xy)) ? tex2D (s_Foreground, uv) : tex2D (s_Background, xy);
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return (Overflow (xy)) ? tex2D (s_Background, uv) : tex2D (s_Foreground, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -192,24 +214,29 @@ float4 ps_bottom (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique Slice_Dx_Left
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_right (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_right)
 }
 
 technique Slice_Dx_Right
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_left (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_left)
 }
 
 technique Slice_Dx_Top
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_top (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_top)
 }
 
 technique Slice_Dx_Bottom
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_bottom (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_bottom)
 }
+

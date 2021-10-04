@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2021-07-27
 // @Author jwrl
-// @Created 2017-08-25
+// @Created 2021-07-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Corners_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Wx_Corners.mp4
 
@@ -14,20 +14,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-31 jwrl.
-// Reformatted the effect header.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-07-27 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,50 +26,64 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Wipe transitions";
    string Notes       = "Splits an image four ways to or from the corners of the frame";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-texture Halfway : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Halfway = sampler_state
-{
-   Texture   = <Halfway>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Overlay, s_Overlay);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -102,61 +105,48 @@ float Amount
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY (0.0).xxxx
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 open_horiz (float2 uv : TEXCOORD1) : COLOR
+// These two shaders are used to convert the sampler texture coordinates to sequence
+// texture coordinates.  This ensures that the wipe calculations aren't affected by
+// varying input sizes.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Foreground, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_Background, uv); }
+
+float4 ps_open (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
    float negAmt = (1.0 - Amount) / 2.0;
    float posAmt = (1.0 + Amount) / 2.0;
 
-   float2 xy1 = float2 (uv.x - posAmt + 0.5, uv.y);
-   float2 xy2 = float2 (uv.x - negAmt + 0.5, uv.y);
+   float2 xy1 = float2 (uv3.x - posAmt + 0.5, uv3.y - posAmt + 0.5);
+   float2 xy2 = float2 (uv3.x - negAmt + 0.5, xy1.y);
+   float2 xy3 = float2 (xy1.x, uv3.y - negAmt + 0.5);
+   float2 xy4 = float2 (xy2.x, xy3.y);
 
-   return (uv.x > posAmt) ? tex2D (s_Foreground, xy1) : (uv.x < negAmt) ? tex2D (s_Foreground, xy2) : EMPTY;
+   return (uv3.x > posAmt) && (uv3.y > posAmt) ? tex2D (s_Overlay, xy1) :
+          (uv3.x < negAmt) && (uv3.y > posAmt) ? tex2D (s_Overlay, xy2) :
+          (uv3.x > posAmt) && (uv3.y < negAmt) ? tex2D (s_Overlay, xy3) :
+          (uv3.x < negAmt) && (uv3.y < negAmt) ? tex2D (s_Overlay, xy4) :
+                                                 GetPixel (s_Background, uv2);
 }
 
-float4 open_main (float2 uv : TEXCOORD1) : COLOR
-{
-   float negAmt = (1.0 - Amount) / 2.0;
-   float posAmt = (1.0 + Amount) / 2.0;
-
-   float2 xy1 = float2 (uv.x, uv.y - posAmt + 0.5);
-   float2 xy2 = float2 (uv.x, uv.y - negAmt + 0.5);
-
-   float4 retval = (uv.y > posAmt) ? tex2D (s_Halfway, xy1) : (uv.y < negAmt) ? tex2D (s_Halfway, xy2) : EMPTY;
-
-   return lerp (tex2D (s_Background, uv), retval, retval.a);
-}
-
-float4 shut_horiz (float2 uv : TEXCOORD1) : COLOR
+float4 ps_shut (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
 {
    float negAmt = Amount / 2.0;
    float posAmt = (2.0 - Amount) / 2.0;
 
-   float2 xy1 = float2 (uv.x - posAmt + 0.5, uv.y);
-   float2 xy2 = float2 (uv.x - negAmt + 0.5, uv.y);
+   float2 xy1 = float2 (uv3.x - posAmt + 0.5, uv3.y - posAmt + 0.5);
+   float2 xy2 = float2 (uv3.x - negAmt + 0.5, xy1.y);
+   float2 xy3 = float2 (xy1.x, uv3.y - negAmt + 0.5);
+   float2 xy4 = float2 (xy2.x, xy3.y);
 
-   return (uv.x > posAmt) ? tex2D (s_Background, xy1) : (uv.x < negAmt) ? tex2D (s_Background, xy2) : EMPTY;
-}
-
-float4 shut_main (float2 uv : TEXCOORD1) : COLOR
-{
-   float negAmt = Amount / 2.0;
-   float posAmt = (2.0 - Amount) / 2.0;
-
-   float2 xy1 = float2 (uv.x, uv.y - posAmt + 0.5);
-   float2 xy2 = float2 (uv.x, uv.y - negAmt + 0.5);
-
-   float4 retval = (uv.y > posAmt) ? tex2D (s_Halfway, xy1) : (uv.y < negAmt) ? tex2D (s_Halfway, xy2) : EMPTY;
-
-   return lerp (tex2D (s_Foreground, uv), retval, retval.a);
+   return (uv3.x > posAmt) && (uv3.y > posAmt) ? tex2D (s_Overlay, xy1) :
+          (uv3.x < negAmt) && (uv3.y > posAmt) ? tex2D (s_Overlay, xy2) :
+          (uv3.x > posAmt) && (uv3.y < negAmt) ? tex2D (s_Overlay, xy3) :
+          (uv3.x < negAmt) && (uv3.y < negAmt) ? tex2D (s_Overlay, xy4) :
+                                                 GetPixel (s_Foreground, uv1);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -165,21 +155,13 @@ float4 shut_main (float2 uv : TEXCOORD1) : COLOR
 
 technique openCorner
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Halfway;"; >
-   { PixelShader = compile PROFILE open_horiz (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE open_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = Overlay;"; > ExecuteShader (ps_initFg)
+   pass P_1 ExecuteShader (ps_open)
 }
-
 
 technique shutCorner
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Halfway;"; >
-   { PixelShader = compile PROFILE shut_horiz (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE shut_main (); }
+   pass Pbg < string Script = "RenderColorTarget0 = Overlay;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_shut)
 }
+

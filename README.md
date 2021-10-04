@@ -1,4 +1,4 @@
-# Lightworks user Fx library, July 1, 2021.
+# Lightworks user Fx library, October 4, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -367,103 +367,103 @@ If you need to use two effects that have the same name, simply open one of them 
 ## TRANSITIONS
 
 ## CATEGORY FOLDER: Abstract transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Abstraction #1            |Abstraction1_Dx.fx      |                        |                         |
-|Abstraction #2            |Abstraction2_Dx.fx      |                        |                         |
-|Abstraction #3            |Abstraction3_Dx.fx      |                        |                         |
-|Erosion                   |Erosion_Dx.fx           |                        |                         |
-|Fractal dissolve          |Fractals_Dx.fx          |Fractals_Ax.fx          |Fractals_Adx.fx          |
-|Transmogrify              |Transmogrify_Dx.fx      |Transmogrify_Ax.fx      |Transmogrify_Adx.fx      |
-|Warped dissolve           |Warped_Dx.fx            |Warped_Ax.fx            |Warped_Adx.fx            |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Abstraction #1            |Abstract_1_Dx.fx        |                        |
+|Abstraction #2            |Abstract_2_Dx.fx        |                        |
+|Abstraction #3            |Abstract_3_Dx.fx        |                        |
+|Erosion                   |Erosion_Dx.fx           |                        |
+|Fractal dissolve          |Fractal_Dx.fx           |Fractal_Kx.fx           |
+|Transmogrify              |Transmogrify_Dx.fx      |Transmogrify_Kx.fx      |
+|Warped dissolve           |Warp_Dx.fx              |Warp_Kx.fx              |
 
 ## CATEGORY FOLDER: Art transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Border transition         |                        |Borders_Ax.fx           |Borders_Adx.fx           |
-|Dry brush mix             |DryBrush_Dx.fx          |DryBrush_Ax.fx          |DryBrush_Adx.fx          |
-|FlareTran                 |FlareTran_Dx.fx         |                        |                         |
-|Granular dissolve         |Granular_Dx.fx          |Granular_Ax.fx          |Granular_Adx.fx          |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Border transition         |                        |Border_Kx.fx            |
+|Dry brush mix             |DryBrush_Dx.fx          |DryBrush_Kx.fx          |
+|FlareTran                 |FlareTran_Dx.fx         |                        |
+|Granular dissolve         |Granular_Dx.fx          |Granular_Kx.fx          |
 
 ## CATEGORY FOLDER: Blend transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|DissolveX                 |DissolveX_Dx.fx         |DissolveX_Ax.fx         |DissolveX_Adx.fx         |
-|Folded neg dissolve       |FoldNeg_Dx.fx           |FoldNeg_Ax.fx           |FoldNeg_Adx.fx           |
-|Folded pos dissolve       |FoldPos_Dx.fx           |FoldPos_Ax.fx           |FoldPos_Adx.fx           |
-|Non-additive mix          |NonAdd_Dx.fx            |NonAdd_Ax.fx            |NonAdd_Adx.fx            |
-|Non-add mix ultra         |NonAddUltra_Dx.fx       |NonAddUltra_Ax.fx       |NonAddUltra_Adx.fx       |
-|Optical dissolve          |Optical_Dx.fx           |Optical_Ax.fx           |Optical_Adx.fx           |
-|S dissolve                |Sdissolve_Dx.fx         |Sdissolve_Ax.fx         |Sdissolve_Adx.fx         |
-|Subtractive dissolve      |Subtract_Dx.fx          |                        |                         |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|DissolveX                 |DissolveX_Dx.fx         |DissolveX_Kx.fx         |
+|Folded neg dissolve       |FoldNeg_Dx.fx           |FoldNeg_Kx.fx           |
+|Folded pos dissolve       |FoldPos_Dx.fx           |FoldPos_Kx.fx           |
+|Non-additive mix          |NonAdd_Dx.fx            |NonAdd_Kx.fx            |
+|Non-add mix ultra         |NonAddUltra_Dx.fx       |NonAddUltra_Kx.fx       |
+|Optical dissolve          |Optical_Dx.fx           |Optical_Kx.fx           |
+|S dissolve                |Sdissolve_Dx.fx         |Sdissolve_Kx.fx         |
+|Subtractive dissolve      |Subtract_Dx.fx          |Subtract_Kx.fx          |
 
 ## CATEGORY FOLDER: Blur transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Blur dissolve             |Blur_Dx.fx              |Blur_Bx.fx              |Blur_Bx.fx               |
-|Spin dissolve             |Spin_Dx.fx              |Spin_Ax.fx              |Spin_Adx.fx              |
-|Swirl mix                 |SwirlMix_Dx.fx          |SwirlMix_Ax.fx          |SwirlMix_Adx.fx          |
-|Whip pan                  |WhipPan_Dx.fx           |WhipPan_Ax.fx           |WhipPan_Adx.fx           |
-|Zoom dissolve             |Zoom_Dx.fx              |Zoom_Ax.fx              |Zoom_Adx.fx              |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Blur dissolve             |Blur_Dx.fx              |Blur_Kx.fx              |
+|Directional blur dissolve |DirectionalBlur_Dx.fx   |DirectionalBlur_Kx.fx   |
+|Spin dissolve             |Spin_Dx.fx              |Spin_Kx.fx              |
+|Swirl mix                 |SwirlMix_Dx.fx          |SwirlMix_Kx.fx          |
+|Whip pan                  |WhipPan_Dx.fx           |WhipPan_Kx.fx           |
+|Zoom dissolve             |Zoom_Dx.fx              |Zoom_Kx.fx              |
 
 ## CATEGORY FOLDER: Colour transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Colour sizzler            |ColourSizzler_Dx.fx     |ColourSizzler_Ax.fx     |ColourSizzler_Adx.fx     |
-|Dissolve thru colour      |Colour_Dx.fx            |Colour_Ax.fx            |Colour_Adx.fx            |
-|Dissolve thru flat colour |FlatColour_Dx.fx        |                        |                         |
-|RGB drifter               |RGBdrifter_Dx.fx        |RGBdrifter_Ax.fx        |RGBdrifter_Adx.fx        |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Colour sizzler            |ColourSizzler_Dx.fx     |ColourSizzler_Kx.fx     |
+|Dissolve thru colour      |Colour_Dx.fx            |Colour_Kx.fx            |
+|Dissolve thru flat colour |FlatColour_Dx.fx        |                        |
+|RGB drifter               |RGBdrifter_Dx.fx        |RGBdrifter_Kx.fx        |
 
 ## CATEGORY FOLDER: DVE transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Barn door squeeze         |BarndoorSqueeze_Dx.fx   |BarndoorSqueeze_Ax.fx   |BarndoorSqueeze_Adx.fx   |
-|Corner squeeze            |CornerSqueeze_Dx.fx     |CornerSqueeze_Ax.fx     |CornerSqueeze_Adx.fx     |
-|Pinch transition          |Pinch_Dx.fx             |Pinch_Ax.fx             |Pinch_Adx.fx             |
-|Radial pinch              |rPinch_Dx.fx            |rPinch_Ax.fx            |rPinch_Adx.fx            |
-|Split and zoom            |SplitAndZoom_Dx.fx      |                        |                         |
-|Squeeze transition        |                        |Squeeze_Ax.fx           |Squeeze_Adx.fx           |
-|Stretch dissolve          |Stretch_Dx.fx           |Stretch_Ax.fx           |Stretch_Adx.fx           |
-|X-pinch                   |xPinch_Dx.fx            |xPinch_Ax.fx            |xPinch_Adx.fx            |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Barn door squeeze         |BarndoorSqueeze_Dx.fx   |BarndoorSqueeze_Kx.fx   |
+|Corner squeeze            |CornerSqueeze_Dx.fx     |CornerSqueeze_Kx.fx     |
+|Pinch transition          |Pinch_Dx.fx             |Pinch_Kx.fx             |
+|Radial pinch              |rPinch_Dx.fx            |rPinch_Kx.fx            |
+|Split and zoom            |SplitAndZoom_Dx.fx      |                        |
+|Squeeze transition        |                        |Squeeze_Kx.fx           |
+|Stretch dissolve          |Stretch_Dx.fx           |Stretch_Kx.fx           |
+|X-pinch                   |xPinch_Dx.fx            |xPinch_Kx.fx            |
 
 ## CATEGORY FOLDER: Fades and non mixes
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Chinagraph pencil         |Chinagraph_Dx.fx        |                        |                         |
-|Fade down                 |FadeDown_Dx.fx          |                        |                         |
-|Fade up                   |FadeUp_Dx.fx            |                        |                         |
-|Optical fade down         |OpticalFadeDown_Dx.fx   |                        |                         |
-|Optical fade up           |OpticalFadeUp_Dx.fx     |                        |                         |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Chinagraph pencil         |Chinagraph_Dx.fx        |                        |
+|Fades                     |Fades_Dx.fx             |                        |
+|Optical fades             |OpticalFades_Dx.fx      |                        |
 
 ## CATEGORY FOLDER: Geometric transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Block dissolve            |Blocks_Dx.fx            |Blocks_Ax.fx            |Blocks_Adx.fx            |
-|Coloured tiles            |ColourTile_Dx.fx        |                        |                         |
-|Kaleido turbine mix       |KaleidoTurbineMix_Dx.fx |KaleidoTurbineMix_Ax.fx |KaleidoTurbineMix_Adx.fx |
-|Mosaic transfer           |Mosaic_Dx.fx            |                        |                         |
-|Rotate                    |                        |Rotate_Ax.fx            |Rotate_Adx.fx            |
-|Tile split                |                        |TileSplit_Ax.fx         |TileSplit_Adx.fx         |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Block dissolve            |Block_Dx.fx             |Block_Kx.fx             |
+|Coloured tiles            |ColourTile_Dx.fx        |                        |
+|Kaleido turbine mix       |KaleidoTurbineMix_Dx.fx |KaleidoTurbineMix_Kx.fx |
+|Mosaic transfer           |Mosaic_Dx.fx            |                        |
+|Rotating transition       |Rotating_Dx.fx          |Rotating_Kx.fx          |
+|Tiled split               |TiledSplit_Dx.fx        |TiledSplit_Kx.fx        |
 
 ## CATEGORY FOLDER: Special Fx transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Dream sequence            |Dreams_Dx.fx            |Dreams_Ax.fx            |Dreams_Adx.fx            |
-|Fly away                  |FlyAway_Dx.fx           |                        |                         |
-|Fireball transition       |Fireball_Dx.fx          |                        |                         |
-|Fireball transition B     |Fireball_B_Dx.fx        |                        |                         |
-|Page Roll                 |PageRoll_Dx.fx          |                        |                         |
-|Sinusoidal mix            |Sine_Dx.fx              |Sine_Ax.fx              |Sine_Adx.fx              |
-|The twister               |Twister_Dx.fx           |Twister_Ax.fx           |Twister_Adx.fx           |
-|Wave collapse             |                        |WaveCollapse_Ax.fx      |WaveCollapse_Adx.fx      |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Dream sequence            |Dream_Dx.fx             |Dream_Kx.fx             |
+|Fireball transition       |Fireballs_Dx.fx         |                        |
+|Fireball transition B     |Fireballs_B_Dx.fx       |                        |
+|Fly away                  |Fly_Away_Dx.fx          |                        |
+|Page Roll                 |Page_Roll_Dx.fx         |                        |
+|Sinusoidal mix            |Sine_Dx.fx              |Sine_Kx.fx              |
+|The twister               |Twister_Dx.fx           |Twister_Kx.fx           |
+|Twist it                  |TwistIt_Dx.fx           |                        |
+|Wave collapse             |                        |WaveCollapse_Kx.fx      |
 
 ## CATEGORY FOLDER: Wipe transitions
-|EFFECT                    |DISSOLVE                |ALPHA TRANSITION        |DELTA TRANSITION         |
-|:------------------------ |:---------------------- |:---------------------- |:----------------------- |
-|Bar wipe                  |                        |Bars_Ax.fx              |Bars_Adx.fx              |
-|Barn door split           |BarnDoorSplit_Dx.fx     |BarnDoorSplit_Ax.fx     |BarnDoorSplit_Adx.fx     |
-|Corner split              |CornerSplit_Dx.fx       |CornerSplit_Ax.fx       |CornerSplit_Adx.fx       |
-|Push transition           |                        |Push_Ax.fx              |Push_Adx.fx              |
-|Slice transition          |Slice_Dx.fx             |Slice_Ax.fx             |Slice_Adx.fx             |
-|Strips                    |                        |Strips_Ax.fx            |Strips_Adx.fx            |
+|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |
+|:------------------------ |:---------------------- |:---------------------- |
+|Bar wipe                  |                        |Bars_Kx.fx              |
+|Barn door split           |BarnDoorSplit_Dx.fx     |BarnDoorSplit_Kx.fx     |
+|Corner split              |CornerSplit_Dx.fx       |CornerSplit_Kx.fx       |
+|Push transition           |                        |Push_Kx.fx              |
+|Slice transition          |Slice_Dx.fx             |Slice_Kx.fx             |
+|Strips                    |                        |Strips_Kx.fx            |
 

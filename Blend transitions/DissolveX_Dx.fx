@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-24
 // @Author khaver
 // @Created 2014-08-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/dissolveX_640.png
@@ -19,8 +19,10 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
+// Modified 2021-07-24 jwrl.
 // Reformatted the effect header.
+// Added macros to support resolution independence.
+// Modification date does not reflect upload date because of forum upload problems.
 //
 // Modified 23 December 2018 jwrl.
 // Reformatted the effect description for markup purposes.
@@ -48,38 +50,48 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend transitions";
    string Notes       = "Allows optional blend modes to be applied during the transition";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgSampler = sampler_state
-{ 
-   Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fg, FgSampler);
+DefineInput (Bg, BgSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -189,8 +201,8 @@ float EaseAmountf(float ease) {
 
 float4 Default_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
    if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -208,8 +220,8 @@ float4 Default_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Add_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -236,8 +248,8 @@ float4 Add_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Subtract_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -264,8 +276,8 @@ float4 Subtract_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Multiply_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -287,8 +299,8 @@ float4 Multiply_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Screen_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -314,8 +326,8 @@ float4 Screen_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Overlay_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -351,8 +363,8 @@ float4 Overlay_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 SoftLight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -388,8 +400,8 @@ float4 SoftLight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Hardlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -425,8 +437,8 @@ float4 Hardlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Vividlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -463,8 +475,8 @@ float4 Vividlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Linearlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -500,8 +512,8 @@ float4 Linearlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLO
 //--------------------------------------------------------------//
 float4 Pinlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -537,8 +549,8 @@ float4 Pinlight_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Exclusion_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -564,8 +576,8 @@ float4 Exclusion_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Lighten_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -592,8 +604,8 @@ float4 Lighten_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Darken_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -620,8 +632,8 @@ float4 Darken_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Average_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -644,8 +656,8 @@ float4 Average_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Difference_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -671,8 +683,8 @@ float4 Difference_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Negation_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -699,8 +711,8 @@ float4 Negation_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 float4 Color_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
    float4 ret;
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -743,8 +755,8 @@ float4 Color_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 float4 Luminosity_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
    float4 ret;
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -786,8 +798,8 @@ float4 Luminosity_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Dodge_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -823,8 +835,8 @@ float4 Dodge_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 CBurn_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -858,8 +870,8 @@ float4 CBurn_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 LBurn_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -885,8 +897,8 @@ float4 LBurn_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 LMeld_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -914,8 +926,8 @@ float4 LMeld_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 DMeld_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -943,8 +955,8 @@ float4 DMeld_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 //--------------------------------------------------------------//
 float4 Reflect_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
+   float4 fg = GetPixel( FgSampler, xy1 );
+   float4 bg = GetPixel( BgSampler, xy2 );
     if (Bypass) {
       if (Amount < 0.5) return fg;
       else return bg;
@@ -981,28 +993,29 @@ float4 Reflect_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Default    { pass SinglePass { PixelShader = compile PROFILE Default_main(); } }
-technique Add        { pass SinglePass { PixelShader = compile PROFILE Add_main(); } }
-technique Subtract   { pass SinglePass { PixelShader = compile PROFILE Subtract_main(); } }
-technique Multiply   { pass SinglePass { PixelShader = compile PROFILE Multiply_main(); } }
-technique Screen     { pass SinglePass { PixelShader = compile PROFILE Screen_main(); } }
-technique Overlay    { pass SinglePass { PixelShader = compile PROFILE Overlay_main(); } }
-technique SoftLight  { pass SinglePass { PixelShader = compile PROFILE SoftLight_main(); } }
-technique Hardlight  { pass SinglePass { PixelShader = compile PROFILE Hardlight_main(); } }
-technique Vividlight { pass SinglePass { PixelShader = compile PROFILE Vividlight_main(); } }
-technique Linearlight{ pass SinglePass { PixelShader = compile PROFILE Linearlight_main(); } }
-technique Pinlight   { pass SinglePass { PixelShader = compile PROFILE Pinlight_main(); } }
-technique Exclusion  { pass SinglePass { PixelShader = compile PROFILE Exclusion_main(); } }
-technique Lighten    { pass SinglePass { PixelShader = compile PROFILE Lighten_main(); } }
-technique Darken     { pass SinglePass { PixelShader = compile PROFILE Darken_main(); } }
-technique Average    { pass SinglePass { PixelShader = compile PROFILE Average_main(); } }
-technique Difference { pass SinglePass { PixelShader = compile PROFILE Difference_main(); } }
-technique Negation { pass SinglePass { PixelShader = compile PROFILE Negation_main(); } }
-technique Color      { pass SinglePass { PixelShader = compile PROFILE Color_main(); } }
-technique Luminosity { pass SinglePass { PixelShader = compile PROFILE Luminosity_main(); } }
-technique Dodge      { pass SinglePass { PixelShader = compile PROFILE Dodge_main(); } }
-technique CBurn      { pass SinglePass { PixelShader = compile PROFILE CBurn_main(); } }
-technique LBurn      { pass SinglePass { PixelShader = compile PROFILE LBurn_main(); } }
-technique LMeld      { pass SinglePass { PixelShader = compile PROFILE LMeld_main(); } }
-technique DMeld      { pass SinglePass { PixelShader = compile PROFILE DMeld_main(); } }
-technique Reflect { pass SinglePass { PixelShader = compile PROFILE Reflect_main(); } }
+technique Default     { pass SinglePass ExecuteShader (Default_main)     }
+technique Add         { pass SinglePass ExecuteShader (Add_main)         }
+technique Subtract    { pass SinglePass ExecuteShader (Subtract_main)    }
+technique Multiply    { pass SinglePass ExecuteShader (Multiply_main)    }
+technique Screen      { pass SinglePass ExecuteShader (Screen_main)      }
+technique Overlay     { pass SinglePass ExecuteShader (Overlay_main)     }
+technique SoftLight   { pass SinglePass ExecuteShader (SoftLight_main)   }
+technique Hardlight   { pass SinglePass ExecuteShader (Hardlight_main)   }
+technique Vividlight  { pass SinglePass ExecuteShader (Vividlight_main)  }
+technique Linearlight { pass SinglePass ExecuteShader (Linearlight_main) }
+technique Pinlight    { pass SinglePass ExecuteShader (Pinlight_main)    }
+technique Exclusion   { pass SinglePass ExecuteShader (Exclusion_main)   }
+technique Lighten     { pass SinglePass ExecuteShader (Lighten_main)     }
+technique Darken      { pass SinglePass ExecuteShader (Darken_main)      }
+technique Average     { pass SinglePass ExecuteShader (Average_main)     }
+technique Difference  { pass SinglePass ExecuteShader (Difference_main)  }
+technique Negation    { pass SinglePass ExecuteShader (Negation_main)    }
+technique Color       { pass SinglePass ExecuteShader (Color_main)       }
+technique Luminosity  { pass SinglePass ExecuteShader (Luminosity_main)  }
+technique Dodge       { pass SinglePass ExecuteShader (Dodge_main)       }
+technique CBurn       { pass SinglePass ExecuteShader (CBurn_main)       }
+technique LBurn       { pass SinglePass ExecuteShader (LBurn_main)       }
+technique LMeld       { pass SinglePass ExecuteShader (LMeld_main)       }
+technique DMeld       { pass SinglePass ExecuteShader (DMeld_main)       }
+technique Reflect     { pass SinglePass ExecuteShader (Reflect_main)     }
+

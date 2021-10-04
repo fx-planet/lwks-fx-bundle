@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2021-07-24
 // @Author jwrl
-// @Created 2016-02-10
+// @Created 2021-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourTile_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourTile.mp4
 
@@ -20,22 +20,10 @@
 //
 // Version history:
 //
-// Modified 2020-07-31 jwrl.
-// Changed sampling profile generation.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 2018-04-28 by jwrl.
-// This effect was originally developed not long after Dx_Blocks.fx, but never released.
-// At the time I was using a simple noise source to generate the coloured tiles but was
-// never happy with the result.  There was way too much white for my liking.  However I
-// found it while going through my development history, did some code cleanup, changed
-// the noise generation shader to the one I now use here, and this is the result.
+// Built 2021-07-24 jwrl.
+// Build date does not reflect upload date because of forum upload problems.
+// This rebuild addresses a problem with the original mosaic generation when applied to
+// sources of differing aspect ratios and/or sizes.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,25 +33,69 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Geometric transitions";
    string Notes       = "Transitions between images using a mosaic pattern of highly coloured tiles";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define HALF_PI 1.5707963268
+#define SCALE   float3(1.2, 0.8, 1.0)     // According to my made-up theory this should be
+                                          // 0.8, 1.2, 1.0, but that doesn't look as good
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-texture Tiles : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Outgoing = sampler_state { Texture = <Fg>; };
-sampler s_Incoming = sampler_state { Texture = <Bg>; };
-
-sampler s_Tiles = sampler_state { Texture = <Tiles>; };
+DefineTarget (Tiles, s_Tiles);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -86,28 +118,17 @@ float TileSize
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define TWO_PI  6.2831853072
-#define HALF_PI 1.5707963268
-
-#define SCALE   float3(1.2, 0.8, 1.0)     // According to my made-up theory this should be
-                                          // 0.8, 1.2, 1.0, but that doesn't look as good
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 // This sets up a mix between the two sources and uses it to generate a colour pseudo
 // random noise pattern which in turn is later used to generate the mosaic wipe.
 
-float4 ps_mix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_mix (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s_Outgoing, xy1);
+   float4 retval = GetPixel (s_Foreground, uv1);
 
-   retval = lerp (retval, tex2D (s_Incoming, xy2), Amount);
+   retval = lerp (retval, GetPixel (s_Background, uv2), Amount);
 
    // This next section was produced empirically.  What I wanted was to produce colour
    // noise that was more than just RGB pixels, but more subtle mixes of those primaries.
@@ -116,7 +137,7 @@ float4 ps_mix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    float a, b;
 
    sincos (Amount * HALF_PI, a, b);
-   retval.rgb = min (abs (retval.rgb - float3 (a, b, frac ((xy1.x + xy1.y) * 1.2345 + Amount))), 1.0);
+   retval.rgb = min (abs (retval.rgb - float3 (a, b, frac ((uv1.x + uv1.y) * 1.2345 + Amount))), 1.0);
    retval.a   = 1.0;
 
    float3 x = retval.aga;
@@ -128,47 +149,41 @@ float4 ps_mix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
    float Tscale  = TileSize * 0.2;                    // Prescale the tile size by 1/5
-   float mosaic  = max (0.00000001, Tscale * 0.2);    // Scale mosaic and prevent zero values
 
-   // We perform a slight zoom which is dependant on the tile size.  This is a nice
-   // enhancement to the effect and also has the effect of ensuring that we never run
-   // off the edges of the noise pattern when sampling the mosaic.
+   // Generate the mosaic size, compensating for the aspect ratio
 
-   float2 xy = (uv * (1.0 - Tscale)) + (Tscale * 0.5).xx;
+   float2 mosaic = float2 (1.0, _OutputAspectRatio) * max (1.0e-6, Tscale * 0.2);
 
-   // Generate the mosaic addressing, compensating for the aspect ratio
+   // We perform a slight zoom which is dependent on the tile size.  This ensures that
+   // we never run off the edges of the noise pattern when sampling the mosaic.  The
+   // mosaic address is generated for each of the three video sources, which are Fg,
+   // Bg and sequence.
 
-   xy.x    = (round ((xy.x - 0.5) / mosaic) * mosaic) + 0.5;
-   mosaic *= _OutputAspectRatio;
-   xy.y    = (round ((xy.y - 0.5) / mosaic) * mosaic) + 0.5;
+   float2 Mscale = (1.0 - Tscale) / mosaic;
+
+   float2 xy1 = (round ((uv1 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
+   float2 xy2 = (round ((uv2 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
+   float2 xy3 = (round ((uv3 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
 
    // This recovers the required input depending on whether the transition has passed the
-   // halfway point or not.  It also recovers a gated version of the same source for use
-   // in generating the coloured mosaic tiles.
+   // halfway point or not.  It also recovers a gated version of the source to be used in
+   // generating the coloured mosaic tiles.
 
-   float4 retval, gating;
-
-   if (Amount < 0.5) {
-      retval = tex2D (s_Outgoing, uv);
-      gating = tex2D (s_Outgoing, xy);
-   }
-   else {
-      retval = tex2D (s_Incoming, uv);
-      gating = tex2D (s_Incoming, xy);
-   }
+   float4 gating = lerp (GetPixel (s_Foreground, xy1), GetPixel (s_Background, xy2), Amount);
+   float4 retval = (Amount < 0.5) ? GetPixel (s_Foreground, uv1) : GetPixel (s_Background, uv2);
 
    // The reference tile level depending on the luminance value of the gated source is now
-   // calculated, and a range value that curves from 1.0 to 0.0 to 1.0 again is produced.
+   // calculated, and a range value that runs from 1.0 to 0.0 back to 1.0 again is produced.
 
    float level = max (gating.r, max (gating.g, gating.b));
-   float range = (cos (Amount * TWO_PI) + 1.0) * 0.5;
+   float range = abs (Amount - 0.5) * 2.0;
 
    // Finally if the gating level exceeds the expected range we show the tile colour.
 
-   return (level >= range) ? tex2D (s_Tiles, xy) : retval;
+   return (level >= range) ? GetPixel (s_Tiles, xy3) : retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -177,10 +192,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique ColourMod
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Tiles;"; > 
-   { PixelShader = compile PROFILE ps_mix (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Tiles;"; > ExecuteShader (ps_mix)
+   pass P_2 ExecuteShader (ps_main)
 }
+

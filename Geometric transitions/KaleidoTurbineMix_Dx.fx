@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-31
+// @Released 2021-07-25
 // @Author schrauber
 // @Created 2016-08-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/KaleidoTurbine_640.png
@@ -21,8 +21,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-31 jwrl.
-// Reformatted the effect header.
+// Modified 2021-07-25 jwrl.
+// Added support for 2021 resolution independence.
+// This date does not reflect the upload date because of forum upload problems.
 //
 // Modified 28 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -47,39 +48,69 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Geometric transitions";
    string Notes       = "Uses a kaleidoscope pattern to transition between two clips";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define HALF_PI 1.5707963268
+#define PI      3.1415926536
+#define TWO_PI  6.2831853072
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FGSampler = sampler_state
-{
-   Texture = <Fg>;
-   MINFILTER = LINEAR;
-   MIPFILTER = LINEAR;
-   MAGFILTER = LINEAR;
-   ADDRESSU  = MIRROR;
-   ADDRESSV  = MIRROR;
-};
-
-sampler BGSampler = sampler_state
-{
-   Texture = <Bg>;
-   MINFILTER = LINEAR;
-   MIPFILTER = LINEAR;
-   MAGFILTER = LINEAR;
-   ADDRESSU  = MIRROR;
-   ADDRESSV  = MIRROR;
-
-};
+DefineTarget (RawFg, FGSampler);
+DefineTarget (RawBg, BGSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -87,11 +118,11 @@ sampler BGSampler = sampler_state
 
 float amount
 <
-	string Description = "Amount";
-	float MinVal = 0.0;
-	float MaxVal = 1.0;
-        float KF0    = 0.0;
-        float KF1    = 1.0;
+   string Description = "Amount";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+   float KF0    = 0.0;
+   float KF1    = 1.0;
 > = 0.5;
 
 float Zoom
@@ -119,28 +150,28 @@ float PosY
 
 bool fan
 <
-	string Description = "Fan";
-> = true;
+   string Description = "Fan";
+> = false;
 
-#pragma warning ( disable : 3571 )
-
-
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Functions
-//--------------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 
 // This function added to mimic the GLSL mod() function
 
-float mod(float x, float y)
+float mod (float x, float y)
 {
-  return x - y * floor(x/y);
+   return x - y * floor (x/y);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main( float2 xy1 : TEXCOORD1 ) : COLOR 
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 main( float2 xy1 : TEXCOORD3 ) : COLOR 
 {
 
      float4 color;                 // to output
@@ -181,10 +212,9 @@ float4 main( float2 xy1 : TEXCOORD1 ) : COLOR
 
 technique SimpleTechnique
 {
-pass MainPass
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
 
-   {
-      PixelShader = compile PROFILE main();
-   }
-
+   pass MainPass ExecuteShader (main)
 }
+

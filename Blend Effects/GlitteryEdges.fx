@@ -1,13 +1,16 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-08-11
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-08-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/GlitterEdge_640.png
 
 /**
  This effect generates a border from a title or graphic with an alpha channel.  It then adds
  noise generated four pointed stars to that border to create a sparkle/glitter effect to the
  edges of the title or graphic.  Star colour, density, length and rotation are adjustable.
+
+ As part of the resolution independence support, it's also now possible to optionally
+ crop the foreground to the boundaries of the background.  This is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,8 +23,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-08-11 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -60,11 +64,11 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define DefineTarget(TARGET, TSAMPLE) \
+#define DefineTarget(TARGET, SAMPLER) \
                                       \
  texture TARGET : RenderColorTarget;  \
                                       \
- sampler TSAMPLE = sampler_state      \
+ sampler SAMPLER = sampler_state      \
  {                                    \
    Texture   = <TARGET>;              \
    AddressU  = ClampToEdge;           \
@@ -73,6 +77,13 @@ Wrong_Lightworks_version
    MagFilter = Linear;                \
    MipFilter = Linear;                \
  }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define DELTANG     25
 #define ANGLE       0.1256637061
@@ -87,14 +98,15 @@ float _Length;
 float _Progress;
 float _OutputAspectRatio;
 
-#define EMPTY    (0.0).xxxx
-
 //-----------------------------------------------------------------------------------------//
 // Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
+
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 DefineTarget (Border, s_Border);
 DefineTarget (Sparkle, s_Sparkle);
@@ -193,49 +205,19 @@ float4 Colour
 
 int Source
 <
-   string Description = "Source selection (disconnect title and image key inputs)";
+   string Group = "Disconnect title and image key inputs";
+   string Description = "Source selection";
    string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = 1;
+
+bool CropToBgd
+<
+   string Description = "Crop to background";
+> = true;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-float4 fn_key2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   if (max (xy.x, xy.y) > 0.5) return EMPTY;
-
-   float4 Fgd = tex2D (s, uv);
-
-   if (Fgd.a == 0.0) return EMPTY;
-
-   if (Source == 0) {
-      Fgd.a    = pow (Fgd.a, 0.5);
-      Fgd.rgb /= Fgd.a;
-   }
-   else if (Source == 2) {
-      float4 Bgd = fn_tex2D (s_Background, uv);
-
-      float kDiff = distance (Fgd.g, Bgd.g);
-
-      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
-
-      Fgd.a = smoothstep (0.0, 0.25, kDiff);
-      Fgd.rgb *= Fgd.a;
-   }
-
-   return Fgd;
-}
 
 float3 fn_noise (float2 uv)
 {
@@ -254,7 +236,34 @@ float3 fn_noise (float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_border_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_initFg (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+{
+   float4 Fgd = GetPixel (s_RawFg, uv1);
+
+   if (Fgd.a == 0.0) return EMPTY;
+
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      float4 Bgd = GetPixel (s_Background, uv3);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
+   }
+
+   return Fgd;
+}
+
+float4 ps_border_1 (float2 uv : TEXCOORD3) : COLOR
 {
    float2 pixsize = float2 (1.0, _OutputAspectRatio) * (EdgeWidth + 0.1) * A_SCALE;
    float2 offset, scale;
@@ -265,19 +274,19 @@ float4 ps_border_1 (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      border += fn_key2D (s_Foreground, uv + offset).a;
-      border += fn_key2D (s_Foreground, uv - offset).a;
+      border += GetPixel (s_Foreground, uv + offset).a;
+      border += GetPixel (s_Foreground, uv - offset).a;
       angle += ANGLE;
    }
 
    border = (border / DELTANG) - 1.0;
    border = (border > 0.95) ? 0.0 : 1.0;
-   border = min (border, fn_key2D (s_Foreground, uv).a);
+   border = min (border, GetPixel (s_Foreground, uv).a);
 
    return border.xxxx;
 }
 
-float4 ps_border_2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_2 (float2 uv : TEXCOORD3) : COLOR
 {
    float2 pixsize = float2 (1.0, _OutputAspectRatio) * B_SCALE;
    float2 offset, scale;
@@ -288,8 +297,8 @@ float4 ps_border_2 (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      border += fn_tex2D (s_Sample_2, uv + offset).a;
-      border += fn_tex2D (s_Sample_2, uv - offset).a;
+      border += GetPixel (s_Sample_2, uv + offset).a;
+      border += GetPixel (s_Sample_2, uv - offset).a;
       angle += ANGLE;
    }
 
@@ -300,14 +309,14 @@ float4 ps_border_2 (float2 uv : TEXCOORD1) : COLOR
    return float4 (retval, border);
 }
 
-float4 ps_threshold (float2 uv : TEXCOORD1) : COLOR
+float4 ps_threshold (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = fn_tex2D (s_Border, uv);
+   float4 retval = GetPixel (s_Border, uv);
 
-   return ((retval.r + retval.g + retval.b) / 3.0 < Threshold) ? 0.0.xxxx : retval;
+   return ((retval.r + retval.g + retval.b) / 3.0 < Threshold) ? EMPTY : retval;
 }
 
-float4 ps_stretch_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_stretch_1 (float2 uv : TEXCOORD3) : COLOR
 {
    float3 delt, ret = 0.0.xxx;
 
@@ -323,10 +332,10 @@ float4 ps_stretch_1 (float2 uv : TEXCOORD1) : COLOR
    xy2.y *= _OutputAspectRatio;
 
    for (int i = 0; i < 20; i++) {
-      delt = fn_tex2D (s_Sample_1, uv + xy3).rgb;
-      delt = max (delt, fn_tex2D (s_Sample_1, uv - xy3).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_1, uv + xy4).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_1, uv - xy4).rgb);
+      delt = GetPixel (s_Sample_1, uv + xy3).rgb;
+      delt = max (delt, GetPixel (s_Sample_1, uv - xy3).rgb);
+      delt = max (delt, GetPixel (s_Sample_1, uv + xy4).rgb);
+      delt = max (delt, GetPixel (s_Sample_1, uv - xy4).rgb);
       delt *= 1.0 - (i / 40.0);
       ret += delt;
       xy3 += xy1;
@@ -336,7 +345,7 @@ float4 ps_stretch_1 (float2 uv : TEXCOORD1) : COLOR
    return float4 (ret, 1.0);
 }
 
-float4 ps_stretch_2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_stretch_2 (float2 uv : TEXCOORD3) : COLOR
 {
    float3 delt, ret = 0.0.xxx;
 
@@ -355,29 +364,29 @@ float4 ps_stretch_2 (float2 uv : TEXCOORD1) : COLOR
    xy2 = xy4 * 0.05;
 
    for (int i = 0; i < 20; i++) {
-      delt = fn_tex2D (s_Sample_1, uv + xy3).rgb;
-      delt = max (delt, fn_tex2D (s_Sample_1, uv - xy3).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_1, uv + xy4).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_1, uv - xy4).rgb);
+      delt = GetPixel (s_Sample_1, uv + xy3).rgb;
+      delt = max (delt, GetPixel (s_Sample_1, uv - xy3).rgb);
+      delt = max (delt, GetPixel (s_Sample_1, uv + xy4).rgb);
+      delt = max (delt, GetPixel (s_Sample_1, uv - xy4).rgb);
       delt *= 0.5 - (i / 40.0);
       ret += delt;
       xy3 += xy1;
       xy4 += xy2;
    }
 
-   ret = (ret + fn_tex2D (s_Sample_2, uv).rgb) / 3.6;
+   ret = (ret + GetPixel (s_Sample_2, uv).rgb) / 3.6;
 
    return float4 (ret, 1.0);
 }
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgd = fn_key2D (s_Foreground, xy1);
-   float4 Bgd = fn_tex2D (s_Background, xy2);
+   float4 Fgd = GetPixel (s_Foreground, uv3);
+   float4 Bgd = GetPixel (s_Background, uv3);
 
-   float4 glint  = fn_tex2D (s_Sparkle, xy1);
+   float4 glint  = GetPixel (s_Sparkle, uv3);
    float4 retval = lerp (Bgd, Fgd, Fgd.a * Opacity);
-   float4 border = fn_tex2D (s_Border, xy1);
+   float4 border = GetPixel (s_Border, uv3);
 
    border.rgb = Colour.rgb * 0.95;
 
@@ -385,7 +394,7 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    glint  = saturate (retval + glint - (glint * retval));
    retval = lerp (retval, glint, Strength);
 
-   return lerp (Bgd, retval, Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgd, retval, Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -394,26 +403,13 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique GlitteryEdges
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Sample_2;"; >
-   { PixelShader = compile PROFILE ps_border_1 (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Border;"; >
-   { PixelShader = compile PROFILE ps_border_2 (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Sample_1;"; >
-   { PixelShader = compile PROFILE ps_threshold (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Sample_2;"; >
-   { PixelShader = compile PROFILE ps_stretch_1 (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Sparkle;"; >
-   { PixelShader = compile PROFILE ps_stretch_2 (); }
-
-   pass P_6
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_1 < string Script = "RenderColorTarget0 = Sample_2;"; > ExecuteShader (ps_border_1)
+   pass P_2 < string Script = "RenderColorTarget0 = Border;"; > ExecuteShader (ps_border_2)
+   pass P_3 < string Script = "RenderColorTarget0 = Sample_1;"; > ExecuteShader (ps_threshold)
+   pass P_4 < string Script = "RenderColorTarget0 = Sample_2;"; > ExecuteShader (ps_stretch_1)
+   pass P_5 < string Script = "RenderColorTarget0 = Sparkle;"; > ExecuteShader (ps_stretch_2)
+   pass P_6 ExecuteShader (ps_main)
 }
+

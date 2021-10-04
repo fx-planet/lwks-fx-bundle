@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-05-19
+// @Released 2021-08-11
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-08-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/EnhancedBlend_640.png
 
 /**
@@ -9,6 +9,9 @@
  alpha channel (transparency) to match the blending used by title effects.  It can help
  when using titles with their inputs disconnected and used with other effects such as DVEs.
  It also closely emulates most of the Photoshop blend modes.
+
+ As part of the resolution independence support, it's also now possible to optionally
+ crop the foreground to the boundaries of the background.  This is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,12 +19,9 @@
 //
 // Version history:
 //
-// Update 2021-05-19 jwrl.
-// Added Compileshader macro to simplify the techniques section.
-//
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-08-11 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
-// Reworded title input warning.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -60,13 +60,26 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
 #define EMPTY 0.0.xxxx
 
-#define IsBad(XY) any(saturate (XY) - XY)
-
-#define GetPixel(SAMPLER, XY) IsBad (XY) ? EMPTY : tex2D (SAMPLER, XY)
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define CrR    0.439
 #define CrG    0.368
@@ -92,8 +105,11 @@ Wrong_Lightworks_version
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (fg, s_Foreground);
-DefineInput (bg, s_Background);
+DefineInput (fg, s_RawFg);
+DefineInput (bg, s_RawBg);
+
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -101,9 +117,9 @@ DefineInput (bg, s_Background);
 
 int Source
 <
-   string Group = "Disconnect the input to a title or image key effect";
-   string Description = "Source type";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted Fg (delta key)";
+   string Group = "Disconnect title and image key inputs";
+   string Description = "Source selection";
+   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = TITLE_FX;
 
 float Amount
@@ -119,34 +135,14 @@ int SetTechnique
    string Enum = "Normal,Export fg with alpha,____________________,Darken,Multiply,Colour Burn,Linear Burn,Darker Colour,____________________,Lighten,Screen,Colour Dodge,Linear Dodge (Add),Lighter Colour,____________________,Overlay,Soft Light,Hard Light,Vivid Light,Linear Light,Pin Light,Hard Mix,____________________,Difference,Exclusion,Subtract,Divide,____________________,Hue,Saturation,Colour,Luminosity";
 > = 0;
 
+bool CropToBgd
+<
+   string Description = "Crop to background";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
-
-float4 fn_key2D (sampler s, float2 uv)
-{
-   float4 Fgd = GetPixel (s, uv);
-
-   if (Fgd.a == 0.0) return EMPTY;
-
-   if (Source == TITLE_FX) {
-      Fgd.a    = pow (Fgd.a, 0.5);
-      Fgd.rgb /= Fgd.a;
-   }
-   else if (Source == DELTA_KEY) {
-      float4 Bgd = GetPixel (s_Background, uv);
-
-      float kDiff = distance (Fgd.g, Bgd.g);
-
-      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
-
-      Fgd.a = smoothstep (0.0, 0.25, kDiff);
-      Fgd.rgb *= Fgd.a;
-   }
-
-   return Fgd;
-}
 
 float4 fn_rgb2hsv (float4 rgb)
 {
@@ -193,141 +189,161 @@ float4 fn_hsv2rgb (float4 hsv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
-{
-   float4 Fgnd =  fn_key2D (s_Foreground, xy1);
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
 
-   return lerp (GetPixel (s_Background, xy2), Fgnd, Fgnd.a * Amount);
+float4 ps_initFg (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+{
+   float4 Fgd = GetPixel (s_RawFg, uv1);
+
+   if (Fgd.a == 0.0) return EMPTY;
+
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      float4 Bgd = GetPixel (s_Background, uv3);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
+   }
+
+   return Fgd;
 }
 
-float4 ps_export (float2 uv : TEXCOORD1) : COLOR
-{
-   return fn_key2D (s_Foreground, uv);
-}
+//-------------------------------------- ^^ INIT ^^ ---------------------------------------//
 
-float4 ps_dummy (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   return GetPixel (s_Background, uv);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
+
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 //--------------------------------------- GROUP 1 -----------------------------------------//
 
-float4 ps_darken (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_darken (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = min (Fgnd.rgb, Bgnd.rgb);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_multiply (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_multiply (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb *= Bgnd.rgb;
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_colourBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_colourBurn (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    if (Fgnd.r > 0.0) Fgnd.r = 1.0 - ((1.0 - Bgnd.r) / Fgnd.r);
    if (Fgnd.g > 0.0) Fgnd.g = 1.0 - ((1.0 - Bgnd.g) / Fgnd.g);
    if (Fgnd.b > 0.0) Fgnd.b = 1.0 - ((1.0 - Bgnd.b) / Fgnd.b);
 
-   return lerp (Bgnd, min (Fgnd, WHITE), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, min (Fgnd, WHITE), Fgnd.a * Amount);
 }
 
-float4 ps_linearBurn (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_linearBurn (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = max (Fgnd.rgb + Bgnd.rgb - 1.0.xxx, 0.0.xxx);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_darkerColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_darkerColour (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float luma = dot (Bgnd, LUMA);
 
    if (dot (Fgnd, LUMA) > luma) Fgnd.rgb = Bgnd.rgb;
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 //--------------------------------------- GROUP 2 -----------------------------------------//
 
-float4 ps_lighten (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_lighten (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = max (Fgnd.rgb, Bgnd.rgb);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_screen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_screen (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb - (Fgnd.rgb * Bgnd.rgb));
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_colourDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_colourDodge (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.r = (Fgnd.r == 1.0) ? 1.0 : Bgnd.r / (1.0 - Fgnd.r);
    Fgnd.g = (Fgnd.g == 1.0) ? 1.0 : Bgnd.g / (1.0 - Fgnd.g);
    Fgnd.b = (Fgnd.b == 1.0) ? 1.0 : Bgnd.b / (1.0 - Fgnd.b);
 
-   return lerp (Bgnd, min (Fgnd, WHITE), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, min (Fgnd, WHITE), Fgnd.a * Amount);
 }
 
-float4 ps_linearDodge (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_linearDodge (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = min (Fgnd.rgb + Bgnd.rgb, 1.0.xxx);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_lighterColour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_lighterColour (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float  luma = dot (Bgnd, LUMA);
 
    if (dot (Fgnd, LUMA) < luma) Fgnd.rgb = Bgnd.rgb;
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 //--------------------------------------- GROUP 3 -----------------------------------------//
 
-float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_overlay (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float3 retMin = 2.0 * Bgnd.rgb * Fgnd.rgb;
    float3 retMax = 1.0.xxx - 2.0 * (1.0.xxx - Fgnd.rgb) * (1.0.xxx - Bgnd.rgb);
@@ -336,13 +352,13 @@ float4 ps_overlay (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.g = (Bgnd.g <= 0.5) ? retMin.g : retMax.g;
    Fgnd.b = (Bgnd.b <= 0.5) ? retMin.b : retMax.b;
 
-   return lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
 }
 
-float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_softLight (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float3 retMax = (2.0 * Fgnd.rgb) - 1.0.xxx;
    float3 retMin = Bgnd.rgb * (retMax * (1.0.xxx - Bgnd.rgb) + 1.0.xxx);
@@ -354,13 +370,13 @@ float4 ps_softLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.g = (Fgnd.g <= 0.5) ? retMin.g : retMax.g;
    Fgnd.b = (Fgnd.b <= 0.5) ? retMin.b : retMax.b;
 
-   return lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
 }
 
-float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_hardLight (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float3 retMin = saturate (2.0 * Bgnd.rgb * Fgnd.rgb);
    float3 retMax = saturate (1.0.xxx - 2.0 * (1.0.xxx - Bgnd.rgb) * (1.0.xxx - Fgnd.rgb));
@@ -369,13 +385,13 @@ float4 ps_hardLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.g = (Fgnd.g < 0.5) ? retMin.g : retMax.g;
    Fgnd.b = (Fgnd.b < 0.5) ? retMin.b : retMax.b;
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_vividLight (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float3 retMax, retMin;
 
@@ -394,13 +410,13 @@ float4 ps_vividLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.g = (Fgnd.g < 0.5) ? retMin.g : retMax.g;
    Fgnd.b = (Fgnd.b < 0.5) ? retMin.b : retMax.b;
 
-   return lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
 }
 
-float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_linearLight (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
    float4 retMin = max ((2.0 * Fgnd) + Bgnd - WHITE, EMPTY);
    float4 retMax = min ((2.0 * Fgnd) + Bgnd - WHITE, WHITE);
 
@@ -408,13 +424,13 @@ float4 ps_linearLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.g = (Fgnd.g < 0.5) ? retMin.g : retMax.g;
    Fgnd.b = (Fgnd.b < 0.5) ? retMin.b : retMax.b;
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_pinLight (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float3 retMax = 2.0 * Fgnd.rgb;
    float3 retMin = retMax - 1.0.xxx;
@@ -423,13 +439,13 @@ float4 ps_pinLight (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.g = (Bgnd.g > retMax.g) ? retMax.g : (Bgnd.g < retMin.g) ? retMin.g : Bgnd.g;
    Fgnd.b = (Bgnd.b > retMax.b) ? retMax.b : (Bgnd.b < retMin.b) ? retMin.b : Bgnd.b;
 
-   return lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, saturate (Fgnd), Fgnd.a * Amount);
 }
 
-float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_hardMix (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    float3 ref = 1.0.xxx - Bgnd.rgb;
 
@@ -437,147 +453,308 @@ float4 ps_hardMix (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.g = (Fgnd.g < ref.g) ? 0.0 : 1.0;
    Fgnd.b = (Fgnd.b < ref.b) ? 0.0 : 1.0;
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 //--------------------------------------- GROUP 4 -----------------------------------------//
 
-float4 ps_difference (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_difference (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = abs (Fgnd.rgb - Bgnd.rgb);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_exclusion (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_exclusion (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = saturate (Fgnd.rgb + Bgnd.rgb * (1.0.xxx - (2.0 * Fgnd.rgb)));
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_subtract (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_subtract (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.rgb = max (Bgnd.rgb - Fgnd.rgb, 0.0.xxx);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
-float4 ps_divide (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_divide (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
    Fgnd.r = (Fgnd.r == 0.0) ? 1.0 : min (Bgnd.r / Fgnd.r, 1.0);
    Fgnd.g = (Fgnd.g == 0.0) ? 1.0 : min (Bgnd.g / Fgnd.g, 1.0);
    Fgnd.b = (Fgnd.b == 0.0) ? 1.0 : min (Bgnd.b / Fgnd.b, 1.0);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 }
 
 //--------------------------------------- GROUP 5 -----------------------------------------//
 
-float4 ps_hue (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_hue (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
    blnd.xw = (fn_rgb2hsv (Fgnd)).xw;
 
-   return lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
 }
 
-float4 ps_saturation (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_saturation (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
    blnd.yw = fn_rgb2hsv (Fgnd).yw;
 
-   return lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
 }
 
-float4 ps_colour (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_colour (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
    float4 blnd = fn_rgb2hsv (Fgnd);
 
    blnd.x = (fn_rgb2hsv (Bgnd)).x;
 
-   return lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
 }
 
-float4 ps_luminosity (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_luminosity (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_key2D (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Fgnd = GetPixel (s_Foreground, uv3);
+   float4 Bgnd = GetPixel (s_Background, uv3);
    float4 blnd = fn_rgb2hsv (Bgnd);
 
    blnd.zw = (fn_rgb2hsv (Fgnd)).zw;
 
-   return lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, fn_hsv2rgb (blnd), Fgnd.a * Amount);
 }
 
 //-----------------------------------------------------------------------------------------//;
 // Techniques;
 //-----------------------------------------------------------------------------------------//;
 
-technique Normal        { pass P_01 CompileShader (ps_main) }
-technique Export        { pass P_02 CompileShader (ps_export) }
+technique Normal
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_01 ExecuteShader (ps_main)
+}
+
+technique Export
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_02 ExecuteShader (ps_initFg)
+}
 
 //--------------------------------------- GROUP 1 -----------------------------------------//
 
-technique Group_1       { pass P_10 CompileShader (ps_dummy) }
-technique Darken        { pass P_11 CompileShader (ps_darken) }
-technique Multiply      { pass P_12 CompileShader (ps_multiply) }
-technique ColourBurn    { pass P_13 CompileShader (ps_colourBurn) }
-technique LinearBurn    { pass P_14 CompileShader (ps_linearBurn) }
-technique DarkerColour  { pass P_15 CompileShader (ps_darkerColour) }
+technique Group_1 { pass P_10 ExecuteShader (ps_initBg) }
+
+technique Darken
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_11 ExecuteShader (ps_darken)
+}
+
+technique Multiply
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_12 ExecuteShader (ps_multiply)
+}
+
+technique ColourBurn
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_13 ExecuteShader (ps_colourBurn)
+}
+
+technique LinearBurn
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_14 ExecuteShader (ps_linearBurn)
+}
+
+technique DarkerColour
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_15 ExecuteShader (ps_darkerColour)
+}
 
 //--------------------------------------- GROUP 2 -----------------------------------------//
 
-technique Group_2       { pass P_20 CompileShader (ps_dummy) }
-technique Lighten       { pass P_21 CompileShader (ps_lighten) }
-technique Screen        { pass P_22 CompileShader (ps_screen) }
-technique ColourDodge   { pass P_23 CompileShader (ps_colourDodge) }
-technique LinearDodge   { pass P_24 CompileShader (ps_linearDodge) }
-technique LighterColour { pass P_25 CompileShader (ps_lighterColour) }
+technique Group_2 { pass P_20 ExecuteShader (ps_initBg) }
+
+technique Lighten
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_21 ExecuteShader (ps_lighten)
+}
+
+technique Screen
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_22 ExecuteShader (ps_screen)
+}
+
+technique ColourDodge
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_23 ExecuteShader (ps_colourDodge)
+}
+
+technique LinearDodge
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_24 ExecuteShader (ps_linearDodge)
+}
+
+technique LighterColour
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_25 ExecuteShader (ps_lighterColour)
+}
 
 //--------------------------------------- GROUP 3 -----------------------------------------//
 
-technique Group_3       { pass P_30 CompileShader (ps_dummy) }
-technique Overlay       { pass P_31 CompileShader (ps_overlay) }
-technique SoftLight     { pass P_32 CompileShader (ps_softLight) }
-technique Hardlight     { pass P_33 CompileShader (ps_hardLight) }
-technique Vividlight    { pass P_34 CompileShader (ps_vividLight) }
-technique Linearlight   { pass P_35 CompileShader (ps_linearLight) }
-technique Pinlight      { pass P_36 CompileShader (ps_pinLight) }
-technique HardMix       { pass P_37 CompileShader (ps_hardMix) }
+technique Group_3 { pass P_30 ExecuteShader (ps_initBg) }
+
+technique Overlay
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_31 ExecuteShader (ps_overlay)
+}
+
+technique SoftLight
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_32 ExecuteShader (ps_softLight)
+}
+
+technique Hardlight
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_33 ExecuteShader (ps_hardLight)
+}
+
+technique Vividlight
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_34 ExecuteShader (ps_vividLight)
+}
+
+technique Linearlight
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_35 ExecuteShader (ps_linearLight)
+}
+
+technique Pinlight
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_36 ExecuteShader (ps_pinLight)
+}
+
+technique HardMix
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_37 ExecuteShader (ps_hardMix)
+}
 
 //--------------------------------------- GROUP 4 -----------------------------------------//
 
-technique Group_4       { pass P_40 CompileShader (ps_dummy) }
-technique Difference    { pass P_41 CompileShader (ps_difference) }
-technique Exclusion     { pass P_42 CompileShader (ps_exclusion) }
-technique Subtract      { pass P_43 CompileShader (ps_subtract) }
-technique Divide        { pass P_44 CompileShader (ps_divide) }
+technique Group_4 { pass P_40 ExecuteShader (ps_initBg) }
+
+technique Difference
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_41 ExecuteShader (ps_difference)
+}
+
+technique Exclusion
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_42 ExecuteShader (ps_exclusion)
+}
+
+technique Subtract
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_43 ExecuteShader (ps_subtract)
+}
+
+technique Divide
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_44 ExecuteShader (ps_divide)
+}
 
 //--------------------------------------- GROUP 5 -----------------------------------------//
 
-technique Group_5       { pass P_50 CompileShader (ps_dummy) }
-technique Hue           { pass P_51 CompileShader (ps_hue) }
-technique Saturation    { pass P_52 CompileShader (ps_saturation) }
-technique Colour        { pass P_53 CompileShader (ps_colour) }
-technique Luminosity    { pass P_54 CompileShader (ps_luminosity) }
+technique Group_5 { pass P_50 ExecuteShader (ps_initBg) }
+
+technique Hue
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_51 ExecuteShader (ps_hue)
+}
+
+technique Saturation
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_52 ExecuteShader (ps_saturation)
+}
+
+technique Colour
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_53 ExecuteShader (ps_colour)
+}
+
+technique Luminosity
+{
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_54 ExecuteShader (ps_luminosity)
+}
+

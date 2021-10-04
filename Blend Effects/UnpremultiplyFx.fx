@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-08-09
 // @Author baopao
 // @Created 2015-11-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Unpremultiply_640.png
@@ -14,8 +14,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Update 2021-08-09 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Release date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,22 +30,6 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-texture Inp;
-
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
@@ -56,7 +41,32 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-#define EMPTY   0.0.xxxx
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
+// Input
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Shader
@@ -64,11 +74,7 @@ Wrong_Lightworks_version
 
 float4 main (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 xy = abs (uv - 0.5.xx);
-
-   if (max (xy.x, xy.y) > 0.5) return EMPTY;
-
-   float4 color = tex2D (s_Input, uv);
+   float4 color = GetPixel (s_Input, uv);
 
    color.rgb /= color.a;
 
@@ -81,6 +87,6 @@ float4 main (float2 uv : TEXCOORD1) : COLOR
 
 technique SimpleTechnique
 {
-   pass MainPass
-   { PixelShader = compile PROFILE main (); }
+   pass MainPass ExecuteShader (main)
 }
+

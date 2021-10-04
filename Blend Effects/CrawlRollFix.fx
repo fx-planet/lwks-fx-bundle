@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-08-11
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-08-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/SmoothRoll_640.png
 
 /**
@@ -19,8 +19,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-08-11 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,27 +60,32 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define DefineTarget(TARGET, TSAMPLE) \
+#define DefineTargetAddress(TARGET, SAMPLER, ADDRESS) \
                                       \
  texture TARGET : RenderColorTarget;  \
                                       \
- sampler TSAMPLE = sampler_state      \
+ sampler SAMPLER = sampler_state      \
  {                                    \
    Texture   = <TARGET>;              \
-   AddressU  = Mirror;                \
-   AddressV  = Mirror;                \
+   AddressU  = ADDRESS;               \
+   AddressV  = ADDRESS;               \
    MinFilter = Linear;                \
    MagFilter = Linear;                \
    MipFilter = Linear;                \
  }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define STRENGTH  0.00125
 
 float _OutputAspectRatio;
 
 float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
-
-#define EMPTY    (0.0).xxxx
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and targets
@@ -88,7 +94,7 @@ float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375, 0.0537109375, 0
 DefineInput (Fg, s_Foreground);
 DefineInput (Bg, s_Background);
 
-DefineTarget (Title, s_Title);
+DefineTargetAddress (Title, s_Title, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -96,7 +102,8 @@ DefineTarget (Title, s_Title);
 
 int SetTechnique
 <
-   string Description = "Disconnect LW roll or crawl inputs first!";
+   string Description = "Mode";
+   string Group = "Disconnect LW roll or crawl inputs first!";
    string Enum = "Roll effect,Crawl effect,Video roll,Video crawl";
 > = 0;
 
@@ -109,23 +116,12 @@ float Smoothing
 > = 0.2;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_effect (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = fn_tex2D (s_Foreground, uv);
+   float4 retval = GetPixel (s_Foreground, uv);
 
    retval.a    = pow (retval.a, 0.5);
    retval.rgb /= retval.a;
@@ -135,81 +131,57 @@ float4 ps_effect (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_video (float2 uv : TEXCOORD1) : COLOR
 {
-   return fn_tex2D (s_Foreground, uv);
+   return GetPixel (s_Foreground, uv);
 }
 
-float4 ps_main_R (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_R (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Title, xy1) * _gaussian [0];
+   float4 Fgnd = tex2D (s_Title, uv3) * _gaussian [0];
 
-   float2 uv = float2 (0.0, Smoothing * _OutputAspectRatio * STRENGTH);
-   float2 xy = xy1 + uv;
+   float2 xy1 = float2 (0.0, Smoothing * _OutputAspectRatio * STRENGTH);
+   float2 xy2 = uv3 + xy1;
 
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
-
-   xy = xy1 - uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [1]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [2]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [3]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [4]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [5]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [6]; xy2 = uv3 - xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [1]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [2]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [3]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [4]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [5]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [6];
 
    Fgnd.a = pow (Fgnd.a, 0.5);
 
-   return lerp (fn_tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a);
 }
 
-float4 ps_main_C (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_C (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = fn_tex2D (s_Title, xy1) * _gaussian [0];
+   float4 Fgnd = tex2D (s_Title, uv3) * _gaussian [0];
 
-   float2 uv = float2 (Smoothing * STRENGTH, 0.0);
-   float2 xy = xy1 + uv;
+   float2 xy1 = float2 (Smoothing * STRENGTH, 0.0);
+   float2 xy2 = uv3 + xy1;
 
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
-   xy += uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
-
-   xy = xy1 - uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [1];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [2];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [3];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [4];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [5];
-   xy -= uv;
-   Fgnd += fn_tex2D (s_Title, xy) * _gaussian [6];
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [1]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [2]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [3]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [4]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [5]; xy2 += xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [6]; xy2 = uv3 - xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [1]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [2]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [3]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [4]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [5]; xy2 -= xy1;
+   Fgnd += tex2D (s_Title, xy2) * _gaussian [6];
 
    Fgnd.a = pow (Fgnd.a, 0.5);
 
-   return lerp (fn_tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -218,40 +190,25 @@ float4 ps_main_C (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique CrawlRollFix_0
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_effect (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main_R (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_effect)
+   pass P_2 ExecuteShader (ps_main_R)
 }
 
 technique CrawlRollFix_1
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_effect (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main_C (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_effect)
+   pass P_2 ExecuteShader (ps_main_C)
 }
 
 technique CrawlRollFix_2
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_video (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main_R (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_video)
+   pass P_2 ExecuteShader (ps_main_R)
 }
 
 technique CrawlRollFix_3
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Title;"; >
-   { PixelShader = compile PROFILE ps_video (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main_C (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_video)
+   pass P_2 ExecuteShader (ps_main_C)
 }
+

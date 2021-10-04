@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-08-11
 // @Author jwrl
-// @Author Robert SchÃ¼tze
-// @Created 2016-05-08
+// @Author Robert Schütze
+// @Created 2021-08-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Magic_Edges_640.png
 
 /**
@@ -10,12 +10,15 @@
  fractal generated four pointed stars to that border to create a sparkle/glitter effect to
  the edges of the title or graphic.  The fractal speed, scaling and offset is adjustable as
  well as star colour, density, length and rotation.
+
+ As part of the resolution independence support, it's also now possible to optionally
+ crop the foreground to the boundaries of the background.  This is the default setting.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect MagicalEdges.fx
 //
-// The fractal generation component was created by Robert SchÃ¼tze in GLSL sandbox
+// The fractal generation component was created by Robert Schütze in GLSL sandbox
 // (http://glslsandbox.com/e#29611.0).  It has been somewhat modified to better suit the
 // needs of its use in this context.
 //
@@ -26,8 +29,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-08-11 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -66,11 +70,11 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define DefineTarget(TARGET, TSAMPLE) \
+#define DefineTarget(TARGET, SAMPLER) \
                                       \
  texture TARGET : RenderColorTarget;  \
                                       \
- sampler TSAMPLE = sampler_state      \
+ sampler SAMPLER = sampler_state      \
  {                                    \
    Texture   = <TARGET>;              \
    AddressU  = ClampToEdge;           \
@@ -79,6 +83,13 @@ Wrong_Lightworks_version
    MagFilter = Linear;                \
    MipFilter = Linear;                \
  }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define PI_2        6.28318530718
 
@@ -101,14 +112,15 @@ Wrong_Lightworks_version
 float _Progress;
 float _OutputAspectRatio;
 
-#define EMPTY    (0.0).xxxx
-
 //-----------------------------------------------------------------------------------------//
 // Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
+
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 DefineTarget (Fractals, s_Fractals);
 DefineTarget (Border, s_Border);
@@ -232,28 +244,25 @@ bool ShowFractal
 
 int Source
 <
-   string Description = "Source selection (disconnect title and image key inputs)";
+   string Group = "Disconnect title and image key inputs";
+   string Description = "Source selection";
    string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = 1;
 
+bool CropToBgd
+<
+   string Description = "Crop to background";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s, float2 uv)
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_initFg (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-float4 fn_key2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   if (max (xy.x, xy.y) > 0.5) return EMPTY;
-
-   float4 Fgd = tex2D (s, uv);
+   float4 Fgd = GetPixel (s_RawFg, uv1);
 
    if (Fgd.a == 0.0) return EMPTY;
 
@@ -262,7 +271,7 @@ float4 fn_key2D (sampler s, float2 uv)
       Fgd.rgb /= Fgd.a;
    }
    else if (Source == 2) {
-      float4 Bgd = fn_tex2D (s_Background, uv);
+      float4 Bgd = GetPixel (s_Background, uv3);
 
       float kDiff = distance (Fgd.g, Bgd.g);
 
@@ -276,11 +285,7 @@ float4 fn_key2D (sampler s, float2 uv)
    return Fgd;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
+float4 ps_fractals (float2 uv : TEXCOORD) : COLOR
 {
    float progress = ((_Progress + StartPoint) * PI_2) / sqrt (SCL_RATE + 1.0 - (SCL_RATE * Rate));
 
@@ -289,7 +294,7 @@ float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
 
    float3 retval = float3 (xy / (Size + 0.01), seed.x);
 
-   float4 fg = fn_key2D (s_Foreground, uv);
+   float4 fg = GetPixel (s_Foreground, uv);
 
    for (int i = 0; i < LOOP; i++) {
       retval.rbg = float3 (1.2, 0.999, 0.9) * (abs ((abs (retval) / dot (retval, retval) - float3 (1.0, 1.0, seed.y * 0.4))));
@@ -308,7 +313,7 @@ float4 ps_fractals (float2 uv : TEXCOORD1) : COLOR
    return float4 (lerp (retval, buffer.rgb, ColourMix), fg.a);
 }
 
-float4 ps_border_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_1 (float2 uv : TEXCOORD3) : COLOR
 {
    float2 pixsize = float2 (1.0, _OutputAspectRatio) * (EdgeWidth + 0.1) * A_SCALE;
    float2 offset, scale;
@@ -319,19 +324,19 @@ float4 ps_border_1 (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      border += fn_key2D (s_Foreground, uv + offset).a;
-      border += fn_key2D (s_Foreground, uv - offset).a;
+      border += GetPixel (s_Foreground, uv + offset).a;
+      border += GetPixel (s_Foreground, uv - offset).a;
       angle += ANGLE;
    }
 
    border = (border / DELTANG) - 1.0;
    border = (border > 0.95) ? 0.0 : 1.0;
-   border = min (border, fn_key2D (s_Foreground, uv).a);
+   border = min (border, GetPixel (s_Foreground, uv).a);
 
    return border.xxxx;
 }
 
-float4 ps_border_2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_2 (float2 uv : TEXCOORD3) : COLOR
 {
    float2 pixsize = float2 (1.0, _OutputAspectRatio) * B_SCALE;
    float2 offset, scale;
@@ -342,26 +347,26 @@ float4 ps_border_2 (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      border += fn_tex2D (s_Sample_1, uv + offset).a;
-      border += fn_tex2D (s_Sample_1, uv - offset).a;
+      border += GetPixel (s_Sample_1, uv + offset).a;
+      border += GetPixel (s_Sample_1, uv - offset).a;
       angle += ANGLE;
    }
 
    border = saturate (border / DELTANG);
 
-   float3 retval = lerp (0.0.xxx, fn_tex2D (s_Fractals, uv).rgb, border);
+   float3 retval = lerp (0.0.xxx, GetPixel (s_Fractals, uv).rgb, border);
 
    return float4 (retval, border);
 }
 
-float4 ps_threshold (float2 uv : TEXCOORD1) : COLOR
+float4 ps_threshold (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = fn_tex2D (s_Border, uv);
+   float4 retval = GetPixel (s_Border, uv);
 
    return ((retval.r + retval.g + retval.b) / 3.0 > 1.0 - Threshold) ? retval : 0.0.xxxx;
 }
 
-float4 ps_stretch_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_stretch_1 (float2 uv : TEXCOORD3) : COLOR
 {
    float3 delt, ret = 0.0.xxx;
 
@@ -377,10 +382,10 @@ float4 ps_stretch_1 (float2 uv : TEXCOORD1) : COLOR
    xy2.y *= _OutputAspectRatio;
 
    for (int i = 0; i < 18; i++) {
-      delt = fn_tex2D (s_Sample_2, uv + xy3).rgb;
-      delt = max (delt, fn_tex2D (s_Sample_2, uv - xy3).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_2, uv + xy4).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_2, uv - xy4).rgb);
+      delt = GetPixel (s_Sample_2, uv + xy3).rgb;
+      delt = max (delt, GetPixel (s_Sample_2, uv - xy3).rgb);
+      delt = max (delt, GetPixel (s_Sample_2, uv + xy4).rgb);
+      delt = max (delt, GetPixel (s_Sample_2, uv - xy4).rgb);
       delt *= 1.0 - (i / 36.0);
       ret += delt;
       xy3 += xy1;
@@ -390,7 +395,7 @@ float4 ps_stretch_1 (float2 uv : TEXCOORD1) : COLOR
    return float4 (ret, 1.0);
 }
 
-float4 ps_stretch_2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_stretch_2 (float2 uv : TEXCOORD3) : COLOR
 {
    float3 delt, ret = 0.0.xxx;
 
@@ -409,37 +414,37 @@ float4 ps_stretch_2 (float2 uv : TEXCOORD1) : COLOR
    xy4 = xy2 * 18.0;
 
    for (int i = 0; i < 18; i++) {
-      delt = fn_tex2D (s_Sample_2, uv + xy3).rgb;
-      delt = max (delt, fn_tex2D (s_Sample_2, uv - xy3).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_2, uv + xy4).rgb);
-      delt = max (delt, fn_tex2D (s_Sample_2, uv - xy4).rgb);
+      delt = GetPixel (s_Sample_2, uv + xy3).rgb;
+      delt = max (delt, GetPixel (s_Sample_2, uv - xy3).rgb);
+      delt = max (delt, GetPixel (s_Sample_2, uv + xy4).rgb);
+      delt = max (delt, GetPixel (s_Sample_2, uv - xy4).rgb);
       delt *= 0.5 - (i / 36.0);
       ret += delt;
       xy3 += xy1;
       xy4 += xy2;
    }
 
-   ret = (ret + fn_tex2D (s_Sample_1, uv).rgb) / 3.6;
+   ret = (ret + GetPixel (s_Sample_1, uv).rgb) / 3.6;
 
    return float4 (ret, 1.0);
 }
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgd = fn_key2D (s_Foreground, xy1);
-   float4 Bgd = fn_tex2D (s_Background, xy2);
+   float4 Fgd = GetPixel (s_Foreground, uv3);
+   float4 Bgd = GetPixel (s_Background, uv3);
    float4 retval = lerp (Bgd, Fgd, Fgd.a * Amount);
 
-   float4 border = fn_tex2D (s_Border, xy1);
+   float4 border = GetPixel (s_Border, uv3);
 
-   if (ShowFractal) return lerp (fn_tex2D (s_Fractals, xy1), border, (border.a + 1.0) / 2);
+   if (ShowFractal) return lerp (GetPixel (s_Fractals, uv3), border, (border.a + 1.0) / 2);
 
    retval = lerp (retval, border, Brightness * border.a);
 
-   float4 glint = fn_tex2D (s_Sample_2, xy1);
+   float4 glint = GetPixel (s_Sample_2, uv3);
    float4 comb  = retval + (glint * (1.0 - retval));
 
-   return lerp (retval, comb, Strength);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (retval, comb, Strength);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -448,30 +453,14 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique MagicalEdges
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Fractals;"; >
-   { PixelShader = compile PROFILE ps_fractals (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Sample_1;"; >
-   { PixelShader = compile PROFILE ps_border_1 (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Border;"; >
-   { PixelShader = compile PROFILE ps_border_2 (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Sample_2;"; >
-   { PixelShader = compile PROFILE ps_threshold (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Sample_1;"; >
-   { PixelShader = compile PROFILE ps_stretch_1 (); }
-
-   pass P_6
-   < string Script = "RenderColorTarget0 = Sample_2;"; >
-   { PixelShader = compile PROFILE ps_stretch_2 (); }
-
-   pass P_7
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_1 < string Script = "RenderColorTarget0 = Fractals;"; > ExecuteShader (ps_fractals)
+   pass P_2 < string Script = "RenderColorTarget0 = Sample_1;"; > ExecuteShader (ps_border_1)
+   pass P_3 < string Script = "RenderColorTarget0 = Border;"; > ExecuteShader (ps_border_2)
+   pass P_4 < string Script = "RenderColorTarget0 = Sample_2;"; > ExecuteShader (ps_threshold)
+   pass P_5 < string Script = "RenderColorTarget0 = Sample_1;"; > ExecuteShader (ps_stretch_1)
+   pass P_6 < string Script = "RenderColorTarget0 = Sample_2;"; > ExecuteShader (ps_stretch_2)
+   pass P_7 ExecuteShader (ps_main)
 }
+

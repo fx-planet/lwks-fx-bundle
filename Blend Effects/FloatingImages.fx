@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-08-11
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-08-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FloatImages_640.png
 
 /**
@@ -15,9 +15,13 @@
  facor is actually from zero to ten.  This has been done to make size adjustment more
  readily controllable.
 
- NOTE:  This effect is resolution independent but the overlay positions will not
- necessarily track.  This is deliberate - during testing with differing image sizes
- and resolutions the overlayed images jumped as we played across cuts.
+ As part of the resolution independence support, it's also now possible to optionally
+ crop the foreground to the boundaries of the background.  This is the default setting.
+
+ NOTE:  A version of this effect was previously released in which the overlay positions
+ didn't necessarily track.  This was a deliberate choice at the time - during testing
+ of that version with differing image sizes and resolutions the overlayed images jumped
+ as they were played across cuts.  That problem has now been identified and corrected.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -25,8 +29,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-08-11 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -65,14 +70,36 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define EMPTY  (0.0).xxxx
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
+
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -80,7 +107,7 @@ DefineInput (Bg, s_Background);
 
 int Source
 <
-   string Group = "Disconnect the video input to titles and image keys if used.";
+   string Group = "Disconnect title and image key inputs";
    string Description = "Source selection";
    string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
 > = 1;
@@ -239,84 +266,70 @@ float D_Yc
    float MaxVal = 1.0;
 > = 0.5;
 
+bool CropToBgd
+<
+   string Description = "Crop to background";
+> = true;
+
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_tex2D (sampler s, float2 uv)
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_initFg (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-float4 fn_key2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   if (max (xy.x, xy.y) > 0.5) return EMPTY;
-
-   float4 Fgd = tex2D (s, uv);
+   float4 Fgd = GetPixel (s_RawFg, uv1);
 
    if (Fgd.a == 0.0) return EMPTY;
 
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
-
-      return Fgd;
    }
+   else if (Source == 2) {
+      float4 Bgd = GetPixel (s_Background, uv3);
 
-   if (Source == 1) return Fgd;
+      float kDiff = distance (Fgd.g, Bgd.g);
 
-   float4 Bgd = fn_tex2D (s_Background, uv);
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
 
-   float kDiff = distance (Fgd.g, Bgd.g);
-
-   kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-   kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
-
-   Fgd.a = smoothstep (0.0, 0.25, kDiff);
-   Fgd.rgb *= Fgd.a;
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
+   }
 
    return Fgd;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd, Bgnd = fn_tex2D (s_Background, uv2);
+   float4 Fgnd, Bgnd = GetPixel (s_Background, uv3);
+
    float2 xy;
 
    if (D_On) {
-      xy = ((uv1 - float2 (D_Xc, 1.0 - D_Yc)) / (D_Zoom *  D_Zoom)) + 0.5.xx;
-
-      Fgnd = fn_key2D (s_Foreground, xy);
+      xy = ((uv3 - float2 (D_Xc, 1.0 - D_Yc)) / (D_Zoom *  D_Zoom)) + 0.5.xx;
+      Fgnd = GetPixel (s_Foreground, xy);
       Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * D_Opac);
    }
 
    if (C_On) {
-      xy = ((uv1 - float2 (C_Xc, 1.0 - C_Yc)) / (C_Zoom *  C_Zoom)) + 0.5.xx;
-
-      Fgnd = fn_key2D (s_Foreground, xy);
+      xy = ((uv3 - float2 (C_Xc, 1.0 - C_Yc)) / (C_Zoom *  C_Zoom)) + 0.5.xx;
+      Fgnd = GetPixel (s_Foreground, xy);
       Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * C_Opac);
    }
 
    if (B_On) {
-      xy = ((uv1 - float2 (B_Xc, 1.0 - B_Yc)) / (B_Zoom *  B_Zoom)) + 0.5.xx;
-
-      Fgnd = fn_key2D (s_Foreground, xy);
+      xy = ((uv3 - float2 (B_Xc, 1.0 - B_Yc)) / (B_Zoom *  B_Zoom)) + 0.5.xx;
+      Fgnd = GetPixel (s_Foreground, xy);
       Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * B_Opac);
    }
 
-   xy = ((uv1 - float2 (A_Xc, 1.0 - A_Yc)) / (A_Zoom *  A_Zoom)) + 0.5.xx;
+   xy = ((uv3 - float2 (A_Xc, 1.0 - A_Yc)) / (A_Zoom *  A_Zoom)) + 0.5.xx;
+   Fgnd = GetPixel (s_Foreground, xy);
 
-   Fgnd = fn_key2D (s_Foreground, xy);
-
-   return lerp (Bgnd, Fgnd, Fgnd.a * A_Opac);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * A_Opac);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -325,6 +338,8 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
 technique FloatingImages
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_1 ExecuteShader (ps_main)
 }
+

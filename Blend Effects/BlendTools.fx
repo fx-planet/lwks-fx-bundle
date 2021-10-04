@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-12-28
+// @Released 2021-08-10
 // @Author jwrl
-// @Created 2020-12-28
+// @Created 2021-08-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blend_Tools_640.png
 
 /**
@@ -28,8 +28,9 @@
 //
 // Version history:
 //
-// Rewrite 2020-12-28 jwrl.
+// Rewrite 2021-08-10 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,33 +55,40 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-#define DeclareInput( TEXTURE, SAMPLER ) \
-                                         \
-   texture TEXTURE;                      \
-                                         \
-   sampler SAMPLER = sampler_state       \
-   {                                     \
-      Texture   = <TEXTURE>;             \
-      AddressU  = ClampToEdge;           \
-      AddressV  = ClampToEdge;           \
-      MinFilter = Linear;                \
-      MagFilter = Linear;                \
-      MipFilter = Linear;                \
-   }
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define DeclareTarget( TARGET, TSAMPLE ) \
-                                         \
-   texture TARGET : RenderColorTarget;   \
-                                         \
-   sampler TSAMPLE = sampler_state       \
-   {                                     \
-      Texture   = <TARGET>;              \
-      AddressU  = ClampToEdge;           \
-      AddressV  = ClampToEdge;           \
-      MinFilter = Linear;                \
-      MagFilter = Linear;                \
-      MipFilter = Linear;                \
-   }
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define LOOP   12
 #define DIVIDE 49
@@ -90,16 +98,14 @@ Wrong_Lightworks_version
 
 float _OutputAspectRatio;
 
-#define EMPTY    (0.0).xxxx
-
 //-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-DeclareInput (Fg, s_Foreground);
-DeclareInput (Bg, s_Background);
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-DeclareTarget (Key, s_Key);
+DefineTarget (Key, s_Key);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -180,23 +186,15 @@ int a_Mode
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? EMPTY : tex2D (s, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = fn_tex2D (s_Foreground, uv);
+   float4 Fgd = GetPixel (s_Foreground, uv);
+
+   if (Fgd.a == 0.0) Fgd = EMPTY;
+
    float4 K = (pow (Fgd, 1.0 / a_Gamma) * a_Gain) + a_Bright.xxxx;
 
    int unpremul = a_Premul;
@@ -221,10 +219,10 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
    return Fgd;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgd = fn_tex2D (s_Key, uv1);
-   float4 Bgd = fn_tex2D (s_Background, uv2);
+   float4 Fgd = GetPixel (s_Key, uv3);
+   float4 Bgd = GetPixel (s_Background, uv2);
 
    float alpha = Fgd.a;
 
@@ -236,11 +234,11 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
       for (int i = 0; i < LOOP; i++) {
          sincos (angle, xy.x, xy.y);
          xy *= radius;
-         alpha += fn_tex2D (s_Key, uv1 + xy).a;
-         alpha += fn_tex2D (s_Key, uv1 - xy).a;
+         alpha += GetPixel (s_Key, uv3 + xy).a;
+         alpha += GetPixel (s_Key, uv3 - xy).a;
          xy += xy;
-         alpha += fn_tex2D (s_Key, uv1 + xy).a;
-         alpha += fn_tex2D (s_Key, uv1 - xy).a;
+         alpha += GetPixel (s_Key, uv3 + xy).a;
+         alpha += GetPixel (s_Key, uv3 - xy).a;
          angle += ANGLE;
       }
 
@@ -267,10 +265,7 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
 technique BlendTools
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_keygen)
+   pass P_2 ExecuteShader (ps_main)
 }
+

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-30
+// @Released 2021-07-25
 // @Author jwrl
-// @Created 2016-05-10
+// @Created 2021-07-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Stretch_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/StretchDissolve.mp4
 
@@ -14,67 +14,82 @@
 //
 // Version history:
 //
-// Modified 2020-07-30 jwrl.
-// Reformatted the effect header.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from StretchDiss.fx for consistency across the dissolve range.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined float2 variables to allow for the behaviour difference between
-// the D3D and Cg compilers.
-//
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Rewrite 2021-07-25 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Stretch dissolve";
+   string Description = "Stretch transition";
    string Category    = "Mix";
    string SubCategory = "DVE transitions";
    string Notes       = "Stretches the image horizontally through the dissolve";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state {
-        Texture   = <Fg>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-        };
-
-sampler s_Background = sampler_state {
-        Texture   = <Bg>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-        };
+DefineTarget (Outw, s_Outgoing);
+DefineTarget (Inw, s_Incoming);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -103,18 +118,13 @@ float Stretch
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI      3.141593
-
-#define HALF_PI 1.570796
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_in (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_Background, uv); }
+float4 ps_out (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_Foreground, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float2 xy = uv - (0.5).xx;
 
@@ -139,8 +149,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    xy += (0.5).xx;
 
-   float4 fgPix = tex2D (s_Foreground, xy);
-   float4 bgPix = tex2D (s_Background, xy);
+   float4 fgPix = GetPixel (s_Outgoing, xy);
+   float4 bgPix = GetPixel (s_Incoming, xy);
 
    return lerp (fgPix, bgPix, dissAmt);
 }
@@ -149,8 +159,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Dx_Stretch
+technique Stretch_Dx
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Outw;"; > ExecuteShader (ps_out)
+   pass P_2 < string Script = "RenderColorTarget0 = Inw;"; > ExecuteShader (ps_in)
+   pass P_3 ExecuteShader (ps_main)
 }

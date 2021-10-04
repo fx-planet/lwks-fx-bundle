@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-06-04
+// @Released 2021-07-07
 // @Author jwrl
 // @Created 2021-06-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_SplitAndZoom_640.png
@@ -58,7 +58,7 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
 
 #define EMPTY 0.0.xxxx                // Transparent black
 
@@ -146,13 +146,6 @@ float4 ps_main_V (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique SplitAndZoom_H
-{
-   pass P_1 CompileShader (ps_main_H)
-}
-
-technique SplitAndZoom_V
-{
-   pass P_1 CompileShader (ps_main_V)
-}
+technique SplitAndZoom_Dx_H { pass P_1 ExecuteShader (ps_main_H) }
+technique SplitAndZoom_Dx_V { pass P_1 ExecuteShader (ps_main_V) }
 

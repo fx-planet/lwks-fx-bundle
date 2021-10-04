@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-07-11
 // @Author jwrl
-// @Created 2020-10-02
+// @Created 2021-07-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Glitch_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Glitch_720.mp4
 
@@ -27,17 +27,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-10-04 jwrl.
-// Added glitch rate, rotation and modulation.
-// Changed "Glitch channels > Normal colour" to "Glitch channels > Full colour".
-// Changed "Jitter" to "Edge roughen" and "Coarseness" to "Edge jitter".
-// These three parameter changes do the same things as in the earlier version, but now
-// give clearer descriptions of what each setting actually does.
-// Changed "Clip" to "Key clip" and "Gain" to "Key gain".  In alpha mode "Key clip" now
-// changes the alpha linearity and "Key gain" changes the unpremultiply settings.
+// Rewrite 2021-07-11 jwrl.
+// The original version did not handle the keys well with resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,33 +42,75 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+// Standard header block (or near enough)
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TEXTURE, SAMPLER) \
+                                       \
+ texture TEXTURE : RenderColorTarget;  \
+                                       \
+ sampler SAMPLER = sampler_state       \
+ {                                     \
+   Texture   = <TEXTURE>;              \
+   AddressU  = ClampToEdge;            \
+   AddressV  = ClampToEdge;            \
+   MinFilter = Linear;                 \
+   MagFilter = Linear;                 \
+   MipFilter = Linear;                 \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define GetPixel(SHADER,XY)  (any (XY < 0.0) || any (XY > 1.0) ? EMPTY : tex2D (SHADER, XY))
+
+#define SCALE  0.01
+#define MODLN  0.25
+#define MODN1  0.125
+#define EDGE   9.0
+
+float _Length;
+float _LengthFrames;
+
+float _Progress;
+
+float _OutputWidth;
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-texture Key    : RenderColorTarget;
-texture Glitch : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_Key = sampler_state { Texture = <Key>; };
-
-sampler s_Glitch = sampler_state
-{
-   Texture   = <Glitch>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Key, s_Key);
+DefineTarget (Glitch, s_Glitch);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -169,29 +202,6 @@ float KeyGain
 > = 0.95;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH   // Only available in version 14.5 and up
-Bad_LW_version    // Forces a compiler error if the Lightworks version is bad.
-#endif
-
-#define EMPTY  0.0.xxxx
-
-#define SCALE  0.01
-#define MODLN  0.25
-#define MODN1  0.125
-#define EDGE   9.0
-
-float _Length;
-float _LengthFrames;
-
-float _Progress;
-
-float _OutputWidth;
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -212,161 +222,118 @@ float2 fn_noise (float y)
    return frac (float2 (abs (n1), n2) * 256.0);
 }
 
-float4 fn_tex2D (sampler s, float2 uv)
+float2 fn_glitch (float2 uv, out float m)
 {
-   float2 xy = abs (uv - 0.5.xx);
+   float c, s, x = dot (uv, float2 (EdgeRoughen, Spread)) * SCALE;
 
-   if ((xy.x > 0.5) || (xy.y > 0.5)) return EMPTY;
+   sincos (radians (Rotation), s, c);
 
-   return tex2D (s, uv);
+   m = 1.0 - (abs (uv.x) * Modulation * MODLN);
+
+   return float2 (c, s * _OutputAspectRatio) * x;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_key_gen (float2 uv : TEXCOORD1) : COLOR
+float4 ps_key_gen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
+   float4 Fgnd = GetPixel (s_Foreground, uv1);
+
+   if (Fgd.a == 0.0) return Fgnd.aaaa;
+
    if (ShowKey == 2) {
-      float4 retval = tex2D (s_Foreground, uv);
+      Fgnd.a = pow (Fgnd.a, 0.5 + (KeyClip * 0.5));
+      Fgnd.rgb /= lerp (1.0, Fgnd.a, KeyGain);
+   }
+   else {
+      float3 Bgnd = GetPixel (s_Background, uv2).rgb;
 
-      retval.a = pow (retval.a, 0.5 + (KeyClip * 0.5));
-      retval.rgb /= lerp (1.0, retval.a, KeyGain);
+      float cDiff = distance (Bgnd, Fgnd.rgb);
+      float alpha = smoothstep (KeyClip, KeyClip - KeyGain + 1.0, cDiff);
 
-      return retval;
+      Fgnd.rgb *= alpha;
+      Fgnd.a    = pow (alpha, 0.5);
    }
 
-   float3 Fgnd = tex2D (s_Foreground, uv).rgb;
-   float3 Bgnd = tex2D (s_Background, uv).rgb;
-
-   float cDiff = distance (Bgnd, Fgnd);
-
-   float alpha = smoothstep (KeyClip, KeyClip - KeyGain + 1.0, cDiff);
-
-   Fgnd *= alpha;
-   alpha = pow (alpha, 0.5);
-
-   return float4 (Fgnd, alpha);
+   return Fgnd;
 }
 
-float4 ps_glitch_0 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_glitch_0 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float2 xy = fn_noise (uv.y);
+   float modulation;
+
+   float2 xy = fn_noise (uv1.y);
 
    xy.x *= xy.y;
 
-   float c, s, modulation = 1.0 - (abs (xy.x) * Modulation * MODLN);
+   xy = fn_glitch (xy, modulation);
 
-   xy *= float2 (EdgeRoughen, Spread) * SCALE;
-   xy.x += xy.y;
-   xy.y = 0.0;
+   float4 retval = GetPixel (s_Key, uv1 + xy);
 
-   sincos (radians (Rotation), s, c);
-
-   xy = mul (float2x2 (c, -s, s, c), xy);
-   xy.y *= _OutputAspectRatio;
-
-   float2 xy1 = uv + xy;
-   float2 xy2 = uv - xy;
-
-   float4 retval = fn_tex2D (s_Key, xy1);
-
-   retval.r   = 0.0;
-   retval.ra += fn_tex2D (s_Key, xy2).ra;
-   retval.a  /= 2.0;
+   retval.ra = GetPixel (s_Key, uv1 - xy).ra;
 
    return retval * modulation;
 }
 
-float4 ps_glitch_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_glitch_1 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float2 xy = fn_noise (uv.y);
+   float modulation;
+
+   float2 xy = fn_noise (uv1.y);
 
    xy.x *= xy.y;
 
-   float c, s, modulation = 1.0 - (abs (xy.x) * Modulation * MODLN);
+   xy = fn_glitch (xy, modulation);
 
-   xy *= float2 (EdgeRoughen, Spread) * SCALE;
-   xy.x += xy.y;
-   xy.y = 0.0;
+   float4 retval = GetPixel (s_Key, uv1 + xy);
 
-   sincos (radians (Rotation), s, c);
-
-   xy = mul (float2x2 (c, -s, s, c), xy);
-   xy.y *= _OutputAspectRatio;
-
-   float2 xy1 = uv + xy;
-   float2 xy2 = uv - xy;
-
-   float4 retval = fn_tex2D (s_Key, xy1);
-
-   retval.g   = 0.0;
-   retval.ga += fn_tex2D (s_Key, xy2).ga;
-   retval.a  /= 2.0;
+   retval.ga = GetPixel (s_Key, uv1 - xy).ga;
 
    return retval * modulation;
 }
 
-float4 ps_glitch_2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_glitch_2 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float2 xy = fn_noise (uv.y);
+   float modulation;
+
+   float2 xy = fn_noise (uv1.y);
 
    xy.x *= xy.y;
 
-   float c, s, modulation = 1.0 - (abs (xy.x) * Modulation * MODLN);
+   xy = fn_glitch (xy, modulation);
 
-   xy *= float2 (EdgeRoughen, Spread) * SCALE;
-   xy.x += xy.y;
-   xy.y = 0.0;
+   float4 retval = GetPixel (s_Key, uv1 + xy);
 
-   sincos (radians (Rotation), s, c);
-
-   xy = mul (float2x2 (c, -s, s, c), xy);
-   xy.y *= _OutputAspectRatio;
-
-   float2 xy1 = uv + xy;
-   float2 xy2 = uv - xy;
-
-   float4 retval = fn_tex2D (s_Key, xy1);
-
-   retval.b   = 0.0;
-   retval.ba += fn_tex2D (s_Key, xy2).ba;
-   retval.a  /= 2.0;
+   retval.ba = GetPixel (s_Key, uv1 - xy).ba;
 
    return retval * modulation;
 }
 
-float4 ps_glitch_3 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_glitch_3 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float2 xy = fn_noise (uv.y);
+   float modulation;
+
+   float2 xy = fn_noise (uv1.y);
 
    xy.y *= xy.x;
    xy.x *= xy.y;
 
-   float c, s, modulation = 0.5 - (abs (xy.x) * Modulation * MODN1);
+   xy = fn_glitch (xy, modulation);
 
-   xy *= float2 (EdgeRoughen, Spread) * SCALE;
-   xy.x += xy.y;
-   xy.y = 0.0;
+   float4 retval = (xy.x >= 0.0) ? GetPixel (s_Key, uv1 + xy) : GetPixel (s_Key, uv1 - xy);
 
-   sincos (radians (Rotation), s, c);
-
-   xy = mul (float2x2 (c, -s, s, c), xy);
-   xy.y *= _OutputAspectRatio;
-
-   float2 xy1 = uv + xy;
-   float2 xy2 = uv - xy;
-
-   return (fn_tex2D (s_Key, xy1) + fn_tex2D (s_Key, xy2)) * modulation;
+   return retval * modulation;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   if (ShowKey == 1) return tex2D (s_Key, uv);
+   if (ShowKey == 1) return GetPixel (s_Key, uv1);
 
-   float4 Fgnd = tex2D (s_Glitch, uv);
+   float4 Fgnd = GetPixel (s_Glitch, uv1);
 
-   return lerp (tex2D (s_Background, uv), Fgnd, Fgnd.a * Opacity);
+   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -375,56 +342,29 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Glitch_0
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glitch;"; >
-   { PixelShader = compile PROFILE ps_glitch_0 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_0)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Glitch_1
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glitch;"; >
-   { PixelShader = compile PROFILE ps_glitch_1 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_1)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Glitch_2
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glitch;"; >
-   { PixelShader = compile PROFILE ps_glitch_2 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_2)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Glitch_3
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glitch;"; >
-   { PixelShader = compile PROFILE ps_glitch_3 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_3)
+   pass P_3 ExecuteShader (ps_main)
 }
+

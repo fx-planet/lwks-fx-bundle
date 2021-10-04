@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-03
 // @Author baopao
 // @Author nouanda
 // @Author jwrl
@@ -7,8 +7,8 @@
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleido_B_640.png
 
 /**
- Kaleido B is a reworking of Kaleido A and produces the classic kaleidoscope effect.  The
- number of sides, the centering, scaling and zoom factor are all adjustable.
+ Kaleido produces the classic kaleidoscope effect.  The number of sides, the centering,
+ scaling and zoom factor are all adjustable.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -38,6 +38,10 @@
 //
 // Version history:
 //
+// Update 2021-10-03 jwrl.
+// Rename from Kaleido B to Kaleido.
+// Added macros for common effects needs.
+//
 // Update 2020-11-15 jwrl.
 // Added CanSize switch for LW 2021 support.
 //
@@ -59,24 +63,42 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+texture TEXTURE;                      \
+                                      \
+sampler SAMPLER = sampler_state       \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define TWO_PI  6.2831853072
+
+#define MINIMUM 0.0000000001
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state
-{
-   Texture = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -120,14 +142,6 @@ float PosY
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define TWO_PI  6.2831853072
-
-#define MINIMUM 0.0000000001
-
-//-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
@@ -160,11 +174,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Technique
 //-----------------------------------------------------------------------------------------//
 
-technique Kaleido
-{
-   pass MainPass
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
-}
+technique Kaleido { pass P_1 ExecuteShader (ps_main) }
 

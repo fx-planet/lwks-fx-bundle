@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-24
 // @Author jwrl
-// @Created 2017-05-11
+// @Created 2021-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_NonAddUltra_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/NonAddUltraDx.mp4
 
@@ -18,26 +18,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes".
-// Changed "Fgd" input to "Fg" and "Bgd" input to "Bg".
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from NonAddUltraDx.fx for consistency across the dissolve range.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Built 2021-07-24 jwrl.
+// Rewritten to support resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,38 +30,48 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend transitions";
    string Notes       = "Emulates the classic analog vision mixer non-add mix";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state
-{
-   Texture   = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Params
@@ -104,7 +97,7 @@ float Linearity
 // Pixel Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float outAmount = min (1.0, (1.0 - Amount) * 2.0);
    float in_Amount = min (1.0, Amount * 2.0);
@@ -114,8 +107,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    temp = in_Amount * in_Amount * in_Amount;
    in_Amount = lerp (in_Amount, temp, Linearity);
 
-   float4 Fgnd = tex2D (s_Foreground, uv) * outAmount;
-   float4 Bgnd = tex2D (s_Background, uv) * in_Amount;
+   float4 Fgnd = GetPixel (s_Foreground, uv1) * outAmount;
+   float4 Bgnd = GetPixel (s_Background, uv2) * in_Amount;
 
    return max (Fgnd, Bgnd);
 }
@@ -126,6 +119,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Dx_NonAddUltra
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

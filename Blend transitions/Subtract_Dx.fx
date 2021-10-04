@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-24
 // @Author jwrl
-// @Created 2017-05-11
+// @Created 2021-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Subtract_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/SubtractiveDx.mp4
 
@@ -17,30 +17,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-// Changed "Fgd" input to "Fg" and "Bgd" input to "Bg".
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from SubtractDx.fx for consistency across the dissolve range.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Swizzled two float variables to float4 to address the behavioural differences
-// between D3D and Cg compilers.
-//
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Built 2021-07-24 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,21 +29,48 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend transitions";
    string Notes       = "An inverted non-additive mix";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -83,13 +89,13 @@ float Amount
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float outAmount = 1.0 - min (1.0, (1.0 - Amount) * 2.0);
    float in_Amount = 1.0 - min (1.0, Amount * 2.0);
 
-   float4 Fgnd = max (tex2D (s_Foreground, uv), outAmount.xxxx);
-   float4 Bgnd = max (tex2D (s_Background, uv), in_Amount.xxxx);
+   float4 Fgnd = max (GetPixel (s_Foreground, uv1), outAmount.xxxx);
+   float4 Bgnd = max (GetPixel (s_Background, uv2), in_Amount.xxxx);
 
    return min (Fgnd, Bgnd);
 }
@@ -100,6 +106,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Subtract_Dx
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

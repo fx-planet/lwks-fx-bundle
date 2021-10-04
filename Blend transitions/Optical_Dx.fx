@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-24
 // @Author jwrl
-// @Created 2016-07-30
+// @Created 2021-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Optical_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/OpticalDissolve.mp4
 
@@ -16,29 +16,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Update August 10 2017 by jwrl.
-// Renamed from OpticalDx.fx for consistency across the dissolve range.
-//
-// Cross platform compatibility check 5 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Explicitly defined float4 variable to address the differing behaviours of the D3D
-// and Cg compilers.
-//
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Built 2021-07-24 jwrl.
+// Rewritten to support resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,21 +28,50 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend transitions";
    string Notes       = "Simulates the burn effect of a film optical dissolve";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define PI 3.1415926536
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -78,23 +87,17 @@ float Amount
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI 3.1415926536
-
-//-----------------------------------------------------------------------------------------//
 // Pixel Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float cAmount = sin (Amount * PI) / 4.0;
    float bAmount = cAmount / 2.0;
    float aAmount = (1.0 - cos (Amount * PI)) / 2.0;
 
-   float4 fgPix = tex2D (s_Foreground, xy1);
-   float4 bgPix = tex2D (s_Background, xy2);
+   float4 fgPix = GetPixel (s_Foreground, uv1);
+   float4 bgPix = GetPixel (s_Background, uv2);
    float4 retval = lerp (min (fgPix, bgPix), bgPix, Amount);
 
    fgPix = lerp (fgPix, min (fgPix, bgPix), Amount);
@@ -111,6 +114,6 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique Optical_Dx
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-24
 // @Author jwrl
-// @Created 2018-03-08
+// @Created 2021-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_FoldNeg_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DX_FoldNeg.mp4
 
@@ -15,19 +15,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
-//
-// Modified 28 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed subcategory.
-// Added "Notes" to _LwksEffectInfo.
-//
-// Modified 9 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-07-24 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -37,21 +27,48 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blend transitions";
    string Notes       = "Dissolves through a negative mix of one image to another";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -70,14 +87,18 @@ float Amount
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd = tex2D (s_Foreground, xy1);
-   float4 Bgd = tex2D (s_Background, xy2);
-   float4 Neg = float4 (1.0.xxx - ((Fgd.rgb + Bgd.rgb) / 2.0), max (Fgd.a, Bgd.a));
-   float4 Mix = lerp (Fgd, Neg, Amount);
+   float4 Fgd = GetPixel (s_Foreground, uv1);
+   float4 Bgd = GetPixel (s_Background, uv2);
 
-   return lerp (Mix, Bgd, Amount);
+   float mix = (Amount - 0.5) * 2.0;
+   float mix_in  = max (1.0 + mix, 0.0);
+   float mix_out = max (mix, 0.0);
+
+   float4 Neg = float4 (1.0.xxx - ((Fgd.rgb + Bgd.rgb) / 2.0), max (Fgd.a, Bgd.a));
+
+   return lerp (lerp (Fgd, Neg, mix_in), Bgd, mix_out);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -86,6 +107,6 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique FoldNeg_Dx
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

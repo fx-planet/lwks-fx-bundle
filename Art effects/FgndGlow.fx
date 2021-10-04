@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-08-07
 // @Author jwrl
-// @Created 2020-10-16
+// @Created 2021-08-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/FgndGlow_640.png
 
 /**
@@ -11,8 +11,8 @@
  disconnecting any input or blend effect, or the foreground video can be extracted.  In
  that case it is separated from the background by means of a delta or difference key.
 
- The blend option used for the glow is a subset of the standard blend modes widely seen in
- most art software.
+ The blend options used for the glow is a subset of the standard blend modes widely seen
+ in most art software.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,8 +24,9 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
+// Rewrite 2021-08-07 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,44 +40,70 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput( TEXTURE, SAMPLER ) \
+                                         \
+   texture TEXTURE;                      \
+                                         \
+   sampler SAMPLER = sampler_state       \
+   {                                     \
+      Texture   = <TEXTURE>;             \
+      AddressU  = ClampToEdge;           \
+      AddressV  = ClampToEdge;           \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define DefineTarget( TARGET, TSAMPLE ) \
+                                         \
+   texture TARGET : RenderColorTarget;   \
+                                         \
+   sampler TSAMPLE = sampler_state       \
+   {                                     \
+      Texture   = <TARGET>;              \
+      AddressU  = ClampToEdge;           \
+      AddressV  = ClampToEdge;           \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY   0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define MaskPixel(SHDR,XY,MM) (Overflow(MM) ? EMPTY : GetPixel(SHDR, XY))
+
+float _OutputHeight;
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-texture FgKey : RenderColorTarget;
-texture GlowX : RenderColorTarget;
-texture GlowY : RenderColorTarget;
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
+DefineTarget (FgKey, s_FgKey);
 
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_FgKey = sampler_state { Texture = <FgKey>; };
-
-sampler s_GlowX = sampler_state
-{
-   Texture   = <GlowX>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Glow = sampler_state
-{
-   Texture   = <GlowY>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (GlowX, s_GlowX);
+DefineTarget (GlowY, s_Glow);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -145,62 +172,80 @@ int Source
 <
    string Group = "Blend mode";
    string Description = "Source selection (disconnect title and image key inputs)";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Delta key";
-> = 2;
+   string Enum = "Delta key,Crawl/Roll/Title/Image key,Video/External image";
+> = 0;
 
-float DeltaKey
+float KeyGain
 <
    string Group = "Blend mode";
-   string Description = "Delta key";
+   string Description = "Trim key";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.25;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Bad_Lightworks_version
-#endif
+float4 fn_glow (sampler s_Source, float2 xy1, float2 xy2)
+{
+   float4 retval = tex2D (s_Source, xy1);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
+   float2 xy = xy1 + xy2;
 
-#define EMPTY   0.0.xxxx
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy += xy2;
+   retval += tex2D (s_Source, xy); xy = xy1 - xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy); xy -= xy2;
+   retval += tex2D (s_Source, xy);
 
-float _OutputWidth;
-float _OutputAspectRatio;
+   return retval / 23.0;
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_keygen (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 Fgd = tex2D (s_Foreground, uv);
+   float4 Bgnd, Fgnd = GetPixel (s_Foreground, uv);
 
-   if (Fgd.a == 0.0) Fgd.rgb = Fgd.aaa;
-   else if (Source == 0) {
-      Fgd.a    = pow (Fgd.a, 0.5);
-      Fgd.rgb /= Fgd.a;
+   if (Source == 0) {
+      Bgnd = GetPixel (s_Background, uv);
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb *= Fgnd.a;
    }
-   else if (Source == 2) {
-      float4 Bgd = tex2D (s_Background, uv);
-
-      float kDiff = distance (Fgd.rgb, Bgd.rgb);
-
-      Fgd.a = smoothstep (0.0, DeltaKey, kDiff);
-      Fgd.rgb *= Fgd.a;
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
    }
 
-   return Fgd;
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 ps_luma (float2 uv : TEXCOORD1) : COLOR
+float4 ps_luma (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = tex2D (s_FgKey, uv);
+   float4 retval = MaskPixel (s_FgKey, uv, uv);
 
    float feather = Feather * 0.5;
    float srcLum = ((retval.r * 0.3) + (retval.g * 0.59) + (retval.b * 0.11)) * retval.a;
@@ -212,100 +257,38 @@ float4 ps_luma (float2 uv : TEXCOORD1) : COLOR
    return lerp (EMPTY, Colour, (srcLum - Tolerance) / feather);
 }
 
-float4 ps_red (float2 uv : TEXCOORD1) : COLOR
+float4 ps_red (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = tex2D (s_FgKey, uv);
+   float4 retval = MaskPixel (s_FgKey, uv, uv);
 
-   if ((retval.r * retval.a) < Tolerance) return EMPTY;
-
-   return retval;
+   return ((retval.r * retval.a) < Tolerance) ? EMPTY : retval;
 }
 
-float4 ps_green (float2 uv : TEXCOORD1) : COLOR
+float4 ps_green (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = tex2D (s_FgKey, uv);
+   float4 retval = MaskPixel (s_FgKey, uv, uv);
 
-   if ((retval.g * retval.a) < Tolerance) return EMPTY;
-
-   return retval;
+   return ((retval.g * retval.a) < Tolerance) ? EMPTY : retval;
 }
 
-float4 ps_blue (float2 uv : TEXCOORD1) : COLOR
+float4 ps_blue (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = tex2D (s_FgKey, uv);
+   float4 retval = MaskPixel (s_FgKey, uv, uv);
 
-   if ((retval.b * retval.a) < Tolerance) return EMPTY;
-
-   return retval;
+   return ((retval.b * retval.a) < Tolerance) ? EMPTY : retval;
 }
 
-float4 ps_glowX (float2 uv : TEXCOORD1) : COLOR
+float4 ps_glowX (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = tex2D (s_GlowX, uv);
-
-   float2 xy1 = float2 (Size * 0.5 / _OutputWidth, 0.0);
-   float2 xy  = uv + xy1;
-
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy += xy1;
-   retval += tex2D (s_GlowX, xy); xy = uv - xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy); xy -= xy1;
-   retval += tex2D (s_GlowX, xy);
-
-   return retval / 23.0;
+   return fn_glow (s_GlowX, uv, float2 (Size * 0.5 / _OutputWidth, 0.0));
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 retval = tex2D (s_FgKey, uv);
+   float4 retval = fn_glow (s_FgKey, uv, float2 (0.0, Size * 0.5 / _OutputHeight));
+   float4 Fgnd, Bgnd = GetPixel (s_Background, uv);
 
-   float2 xy1 = float2 (0.0, Size *_OutputAspectRatio * 0.5 / _OutputWidth);
-   float2 xy  = uv + xy1;
-
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy += xy1;
-   retval += tex2D (s_Glow, xy); xy = uv - xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy); xy -= xy1;
-   retval += tex2D (s_Glow, xy);
-   retval /= 23.0;
-
-   float4 Fgnd, Bgnd = tex2D (s_Background, uv);
-
-   if (Source == 2) { Fgnd = tex2D (s_Foreground, uv); }
+   if (Source == 0) { Fgnd = GetPixel (s_Foreground, uv); }
    else {
       Fgnd = tex2D (s_FgKey, uv);
       Fgnd = float4 (lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a), Bgnd.a);
@@ -331,66 +314,53 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique LuminanceGlow
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
 
-   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; >
-   { PixelShader = compile PROFILE ps_luma (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; >
-   { PixelShader = compile PROFILE ps_glowX (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; > ExecuteShader (ps_luma)
+   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; > ExecuteShader (ps_glowX)
+   pass P_4 ExecuteShader (ps_main)
 }
 
 technique RedGlow
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
 
-   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; >
-   { PixelShader = compile PROFILE ps_red (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; >
-   { PixelShader = compile PROFILE ps_glowX (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; > ExecuteShader (ps_red)
+   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; > ExecuteShader (ps_glowX)
+   pass P_4 ExecuteShader (ps_main)
 }
 
 technique GreenGlow
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
 
-   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; >
-   { PixelShader = compile PROFILE ps_green (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; >
-   { PixelShader = compile PROFILE ps_glowX (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; > ExecuteShader (ps_green)
+   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; > ExecuteShader (ps_glowX)
+   pass P_4 ExecuteShader (ps_main)
 }
 
 technique BlueGlow
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
 
-   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; >
-   { PixelShader = compile PROFILE ps_blue (); }
-
-   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; >
-   { PixelShader = compile PROFILE ps_glowX (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FgKey;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = GlowX;"; > ExecuteShader (ps_blue)
+   pass P_3 < string Script = "RenderColorTarget0 = GlowY;"; > ExecuteShader (ps_glowX)
+   pass P_4 ExecuteShader (ps_main)
 }
 
 technique Setup
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_keygen (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+
+   pass P_1 ExecuteShader (ps_keygen)
 }
+

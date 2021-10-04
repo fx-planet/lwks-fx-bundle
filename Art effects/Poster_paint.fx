@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-08-07
 // @Author jwrl
-// @Created 2018-11-28
+// @Created 2021-08-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/PosterPaint_640.png
 
 /**
@@ -17,21 +17,9 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 11 July 2020 jwrl.
-// Removed pointless settings bypass.
-// Changed amount setting to be an enumeration.
-// Added a simple box blur so that noisy inputs will look cleaner after posterization.
-// Reordered the parameters into a major and a minor group according to end result impact.
-//
-// Modified 16 August 2019 jwrl.
-// Corrected cross-platform bug which broke the effect in the Linux/OS-X world.
-// Changed input adjustment settings to always on or affected by posterization.
-//
-// Modified 23 December 2018 jwrl.
-// Formatted the descriptive block so that it can automatically be read.
+// Rewrite 2021-08-07 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,33 +33,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Pre : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define ONE_THIRD  0.3333333333
+
+float _OutputWidth;
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state {
-   Texture   = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_RawInp);
 
-sampler s_PreBlur = sampler_state
-{
-   Texture   = <Pre>;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
+DefineTarget (Pre, s_PreBlur);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -144,15 +164,6 @@ float HueAngle
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define ONE_THIRD  0.3333333333
-
-float _OutputWidth;
-float _OutputHeight;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -214,7 +225,9 @@ float3 fn_RGBtoHSL (float3 RGB)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_preblur (float2 uv : TEXCOORD1 ) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_preblur (float2 uv : TEXCOORD2) : COLOR
 {
    float4 retval = tex2D (s_Input, uv);
 
@@ -245,15 +258,17 @@ float4 ps_preblur (float2 uv : TEXCOORD1 ) : COLOR
    return retval / 13.0;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 RGB = tex2D (s_PreBlur, uv);
+   float4 RGB = tex2D (s_PreBlur, uv2);
+
+   float alpha = RGB.a;
 
    // This is the vertical component of the box blur.
 
    float2 xy0 = float2 (0.0, Smoothness / _OutputHeight);
-   float2 xy1 = uv + xy0;
-   float2 xy2 = uv - xy0;
+   float2 xy1 = uv2 + xy0;
+   float2 xy2 = uv2 - xy0;
 
    RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
    RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
@@ -297,7 +312,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    RGB.rgb = fn_HSLtoRGB (HSL);
 
-   return RGB;
+   return Overflow (uv1) ? EMPTY : lerp (EMPTY, RGB, alpha);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -306,10 +321,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique PosterPaint
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Pre;"; >
-   { PixelShader = compile PROFILE ps_preblur (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = Pre;"; > ExecuteShader (ps_preblur)
+   pass P_2 ExecuteShader (ps_main)
 }
+

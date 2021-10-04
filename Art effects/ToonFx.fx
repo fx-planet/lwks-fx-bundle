@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-07-26
 // @Author khaver
 // @Created 2011-04-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/Toon_640.png
@@ -15,23 +15,12 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
+// Update 2021-07-26 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Cross platform compatibility check 27 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Explicitly defined float3 variable to address behavioural differences between the D3D
-// and Cg compilers.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Prior to 23 December 2018:
+// Various changes to better support cross platform versions.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,20 +34,61 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define NUM 9
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler FgSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, FgSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -67,52 +97,51 @@ sampler FgSampler = sampler_state
 float RedStrength
 <
    string Description = "RedStrength";
-   string Group       = "Master"; // Causes this parameter to be displayed in a group called 'Master'
-   float MinVal       = 1.00;
-   float MaxVal       = 100.00;
+   string Group       = "Master";
+   string Flags       = "DisplayAsPercentage";
+   float MinVal       = 1.0;
+   float MaxVal       = 100.0;
 > = 4.0; // Default value
 
 float GreenStrength
 <
    string Description = "GreenStrength";
-   string Group       = "Master"; // Causes this parameter to be displayed in a group called 'Master'
-   float MinVal       = 1.00;
-   float MaxVal       = 100.00;
+   string Group       = "Master";
+   string Flags       = "DisplayAsPercentage";
+   float MinVal       = 1.0;
+   float MaxVal       = 100.0;
 > = 4.0; // Default value
 
 float BlueStrength
 <
    string Description = "BlueStrength";
-   string Group       = "Master"; // Causes this parameter to be displayed in a group called 'Master'
-   float MinVal       = 1.00;
-   float MaxVal       = 100.00;
+   string Group       = "Master";
+   string Flags       = "DisplayAsPercentage";
+   float MinVal       = 1.0;
+   float MaxVal       = 100.0;
 > = 4.0; // Default value
 
 float Threshold
 <
    string Description = "Threshold";
-   string Group       = "Master"; // Causes this parameter to be displayed in a group called 'Master'
-   float MinVal       = 0.00;
-   float MaxVal       = 10.00;
+   string Group       = "Master";
+   float MinVal       = 0.0;
+   float MaxVal       = 10.0;
 > = 0.1; // Default value
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define NUM 9
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 dirtyToonPS( float2 xy : TEXCOORD1 ) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 dirtyToonPS (float2 uv : TEXCOORD1, float2 xy : TEXCOORD2) : COLOR
 {
    // Read a pixel from the source image at position 'xy'
    // and place it in the variable 'color'
    float4 color = tex2D( FgSampler, xy );
+
+   float alpha = color.a;
 
 	color.r = round(color.r*RedStrength)/RedStrength;
 	color.g = round(color.g*GreenStrength)/GreenStrength;
@@ -151,7 +180,10 @@ float4 dirtyToonPS( float2 xy : TEXCOORD1 ) : COLOR
 	float edge =(x*x + y*y < threshold)? 1.0:0.0;
 
 	color.rgb *= edge;
-	return color;
+
+        if (Overflow (uv)) color = EMPTY;
+
+	return lerp (EMPTY, color, alpha);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -160,8 +192,7 @@ float4 dirtyToonPS( float2 xy : TEXCOORD1 ) : COLOR
 
 technique Toon
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE dirtyToonPS();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass SinglePass ExecuteShader (dirtyToonPS)
 }
+

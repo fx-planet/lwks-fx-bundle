@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-07-26
 // @Author jwrl
-// @Created 2017-02-25
+// @Created 2021-07-26
 // @see https://www.lwks.com/media/kunena/attachments/6375/TheDarkSide_640.png
 
 /**
@@ -43,25 +43,8 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 11 July 2020 jwrl.
-// Explicitly set SupportsAlpha boolean value in colour parameter to false.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 6 July 2018 jwrl.
-// Calculate glow related to frame size not pixel size.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Rewrite 2021-07-26 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -75,39 +58,73 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Glow_1 : RenderColorTarget;
-texture Glow_2 : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DeclareInput( TEXTURE, SAMPLER ) \
+                                         \
+   texture TEXTURE;                      \
+                                         \
+   sampler SAMPLER = sampler_state       \
+   {                                     \
+      Texture   = <TEXTURE>;             \
+      AddressU  = ClampToEdge;           \
+      AddressV  = ClampToEdge;           \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define DeclareTarget( TARGET, TSAMPLE ) \
+                                         \
+   texture TARGET : RenderColorTarget;   \
+                                         \
+   sampler TSAMPLE = sampler_state       \
+   {                                     \
+      Texture   = <TARGET>;              \
+      AddressU  = Mirror;                \
+      AddressV  = Mirror;                \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY      0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define RED     1
+#define GREEN   2
+#define BLUE    3
+
+#define R_LUMA  0.2989
+#define G_LUMA  0.5866
+#define B_LUMA  0.1145
+
+#define F_SCALE 0.5
+#define P_SCALE 0.0015
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state { Texture = <Input>; };
+DeclareInput (Inp, s_Input);
 
-sampler s_Glow_1 = sampler_state
-{
-   Texture   = <Glow_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Glow_2 = sampler_state
-{
-   Texture   = <Glow_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DeclareTarget (Glow_1, s_Glow_1);
+DeclareTarget (Glow_2, s_Glow_2);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -154,29 +171,12 @@ float4 Colour
 > = { 0.0, 0.0, 0.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define RED     1
-#define GREEN   2
-#define BLUE    3
-
-#define R_LUMA  0.2989
-#define G_LUMA  0.5866
-#define B_LUMA  0.1145
-
-#define F_SCALE 0.5
-#define P_SCALE 0.0015
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_extract_Y (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
@@ -191,7 +191,7 @@ float4 ps_extract_Y (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_extract_R (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
@@ -206,7 +206,7 @@ float4 ps_extract_R (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_extract_G (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
@@ -221,7 +221,7 @@ float4 ps_extract_G (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_extract_B (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
@@ -234,7 +234,7 @@ float4 ps_extract_B (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_part_blur (float2 uv : TEXCOORD1) : COLOR
+float4 ps_part_blur (float2 uv : TEXCOORD2) : COLOR
 {
    float2 xy = uv;
    float2 offset = float2 (max (glowSpread, P_SCALE) * P_SCALE, 0.0);
@@ -262,15 +262,13 @@ float4 ps_part_blur (float2 uv : TEXCOORD1) : COLOR
    return retval / 15.0;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float amount = max (glowAmount, 0.0);
+   float4 retval = GetPixel (s_Input, uv1);
+   float4 gloVal = tex2D (s_Glow_2, uv2);
 
-   float2 xy = uv;
    float2 offset = float2 (0.0, max (glowSpread, P_SCALE) * _OutputAspectRatio * P_SCALE);
-
-   float4 retval = tex2D (s_Input, xy);
-   float4 gloVal = tex2D (s_Glow_2, xy);
+   float2 xy = uv2;
 
    xy += offset; gloVal += tex2D (s_Glow_2, xy);
    xy += offset; gloVal += tex2D (s_Glow_2, xy);
@@ -280,7 +278,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    xy += offset; gloVal += tex2D (s_Glow_2, xy);
    xy += offset; gloVal += tex2D (s_Glow_2, xy);
 
-   xy = uv - offset;
+   xy = uv2 - offset;
    gloVal += tex2D (s_Glow_2, xy);
 
    xy -= offset; gloVal += tex2D (s_Glow_2, xy);
@@ -292,6 +290,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    gloVal = saturate (retval - (gloVal / 15.0));
 
+   float amount = max (glowAmount, 0.0);
+
    return lerp (retval, gloVal, amount);
 }
 
@@ -301,56 +301,29 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique DarkSide_Y
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_extract_Y (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_part_blur (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_Y)
+   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique DarkSide_R
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_extract_R (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_part_blur (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_R)
+   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique DarkSide_G
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_extract_G (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_part_blur (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_G)
+   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique DarkSide_B
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Glow_1;"; >
-   { PixelShader = compile PROFILE ps_extract_B (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glow_2;"; >
-   { PixelShader = compile PROFILE ps_part_blur (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_B)
+   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
+   pass P_3 ExecuteShader (ps_main)
 }
+

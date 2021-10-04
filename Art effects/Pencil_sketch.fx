@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-08-07
 // @Author khaver
 // @Author Daniel Taylor
 // @Created 2018-05-24
@@ -30,11 +30,9 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Formatted the descriptive block so that it can automatically be read.
+// Update 2021-08-07 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,29 +45,68 @@ int _LwksEffectInfo
    bool CanSize       = true;
 > = 0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Wrap;                  \
+   AddressV  = Wrap;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY      0.0.xxxx
+#define BLACK      float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputWidth;
+float _OutputHeight;
+
+#define PI2      6.28318530717959
+#define RANGE    16.0
+#define STEP     2.0
+#define ANGLENUM 4.0
+
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-	Texture = <Input>;
-	AddressU = Wrap;
-	AddressV = Wrap;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+DefineInput (Input, s_RawInp);
+DefineTarget (Inp, InputSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -93,36 +130,36 @@ float Saturation
 float MasterGamma
 <
    string Description = "Gamma";
-   float MinVal = 0.10;
-   float MaxVal = 4.00;
+   float MinVal = 0.1;
+   float MaxVal = 4.0;
 > = 1.00;
 
 float MasterContrast
 <
    string Description = "Contrast";
-   float MinVal = 0.00;
-   float MaxVal = 5.00;
+   float MinVal = 0.0;
+   float MaxVal = 5.0;
 > = 1.0;
 
 float MasterBrightness
 <
    string Description = "Brightness";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float MasterGain
 <
    string Description = "Gain";
-   float MinVal = 0.00;
-   float MaxVal = 4.00;
+   float MinVal = 0.0;
+   float MaxVal = 4.0;
 > = 1.0;
 
 float Range
 <
    string Description = "Range";
-   float MinVal = 0.00;
-   float MaxVal = 20.00;
+   float MinVal = 0.0;
+   float MaxVal = 20.0;
 > = 10.0;
 
 float EPS
@@ -166,115 +203,97 @@ bool GREY
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-
-float _OutputWidth = 1;
-float _OutputHeight = 1;
-
+// Your usual image functions and utility stuff
 //-----------------------------------------------------------------------------------------//
 
-#define PI2 6.28318530717959
-#define RANGE 16.
-#define STEP 2.
-#define ANGLENUM 4.
-
-//---------------------------------------------------------
-// Your usual image functions and utility stuff
-//---------------------------------------------------------
-float4 getCol(float2 pos)
+float4 getCol (float2 pos)
 {
-    float2 uv = pos / float2(_OutputWidth,_OutputHeight);
-    return tex2D(InputSampler, uv);
+   float2 uv = pos / float2 (_OutputWidth, _OutputHeight);
+
+   return tex2D (InputSampler, uv);
 }
 
-float getVal(float2 pos)
+float getVal (float2 pos)
 {
-    float4 c=getCol(pos);
-    return dot(c.xyz, float3(0.2126, 0.7152, 0.0722));
+   return dot (getCol (pos).xyz, float3 (0.2126, 0.7152, 0.0722));
 }
 
-float2 getGrad(float2 pos, float eps)
+float2 getGrad (float2 pos, float eps)
 {
-   	float2 d=float2(eps,0);
-    return float2(
-        getVal(pos+d.xy)-getVal(pos-d.xy),
-        getVal(pos+d.yx)-getVal(pos-d.yx)
-    )/eps/2.;
+   float2 d = float2 (eps, 0.0);
+
+   return float2 (getVal (pos + d.xy) - getVal (pos - d.xy),
+                  getVal (pos + d.yx) - getVal (pos - d.yx)) / eps / 2.0;
 }
 
-void pR(inout float2 p, float a) {
-	p = cos(a)*p + sin(a)*float2(p.y, -p.x);
+void pR (inout float2 p, float a)
+{
+   p = (cos (a) * p) + (sin (a) * p.yx);
 }
 
-//---------------------------------------------------------
+//-----------------------------------------------------------------------------------------//
 // Let's do this!
-//---------------------------------------------------------
-float4 mainImage( float2 fragCoord : TEXCOORD1 ) : COLOR
+//-----------------------------------------------------------------------------------------//
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 mainImage (float2 uv : TEXCOORD1, float2 fragCoord : TEXCOORD2) : COLOR
 {
-	float2 iResolution = float2(_OutputWidth,_OutputHeight);
-	float4 fragColor;
-    float2 pos = fragCoord * iResolution;
-    float weight = 1.0;
+   float2 iResolution = float2 (_OutputWidth, _OutputHeight);
+   float2 pos = fragCoord * iResolution;
 
-    for (float j = 0.; j < ANGLENUM; j += 1.)
-    {
-        float2 dir = float2(1, 0);
-        pR(dir, j * PI2 / (EPS * ANGLENUM));
+   float4 fragColor;
 
-        float2 grad = float2(-dir.y, dir.x);
+   float weight = 1.0;
 
-        for (float i = -RANGE; i <= RANGE; i += STEP)
-        {
-            float2 pos2 = pos + normalize(dir)*i;
+   for (float j = 0.0; j < ANGLENUM; j += 1.0) {
+      float2 dir = float2 (1.0, 0.0);
 
-            // video texture wrap can't be set to anything other than clamp  (-_-)
-            if (pos2.y < 0. || pos2.x < 0. || pos2.x > iResolution.x || pos2.y > iResolution.y)
-                continue;
+      pR (dir, j * PI2 / (EPS * ANGLENUM));           // NOTE: dir is changed by this!!!!!
 
-            float2 g = getGrad(pos2, 1.);
-            if (length(g) < MAGIC_GRAD_THRESH)
-                continue;
+      float2 grad = float2 (-dir.y, dir.x);
 
-            weight -= pow(abs(dot(normalize(grad), normalize(g))), MAGIC_SENSITIVITY) / floor((2. * ceil(Range) + 1.) / STEP) / ANGLENUM;
-        }
-    }
-	float4 col;
-	if (!GREY) col = getCol(pos);
+      for (float i = -RANGE; i <= RANGE; i += STEP) {
+         float2 pos2 = pos + (normalize (dir) * i);
 
-	else {float grey = getVal(pos); col = float4(grey,grey,grey,grey);}
+         // video texture wrap can't be set to anything other than clamp  (-_-)
 
-    float4 background = lerp(col, float4(1,1,1,1), 1.0 - MAGIC_COLOR);
+         if ((pos2.y < 0.0) || (pos2.x < 0.0) || (pos2.x > iResolution.x) || (pos2.y > iResolution.y)) continue;
 
-    fragColor = lerp(float4(0,0,0,0), background, weight);
-	fragColor = ( ( ( ( pow( fragColor, 1 / MasterGamma ) * MasterGain ) + MasterBrightness ) - 0.5 ) * MasterContrast ) + 0.5;
+         float2 g = getGrad (pos2, 1.0);
 
-	float4 fg = tex2D( InputSampler, fragCoord );
-	float4 bg = fragColor;
+         if (length(g) < MAGIC_GRAD_THRESH) continue;
 
+         weight -= pow (abs (dot (normalize (grad), normalize (g))), MAGIC_SENSITIVITY) / floor ((2.0 * ceil (Range) + 1.0) / STEP) / ANGLENUM;
+      }
+   }
+
+   float4 col = (!GREY) ? getCol (pos) : getVal (pos).xxxx;
+
+   float4 background = lerp (col, 1.0.xxxx, 1.0 - MAGIC_COLOR);
+
+   fragColor = lerp (0.0.xxxx, background, weight);
+   fragColor = ((((pow (fragColor, 1.0 / MasterGamma) * MasterGain) + MasterBrightness) - 0.5) * MasterContrast) + 0.5;
+
+   float4 fg = tex2D (InputSampler, fragCoord);
+   float4 bg = fragColor;
    float4 result;
 
-   if ( bg.r < 0.5 )
-      result.r = 2.0 * fg.r * bg.r;
-   else
-      result.r = 1.0 - ( 2.0 * ( 1.0 - fg.r ) * ( 1.0 - bg.r ) );
+   result.r = (bg.r < 0.5) ? 2.0 * fg.r * bg.r : 1.0 - (2.0 * (1.0 - fg.r) * (1.0 - bg.r));
+   result.g = (bg.g < 0.5) ? 2.0 * fg.g * bg.g : 1.0 - (2.0 * (1.0 - fg.g) * (1.0 - bg.g));
+   result.b = (bg.b < 0.5) ? 2.0 * fg.b * bg.b : 1.0 - (2.0 * (1.0 - fg.b) * (1.0 - bg.b));
 
-   if ( bg.g < 0.5 )
-      result.g = 2.0 * fg.g * bg.g;
-   else
-      result.g = 1.0 - ( 2.0 * ( 1.0 - fg.g ) * ( 1.0 - bg.g ) );
+   result.rgb = lerp (result.rgb, BLACK, 1.0 - fg.a); // This cleans up any overshoot if the frame boundaries are too small.
 
-   if ( bg.b < 0.5 )
-      result.b = 2.0 * fg.b * bg.b;
-   else
-      result.b = 1.0 - ( 2.0 * ( 1.0 - fg.b ) * ( 1.0 - bg.b ) );
+   result.rgb = lerp (bg.rgb, result.rgb, fg.a * AMOUNT);
 
-   result.rgb = lerp( bg.rgb, result.rgb, fg.a * AMOUNT );
-   if (!ALPHA) result.a   = 1.0;
-   else result.a = 1.0 - dot(result.rgb, float3(0.33333,0.33334,0.33333));
+   result.a = (!ALPHA) ? 1.0 : 1.0 - dot (result.rgb, 0.33333.xxx);
 
-   float3 avg = ( result.r + result.g + result.b ) / 3.0;
-   result.rgb = avg + ( ( result.rgb - avg ) * Saturation );
+   float3 avg = (result.r + result.g + result.b) / 3.0;
 
-   return result;
+   result.rgb = avg + ((result.rgb - avg) * Saturation);
+
+   return (Overflow (uv)) ? EMPTY : result;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -283,8 +302,7 @@ float4 mainImage( float2 fragCoord : TEXCOORD1 ) : COLOR
 
 technique Pencil
 {
-   pass Pass1
-   {
-      PixelShader = compile PROFILE mainImage ();
-   }
+   pass Pfg < string Script = "RenderColorTarget0 = Inp;"; > ExecuteShader (ps_initInp)
+   pass Pass1 ExecuteShader (mainImage)
 }
+

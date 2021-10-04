@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-07-26
 // @Author khaver
 // @Created 2011-07-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Edge_640.png
@@ -20,27 +20,9 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified by LW user jwrl 11 July 2020.
-// Added "DisplayAsPercentage" flag to threshold for LW 2020.1 and higher.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Added Notes.
-// Formatted the descriptive block so that it can be used for markdown purposes.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Cross platform compatibility check 27 July 2017 jwrl.
-// Explicitly defined samplers to correct for cross-platform sampler state defaults.
-// Explicitly defined float2, float3 and float4 variables to address the behavioural
-// difference between the D3D and Cg compilers when this is not done.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Rewrite 2021-07-26 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,20 +36,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DeclareInput( TEXTURE, SAMPLER ) \
+                                         \
+   texture TEXTURE;                      \
+                                         \
+   sampler SAMPLER = sampler_state       \
+   {                                     \
+      Texture   = <TEXTURE>;             \
+      AddressU  = ClampToEdge;           \
+      AddressV  = ClampToEdge;           \
+      MinFilter = Linear;                \
+      MagFilter = Linear;                \
+      MipFilter = Linear;                \
+   }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler TexSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DeclareInput (Input, TexSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -84,7 +89,7 @@ float Threshold
 float K00
 <
    string Description = "Kernel 0";
-   string Group       = "Kernel"; // Causes this parameter to be displayed in a group called 'Kernel'
+   string Group       = "Kernel";
    float MinVal       = -10.0;
    float MaxVal       = 10.0;
 > = 2.0; // Default value
@@ -92,7 +97,7 @@ float K00
 float K01
 <
    string Description = "Kernel 1";
-   string Group       = "Kernel"; // Causes this parameter to be displayed in a group called 'Kernel'
+   string Group       = "Kernel";
    float MinVal       = -10.0;
    float MaxVal       = 10.0;
 > = 2.0; // Default value
@@ -100,7 +105,7 @@ float K01
 float K02
 <
    string Description = "Kernel 2";
-   string Group       = "Kernel"; // Causes this parameter to be displayed in a group called 'Kernel'
+   string Group       = "Kernel";
    float MinVal       = -10.0;
    float MaxVal       = 10.0;
 > = 1.0; // Default value
@@ -135,7 +140,7 @@ bool Alpha
 
 float4 main( float2 uv : TEXCOORD1 ) : COLOR
 {
-   float4 org = tex2D(TexSampler,uv);
+   float4 org = GetPixel (TexSampler,uv);
    float ThreshholdSq = Threshold * Threshold;
    float2 TextureSizeInv = float2(1.0f / TextureSizeX, 1.0f / TextureSizeY);
    float K20 = -K00;
@@ -148,20 +153,20 @@ float4 main( float2 uv : TEXCOORD1 ) : COLOR
     // Sample texture
 	// Top row
 	float2 texCoord = uv - offY;
-    float4 c00 = tex2D(TexSampler, texCoord - offX);
-    float4 c01 = tex2D(TexSampler, texCoord);
-    float4 c02 = tex2D(TexSampler, texCoord + offX);
+    float4 c00 = GetPixel (TexSampler, texCoord - offX);
+    float4 c01 = GetPixel (TexSampler, texCoord);
+    float4 c02 = GetPixel (TexSampler, texCoord + offX);
 
 	// Middle row
 	texCoord = uv;
-    float4 c10 = tex2D(TexSampler, texCoord - offX);
-    float4 c12 = tex2D(TexSampler, texCoord + offX);
+    float4 c10 = GetPixel (TexSampler, texCoord - offX);
+    float4 c12 = GetPixel (TexSampler, texCoord + offX);
 
 	// Bottom row
 	texCoord = uv + offY;
-    float4 c20 = tex2D(TexSampler, texCoord - offX);
-    float4 c21 = tex2D(TexSampler, texCoord);
-    float4 c22 = tex2D(TexSampler, texCoord + offX);
+    float4 c20 = GetPixel (TexSampler, texCoord - offX);
+    float4 c21 = GetPixel (TexSampler, texCoord);
+    float4 c22 = GetPixel (TexSampler, texCoord + offX);
 
     // Convolution
     float4 sx = 0;
@@ -201,10 +206,5 @@ float4 main( float2 uv : TEXCOORD1 ) : COLOR
 // Technique
 //-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
-{
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE main();
-   }
-}
+technique SampleFxTechnique { pass SinglePass ExecuteShader (main) }
+

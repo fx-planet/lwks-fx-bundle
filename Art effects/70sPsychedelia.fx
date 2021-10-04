@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-07-26
 // @Author jwrl
-// @Created 2016-05-11
+// @Created 2021-07-26
 // @see https://www.lwks.com/media/kunena/attachments/6375/70s_psych_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Contours_7_2016-08-16.png
 
@@ -19,48 +19,9 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Major rewrite 10 June 2020 jwrl.
-// Changed sampler addressing to defaults.  On some GPUs apparently the mirror addressing
-// previously used imposed too heavy a load and can even crash Lightworks.
-// Because of that, mirrored the edge pixels internally using the function fn_tex2D().
-// Merged previous ps_gene() and ps_hueSat() into ps_contour().
-// Simplified the antialias to a quarter of its original size.
-// Simplified the HSV processing considerably.
-// Modified the smudger to give a smoother result.
-// Added gain adjustment for contrast enhancement.
-// Removed the now redundant monochrome trimming.
-//
-// Parameter alterations:
-// Changed Contour to range from 0 to 12 and clamped it to a minimum of 0.0.
-// Increased Smudger's blur amount and clamped it to go no lower than 0.0.
-// Changed Saturation to run from 0% to 200%, using the "DisplayAsPercentage" flag.
-// Replaced Monochrome parameter with Gain.
-//
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Changed filename and subcategory.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 2018-07-09 jwrl:
-// Removed dependency on pixel size.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Rewrite 2021-07-26jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -74,20 +35,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Contours : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+texture TEXTURE;                      \
+                                      \
+sampler SAMPLER = sampler_state       \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY      0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define LUMA_VAL   float3 (0.3, 0.59, 0.11)
+#define HUE        float3 (1.0, 2.0 / 3.0, 1.0 / 3.0)
+
+float _OutputAspectRatio;
+float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
-sampler s_Contours = sampler_state { Texture = <Contours>; };
+DefineTarget (Contours, s_Contours);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -162,27 +168,6 @@ float Gain
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define LUMA_VAL   float3 (0.3, 0.59, 0.11)
-#define HUE        float3 (1.0, 2.0 / 3.0, 1.0 / 3.0)
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s_Sampler, float2 uv)
-{
-   float2 xy = 1.0.xx - abs (1.0.xx - abs (uv));   // Mirrors the edge pixels if overflow
-
-   return tex2D (s_Sampler, xy);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
@@ -197,12 +182,12 @@ float4 ps_contour (float2 uv : TEXCOORD1) : COLOR
    float2 scale   = halftex * 4.25;
    float2 xy, xy1 = uv + halftex;
 
-   float4 retval = fn_tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    for (int i = 0; i < 12; i++) {
       sincos (angle, xy.y, xy.x);
       xy *= scale;
-      retval += fn_tex2D (s_Input, xy + xy1);
+      retval += GetPixel (s_Input, xy + xy1);
       angle += 30.0;
    }
 
@@ -252,10 +237,10 @@ float4 ps_contour (float2 uv : TEXCOORD1) : COLOR
    return float4 (rgb, retval.a);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd   = tex2D (s_Input, uv);
-   float4 retval = tex2D (s_Contours, uv);
+   float4 Fgnd   = GetPixel (s_Input, uv1);
+   float4 retval = tex2D (s_Contours, uv2);
 
    // The smudger is implemented as a variation on a radial blur first.  The range
    // of adjustment is limited to run between zero and an arbitrary value of 0.002.
@@ -268,13 +253,13 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       sincos (angle, xy1.x, xy1.y);    // Put sin into x component, cos into y.
       xy1 *= xy2;                      // Scale xy1 by aspect ratio and smudge amount.
 
-      retval += fn_tex2D (s_Contours, uv + xy1);   // Sample at 0 radians first, then
-      retval += fn_tex2D (s_Contours, uv - xy1);   // at Pi radians (180 degrees).
+      retval += tex2D (s_Contours, uv2 + xy1);   // Sample at 0 radians first, then
+      retval += tex2D (s_Contours, uv2 - xy1);   // at Pi radians (180 degrees).
 
       xy1 *= 1.5;                      // Offset xy1 by 50% for a second sample pass.
 
-      retval += fn_tex2D (s_Contours, uv + xy1);
-      retval += fn_tex2D (s_Contours, uv - xy1);
+      retval += tex2D (s_Contours, uv2 + xy1);
+      retval += tex2D (s_Contours, uv2 - xy1);
 
       angle += 12.0;                   // Add 12 radians to the angle and go again.
    }
@@ -286,7 +271,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // We then composite the result with the input image and quit.
 
-   return lerp (Fgnd, retval, Amount);
+   return lerp (Fgnd, retval, Fgnd.a * Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -295,10 +280,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Psychedelia
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Contours;"; >
-   { PixelShader = compile PROFILE ps_contour (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Contours;"; > ExecuteShader (ps_contour)
+   pass P_2 ExecuteShader (ps_main)
 }

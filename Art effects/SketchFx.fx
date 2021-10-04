@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-08
+// @Released 2021-07-26
 // @Author khaver
 // @Created 2012-08-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/Sketch_640.png
@@ -17,38 +17,12 @@
 //
 // Version history:
 //
-// Update 2020-11-08 jwrl.
-// Added CanSize switch for 2021 support.
+// Update 2021-07-26 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 11 July 2020.
-// Changed addressing from Clamp to ClampToEdge for cross-platform compatibility. I'm
-// not sure whether this is absolutely necessary because the documentation about this
-// problem is somewhat ambiguous, but the change doesn't seem to hurt anything.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Corrected creation date.
-// Reformatted the descriptive block slightly.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Cross platform compatibility check 27 July 2017 jwrl.
-// Explicitly defined samplers to fix cross-platform default sampler state differences.
-// Explicitly defined float2 and float4 variables to address behavioural difference
-// between the D3D and Cg compilers.
-// Removed the statements "static const", "CULL_MODE" and a VertexShader declaration.
-// They broke the effect in Linux and appeared to do nothing in Windows.
-// Removed the arguments being passed to the RenderColorTarget declarations.  They
-// seemed to do nothing in either OS.
-//
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in Lightworks effects.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//
-// Cross platform conversion by jwrl May 2 2016.
-// Explicit profile declaration changed to generic PROFILE.
+// Prior to 11 July 2020:
+// Various changes to better support cross platform versions.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -62,68 +36,80 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture ThresholdTexture : RenderColorTarget;
-texture Blur1 : RenderColorTarget;
-texture Blur2 : RenderColorTarget;
-texture Target : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputWidth;
+float _OutputHeight;
+
+int GX [3][3] =
+{
+    { -1, +0, +1 },
+    { -2, +0, +2 },
+    { -1, +0, +1 },
+};
+
+int GY [3][3] =
+{
+    { +1, +2, +1 },
+    { +0, +0, +0 },
+    { -1, -2, -1 },
+};
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler SourceTextureSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_RawInp);
 
-sampler ThresholdSampler = sampler_state
-{
-   Texture = <ThresholdTexture>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BlurSampler = sampler_state
-{
-   Texture = <Blur1>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BlurSampler2 = sampler_state
-{
-   Texture = <Blur2>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler TarSamp = sampler_state {
-   Texture = <Target>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
- };
+DefineTarget (FixInp,  SourceTextureSampler);
+DefineTarget (ThresholdTexture, ThresholdSampler);
+DefineTarget (Blur1, BlurSampler1);
+DefineTarget (Blur2, BlurSampler2);
+DefineTarget (Target, TarSamp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -159,32 +145,32 @@ float RLevel
 <
    string Description = "Red Threshold";
    string Group = "Background";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.3;
 
 float GLevel
 <
    string Description = "Green Threshold";
    string Group = "Background";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.59;
 
 float BLevel
 <
    string Description = "Blue Threshold";
    string Group = "Background";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.11;
 
 float Level
 <
    string Description = "Shadow Amount";
    string Group = "Background";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float4 DarkColor
@@ -214,35 +200,14 @@ bool InvBack
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-int GX [3][3] =
-{
-    { -1, +0, +1 },
-    { -2, +0, +2 },
-    { -1, +0, +1 },
-};
-
-int GY [3][3] =
-{
-    { +1, +2, +1 },
-    { +0, +0, +0 },
-    { -1, -2, -1 },
-};
-
-#pragma warning ( disable : 3571 )
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 threshold_main (float2 xy1 : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 threshold_main (float2 xy : TEXCOORD2) : COLOR
 {
-   float4 src1 = tex2D (SourceTextureSampler, xy1);
+   float4 src1 = tex2D (SourceTextureSampler, xy);
    float srcLum = saturate ((src1.r * RLevel) + (src1.g * GLevel) + (src1.b * BLevel));
 
    if (Swap) src1.rgb = (srcLum <= Level) ? LightColor.rgb : DarkColor.rgb;
@@ -253,39 +218,39 @@ float4 threshold_main (float2 xy1 : TEXCOORD1) : COLOR
    return src1;
 }
 
-float4 blurX_main (float2 xy1 : TEXCOORD1) : COLOR
+float4 blurX_main (float2 xy : TEXCOORD2) : COLOR
 {
    float one   = 1.0 / _OutputWidth;
-   float tap1  = xy1.x + one;
-   float ntap1 = xy1.x - one;
+   float tap1  = xy.x + one;
+   float ntap1 = xy.x - one;
 
-   float4 blurred = tex2D (ThresholdSampler, xy1);
+   float4 blurred = tex2D (ThresholdSampler, xy);
 
-   blurred += tex2D (ThresholdSampler, float2 (tap1,  xy1.y));
-   blurred += tex2D (ThresholdSampler, float2 (ntap1, xy1.y));
+   blurred += tex2D (ThresholdSampler, float2 (tap1,  xy.y));
+   blurred += tex2D (ThresholdSampler, float2 (ntap1, xy.y));
 
    return blurred / 3.0;
 }
 
-float4 blurY_main (float2 xy1 : TEXCOORD1) : COLOR
+float4 blurY_main (float2 xy : TEXCOORD2) : COLOR
 {
-   float one  = _OutputAspectRatio / _OutputWidth;
-   float tap1 = xy1.y + one;
-   float ntap1 = xy1.y - one;
+   float one  = 1.0 / _OutputHeight;
+   float tap1 = xy.y + one;
+   float ntap1 = xy.y - one;
 
-   float4 ret = tex2D (BlurSampler, xy1);
+   float4 ret = tex2D (BlurSampler1, xy);
 
-   ret += tex2D (BlurSampler, float2 (xy1.x, tap1));
-   ret += tex2D (BlurSampler, float2 (xy1.x, ntap1));
+   ret += tex2D (BlurSampler1, float2 (xy.x, tap1));
+   ret += tex2D (BlurSampler1, float2 (xy.x, ntap1));
 
    return ret / 3.0;
 }
 
-float4 EdgedetectGrayscaleFunc (float2 tex : TEXCOORD1) : COLOR
+float4 EdgedetectGrayscaleFunc (float2 tex : TEXCOORD2) : COLOR
 {
    float4 bl = BorderLineColor;
 
-   float2 PIXEL_SIZE = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+   float2 PIXEL_SIZE = 1.0 / float2 (_OutputWidth, _OutputHeight);
    float2 HALF_PIX = PIXEL_SIZE / 2.0;
    float2 xy = 0.0.xx;
 
@@ -311,9 +276,11 @@ float4 EdgedetectGrayscaleFunc (float2 tex : TEXCOORD1) : COLOR
    return color;
 }
 
-float4 Fix (float2 tex : TEXCOORD1) : COLOR
+float4 Fix (float2 uv : TEXCOORD1, float2 tex : TEXCOORD2) : COLOR
 {
-   float2 PIXEL_SIZE = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+   float alpha = tex2D (SourceTextureSampler, tex).a;
+
+   float2 PIXEL_SIZE = 1.0 / float2 (_OutputWidth, _OutputHeight);
    float2 HALF_PIX = PIXEL_SIZE / 2.0;
 
    float4 lines = tex2D (TarSamp, tex - (PIXEL_SIZE * 2.0));
@@ -321,7 +288,9 @@ float4 Fix (float2 tex : TEXCOORD1) : COLOR
 
    if (Invert) return 1.0.xxxx - lerp (lines, back, lines.a);
 
-   return lerp (lines, back, lines.a);
+   float4 retval = (Overflow (uv)) ? EMPTY : lerp (lines, back, lines.a);
+
+   return lerp (EMPTY, retval, alpha);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -330,40 +299,11 @@ float4 Fix (float2 tex : TEXCOORD1) : COLOR
 
 technique EdgeDetect
 {
-   pass ThresholdPass
-   <
-      string Script = "RenderColorTarget0 = ThresholdTexture;";
-   >
-   {
-      PixelShader = compile PROFILE threshold_main ();
-   }
-
-   pass BlurX
-   <
-      string Script = "RenderColorTarget0 = Blur1;";
-   >
-   {
-      PixelShader = compile PROFILE blurX_main ();
-   }
-
-   pass BlurY
-   <
-      string Script = "RenderColorTarget0 = Blur2;";
-   >
-   {
-      PixelShader = compile PROFILE blurY_main ();
-   }
-
-   pass one
-   <
-      string Script = "RenderColorTarget0 = Target;";
-   >
-   {
-      PixelShader = compile PROFILE EdgedetectGrayscaleFunc ();
-   }
-
-   pass two
-   {
-      PixelShader = compile PROFILE Fix ();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass ThresholdPass < string Script = "RenderColorTarget0 = ThresholdTexture;"; > ExecuteShader (threshold_main)
+   pass BlurX < string Script = "RenderColorTarget0 = Blur1;"; > ExecuteShader (blurX_main)
+   pass BlurY < string Script = "RenderColorTarget0 = Blur2;"; > ExecuteShader (blurY_main)
+   pass one < string Script = "RenderColorTarget0 = Target;"; > ExecuteShader (EdgedetectGrayscaleFunc)
+   pass two ExecuteShader (Fix)
 }
+

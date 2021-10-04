@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-25
 // @Author schrauber
 // @Created 2017-11-13
 // @see https://www.lwks.com/media/kunena/attachments/6375/SwirlMix_Dx_640.png
@@ -34,6 +34,12 @@
 //
 // Version history:
 //
+// Modified 2021-07-25 jwrl.
+// Added CanSize switch for 2021 support.
+// Added preamble code to convert input addressing to sequence addressing.
+// Reformatted code and addressing to support resolution independence.
+// Modification date does not reflect upload date because of forum upload problems.
+//
 // Modified 2020-07-29 jwrl.
 // Reformatted the effect header.
 //
@@ -64,93 +70,82 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Blur transitions";
    string Notes       = "Uses a spin effect to transition between two sources";
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs and Samplers
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifdef LINUX
-#define Clamp ClampToEdge
+#ifndef _LENGTH
+Wrong_Lightworks_version
 #endif
 
-#ifdef OSX
-#define Clamp ClampToEdge
+#ifdef WINDOWS
+#define PROFILE ps_3_0
 #endif
 
-texture Fg;
-sampler FgSampler = sampler_state
-{
-   Texture = <Fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-texture Bg;
-sampler BgSampler = sampler_state
-{
-   Texture = <Bg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define ExecuteParam(SHDR,PM) { PixelShader = compile PROFILE SHDR (PM); }
 
+#define BLACK float2(0.0, 1.0).xxxy
 
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
 
+#define FG      true
+#define BG      false
 
+#define PI      3.1415926536
+#define TWO_PI  6.2831853072
 
-texture FgTwist : RenderColorTarget;
-sampler FgTwistSampler = sampler_state
-{
-   Texture   = <FgTwist>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+#define CENTRE     0.5
 
+#define FREQ       20.0      // Frequency of the zoom oscillation
+#define PHASE      0.5       // 90 ° phase shift of the zoom oscillation. Valid from progress 0.75
+#define AREA       100.0     // Area of the regional zoom
+#define ZOOMPOWER  12.0
 
-texture BgTwist : RenderColorTarget;
-sampler BgTwistSampler = sampler_state
-{
-   Texture   = <BgTwist>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+float _OutputAspectRatio;
 
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
 
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-texture FgZoom : RenderColorTarget;
-sampler FgZoomSampler = sampler_state
-{
-   Texture   = <FgZoom>;
-   AddressU  = Clamp;
-   AddressU  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-texture BgZoom : RenderColorTarget;
-sampler BgZoomSampler = sampler_state
-{
-   Texture   = <BgZoom>;
-   AddressU  = Clamp;
-   AddressU  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Source, SourceSampler);
+DefineTarget (Twist, TwistSampler);
+DefineTarget (FgZoom, FgZoomSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -165,14 +160,12 @@ float Progress
    float KF1    = 1.0;
 > = 0.5;
 
-
 float Zoom
 <
    string Description = "Swirl depth";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
-
 
 float Spin
 <
@@ -191,176 +184,94 @@ float Border
 > = 0.9;
 
 //-----------------------------------------------------------------------------------------//
-// Common definitions, declarations, macros
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-#define HALF_PI 1.5707963
-#define PI      3.1415927
-#define TWO_PI  6.2831853
-#define CENTRE   0.5
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_rotation (float2 uvFg : TEXCOORD1, float2 uvBg : TEXCOORD2, uniform int texcoord, uniform sampler InpSampler) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 ps_rotation (float2 uv : TEXCOORD3) : COLOR
 { 
-   // Relevant texture coordinates
-   float2 uv = uvFg;
-   if (texcoord == 2) uv = uvBg;
-
-
-   // ----Shader definitions or declarations ----
-   float4 retval;
-
-   // Position vectors
-   float2 posSpin;
-
-   // Direction vectors
-   float2 vCT;          // Vector between Center and Texel
-   float2 vCT2;         // Vector between Center and Texel, correct the aspect ratio.
-
-   // Others
-   float distC;         // Distance from the center
-   float Tsin, Tcos;    // Sine and cosine of the set angle.
-   float WhirlCenter;   // Number of revolutions in the center. With increasing distance from the center, this number of revolutions decreases.
-   float WhirlOutside;  // Unrolling from the outside. The number corresponds to the rotation in the center, with an undistorted rotation. (undistorted: WhirlOutside = WhirlCenter)
-   float angle, overEdge;
-
-   #define BORDER   (pow(1.0 - Border, 2.0) * 1000.0)     // Setting characteristic of the border width
-
+   float2 vCT = (uv - CENTRE);        // Vector between Center and Texel
 
    // ------ ROTATION --------
-   vCT = uv - CENTRE;
-   distC = length (float2 (vCT.x, vCT.y / _OutputAspectRatio));
 
-   WhirlCenter  =  cos(Progress * PI) *-0.5 + 0.5;                           // Rotation starts slowly, gets faster, and ends slowly (S-curve).
-   WhirlOutside =  cos(saturate((Progress * 2.0 -1.0)) * PI) *-0.5 + 0.5;    // Unrolling starts slowly from the middle of the effect runtime (S-curve).
-   angle = radians
-           ( 
-            + (WhirlOutside * round(Spin) * 360.0 * distC)
-            - (WhirlCenter  * round(Spin) * 360.0 * (1.0 - distC))
-            * -1.0
-           );
-   vCT2 = float2(vCT.x * _OutputAspectRatio, vCT.y);
+   // WhirlCenter:  Number of revolutions in the center. With increasing distance from the center, this number of revolutions decreases.
+   // WhirlOutside: Unrolling from the outside. The number corresponds to the rotation in the center, with an undistorted rotation. (undistorted: WhirlOutside = WhirlCenter)
+
+   float WhirlCenter  = (1.0 - cos (Progress * PI)) * 0.5;                          // Rotation starts slowly, gets faster, and ends slowly (S-curve).
+   float WhirlOutside = (1.0 - cos (saturate ((Progress * 2.0 - 1.0)) * PI)) * 0.5; // Unrolling starts slowly from the middle of the effect runtime (S-curve).
+
+   WhirlCenter -= WhirlOutside;
+   WhirlCenter *= length (float2 (vCT.x, vCT.y / _OutputAspectRatio));              // Distance from the center
+   WhirlCenter += WhirlOutside;
+
+   float angle = radians (WhirlCenter * round (Spin) * 360.0);
+   float Tsin, Tcos;    // Sine and cosine of the set angle.
+
    sincos (angle, Tsin , Tcos);
-   posSpin = float2 ((vCT2.x * Tcos - vCT2.y * Tsin), (vCT2.x * Tsin + vCT2.y * Tcos)); 
-   posSpin = float2(posSpin.x / _OutputAspectRatio, posSpin.y ) + CENTRE;
+   vCT.x *= _OutputAspectRatio;       // Vector between Center and Texel, corrected the aspect ratio.
 
+   // Position vectors
+
+   float2 posSpin = float2 ((vCT.x * Tcos) - (vCT.y * Tsin), (vCT.x * Tsin) + (vCT.y * Tcos)); 
+
+   posSpin = float2 (posSpin.x / _OutputAspectRatio, posSpin.y) + CENTRE;
 
    // ------ OUTPUT-------
-   retval = tex2D (InpSampler, posSpin);
 
-   overEdge =
-      saturate( BORDER * max(
-            max(abs(posSpin.x -0.5)-0.5, 0.0),
-            max(abs(posSpin.y -0.5)-0.5, 0.0) ));
+   float overEdge = (pow (1.0 - Border, 2.0) * 1000.0);       // Setting characteristic of the border width
 
-   return lerp(retval,
-                float4 (0.0.xxx, retval.a),
-                overEdge);
-   
+   float4 retval = tex2D (SourceSampler, posSpin);
 
+   posSpin = max (abs (posSpin - CENTRE) - CENTRE, 0.0);
+   overEdge = saturate (overEdge * max (posSpin.x, posSpin.y));
+
+   return lerp (retval, float4 (0.0.xxx, retval.a), overEdge);
 }
-   
-   
 
-
-
-
-
-
-
-
-
-
-
-
-float4 ps_zoom (float2 uvFg : TEXCOORD1, float2 uvBg : TEXCOORD2, uniform int texcoord, uniform sampler TwistSampler) : COLOR
+float4 ps_zoom (float2 uv : TEXCOORD3, uniform bool firstPass) : COLOR
 { 
-
-
-   // Relevant texture coordinates
-   float2 uv = uvFg;
-   if (texcoord == 2) uv = uvBg;
-
-
-   // ----Shader definitions or declarations ----
-   // Position vectors
-   float2 posZoom;
-
-   // Direction vectors
-   float2 vCT;         // Vector between Center and Texel
-
-   // Others
-   float distC;        // Distance from the center
-   float zoom;         // inverted zoom (> 0 = negative zoom, <0 = positive zoom)
-   float distortion;
-   float distortion2;  // Compensation distortion to avoid edge distortion.
-
-   #define FREQ              20.0                             // Frequency of the zoom oscillation
-   #define PHASE              0.5                             // 90 Â° phase shift of the zoom oscillation. Valid from progress 0.75
-   #define AREA            100.0                              // Area of the regional zoom
-   #define ZOOMPOWER        12.0
-
-
    // --- Automatic zoom change in effect progress ----
    // Progress 0    to  0.5 : increasing negative zoom
    // Progress 0.5  to  0.75: constant zoom
    // Progress 0.75 to  1   : Oscillating zoom, subside
-   zoom = min(Progress, 0.5);                                 // negative zoom  (Progress 0 to 0.75)
-   zoom = Zoom * (cos(zoom * TWO_PI) *-0.5 + 0.5);            // Creates a smooth zoom start & zoom end (S-curve) from Progress 0 to 0.5
-   if (Progress > 0.75)                                       // Progress 0.75 to 1 (Swinging zoom)
-      {
-         zoom = sin((Progress * FREQ - PHASE) * PI);           // Zoom oscillation
-         zoom *= Zoom * saturate(1.0 - (Progress * 4.0 -3.0)); // Damping the zoom from progress 0.75   The formula scales the progress range from 0.75 ... 1   to   1 ... 0; 
-      }
 
+   float zoom = min (Progress, 0.5);                          // negative zoom (Progress 0 to 0.75)
+
+   zoom = Zoom * (1.0 - cos (zoom * TWO_PI)) * 0.5;           // Creates a smooth zoom start & zoom end (S-curve) from Progress 0 to 0.5
+
+   if (Progress > 0.75) {                                     // Progress 0.75 to 1 (Swinging zoom)
+      zoom = sin (((Progress * FREQ) - PHASE) * PI);          // Zoom oscillation
+      zoom *= Zoom * saturate ((1.0 - Progress) * 4.0);       // Damping the zoom from progress 0.75   The formula scales the progress range from 0.75 ... 1   to   1 ... 0; 
+   }
 
    // ------  Inverted regional zoom ------
-   vCT = CENTRE - uv;
-   distC = length (float2 (vCT.x * _OutputAspectRatio , vCT.y));
-   distortion = (distC * ((distC * AREA) + 1.0) + 1.0); 
-   distortion2 =  min(length(vCT), CENTRE) -CENTRE;                // The limitation to CENTRE (0.5) preventing distortion of the corners.
-   zoom /= max( distortion, 1E-6);
-   posZoom =  zoom  * ZOOMPOWER * distortion2 * vCT + uv; 
-   
 
+   float2 vCT = CENTRE - uv;                                  // Vector between Center and Texel
+
+   float distC = length (float2 (vCT.x * _OutputAspectRatio, vCT.y));
+
+   float distortion  = (distC * ((distC * AREA) + 1.0)) + 1.0; 
+   float distortion2 = min (length (vCT), CENTRE) - CENTRE;   // The limitation to CENTRE (0.5) preventing distortion of the corners.
+
+   zoom /= max (distortion, 1e-6);
+
+   float2 posZoom = uv + (distortion2 * vCT * zoom * ZOOMPOWER); 
 
    // ------ OUTPUT-------
-   return tex2D (TwistSampler, posZoom);           
 
-}
+   float4 zoomed = tex2D (TwistSampler, posZoom);           
 
+   if (firstPass) return zoomed;           
 
+   float mix = saturate ((Progress - 0.78) * 6.0);            // Scales the progress range from > 0.78 to 0 ... 1
 
+   mix = saturate (mix / distC);                              // Divide mix by distance from the center
+   mix = (1.0 - cos (mix * PI)) * 0.5;                        // Makes the spatial boundary of the blended clips narrower.
+   mix = (1.0 - cos (mix * PI)) * 0.5;                        // Makes the spatial boundary of the mixed clips even narrower.
 
-
-
-
-
-
-
-float4 ps_mix (float2 uvFg: TEXCOORD1, float2 uvBg: TEXCOORD2, float2 uvmix: TEXCOORD0 ) : COLOR
-{ 
-  
-
-   float2 vCT;      // Direction vector between Center and Texel
-   float distC;     // Distance from the center
-   float mix;
-
-  vCT = CENTRE - uvmix;
-  distC = length (float2 (vCT.x * _OutputAspectRatio , vCT.y));
-  mix = saturate ((Progress - 0.78) * 6.0);       // Scales the progress range from > 0.78  to   0 ... 1
-  mix = saturate(mix / distC);
-  mix = cos(mix * PI) *-0.5 + 0.5;                // Makes the spatial boundary of the blended clips narrower.
-  mix = cos(mix * PI) *-0.5 + 0.5;                // Makes the spatial boundary of the mixed clips even narrower.
-
-  return lerp (tex2D (FgZoomSampler, uvFg),
-               tex2D (BgZoomSampler, uvBg),
-               mix);
-
+   return lerp (tex2D (FgZoomSampler, uv), zoomed, mix);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -369,10 +280,11 @@ float4 ps_mix (float2 uvFg: TEXCOORD1, float2 uvBg: TEXCOORD2, float2 uvmix: TEX
 
 technique main
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FgTwist;"; >    { PixelShader = compile PROFILE ps_rotation (1, FgSampler); }
-   pass P_2 < string Script = "RenderColorTarget0 = BgTwist;"; >    { PixelShader = compile PROFILE ps_rotation (2, BgSampler); }
-   pass P_3 < string Script = "RenderColorTarget0 = FgZoom;";  >    { PixelShader = compile PROFILE ps_zoom (1, FgTwistSampler); }
-   pass P_4 < string Script = "RenderColorTarget0 = BgZoom;";  >    { PixelShader = compile PROFILE ps_zoom (2, BgTwistSampler); }
-   pass P_5 { PixelShader = compile PROFILE ps_mix (); }
-
+   pass Pfg < string Script = "RenderColorTarget0 = Source;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = Twist;"; > ExecuteShader (ps_rotation)
+   pass P_1 < string Script = "RenderColorTarget0 = FgZoom;"; > ExecuteParam (ps_zoom, FG)
+   pass P_2 < string Script = "RenderColorTarget0 = Source;"; > ExecuteShader (ps_initBg)
+   pass P_3 < string Script = "RenderColorTarget0 = Twist;"; > ExecuteShader (ps_rotation)
+   pass P_4 ExecuteParam (ps_zoom, BG)
 }
+

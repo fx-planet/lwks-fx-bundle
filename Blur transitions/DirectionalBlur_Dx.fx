@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-06-20
+// @Released 2021-06-24
 // @Author jwrl
-// @Created 2021-06-20
+// @Created 2021-06-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalBlur_Dx_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalBlur_Dx.mp4
 
@@ -18,7 +18,9 @@
 //
 // Version history:
 //
-// Built 2021-06-20 jwrl.
+// Rewrite 2021-07-24 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,11 +44,6 @@ Wrong_Lightworks_version
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define EMPTY 0.0.xxxx
-
-#define IsOutOfBounds(XY) any(saturate(XY) - XY)
-#define GetPixel(SHD, XY) (IsOutOfBounds(XY) ? EMPTY : tex2D (SHD, XY))
 
 #define DefineInput(TEXTURE, SAMPLER)  \
                                        \
@@ -77,6 +74,11 @@ sampler SAMPLER = sampler_state        \
 }
 
 #define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define PI        3.1415926536
 

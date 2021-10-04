@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-06-19
+// @Released 2021-07-24
 // @Author jwrl
-// @Created 2021-06-19
+// @Created 2021-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blur_Dx_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Blur_Dx.mp4
 
@@ -17,7 +17,9 @@
 //
 // Version history:
 //
-// Built 2021-06-19 jwrl.
+// Rebuild 2021-07-24 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,40 +44,40 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+texture TEXTURE;                      \
+                                      \
+sampler SAMPLER = sampler_state       \
+{                                     \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+}
+
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+}
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
 #define EMPTY 0.0.xxxx
 
-#define IsOutOfBounds(XY) any(saturate(XY) - XY)
-#define GetPixel(SHD, XY) (IsOutOfBounds(XY) ? EMPTY : tex2D (SHD, XY))
-
-#define DefineInput(TEXTURE, SAMPLER)  \
-                                       \
-texture TEXTURE;                       \
-                                       \
-sampler SAMPLER = sampler_state        \
-{                                      \
-   Texture   = <TEXTURE>;              \
-   AddressU  = ClampToEdge;            \
-   AddressV  = ClampToEdge;            \
-   MinFilter = Linear;                 \
-   MagFilter = Linear;                 \
-   MipFilter = Linear;                 \
-}
-
-#define DefineTarget(TEXTURE, SAMPLER) \
-                                       \
-texture TEXTURE : RenderColorTarget;   \
-                                       \
-sampler SAMPLER = sampler_state        \
-{                                      \
-   Texture   = <TEXTURE>;              \
-   AddressU  = Mirror;                 \
-   AddressV  = Mirror;                 \
-   MinFilter = Linear;                 \
-   MagFilter = Linear;                 \
-   MipFilter = Linear;                 \
-}
-
-#define CompileShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define PI        3.1415926536
 
@@ -180,7 +182,7 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
 
 technique Blur_Dx
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Mixed;"; > CompileShader (ps_mixer)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > CompileShader (ps_blurX)
-   pass P_3 CompileShader (ps_main)
+   pass P_1 < string Script = "RenderColorTarget0 = Mixed;"; > ExecuteShader (ps_mixer)
+   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_blurX)
+   pass P_3 ExecuteShader (ps_main)
 }

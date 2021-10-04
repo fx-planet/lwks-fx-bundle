@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-06-11
+// @Released 2021-07-25
 // @Author jwrl
-// @Created 2021-06-11
+// @Created 2021-07-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhipPan_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/WhipPan.mp4
 
 /**
  This effect performs a whip pan style of transition between two sources.  Unlike the
- blur dissolve effect, this also pans the incoming and outgoing vision sources.  It's
- limited to vertical and horizontal whips, so if you need an angled whip your only
- option is to use the blur dissolve.
+ blur dissolve effect, this also pans the incoming and outgoing vision sources.  This
+ revised version allows the whip pan angle to be set over the range of plus or minus
+ 180 degrees.  The original was limited to horizontal and vertical moves.
 
  To better handle varying aspect ratios masking has been provided to limit the blur
  range to the input frame boundaries.  This changes as the effect progresses to allow
@@ -21,7 +21,9 @@
 //
 // Version history:
 //
-// Complete rebuild 2021-06-11 jwrl.
+// Rewrite 2021-07-25 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,48 +48,61 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-#define EMPTY 0.0.xxxx
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define IsOutOfBounds(XY) any(saturate(XY) - XY)
+#define DefineTarget(TARGET, TSAMPLE) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler TSAMPLE = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = Mirror;                \
+   AddressV  = Mirror;                \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define DeclareInput( TEXTURE, SAMPLER ) \
-                                         \
-   texture TEXTURE;                      \
-                                         \
-   sampler SAMPLER = sampler_state       \
-   {                                     \
-      Texture   = <TEXTURE>;             \
-      AddressU  = Mirror;                \
-      AddressV  = Mirror;                \
-      MinFilter = Linear;                \
-      MagFilter = Linear;                \
-      MipFilter = Linear;                \
-   }
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define BLACK float2(0.0, 1.0).xxxy
 
-#define PI        3.1415926536
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
 
-#define STRENGTH  0.005
+#define PI        3.14159265359
 
-float _OutputAspectRatio;
+#define SAMPLES   60
+#define SAMPSCALE 61
+
+#define STRENGTH  0.01
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DeclareInput (Fg, s_Foreground);
-DeclareInput (Bg, s_Background);
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
+
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
-
-int SetTechnique
-<
-   string Description = "Whip direction";
-   string Enum = "Left to right,Right to left,Top to bottom,Bottom to top";
-> = 0;
 
 float Amount
 <
@@ -98,176 +113,73 @@ float Amount
    float KF1    = 1.0;
 > = 0.5;
 
-float Strength
+float Angle
 <
-   string Description = "Strength";
+   string Description = "Angle";
+   float MinVal = -180.00;
+   float MaxVal = 180.0;
+> = 0.0;
+
+float Spread
+<
+   string Description = "Spread";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float fn_mix (float2 xy1, float2 xy2, out float Mask, out float Whip)
-{
-   float Fkey = IsOutOfBounds (xy1);
-   float Bkey = IsOutOfBounds (xy2);
-
-   Mask = lerp (Fkey, Bkey, Amount);
-   Whip = 1.5 - (cos (Amount * PI) * 1.5);
-
-   return saturate (Whip - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_L_R (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float mask, whip;
-   float Mix = fn_mix (uv1, uv2, mask, whip);
+   float amount = saturate (Amount);   // Just in case someone types in silly numbers
 
-   float2 xy1 = float2 (-whip, 0.0);
-   float2 xy2 = float2 (1.0 + uv2.x, uv2.y) + xy1;
+   float2 blur1, blur2;
 
-   xy1 += uv1;
+   sincos (radians (Angle), blur1.y, blur1.x);
+   sincos (radians (Angle + 180.0), blur2.y, blur2.x);
 
-   float4 retval = tex2D (s_Foreground, xy1);
+   blur1  *= Spread * amount;
+   blur2  *= Spread * (1.0 - amount);
+   blur1.x = -blur1.x;
+   blur2.x = -blur2.x;
 
-   float amount = 1.0 - cos (clamp ((0.5 - abs (Amount - 0.5)) * 4.0, 0.0, 0.5) * PI);
+   float2 xy1 = uv + (blur1 * 3.0);
+   float2 xy2 = uv + (blur2 * 3.0);
 
-   if ((amount > 0.0) && (Strength > 0.0)) {
+   float4 Fgnd = tex2D (s_Foreground, xy1);
+   float4 Bgnd = tex2D (s_Background, xy2);
 
-      float4 Bgnd = tex2D (s_Background, xy2);
-      float4 Fgnd = retval;
+   if (Spread > 0.0) {
+      blur1 *= STRENGTH;
+      blur2 *= STRENGTH;
 
-      float2 xy0 = float2 (amount * Strength * STRENGTH, 0.0);
-
-      for (int i = 0; i < 60; i++) {
-         xy1 += xy0;
-         xy2 -= xy0;
+      for (int i = 0; i < SAMPLES; i++) {
+         xy1 -= blur1;
+         xy2 += blur2;
          Fgnd += tex2D (s_Foreground, xy1);
          Bgnd += tex2D (s_Background, xy2);
       }
-
-      retval = lerp (Fgnd, Bgnd, Mix) / 61;
+    
+      Fgnd /= SAMPSCALE;
+      Bgnd /= SAMPSCALE;
    }
 
-   return lerp (retval, EMPTY, mask);
-}
-
-float4 ps_main_R_L (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float mask, whip;
-   float Mix = fn_mix (uv1, uv2, mask, whip);
-
-   float2 xy1 = float2 (whip, 0.0);
-   float2 xy2 = float2 (1.0 + uv2.x, uv2.y) + xy1;
-
-   xy1 += uv1;
-
-   float4 retval = tex2D (s_Foreground, xy1);
-
-   float amount = 1.0 - cos (clamp ((0.5 - abs (Amount - 0.5)) * 4.0, 0.0, 0.5) * PI);
-
-   if ((amount > 0.0) && (Strength > 0.0)) {
-
-      float4 Bgnd = tex2D (s_Background, xy2);
-      float4 Fgnd = retval;
-
-      float2 xy0 = float2 (amount * Strength * STRENGTH, 0.0);
-
-      for (int i = 0; i < 60; i++) {
-         xy1 -= xy0;
-         xy2 += xy0;
-         Fgnd += tex2D (s_Foreground, xy1);
-         Bgnd += tex2D (s_Background, xy2);
-      }
-
-      retval = lerp (Fgnd, Bgnd, Mix) / 61;
-   }
-
-   return lerp (retval, EMPTY, mask);
-}
-
-float4 ps_main_T_B (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float mask, whip;
-   float Mix = fn_mix (uv1, uv2, mask, whip);
-
-   float2 xy1 = float2 (0.0, -whip);
-   float2 xy2 = float2 (uv2.x, 1.0 + uv2.y) + xy1;
-
-   xy1 += uv1;
-
-   float4 retval = tex2D (s_Foreground, xy1);
-
-   float amount = 1.0 - cos (clamp ((0.5 - abs (Amount - 0.5)) * 4.0, 0.0, 0.5) * PI);
-
-   if ((amount > 0.0) && (Strength > 0.0)) {
-
-      float4 Bgnd = tex2D (s_Background, xy2);
-      float4 Fgnd = retval;
-
-      float2 xy0 = float2 (0.0, amount * Strength * STRENGTH / _OutputAspectRatio);
-
-      for (int i = 0; i < 60; i++) {
-         xy1 += xy0;
-         xy2 -= xy0;
-         Fgnd += tex2D (s_Foreground, xy1);
-         Bgnd += tex2D (s_Background, xy2);
-      }
-
-      retval = lerp (Fgnd, Bgnd, Mix) / 61;
-   }
-
-   return lerp (retval, EMPTY, mask);
-}
-
-float4 ps_main_B_T (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float mask, whip;
-   float Mix = fn_mix (uv1, uv2, mask, whip);
-
-   float2 xy1 = float2 (0.0, whip);
-   float2 xy2 = float2 (uv2.x, 1.0 + uv2.y) + xy1;
-
-   xy1 += uv1;
-
-   float4 retval = tex2D (s_Foreground, xy1);
-
-   float amount = 1.0 - cos (clamp ((0.5 - abs (Amount - 0.5)) * 4.0, 0.0, 0.5) * PI);
-
-   if ((amount > 0.0) && (Strength > 0.0)) {
-
-      float4 Bgnd = tex2D (s_Background, xy2);
-      float4 Fgnd = retval;
-
-      float2 xy0 = float2 (0.0, amount * Strength * STRENGTH / _OutputAspectRatio);
-
-      for (int i = 0; i < 60; i++) {
-         xy1 -= xy0;
-         xy2 += xy0;
-         Fgnd += tex2D (s_Foreground, xy1);
-         Bgnd += tex2D (s_Background, xy2);
-      }
-
-      retval = lerp (Fgnd, Bgnd, Mix) / 61;
-   }
-
-   return lerp (retval, EMPTY, mask);
+   return lerp (Fgnd, Bgnd, 0.5 - (cos (amount * PI) / 2.0));
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique WhipPan_Dx_0 { pass P_1 CompileShader (ps_main_L_R) }
+technique WhipPan_Dx
+{
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_main)
+}
 
-technique WhipPan_Dx_1 { pass P_1 CompileShader (ps_main_R_L) }
-
-technique WhipPan_Dx_2 { pass P_1 CompileShader (ps_main_T_B) }
-
-technique WhipPan_Dx_3 { pass P_1 CompileShader (ps_main_B_T) }

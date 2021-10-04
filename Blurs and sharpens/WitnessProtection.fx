@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-02-11
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2020-06-03
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/WitnessProtection_640.png
 
 /**
@@ -34,9 +34,6 @@
  discrepancies.  Correct the position where necessary.  You may also choose to enable curved
  keyframe paths to help path smoothing in the effect graph display, but this can often be
  unnecessary when using this technique.
-
- NOTE: This effect won't handle resolution independence perfectly.  As with Lightworks'
- standard blur effects, it produces the blur and/or mosaic at the sequence resolution.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -44,13 +41,9 @@
 //
 // Version history:
 //
-// Updated 2021-02-11 jwrl:
-// Rewrite to handle resolution independence for version 2021 and higher.
-//
-// Modified jwrl 2020-06-05
-// Added a choice of rectangular or oval mask shapes.
-// Added the ability track the mosaic sampling with the mask position.
-// Fixed positional error in mosaic sampling caused by use of floor() instead of round().
+// Rewrite 2021-08-31 jwrl:
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -60,7 +53,7 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "A classic witness protection effect.";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -75,48 +68,55 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-#define DeclareInput(TEXTURE, SAMPLER) \
- \
-texture TEXTURE; \
- \
-sampler SAMPLER = sampler_state \
-{ \
-   Texture   = <TEXTURE>; \
-   AddressU  = ClampToEdge; \
-   AddressV  = ClampToEdge; \
-   MinFilter = Linear; \
-   MagFilter = Linear; \
-   MipFilter = Linear; \
-}
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define DeclareTarget(TARGET, SAMPLER) \
- \
-texture TARGET : RenderColorTarget; \
- \
-sampler SAMPLER = sampler_state \
-{ \
-   Texture   = <TARGET>; \
-   AddressU  = ClampToEdge; \
-   AddressV  = ClampToEdge; \
-   MinFilter = Linear; \
-   MagFilter = Linear; \
-   MipFilter = Linear; \
-}
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define Execute(SHADER) {PixelShader = compile PROFILE SHADER ();}
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
-#define EMPTY   (0.0).xxxx
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
 
 float _OutputAspectRatio;
+
+#define Size(M,X,Y) (_OutputAspectRatio > 1.0 ? M * float2 (X / _OutputAspectRatio, Y) \
+                                              : M * float2 (X, Y * _OutputAspectRatio))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-DeclareInput (Inp, s_Input);
+SetInputMode (Inp, s_RawInp, Mirror);
 
-DeclareTarget (Ps_1, s_PassOne);
-DeclareTarget (Ps_2, s_PassTwo);
+SetTargetMode (FixInp, s_Input, Mirror);
+
+SetTargetMode (Ps_1, s_PassOne, Mirror);
+SetTargetMode (Ps_2, s_PassTwo, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -201,55 +201,41 @@ float PosY
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   if ((xy.x > 0.5) || (xy.y > 0.5)) return EMPTY;
-
-   return tex2D (s, uv);
-}
-
-float2 fn_size (float M, float X, float Y)
-{
-   return (_OutputAspectRatio > 1.0) ? M * float2 (X / _OutputAspectRatio, Y)
-                                     : M * float2 (X, Y * _OutputAspectRatio);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_rectangle_crop (float2 uv : TEXCOORD1) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 ps_rectangle_crop (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 retval = fn_tex2D (s_Input, uv);
+   float4 retval = tex2D (s_Input, uv);
 
    float2 xy  = abs (uv - float2 (PosX, 1.0 - PosY));
 
-   xy -= fn_size (MasterSize, SizeX, SizeY) * 0.5;
+   xy -= Size (MasterSize, SizeX, SizeY) * 0.5;
 
    if ((xy.x > 0.0) || (xy.y > 0.0)) retval.a = 0.0;
 
    return retval;
 }
 
-float4 ps_ellipse_crop (float2 uv : TEXCOORD1) : COLOR
+float4 ps_ellipse_crop (float2 uv : TEXCOORD2) : COLOR
 {
    float4 retval = tex2D (s_Input, uv);
 
    float2 xy = (uv - float2 (PosX, 1.0 - PosY)) * 1.77245;
 
-   xy /= fn_size (MasterSize, SizeX, SizeY);
+   xy /= Size (MasterSize, SizeX, SizeY);
 
    if (dot (xy, xy) > 1.0) retval.a = 0.0;
 
    return retval;
 }
 
-float4 ps_mosaic (float2 uv : TEXCOORD1) : COLOR
+float4 ps_mosaic (float2 uv : TEXCOORD2) : COLOR
 {
    float amount = Master * Mosaic;
 
@@ -258,15 +244,15 @@ float4 ps_mosaic (float2 uv : TEXCOORD1) : COLOR
    if (amount > 0.0) {
       float2 xy1 = (Tracking == 0) ? 0.5.xx : float2 (PosX, 1.0 - PosY);
 
-      xy = fn_size (amount * 0.1, 1.0, 1.0);
+      xy = Size (amount * 0.1, 1.0, 1.0);
       xy = (floor ((uv - xy1) / xy) * xy) + xy1;
    }
    else xy = uv;
 
-   return fn_tex2D (s_PassOne, xy);
+   return tex2D (s_PassOne, xy);
 }
 
-float4 ps_blur_sub (float2 uv : TEXCOORD1) : COLOR
+float4 ps_blur_sub (float2 uv : TEXCOORD2) : COLOR
 {
    float amount = Master * Blurriness * 0.00772;
 
@@ -274,39 +260,41 @@ float4 ps_blur_sub (float2 uv : TEXCOORD1) : COLOR
 
    if (amount <= 0.0) return retval;
 
-   float2 xy, radius = fn_size (amount, 1.0, 1.0);
+   float2 xy, radius = Size (amount, 1.0, 1.0);
 
    for (int i = 0; i < 12; i++) {
       sincos ((i * 0.2617993878), xy.x, xy.y);
       xy *= radius;
-      retval += fn_tex2D (s_PassTwo, uv + xy);
-      retval += fn_tex2D (s_PassTwo, uv - xy);
+      retval += tex2D (s_PassTwo, uv + xy);
+      retval += tex2D (s_PassTwo, uv - xy);
       xy += xy;
-      retval += fn_tex2D (s_PassTwo, uv + xy);
-      retval += fn_tex2D (s_PassTwo, uv - xy);
+      retval += tex2D (s_PassTwo, uv + xy);
+      retval += tex2D (s_PassTwo, uv - xy);
    }
 
    return retval / 49.0;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Bgd = fn_tex2D (s_Input, uv);
-   float4 retval = fn_tex2D (s_PassOne, uv);
+   if (Overflow (uv1)) return EMPTY;
+
+   float4 Bgd = tex2D (s_Input, uv2);
+   float4 retval = tex2D (s_PassOne, uv2);
 
    float amount = Master * Blurriness * 0.0193;
 
    if (amount > 0.0) {
-      float2 xy, radius = fn_size (amount, 1.0, 1.0);
+      float2 xy, radius = Size (amount, 1.0, 1.0);
 
       for (int i = 0; i < 12; i++) {
          sincos ((i * 0.2617993878), xy.x, xy.y);
          xy *= radius;
-         retval += fn_tex2D (s_PassOne, uv + xy);
-         retval += fn_tex2D (s_PassOne, uv - xy);
+         retval += tex2D (s_PassOne, uv2 + xy);
+         retval += tex2D (s_PassOne, uv2 - xy);
          xy += xy;
-         retval += fn_tex2D (s_PassOne, uv + xy);
-         retval += fn_tex2D (s_PassOne, uv - xy);
+         retval += tex2D (s_PassOne, uv2 + xy);
+         retval += tex2D (s_PassOne, uv2 - xy);
       }
 
       retval /= 49.0;
@@ -322,28 +310,19 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique WitnessProtection_0
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_rectangle_crop)
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Ps_2;"; > Execute (ps_mosaic)
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_blur_sub)
-
-   pass P_4 Execute (ps_main)
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = Ps_1;"; > ExecuteShader (ps_rectangle_crop)
+   pass P_2 < string Script = "RenderColorTarget0 = Ps_2;"; > ExecuteShader (ps_mosaic)
+   pass P_3 < string Script = "RenderColorTarget0 = Ps_1;"; > ExecuteShader (ps_blur_sub)
+   pass P_4 ExecuteShader (ps_main)
 }
 
 technique WitnessProtection_1
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_ellipse_crop)
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Ps_2;"; > Execute (ps_mosaic)
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Ps_1;"; > Execute (ps_blur_sub)
-
-   pass P_4 Execute (ps_main)
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = Ps_1;"; > ExecuteShader (ps_ellipse_crop)
+   pass P_2 < string Script = "RenderColorTarget0 = Ps_2;"; > ExecuteShader (ps_mosaic)
+   pass P_3 < string Script = "RenderColorTarget0 = Ps_1;"; > ExecuteShader (ps_blur_sub)
+   pass P_4 ExecuteShader (ps_main)
 }
+

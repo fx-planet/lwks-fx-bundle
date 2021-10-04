@@ -1,11 +1,14 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
+// @Author Jerker
+// @Author khaver
 // @Created 2017-06-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/UnsharpMask_640.png
 
 /**
- A simple unsharp mask.  Probably redundant, since the Lightworks effect does the same thing.
+ A simple unsharp mask.  Probably redundant, since the Lightworks effect does pretty much
+ the same thing.  I've kept it because I prefer the look of this one.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,61 +26,27 @@
 // passes.  There's a checkbox for a 10 fold increase in the blur amount.  (This was
 // actually reduced to 5 in Jerker's effect - jwrl)
 //
+// This was then totally rewritten 19 July 2017 by jwrl.  I decided to rewrite the effect
+// from the ground up because of assumptions made about the way that shaders functioned
+// in Lightworks which at best could only be described as coincidental if it was at all
+// true.  This includes the blur section which took khaver's original big blur effect
+// and heavily optimised it to reduce GPU loading.
+//
+// The original unsharpen shader has been discarded all together. I have gone back to
+// first principles and created an algorithm that produces the sharpening using
+// luminance.  There is also edge gain and contrast provided, which the original effect
+// didn't have.
+//
 // ******************************** END OF ORIGINAL HEADER **********************************
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Updated 2021-08-31 jwrl:
+// Partial rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-// Renamed "Edge gamma" to "Edge contrast".  While strictly speaking incorrect, it feels
-// more like what's happening with that control to an uneducated user.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Totally rewritten 19 July 2017 by jwrl.
-// I didn't understand how the original effect could ever have worked correctly and didn't
-// work at all in Linux, and therefore was unlikely to do so in OS/X.  The main issue was
-// with the actual unsharp shader, which made assumptions about the way that shaders
-// functioned in Lightworks which at best could only be described as coincidental if it
-// was at all true.
-//
-// The original also did five passes through the blur code, but only ever used three
-// of them.  This meant that the blur could never have been smooth, and in the version
-// that was tested on Windows, visibly wasn't.
-//
-// In the light of all that I decided to completely rewrite the effect from the ground
-// up.  This includes the blur section which took khaver's original big blur effect
-// and heavily optimised it to reduce GPU loading.  Any overheads in an effect of this
-// complexity should be kept as low as possible, and we had a total of six passes to
-// execute.
-//
-// I have discarded the five / ten times sample radius scaling of the original because
-// I really didn't see the point when the blur was used in this context.
-//
-// The original unsharpen shader has been discarded all together. I have gone back to
-// first principles and created an algorithm that produces the sharpening using
-// luminance.  To my eye it gives a cleaner result and is much closer to the way that
-// the original film optical technique functioned.  As far as I know the actual method
-// that I have used is an original one, but feel free to use it if you find it useful.
-//
-// I have added a mask gamma adjustment to the unsharp section.  Called somewhat
-// misleadingly "Edge gamma", that plus the range of the original blur gives more than
-// enough sharpness adjustment for any reasonable purpose.  The parameter as used will
-// run from a mask gamma value of 3.67 (EdgeGamma 0.0) to a value of 0.007 (EdgeGamma
-// 1.0).  The default EdgeGamma setting of 0.5 will give a unity mask gamma value.
-//
-// I've also included a mask gain parameter called, as you might have expected, "Edge
-// gain"  Again, 0.5 corresponds to a unity setting.
-//
-// The finished effect functions cross-platform and has been tested to confirm that.
-// As a result the old effect has been retired.  It really was too broken to repair.
+// Prior to 2020-11-09:
+// Various updates mainly to improve cross-platform performance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -87,48 +56,71 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "Try the Lightworks sharpen effects first and use this only if those don't have enough range";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Pass1 : RenderColorTarget;
-texture Pass2 : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define ExecuteParam(SHD,PRM) { PixelShader = compile PROFILE SHD (PRM); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define LUMA_DOT  float3(1.1955,2.3464,0.4581)
+#define GAMMA_VAL 1.666666667
+
+float _OutputWidth;
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s0 = sampler_state {
-	Texture   = <Input>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Point;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetInputMode (Input, s_RawInp, Mirror);
 
-sampler s1 = sampler_state {
-	Texture   = <Pass1>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Point;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
-
-sampler s2 = sampler_state {
-	Texture   = <Pass2>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Point;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetTargetMode (FixInp, s0, Mirror);
+SetTargetMode (Pass1, s1, Mirror);
+SetTargetMode (Pass2, s2, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -170,20 +162,15 @@ float Amount
 > = 0.15;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define LUMA_DOT  float3(1.1955,2.3464,0.4581)
-#define GAMMA_VAL 1.666666667
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_blur_1 (float2 uv : TEXCOORD1) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 ps_blur_1 (float2 uv : TEXCOORD2) : COLOR
 {  
    float4 orig = tex2D (s0, uv);
 
@@ -191,7 +178,7 @@ float4 ps_blur_1 (float2 uv : TEXCOORD1) : COLOR
 
    float angle, radius = BlurAmt * 100.0;
 
-   float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+   float2 pixsize = 1.0.xx / float2 (_OutputWidth, _OutputHeight);
    float2 halfpix = pixsize / 2.0;
    float2 xy2, xy1 = uv + halfpix;
 
@@ -210,7 +197,7 @@ float4 ps_blur_1 (float2 uv : TEXCOORD1) : COLOR
    return cOut;
 }
 
-float4 ps_blur_2 (float2 uv : TEXCOORD1, uniform float ang) : COLOR
+float4 ps_blur_2 (float2 uv : TEXCOORD2, uniform float ang) : COLOR
 {  
    float4 orig = tex2D (s1, uv);
 
@@ -218,7 +205,7 @@ float4 ps_blur_2 (float2 uv : TEXCOORD1, uniform float ang) : COLOR
 
    float angle, radius = BlurAmt * 100.0;
 
-   float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+   float2 pixsize = 1.0.xx / float2 (_OutputWidth, _OutputHeight);
    float2 halfpix = pixsize / 2.0;
    float2 xy2, xy1 = uv + halfpix;
 
@@ -237,7 +224,7 @@ float4 ps_blur_2 (float2 uv : TEXCOORD1, uniform float ang) : COLOR
    return cOut;
 }
 
-float4 ps_blur_3 (float2 uv : TEXCOORD1, uniform float ang) : COLOR
+float4 ps_blur_3 (float2 uv : TEXCOORD2, uniform float ang) : COLOR
 {  
    float4 orig = tex2D (s2, uv);
 
@@ -245,7 +232,7 @@ float4 ps_blur_3 (float2 uv : TEXCOORD1, uniform float ang) : COLOR
 
    float angle, radius = BlurAmt * 100.0;
 
-   float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+   float2 pixsize = 1.0.xx / float2 (_OutputWidth, _OutputHeight);
    float2 halfpix = pixsize / 2.0;
    float2 xy2, xy1 = uv + halfpix;
 
@@ -264,9 +251,11 @@ float4 ps_blur_3 (float2 uv : TEXCOORD1, uniform float ang) : COLOR
    return cOut;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s0, uv);
+   if (Overflow (uv1)) return EMPTY;
+
+   float4 retval = tex2D (s0, uv2);
 
    if (Amount <= 0.0) return retval;
 
@@ -274,7 +263,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float maskGamma = min (1.15, 1.1 - min (1.05, EdgeGamma)) * GAMMA_VAL;
    float maskGain  = EdgeGain * 2.0;
 
-   sharpMask -= dot (tex2D (s1, uv).rgb, LUMA_DOT);
+   sharpMask -= dot (tex2D (s1, uv2).rgb, LUMA_DOT);
    maskGamma *= maskGamma;
 
    float sharp_pos = pow (max (0.0, sharpMask - Threshold), maskGamma) * maskGain;
@@ -291,30 +280,15 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   pass PassA
-   < string Script = "RenderColorTarget0 = Pass1;"; >
-   { PixelShader = compile PROFILE ps_blur_1 (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P1 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteShader (ps_blur_1)
 
-   pass PassB
-   < string Script = "RenderColorTarget0 = Pass2;"; >
-   { PixelShader = compile PROFILE ps_blur_2 (1); }
+   pass P2 < string Script = "RenderColorTarget0 = Pass2;"; > ExecuteParam (ps_blur_2, 1)
+   pass P3 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteParam (ps_blur_3, 1)
+   pass P4 < string Script = "RenderColorTarget0 = Pass2;"; > ExecuteParam (ps_blur_2, 3)
+   pass P5 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteParam (ps_blur_3, 2)
+   pass P6 < string Script = "RenderColorTarget0 = Pass2;"; > ExecuteParam (ps_blur_2, 5)
 
-   pass PassC
-   < string Script = "RenderColorTarget0 = Pass1;"; >
-   { PixelShader = compile PROFILE ps_blur_3 (1); }
-
-   pass PassD
-   < string Script = "RenderColorTarget0 = Pass2;"; >
-   { PixelShader = compile PROFILE ps_blur_2 (3); }
-
-   pass PassE
-   < string Script = "RenderColorTarget0 = Pass1;"; >
-   { PixelShader = compile PROFILE ps_blur_3 (2); }
-
-   pass PassF
-   < string Script = "RenderColorTarget0 = Pass2;"; >
-   { PixelShader = compile PROFILE ps_blur_2 (5); }
-
-   pass PassG
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P7 ExecuteShader (ps_main)
 }
+

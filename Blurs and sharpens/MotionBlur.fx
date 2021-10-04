@@ -1,11 +1,15 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author quality
 // @Created 2013-02-09
 // @see https://www.lwks.com/media/kunena/attachments/6375/MotionBlur.png
 
 /**
  A directional blur that can be used to simulate fast motion, whip pans and the like.
+
+ NOTE: This effect previously had a means of setting the number of samples used to make
+ the blur.  That made use of a forced return which is now blocked in current versions
+ of Lightworks, and has now been removed.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -13,27 +17,12 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Updated 2021-08-31 jwrl:
+// Partial rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 15 September 2018.
-// Corrected a bug which could cause this effect to fail to compile.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Cross platform compatibility check 29 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Modified the code so that low values of Samples didn't make the video levels jump.
-// Also added an offset adjustment to compensate for the subjective position shift seen
-// with low values of that variable.
-//
-// Modified 5 February 2016 by user jwrl.
-// This effect was originally posted by Lightworks user quality.  It was converted for
-// better ps_2_b compliance.
+// Prior to 2020-11-09:
+// Various updates mainly to improve cross-platform performance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,31 +32,66 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "A directional blur that can be used to simulate fast motion, whip pans and the like";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-texture Input;
-
-sampler InputSampler = sampler_state {
-   Texture   = <Input>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float _Progress;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-#define MAXSAMPLES 60.0
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define EMPTY 0.0.xxxx
+
+#define SAMPLES 60.0
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
+
+SetInputMode (Input, s_Input, Mirror);
+
+SetTargetMode (FixInp, InputSampler, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -87,13 +111,6 @@ float Strength
    float MaxVal = 1.0;
 > = 0.0;
 
-float Samples
-<
-  string Description = "Samples";
-  float MinVal = 0.0;
-  float MaxVal = MAXSAMPLES;
-> = MAXSAMPLES;
-
 float Mix
 <
     string Description = "Mix";
@@ -102,35 +119,36 @@ float Mix
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Pixel Shader
+// Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 main (float2 uv : TEXCOORD1) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_Input, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 original = tex2D (InputSampler, uv);
-   float4 output = 0.0.xxxx;  
+   float4 output = EMPTY;  
 
-   float2 offset, xy = uv;
+   if (Overflow (uv1)) return output;
 
-   int sampleVal = round (min (MAXSAMPLES, Samples));
+   float4 original = tex2D (InputSampler, uv2);
 
-   if ((Mix <= 0.0) || (sampleVal <= 0) || (Strength <= 0.0)) return original;
+   if ((Mix <= 0.0) || (Strength <= 0.0)) return original;
+
+   float2 offset, xy = uv2;
 
    sincos (radians (Angle), offset.y, offset.x);
    offset *= (Strength * 0.005);
+   offset.y *= _OutputAspectRatio;
 
-   xy += (sampleVal < 2) ? 0.0.xx :
-         (sampleVal > 2) ? offset : offset / 2.0;
-
-   for (int i = 0; i < MAXSAMPLES; i++) {
-
-      if (i < sampleVal) {
-         output += tex2D (InputSampler, xy);
-         xy -= offset;
-      }
+   for (int i = 0; i < SAMPLES; i++) {
+      output += tex2D (InputSampler, xy);
+      xy -= offset;
    }
     
-   output /= sampleVal;
+   output /= SAMPLES;
 
    return lerp (original, output, Mix);
 }
@@ -141,8 +159,7 @@ float4 main (float2 uv : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE main ();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass SinglePass ExecuteShader (ps_main)
 }
+

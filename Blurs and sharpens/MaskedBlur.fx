@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author khaver
 // @Created 2011-08-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/MaskedBlur_640.png
@@ -14,24 +14,12 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Updated 2021-08-31 jwrl:
+// Partial rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Bug fix 26 February 2017 by jwrl:
-// Added workaround for the interlaced media height bug in Lightworks effects.  THE BUG
-// WAS NOT IN THE WAY THIS EFFECT WAS ORIGINALLY IMPLEMENTED.  When a height parameter is
-// needed one cannot reliably use _OutputHeight with interlaced media.  It returns only
-// half the actual frame height when interlaced media is stationary.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Prior to 2020-11-09:
+// Various updates mainly to improve cross-platform performance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,67 +29,73 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "The blur can be masked using the source alpha or luminance or an external video track";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-texture Mask;
-texture MaskPass : RenderColorTarget;
-texture Pass1 : RenderColorTarget;
-texture Pass2 : RenderColorTarget;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define ExecuteParam(SHD,PRM) { PixelShader = compile PROFILE SHD (PRM); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+float _OutputWidth;
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s0 = sampler_state {
-	Texture = <Input>;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetInputMode (Input, s_Input, Mirror);
+SetInputMode (Mask, s_Mask, Mirror);
 
-sampler affector = sampler_state {
-	Texture = <Mask>;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetTargetMode (FixInp, s0, Mirror);
+SetTargetMode (FixMsk, affector, Mirror);
 
-sampler masktex = sampler_state {
-	Texture = <MaskPass>;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetTargetMode (MaskPass, masktex, Mirror);
 
-sampler s1 = sampler_state {
-	Texture = <Pass1>;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
-
-sampler s2 = sampler_state {
-	Texture = <Pass2>;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetTargetMode (Pass1, s1, Mirror);
+SetTargetMode (Pass2, s2, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -109,21 +103,21 @@ sampler s2 = sampler_state {
 
 float blurry
 <
-	string Description = "Amount";
-	float MinVal = 0.0f;
-	float MaxVal = 100.0f;
-> = 0.0f;
+   string Description = "Amount";
+   float MinVal = 0.0;
+   float MaxVal = 100.0;
+> = 0.0;
 
 bool big
 <
-	string Description = "x10";
+   string Description = "x10";
 > = false;
 
 int alpha
 <
-	string Description = "Mask Type";
-	string Group = "Mask";
-	string Enum = "None,Source_Alpha,Source_Luma,Mask_Alpha,Mask_Luma";
+   string Description = "Mask Type";
+   string Group = "Mask";
+   string Enum = "None,Source_Alpha,Source_Luma,Mask_Alpha,Mask_Luma";
 > = 0;
 
 int SetTechnique
@@ -135,46 +129,39 @@ int SetTechnique
 
 float adjust
 <
-	string Description = "Brightness";
-	string Group = "Mask";
-	float MinVal = -1.0f;
-	float MaxVal = 1.0f;
-> = 0.0f;
+   string Description = "Brightness";
+   string Group = "Mask";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.0;
 
 float contrast
 <
-	string Description = "Contrast";
-	string Group = "Mask";
-	float MinVal = 0.0f;
-	float MaxVal = 10.0f;
-> = 0.0f;
+   string Description = "Contrast";
+   string Group = "Mask";
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
+> = 0.0;
 
 float thresh
 <
-	string Description = "Threshold";
-	string Group = "Mask";
-	float MinVal = 0.0f;
-	float MaxVal = 1.0f;
-> = 0.0f;
+   string Description = "Threshold";
+   string Group = "Mask";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
 
 bool invert
 <
-	string Description = "Invert";
-	string Group = "Mask";
+   string Description = "Invert";
+   string Group = "Mask";
 > = false;
 
 bool show
 <
-	string Description = "Show";
-	string Group = "Mask";
+   string Description = "Show";
+   string Group = "Mask";
 > = false;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -182,26 +169,26 @@ float _OutputWidth;
 
 float2 circle(float angle)
 {
-	return float2(cos(angle),sin(angle))/2.333f;
+   return float2 (cos (angle), sin (angle)) / 2.333;
 }
 
 float4 GrowablePoissonDisc13FilterRGBA (sampler tSource, float2 texCoord, float2 pixelSize, float discRadius, int run)
 {
    float2 coord;
-   float2 halfpix = pixelSize / 2.0f;
-   float2 sample;
+   float2 halfpix = pixelSize / 2.0;
+   float2 radius = halfpix * discRadius;
+   float2 sample = run * 0.1745;                      // 10 degrees expressed in radians
 
-   float4 cOut = tex2D (tSource, texCoord+halfpix);
+   float4 cOut = tex2D (tSource, texCoord + halfpix);
    float4 orig = tex2D (tSource, texCoord);
 
-   for (int tap = 0; tap < 12; tap++)
-   {
-   	  sample = (tap*30)+(run*10);
-	  coord = texCoord.xy + (halfpix * circle(sample) * float(discRadius));
+   for (int tap = 0; tap < 12; tap++) {
+      coord = texCoord + (radius * circle (sample));
       cOut += tex2D (tSource, coord);
+      sample += 0.5236;                               // 30 degrees expressed in radians
    }
 
-   cOut /= 13.0f;
+   cOut /= 13.0;
 
    return cOut;
 }
@@ -210,68 +197,79 @@ float4 GrowablePoissonDisc13FilterRGBA (sampler tSource, float2 texCoord, float2
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 Masking( float2 Tex : TEXCOORD1) : COLOR
+// These two passes map the input and mask timelines to TEXCOORD3, so that
+// variations in clip geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_Input, uv); }
+float4 ps_initMsk (float2 uv : TEXCOORD2) : COLOR { return tex2D (s_Mask, uv); }
+
+float4 Masking (float2 Tex : TEXCOORD3) : COLOR
 {
-	float4 orig = tex2D( s0, Tex);
-	float4 aff = tex2D( affector, Tex);
+   float4 orig = tex2D (s0, Tex);
+   float4 aff  = tex2D (affector, Tex);
 
-	float themask;
+   float themask = (alpha == 0) ? 0.0
+                 : (alpha == 1) ? orig.a
+                 : (alpha == 2) ? dot (orig.rgb, float3 (0.33, 0.34, 0.33))
+                 : (alpha == 3) ? aff.a
+                                : dot (aff.rgb, float3 (0.33, 0.34, 0.33));
+   themask += adjust;
+   themask *= 1.0 + contrast;
 
-	if (alpha==0) themask = 0.0f;
-	if (alpha==1) themask = orig.a;
-	if (alpha==2) themask = dot(orig.rgb, float3(0.33f, 0.34f, 0.33f));
-	if (alpha==3) themask = aff.a;
-	if (alpha==4) themask = dot(aff.rgb, float3(0.33f, 0.34f, 0.33f));
+   if (themask < thresh) themask = 0.0;
 
-	themask = (themask + adjust) * (1.0f+contrast)/1.0f;
+   if (invert) themask = 1.0 - themask;
 
-	if (themask<thresh) themask = 0.0f;
-	if (invert) themask = 1.0f - themask;
-
-	return themask.xxxx;
+   return themask.xxxx;
 }
 
-float4 PSMain(  float2 Tex : TEXCOORD1, uniform int test, uniform bool mask ) : COLOR
+float4 PSMask (float2 Tex : TEXCOORD3) : COLOR
 {  
-	float blur = blurry;
+   float blur = (big) ? blurry * 10.0 : blurry;
 
-	if (big) blur *= 10.0f;
+   float2 pixsize = float2 (1.0 / _OutputWidth, 1.0 / _OutputHeight);
+   float2 halfpix = pixsize / 2.0;
 
-	float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
-	float2 halfpix = pixsize / 2.0f;
-
-	if (test==1) return GrowablePoissonDisc13FilterRGBA(s1, Tex+halfpix, pixsize,blur,1);
-
-	if (test==2) return GrowablePoissonDisc13FilterRGBA(s2, Tex+halfpix, pixsize,blur,2);
-
-	if (mask) return GrowablePoissonDisc13FilterRGBA(masktex, Tex+halfpix, pixsize,blur,0);
-
-	return GrowablePoissonDisc13FilterRGBA(s0, Tex+halfpix, pixsize,blur,0);
+   return GrowablePoissonDisc13FilterRGBA (masktex, Tex + halfpix, pixsize, blur, 0);
 }
 
-float4 Combine( float2 Tex : TEXCOORD1 ) : COLOR
+float4 PSMain (float2 Tex : TEXCOORD3, uniform int test) : COLOR
+{  
+   float blur = (big) ? blurry * 10.0 : blurry;
+
+   float2 pixsize = float2 (1.0 / _OutputWidth, 1.0 / _OutputHeight);
+   float2 halfpix = pixsize / 2.0;
+
+   return (test == 1) ? GrowablePoissonDisc13FilterRGBA (s1, Tex + halfpix, pixsize, blur, 1)
+        : (test == 2) ? GrowablePoissonDisc13FilterRGBA (s2, Tex + halfpix, pixsize, blur, 2)
+                      : GrowablePoissonDisc13FilterRGBA (s0, Tex + halfpix, pixsize, blur, 0);
+}
+
+float4 Combine (float2 uv : TEXCOORD1, float2 Tex : TEXCOORD3) : COLOR
 {
-	float blur = blurry;
+   if (Overflow (uv)) return EMPTY;
 
-	float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
-	float2 halfpix = pixsize / 2.0f;
+   float blur = blurry;
 
-	float4 orig = tex2D( s0, Tex+halfpix);
-	float4 masked, color, cout;
+   float2 pixsize = float2 (1.0 / _OutputWidth, 1.0 / _OutputHeight);
+   float2 halfpix = pixsize / 2.0;
 
-	if (blurry > 0.0f) {
-		color = tex2D( s1, Tex+halfpix);
-		masked = tex2D( masktex, Tex+halfpix);
-		cout = lerp(color,orig,saturate(masked.a));
-	}
-	else {
-		cout = orig;
-		masked = tex2D( masktex, Tex+pixsize);
-	}
+   float4 orig = tex2D (s0, Tex + halfpix);
+   float4 masked, color, cout;
 
-	if (show) return masked;
+   if (blurry > 0.0) {
+      color = tex2D (s1, Tex + halfpix);
+      masked = tex2D (masktex, Tex + halfpix);
+      cout = lerp (color, orig, saturate (masked. a));
+   }
+   else {
+      cout = orig;
+      masked = tex2D (masktex, Tex + pixsize);
+   }
 
-	return cout;
+   if (show) return masked;
+
+   return cout;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -280,95 +278,33 @@ float4 Combine( float2 Tex : TEXCOORD1 ) : COLOR
 
 technique No
 {
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass Pma < string Script = "RenderColorTarget0 = FixMsk;"; > ExecuteShader (ps_initMsk)
 
-   pass PassMask
-   <
-      string Script = "RenderColorTarget0 = MaskPass;";
-   >
-   {
-      PixelShader = compile PROFILE Masking();
-   }
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Pass1;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(0,false);
-   }
-   pass Pass2
-   <
-      string Script = "RenderColorTarget0 = Pass2;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(1,false);
-   }
-   pass Pass3
-   <
-      string Script = "RenderColorTarget0 = Pass1;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(2,false);
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE Combine();
-   }
+   pass PassMask < string Script = "RenderColorTarget0 = MaskPass;"; > ExecuteShader (Masking)
+
+   pass Pass1 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteParam (PSMain, 0)
+   pass Pass2 < string Script = "RenderColorTarget0 = Pass2;"; > ExecuteParam (PSMain, 1)
+   pass Pass3 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteParam (PSMain, 2)
+
+   pass Last ExecuteShader (Combine)
 }
 
 technique Yes
 {
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass Pma < string Script = "RenderColorTarget0 = FixMsk;"; > ExecuteShader (ps_initMsk)
 
-   pass PassMask
-   <
-      string Script = "RenderColorTarget0 = MaskPass;";
-   >
-   {
-      PixelShader = compile PROFILE Masking();
-   }
-   pass MBlur1
-   <
-      string Script = "RenderColorTarget0 = Pass1;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(0,true);
-   }
-   pass MBlur2
-   <
-      string Script = "RenderColorTarget0 = Pass2;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(1,true);
-   }
-   pass MBlur3
-   <
-      string Script = "RenderColorTarget0 = MaskPass;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(2,true);
-   }
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Pass1;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(0,false);
-   }
-   pass Pass2
-   <
-      string Script = "RenderColorTarget0 = Pass2;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(1,false);
-   }
-   pass Pass3
-   <
-      string Script = "RenderColorTarget0 = Pass1;";
-   >
-   {
-      PixelShader = compile PROFILE PSMain(2,false);
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE Combine();
-   }
+   pass PassMask < string Script = "RenderColorTarget0 = MaskPass;"; > ExecuteShader (Masking)
+
+   pass MBlur1 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteShader (PSMask)
+   pass MBlur2 < string Script = "RenderColorTarget0 = Pass2;"; > ExecuteParam (PSMain, 1)
+   pass MBlur3 < string Script = "RenderColorTarget0 = MaskPass;"; > ExecuteParam (PSMain, 2)
+
+   pass Pass1 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteParam (PSMain, 0)
+   pass Pass2 < string Script = "RenderColorTarget0 = Pass2;"; > ExecuteParam (PSMain, 1)
+   pass Pass3 < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteParam (PSMain, 2)
+
+   pass Last ExecuteShader (Combine)
 }
+

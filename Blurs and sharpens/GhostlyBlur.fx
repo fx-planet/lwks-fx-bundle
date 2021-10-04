@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2016-05-09
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/GhostBlur_640.png
 
 /**
@@ -16,23 +16,9 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Modified by jwrl 29 July 2017.
-// Renamed to Ghost blur because it felt more like the result that you get.  Opacity and
-// Radius limiting added so that negative values of either will not be acted on.  Added
-// a fogginess adjustment.  Really a gamma tweak applied while sampling the blur, it's
-// also range limited to ensure that whiter than white video levels are controlled.
+// Rewrite 2021-08-31 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -42,38 +28,77 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "The sort of effect that you get when looking through a fogged window";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture prelim : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define LOOP_1   29
+#define RADIUS_1 0.1
+#define ANGLE_1  0.216662
+
+#define LOOP_2   23
+#define RADIUS_2 0.066667
+#define ANGLE_2  0.273182
+
+#define FOG_LIM  0.8
+#define FOG_MIN  0.4
+#define FOG_MAX  4.0
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state {
-        Texture   = <Input>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-        };
+SetInputMode (Input, s_RawInp, Mirror);
 
-sampler preSampler = sampler_state {
-        Texture   = <prelim>;
-	AddressU  = Mirror;
-	AddressV  = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-        };
+SetTargetMode (FixInp, s_Input, Mirror);
+SetTargetMode (prelim, s_prelim, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -101,40 +126,31 @@ float Opacity
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define LOOP_1   29
-#define RADIUS_1 0.1
-#define ANGLE_1  0.216662
-
-#define LOOP_2   23
-#define RADIUS_2 0.066667
-#define ANGLE_2  0.273182
-
-#define FOG_LIM  0.8
-#define FOG_MIN  0.4
-#define FOG_MAX  4.0
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_prelim (float2 uv : TEXCOORD1) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 ps_prelim (float2 uv1 : TEXCOORD2, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd = tex2D (FgSampler, uv);
+   float4 Fgd = tex2D (s_Input, uv2);
 
-   if ((Opacity <= 0.0) || (Radius <= 0.0)) return Fgd;
+   if ((Opacity <= 0.0) || Overflow (uv1)) return Fgd;
 
-   float gamma = (Fog > 0.0) ? 1.0 - min (Fog * FOG_MIN, FOG_LIM) : 1.0 + abs (Fog) * FOG_MAX;
+   float gamma = 3.0 / ((1.5 + Fog) * 2.0);
 
-   float2 xy, radius = float2 (1.0 - Fgd.b, Fgd.r + Fgd.g) * Radius * RADIUS_1;
+   float2 xy, radius = (Radius * Radius * RADIUS_1).xx;
 
-   float4 retval = 0.0.xxxx;
+   radius *= float2 ((1.0 - Fgd.b) / _OutputAspectRatio, Fgd.r + Fgd.g);
+
+   float4 retval = EMPTY;
 
    for (int i = 0; i < LOOP_1; i++) {
       sincos ((i * ANGLE_1), xy.x, xy.y);
-      retval += pow (tex2D (FgSampler, uv + (xy * radius)), gamma);
+      retval += pow (tex2D (s_Input, uv2 + (xy * radius)), gamma);
    }
 
    retval /= LOOP_1;
@@ -142,26 +158,32 @@ float4 ps_prelim (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD2, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgd = tex2D (FgSampler, uv);
+   if (Overflow (uv1)) return EMPTY;
 
-   if ((Opacity <= 0.0) || (Radius <= 0.0)) return Fgd;
+   float4 Fgd = tex2D (s_Input, uv2);
 
-   float4 retval = tex2D (preSampler, uv);
+   if (Opacity <= 0.0) return Fgd;
 
-   float2 xy, radius = float2 (retval.r + retval.b, 1.0 - retval.g) * Radius * RADIUS_2;
+   float gamma = 3.0 / ((1.5 + Fog) * 2.0);
 
-   float gamma = (Fog > 0.0) ? 1.0 - min (Fog * FOG_MIN, FOG_LIM) : 1.0 + abs (Fog) * FOG_MAX;
+   float4 retval = tex2D (s_prelim, uv2);
 
-   retval = 0.0.xxxx;
+   float2 xy, radius = (Radius * Radius * RADIUS_2).xx;
+
+   radius *= float2 ((retval.r + retval.b) / _OutputAspectRatio, 1.0 - retval.g);
+
+   retval = EMPTY;
 
    for (int i = 0; i < LOOP_2; i++) {
       sincos ((i * ANGLE_2), xy.x, xy.y);
-      retval += pow (tex2D (preSampler, uv + (xy * radius)), gamma);
+      retval += pow (tex2D (s_prelim, uv2 + (xy * radius)), gamma);
    }
 
    retval /= LOOP_2;
+
+   retval.rgb += lerp (0.0.xxx, Fgd.rgb - (Fgd.rgb * retval.rgb), saturate (-Fog));
 
    return lerp (Fgd, saturate (retval), Opacity);
 }
@@ -172,10 +194,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique GhostlyBlur
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = prelim;"; >
-   { PixelShader = compile PROFILE ps_prelim (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = prelim;"; > ExecuteShader (ps_prelim)
+   pass P_2 ExecuteShader (ps_main)
 }
+

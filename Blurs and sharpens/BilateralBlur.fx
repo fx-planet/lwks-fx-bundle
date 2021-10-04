@@ -1,11 +1,13 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author baopao
 // @Created 2013-10-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/BilateralBlur_640.png
 
 /**
- A strong bilateral blur created by baopao with a little help from his friends.
+ A strong bilateral blur created by baopao with a little help from his friends.  In this
+ version for Lightworks 2021 and higher the alpha channel is preserved, unlike in the
+ earlier one where it was discarded.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,27 +19,12 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Updated 2021-08-31 jwrl:
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Bug fix 18 July 2017 by jwrl.
-// Partial rewrite to address a Linux/Mac compatibility issue.  In the process some
-// code optimisation has been performed to improve execution times and lighten the GPU
-// load.  Range values that result in divide by zero errors have been limited to safe
-// values, and the "FrameSize" parameter is now labelled more appropriately "Blur
-// window".
-// The direction of operation of that control has also been reversed so that increasing
-// values result in an increase of the blur window, and no longer a reduction.
-//
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Prior to 2020-11-09:
+// Various updates mainly to improve cross-platform performance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,27 +34,65 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "A strong bilateral blur created by baopao with a little help from his friends";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+float _OutputWidth;
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler2D InpSampler = sampler_state {
-   Texture   = <Input>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MipFilter = Linear;
-   MagFilter = Linear;
-};
+SetInputMode (Input, s_Input, Mirror);
+
+SetTargetMode (FixInp, InpSampler, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -76,39 +101,39 @@ sampler2D InpSampler = sampler_state {
 float Amount
 <
    string Description = "Amount";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.2;
 
 float FrameSize
 <
    string Description = "Blur window";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 fold_bilateral (float2 uv : TEXCOORD1) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_Input, uv); }
+
+float4 fold_bilateral (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float3 tempC0 = tex2D (InpSampler, uv).rgb;
-   float3 Colour = tempC0;
-   float3 normalizer = 1.0.xxx;
-   float3 tempC1, tempC2, tempW;
+   float4 tempC0 = tex2D (InpSampler, uv2);
+   float4 Colour = tempC0;
+   float4 normalizer = 1.0.xxxx;
+   float4 tempC1, tempC2, tempW;
 
    float2 position;
 
-   float width  = _OutputWidth * max (0.002, 1.0 - max (0.0, FrameSize));
-   float height = width / _OutputAspectRatio;
+   float width  = max (0.002, 1.0 - max (0.0, FrameSize));
+   float height = _OutputHeight * width;
+
+   width *= _OutputWidth;
 
    float stepX = 1.0 / width;
    float stepY = 1.0 / height;
@@ -121,36 +146,36 @@ float4 fold_bilateral (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < 2; i++) {
       y = stepY;
       optX = x * x * width * width * 0.125;
-      position = float2 (uv.x, uv.y + y);
+      position = float2 (uv2.x, uv2.y + y);
 
-      tempC1 = tex2D (InpSampler, position).rgb;
+      tempC1 = tex2D (InpSampler, position);
       tempC2 = tempC0 - tempC1;
       tempW  = exp (-(tempC2 * tempC2 * p) - optX);
       Colour += (tempC1 * tempW);
 
       normalizer += tempW;
 
-      position = float2 (uv.x, uv.y - y);
+      position = float2 (uv2.x, uv2.y - y);
 
-      tempC1 = tex2D (InpSampler, position).rgb;
+      tempC1 = tex2D (InpSampler, position);
       tempC2 = tempC0 - tempC1;
       tempW  = exp (-(tempC2 * tempC2 * p) - optX);
       Colour += (tempC1 * tempW);
 
       normalizer += tempW;
 
-      position = float2 (uv.x + x, uv.y);
+      position = float2 (uv2.x + x, uv2.y);
 
-      tempC1 = tex2D (InpSampler, position).rgb;
+      tempC1 = tex2D (InpSampler, position);
       tempC2 = tempC0 - tempC1;
       tempW  = exp (-(tempC2 * tempC2 * p) - optX);
       Colour += (tempC1 * tempW);
 
       normalizer += tempW;
 
-      position = float2 (uv.x - x, uv.y);
+      position = float2 (uv2.x - x, uv2.y);
 
-      tempC1 = tex2D (InpSampler, position).rgb;
+      tempC1 = tex2D (InpSampler, position);
       tempC2 = tempC0 - tempC1;
       tempW  = exp (-(tempC2 * tempC2 * p) - optX);
       Colour += (tempC1 * tempW);
@@ -160,36 +185,36 @@ float4 fold_bilateral (float2 uv : TEXCOORD1) : COLOR
       for (int j = 0; j < 2; j++) {
          optX += y * y * height * height * 0.125;
 
-         position = float2 (uv.x + x, uv.y + y);
+         position = float2 (uv2.x + x, uv2.y + y);
 
-         tempC1 = tex2D (InpSampler, position).rgb;
+         tempC1 = tex2D (InpSampler, position);
          tempC2 = tempC0 - tempC1;
          tempW  = exp (-(tempC2 * tempC2 * p) - optX);
          Colour += (tempC1 * tempW);
 
          normalizer += tempW;
 
-         position = float2 (uv.x - x, uv.y + y);
+         position = float2 (uv2.x - x, uv2.y + y);
 
-         tempC1 = tex2D (InpSampler, position).rgb;
+         tempC1 = tex2D (InpSampler, position);
          tempC2 = tempC0 - tempC1;
          tempW  = exp (-(tempC2 * tempC2 * p) - optX);
          Colour += (tempC1 * tempW);
 
          normalizer += tempW;
 
-         position = float2 (uv.x + x, uv.y - y);
+         position = float2 (uv2.x + x, uv2.y - y);
 
-         tempC1 = tex2D (InpSampler, position).rgb;
+         tempC1 = tex2D (InpSampler, position);
          tempC2 = tempC0 - tempC1;
          tempW  = exp (-(tempC2 * tempC2 * p) - optX);
          Colour += (tempC1 * tempW);
 
          normalizer += tempW;
 
-         position = float2 (uv.x - x, uv.y - y);
+         position = float2 (uv2.x - x, uv2.y - y);
 
-         tempC1 = tex2D (InpSampler, position).rgb;
+         tempC1 = tex2D (InpSampler, position);
          tempC2 = tempC0 - tempC1;
          tempW  = exp (-(tempC2 * tempC2 * p) - optX);
          Colour += (tempC1 * tempW);
@@ -202,7 +227,7 @@ float4 fold_bilateral (float2 uv : TEXCOORD1) : COLOR
       x += stepX;
    }
 
-   return float4 (Colour / normalizer, 1.0);
+   return Overflow (uv1) ? EMPTY : Colour / normalizer;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -211,5 +236,7 @@ float4 fold_bilateral (float2 uv : TEXCOORD1) : COLOR
 
 technique BilateralFilter
 {
-   pass Single_Pass { PixelShader = compile PROFILE fold_bilateral (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass Single_Pass ExecuteShader (fold_bilateral)
 }
+

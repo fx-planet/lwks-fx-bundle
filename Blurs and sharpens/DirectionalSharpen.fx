@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2019-01-10
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalSharpen_640.png
 
 /**
@@ -9,8 +9,6 @@
  compensated for.  The angle can only be adjusted through 180 degrees, because it uses a
  bidirectional blur.  Using that technique, 90 degrees and 270 degrees would give identical
  results.
-
- NOTE: This version won't run or compile on Windows' Lightworks version 14.0 or earlier.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,8 +16,9 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-08-31 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -29,23 +28,67 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "This is a directional unsharp mask useful where directional blurring must be compensated for";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define LUMA_DOT  float3(1.1955,2.3464,0.4581)
+#define GAMMA_VAL 1.666666667
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+SetInputMode (Inp, s_RawInp, Mirror);
 
-sampler s_Input = sampler_state {
-   Texture   = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (FixInp, s_Input, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -54,7 +97,7 @@ sampler s_Input = sampler_state {
 float BlurAngle
 <
    string Description = "Blur angle";
-   float MinVal = 0.00;
+   float MinVal = 0.0;
    float MaxVal = 180.0;
 > = 0.0;
 
@@ -94,31 +137,28 @@ float Amount
 > = 0.15;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Shader
 //-----------------------------------------------------------------------------------------//
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
 
-#define LUMA_DOT  float3(1.1955,2.3464,0.4581)
-#define GAMMA_VAL 1.666666667
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
 
-//-----------------------------------------------------------------------------------------//
-// Pixel Shader
-//-----------------------------------------------------------------------------------------//
-
-float4 main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
-   float4 unblur = 0.0.xxxx;  
+   if (Overflow (uv1)) return EMPTY;
 
-   float2 offset, xy = uv;
+   float4 retval = tex2D (s_Input, uv2);
+   float4 unblur = EMPTY;
+
+   float2 offset, xy = uv2;
 
    if ((Amount <= 0.0) || (BlurWidth <= 0.0)) return retval;
 
    sincos (radians (BlurAngle), offset.y, offset.x);
    offset *= (BlurWidth * 0.0005);
+   offset.y *= _OutputAspectRatio;
 
    xy += offset * 30.0;
 
@@ -152,5 +192,7 @@ float4 main (float2 uv : TEXCOORD1) : COLOR
 
 technique DirectionalSharpen
 {
-   pass P_1 { PixelShader = compile PROFILE main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 ExecuteShader (ps_main)
 }
+

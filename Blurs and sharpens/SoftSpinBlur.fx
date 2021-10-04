@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author jwrl
-// @Created 2017-06-01
+// @Created 2021-08-31
 // @see https://www.lwks.com/media/kunena/attachments/6375/SoftSpinBlur_640.png
 
 /**
@@ -22,6 +22,12 @@
  change values and swings between 1:5 and 5:1.  The blur centring can be set either by
  means of the sliders or by dragging with the mouse in the edit sequence viewer.  Blurs
  cannot be dragged off screen, but manually entering values will allow this if desired.
+
+ NOTE:  With resolution independence an issue has arisen that means that mixing frames
+ of differing aspect ratios will cause the centre point of the spin to jump.  There is
+ no way that I have been able to find that prevents this.  I have supplied this version
+ despite this flaw, but as soon as I can find a fix that doesn't involve dummy inputs
+ and the like I will update it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -35,19 +41,9 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
-//
-// Modified by LW user jwrl 23 December 2018.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Re-arranged the user interface 6 July 2017.
+// Rewrite 2021-08-31 jwrl:
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -57,48 +53,78 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "This effect uses a bidirectional blur to give an extremely smooth spin blur";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture blur_1 : RenderColorTarget;
-texture blur_2 : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define Execute2param(SHD,P1,P2) { PixelShader = compile PROFILE SHD (P1, P2); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define STEPS   18
+#define DIVISOR 18.975
+
+#define SCALE_1 36
+#define SCALE_2 108
+#define SCALE_3 324
+
+#define WEIGHT  1.0
+#define WT_DIFF 0.0555556
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler InpSampler = sampler_state {
-   Texture   = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetInputMode (Inp, s_RawInp, Mirror);
 
-sampler b1_Sampler = sampler_state {
-   Texture   = <blur_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (FixInp, s_Input, Mirror);
 
-sampler b2_Sampler = sampler_state {
-   Texture   = <blur_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (blur_1, s_Blur_1, Mirror);
+SetTargetMode (blur_2, s_Blur_2, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -149,30 +175,19 @@ float Tracking
 > = 0.1;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define STEPS   18
-#define DIVISOR 18.975
-
-#define SCALE_1 36
-#define SCALE_2 108
-#define SCALE_3 324
-
-#define WEIGHT  1.0
-#define WT_DIFF 0.0555556
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform int scale) : COLOR
-{
-   if ((Amount == 0.0) || (Arc == 0.0)) return tex2D (InpSampler, uv);
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
 
-   float4 retval = 0.0.xxxx;
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 ps_Blur (float2 uv : TEXCOORD2, uniform sampler blurSampler, uniform int scale) : COLOR
+{
+   if ((Amount == 0.0) || (Arc == 0.0)) return tex2D (s_Input, uv);
+
+   float4 retval = EMPTY;
 
    float spin   = radians (Arc) / scale;
    float weight = WEIGHT;
@@ -180,7 +195,7 @@ float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform int 
    float C, S;
 
    float2 blur_aspect  = float2 (1.0, (1.0 - (max (Aspect, 0.0) * 0.8) - (min (Aspect, 0.0) * 4.0)) * _OutputAspectRatio);
-   float2 fxCentre     = float2 (CentreX, 1.0 - CentreY);
+   float2 fxCentre = float2 (CentreX, 1.0 - CentreY);
    float2 xy1, xy2, xy = (uv - fxCentre) / blur_aspect;
    float2 xyC, xyS;
 
@@ -201,17 +216,19 @@ float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform int 
    return retval / DIVISOR;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
+   if (Overflow (uv1)) return EMPTY;
+
    float offset = 0.7 - (Arc / 600.0);
    float adjust = 1.0 + (Arc / 270.0);
 
-   float4 retval = tex2D (b1_Sampler, uv);
+   float4 retval = tex2D (s_Blur_1, uv2);
    float4 repair = float4 (((retval.rgb - offset.xxx) * adjust) + offset.xxx, retval.a);
 
    retval = lerp (retval, repair, Tracking);
 
-   return lerp (tex2D (InpSampler, uv), retval, Amount);
+   return lerp (tex2D (s_Input, uv2), retval, Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -220,18 +237,13 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique SoftSpinBlur
 {
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
    pass P_1
-   < string Script = "RenderColorTarget0 = blur_1;"; >
-   { PixelShader = compile PROFILE ps_blur (InpSampler, SCALE_1); }
-
+   < string Script = "RenderColorTarget0 = blur_1;"; > Execute2param (ps_Blur, s_Input, SCALE_1)
    pass P_2
-   < string Script = "RenderColorTarget0 = blur_2;"; >
-   { PixelShader = compile PROFILE ps_blur (b1_Sampler, SCALE_2); }
-
+   < string Script = "RenderColorTarget0 = blur_2;"; > Execute2param (ps_Blur, s_Blur_1, SCALE_2)
    pass P_3
-   < string Script = "RenderColorTarget0 = blur_1;"; >
-   { PixelShader = compile PROFILE ps_blur (b2_Sampler, SCALE_3); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   < string Script = "RenderColorTarget0 = blur_1;"; > Execute2param (ps_Blur, s_Blur_2, SCALE_3)
+   pass P_4 ExecuteShader (ps_main)
 }
+

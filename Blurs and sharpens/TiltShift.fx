@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)
 // @Created 2012-07-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTiltShift_640.png
@@ -42,26 +42,12 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Updated 2021-08-31 jwrl:
+// Partial rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Renamed from FxTiltShift to TiltShift.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Bug fix June 28 2017 by jwrl.
-// An arithmetic bug which arose during the cross platform conversion was detected and
-// fixed.  The bug resulted in a noticeable drop in video levels and severe highlight
-// compression.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//
-// Conversion for ps_2_0 compliance by Lightworks user jwrl, 5 February 2016.
+// Prior to 2020-11-09:
+// Various updates mainly to improve cross-platform performance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -71,39 +57,67 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "Simulates the shallow depth of field normally encountered in close-up photography";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Pass1 : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define ExecuteParam(SHD,PRM) { PixelShader = compile PROFILE SHD (PRM); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+float _OutputWidth;
+float _OutputHeight;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler s0 = sampler_state
-{
-	Texture = <Input>;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetInputMode (Input, s_RawInp, Mirror);
 
-sampler s1 = sampler_state {
-	Texture = <Pass1>;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetTargetMode (FixInp, s0, Mirror);
+SetTargetMode (Pass1, s1, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -113,32 +127,32 @@ float startX
 <
    string Description = "Start";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.2;
 
 float startY
 <
    string Description = "Start";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float endX
 <
    string Description = "End";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.8;
 
 float endY
 <
    string Description = "End";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float blurRadius
@@ -154,13 +168,6 @@ float gradientRadius
    float MinVal = 0.0;
    float MaxVal = 500.0;
 > = 200.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -217,17 +224,24 @@ float4 tiltShift (sampler tSource, float2 start, float2 end, float2 delta, float
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 FxTiltShift (float2 texCoord : TEXCOORD1, uniform int mode) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 FxTiltShift (float2 uv : TEXCOORD1, float2 texCoord : TEXCOORD2, uniform int mode) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
    float4 color = 0.0;
-   float2 start = float2 (_OutputWidth * startX, (_OutputWidth/_OutputAspectRatio) * (1.0 - startY));
-   float2 end   = float2 (_OutputWidth * endX,   (_OutputWidth/_OutputAspectRatio) * (1.0 - endY));
+   float2 start = float2 (_OutputWidth * startX, (_OutputHeight) * (1.0 - startY));
+   float2 end   = float2 (_OutputWidth * endX,   (_OutputHeight) * (1.0 - endY));
 
    float dx = end.x - start.x;
    float dy = end.y - start.y;
    float d  = sqrt (dx * dx + dy * dy);
 
-   float2 texSize = float2 (_OutputWidth, _OutputWidth / _OutputAspectRatio);
+   float2 texSize = float2 (_OutputWidth, _OutputHeight);
 
    if (mode == 0) color = tiltShift (s0, start, end, float2 ( dx / d, dy / d), texSize, texCoord);
    if (mode == 1) color = tiltShift (s1, start, end, float2 (-dy / d, dx / d), texSize, texCoord);
@@ -241,16 +255,8 @@ float4 FxTiltShift (float2 texCoord : TEXCOORD1, uniform int mode) : COLOR
 
 technique FxTechnique
 {
-   pass PassA
-   <
-      string Script = "RenderColorTarget0 = Pass1;";
-   >
-   {
-      PixelShader = compile PROFILE FxTiltShift (0);
-   }
-
-   pass PassB
-   {
-      PixelShader = compile PROFILE FxTiltShift (1);
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass PassA < string Script = "RenderColorTarget0 = Pass1;"; > ExecuteParam (FxTiltShift, 0)
+   pass PassB ExecuteParam (FxTiltShift, 1)
 }
+

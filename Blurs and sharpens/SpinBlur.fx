@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author rakusan/windsturm
 // @Created 2012-05-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxSpinBlur_640.png
@@ -23,24 +23,12 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Updated 2021-08-31 jwrl:
+// Updated to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Renamed from FxSpinBlur.fx to SpinBlur.fx.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Bug fix June 28 2017 by jwrl.
-// An arithmetic bug which arose during the cross platform conversion was detected and
-// fixed.  The bug resulted in a noticeable drop in video levels and severe highlight
-// compression.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Prior to 2020-11-09:
+// Various updates mainly to improve cross-platform performance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,40 +38,75 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "This applies a rotary blur with adjustable aspect ratio and centring";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture prelim : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define ExecuteParam(SHD,PRM) { PixelShader = compile PROFILE SHD (PRM); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define BLUR_PART 15
+#define BLUR_SAMP 30
+#define BLUR_DIV  11.6
+
+#define WAIT_1    1.0
+#define WAIT_2    0.5
+
+#define INTERVAL  0.033333
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and targets
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Mirror;
-   AddressV = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetInputMode (Input, s_RawInp, Mirror);
 
-sampler partSampler = sampler_state
-{
-   Texture = <prelim>;
-   AddressU = Mirror;
-   AddressV = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (FixInp, InputSampler, Mirror);
+SetTargetMode (prelim, partSampler, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -120,37 +143,29 @@ float AR
 > = 1.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define BLUR_PART 15
-#define BLUR_SAMP 30
-#define BLUR_DIV  11.6
-
-#define WAIT_1    1.0
-#define WAIT_2    0.5
-
-#define INTERVAL  0.033333
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, uniform bool pass2) : COLOR
 {
-   if (threshold == 0.0) return tex2D (InputSampler, xy);
+   if (Overflow (uv1)) return EMPTY;
+
+   if (threshold == 0.0) return tex2D (InputSampler, uv2);
 
    float2 angXY;
    float Tcos, Tsin;
 
-   float4 color = 0.0.xxxx;
+   float4 color = EMPTY;
 
    float2 outputAspect = float2 (1.0, _OutputAspectRatio);
    float2 blueAspect = float2 (1.0, AR);
    float2 center = float2 (CX, 1.0 - CY );
-   float2 uv = (xy - center) / outputAspect / blueAspect;
+   float2 xy = (uv2 - center) / outputAspect / blueAspect;
 
    float amount = radians (threshold) / BLUR_SAMP;
    float wait = pass2 ? WAIT_2 : WAIT_1;
@@ -162,8 +177,8 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
 
    for (int i = start_count; i < end_count; i++) {
       sincos (ang, Tsin, Tcos);
-      angXY = center + float2 ((uv.x * Tcos - uv.y * Tsin),
-              (uv.x * Tsin + uv.y * Tcos) * outputAspect.y) * blueAspect;
+      angXY = center + float2 ((xy.x * Tcos - xy.y * Tsin),
+              (xy.x * Tsin + xy.y * Tcos) * outputAspect.y) * blueAspect;
 
       color += (tex2D (InputSampler, angXY) * wait);
 
@@ -173,7 +188,7 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
 
    color /= BLUR_DIV;
 
-   if (pass2) color = (color + tex2D (partSampler, xy)) * 0.75;
+   if (pass2) color = (color + tex2D (partSampler, uv2)) * 0.75;
 
    return color;
 }
@@ -184,16 +199,9 @@ float4 ps_main (float2 xy : TEXCOORD1, uniform bool pass2) : COLOR
 
 technique FxSpinBlur
 {
-   pass Pass_1
-   <
-      string Script = "RenderColorTarget0 = prelim;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main (false);
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass Pass_1 < string Script = "RenderColorTarget0 = prelim;"; > ExecuteParam (ps_main, false)
 
-   pass Pass_2
-   {
-      PixelShader = compile PROFILE ps_main (true);
-   }
+   pass Pass_2 ExecuteParam (ps_main, true)
 }
+

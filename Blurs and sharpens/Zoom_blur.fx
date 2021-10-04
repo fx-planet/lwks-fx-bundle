@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-09
+// @Released 2021-08-31
 // @Author khaver
 // @Created 2012-01-23
 // @see https://www.lwks.com/media/kunena/attachments/6375/ZoomBlur_640.png
@@ -13,24 +13,12 @@
 //
 // Version history:
 //
-// Modified jwrl 2020-11-09:
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-08-31 jwrl:
+// Partial rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified by LW user jwrl 23 December 2018.
-// Added creation date.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Version 14.5 update 24 March 2018 by jwrl.
-// Added LINUX and OSX test to allow support for changing "Clamp" to "ClampToEdge" on
-// those platforms.  It will now function correctly when used with Lightworks versions
-// 14.5 and higher under Linux or OS-X and fixes a bug associated with using this effect
-// with transitions on those platforms.  The bug still exists when using older versions
-// of Lightworks.
-//
-// Cross platform conversion by jwrl 20 July 2017.
+// Prior to 2020-11-09:
+// Various updates mainly to improve cross-platform performance.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -40,23 +28,62 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Blurs and Sharpens";
    string Notes       = "A radial blur effect that simulates the motion of a zoom in or out";
-   bool CanSize       = false;
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+SetInputMode (Input, s_RawInp, Mirror);
 
-sampler InputSampler = sampler_state {
-	Texture   = <Input>;
-	AddressU  = ClampToEdge;
-	AddressV  = ClampToEdge;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+SetTargetMode (FixInp, InputSampler, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -66,55 +93,62 @@ float CX
 <
    string Description = "Center";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float CY
 <
    string Description = "Center";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float BlurAmount
 <
    string Description = "Strength";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main (float2 uv : TEXCOORD1) : COLOR
+// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
+// geometry and rotation are handled without too much effort.
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 c = 0.0.xxxx;
+   if (Overflow (uv1)) return EMPTY;
+
+   float4 c = EMPTY;
 
    float2 Center = float2 (CX, 1.0 - CY);
-   float2 xy = uv - Center;
+   float2 xy = uv2 - Center;
 
-   float scale = 1.0;
-   float sDiff = BlurAmount / 40.0;
+   float scale;
 
    for (int i = 0; i < 41; i++) {
+      scale = 1.0 - BlurAmount * (i / 40.0);
       c += tex2D (InputSampler, xy * scale + Center);
-      scale -= sDiff;
    }
 
-   return c / 41.0;
+   c /= 41.0;
+
+   return c;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
+technique ZoomBlur
 {
-   pass Pass1
-   {
-      PixelShader = compile PROFILE main ();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass Pass1 ExecuteShader (ps_main)
 }
+

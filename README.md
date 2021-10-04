@@ -287,7 +287,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Kaleido A                     |KaleidoA.fx             |
 |Kaleidoscope                  |KaleidoscopeFx.fx       |
 |Lightning flash               |LightningFlash.fx       |
-|Rainbow V2                    |Rainbow_V2.fx           |
+|Rainbow                       |Rainbow.fx              |
 |Rainbow connection            |RainbowConnect.fx       |
 |Sea scape                     |Sea_Scape.fx            |
 |Spotlight effect              |SpotlightFx.fx          |

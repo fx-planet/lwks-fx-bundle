@@ -1,15 +1,16 @@
 // @Maintainer jwrl
-// @Released 2020-07-29
+// @Released 2021-07-24
 // @Author jwrl
-// @Created 2018-09-27
+// @Created 2021-07-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourFlat_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourFlat.mp4
 
 /**
  This is a modified version of my "Dissolve through colour" but is very much simpler to
  use.  Apply it as you would a dissolve, adjust the percentage of the dissolve that you
- want to be colour and set the colour to what you want.  It defaults to white colour
- with a colour duration of 10% of the total effect duration.
+ want to be colour and set the colour to what you want.  It defaults to a black colour
+ with a colour duration of 10% of the total effect duration, for a quick dissolve through
+ black.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,15 +18,9 @@
 //
 // Version history:
 //
-// Modified 2020-07-29 jwrl.
-// Reformatted the effect header.
-//
-// Modified 23 December 2018 jwrl.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 13 December 2018 jwrl.
-// Changed effect name.
-// Changed subcategory.
+// Rewrite 2021-07-24 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,21 +30,48 @@ int _LwksEffectInfo
    string Category    = "Mix";
    string SubCategory = "Colour transitions";
    string Notes       = "Dissolves to a flat user defined colour then from that to the incoming image";
+   bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -77,13 +99,13 @@ float4 Colour
    string Group = "Colour setup";
    string Description = "Colour";
    bool SupportsAlpha = false;
-> = { 1.0, 1.0, 1.0, 1.0 };
+> = { 0.0, 0.0, 0.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
 // Pixel Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float mix_bgd = min (1.0, (1.0 - Amount) * 2.0);
    float mix_fgd = min (1.0, Amount * 2.0);
@@ -99,17 +121,17 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       mix_fgd = 1.0;
    }
 
-   float4 retval = lerp (tex2D (s_Foreground, uv), Colour, mix_fgd);
+   float4 retval = lerp (GetPixel (s_Foreground, uv1), Colour, mix_fgd);
 
-   return lerp (tex2D (s_Background, uv), retval, mix_bgd);
+   return lerp (GetPixel (s_Background, uv2), retval, mix_bgd);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Technique
 //-----------------------------------------------------------------------------------------//
 
-technique Dx_FlatColour
+technique FlatColour_Dx
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

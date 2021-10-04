@@ -1,40 +1,35 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2021-07-17
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Colour_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/DissolveThruColour.mp4
+// @Created 2021-07-17
+// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour_640.png
+// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Colour.mp4
 
 /**
- This effect dissolves through a user-selected colour field from one clip to another.
- The colour percentage can be adjusted from 0% when the effect perform as a standard
- dissolve, to 100% which fades to the colour field then to the second video stream.
- Values between 100% and 0% will make the colour more or less opaque, giving quite
- subtle colour blends through the transition.  Transition centering can also be adjusted.
-
- The colour field can be set up to be a single flat colour or a wide range of gradients.
- In the gradients that blend to the centre, the centre point is also fully adjustable.
- Asymmetrical colour transitions can be created by changing keyframing of the effect
- centre, opacity, transition curve, gradient centre and colour values.
+ This effect fades a blended foreground such as a title or image key in or out through
+ a user-selected colour gradient.  The gradient can be a single flat colour, a vertical
+ gradient, a horizontal gradient or a four corner gradient.  The colour is at its
+ maximum strength half way through the transition.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Colour_Dx.fx
+// Lightworks user effect Colour_Kx.fx
+//
+// This effect is a combination of two previous effects, Colour_Ax and Colour_Adx.
 //
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2021-07-17 jwrl.
 // Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
 <
    string EffectGroup = "GenericPixelShader";
-   string Description = "Dissolve thru colour";
+   string Description = "Dissolve thru colour (keyed)";
    string Category    = "Mix";
    string SubCategory = "Colour transitions";
-   string Notes       = "Dissolves through a user-selected colour field from one clip to another";
+   string Notes       = "Fades the blended foreground in or out through a colour gradient";
    bool CanSize       = true;
 > = 0;
 
@@ -95,7 +90,8 @@ Wrong_Lightworks_version
 DefineInput (Fg, s_Foreground);
 DefineInput (Bg, s_Background);
 
-DefineTarget (Gradient, s_Gradient);
+DefineTarget (Super, s_Super);
+DefineTarget (Color, s_Color);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -110,28 +106,31 @@ float Amount
    float KF1    = 1.0;
 > = 0.5;
 
-float FxCentre
+int Source
 <
-   string Description = "Transition centre";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+   string Description = "Source";
+   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
+> = 0;
+
+int SetTechnique
+<
+   string Description = "Transition position";
+   string Enum = "At start if delta key folded,At start of clip,At end of clip";
+> = 1;
 
 float cAmount
 <
    string Group = "Colour setup";
-   string Description = "Opacity";
+   string Description = "Colour mix";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 1.0;
+> = 0.5;
 
-float cCurve
+bool gradSetup
 <
    string Group = "Colour setup";
-   string Description = "Trans. curve";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+   string Description = "Show gradient full screen";
+> = false;
 
 int cGradient
 <
@@ -160,35 +159,78 @@ float OffsY
 
 float4 topLeft
 <
+   string Description = "Top Left";
    string Group = "Colour setup";
-   string Description = "Top left";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, 1.0 };
+   bool SupportsAlpha = true;
+> = { 0.0, 1.0, 1.0, 1.0 };
 
 float4 topRight
 <
+   string Description = "Top Right";
    string Group = "Colour setup";
-   string Description = "Top right";
-   bool SupportsAlpha = false;
-> = { 0.5, 0.0, 1.0, 0.8 };
+   bool SupportsAlpha = true;
+> = { 1.0, 1.0, 0.0, 1.0 };
 
 float4 botLeft
 <
+   string Description = "Bottom Left";
    string Group = "Colour setup";
-   string Description = "Bottom left";
-   bool SupportsAlpha = false;
+   bool SupportsAlpha = true;
 > = { 0.0, 0.0, 1.0, 1.0 };
 
 float4 botRight
 <
+   string Description = "Bottom Right";
    string Group = "Colour setup";
-   string Description = "Bottom right";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.8, 1.0, 0.5 };
+   bool SupportsAlpha = true;
+> = { 1.0, 0.0, 1.0, 1.0 };
+
+float KeyGain
+<
+   string Description = "Key trim";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.25;
 
 //-----------------------------------------------------------------------------------------//
-// Pixel Shaders
+// Shaders
 //-----------------------------------------------------------------------------------------//
+
+float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+{
+   float4 Fgnd = GetPixel (s_Foreground, uv1);
+
+   if (Source == 0) {
+      float4 Bgnd = GetPixel (s_Background, uv2);
+
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+   }
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+}
+
+float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+{
+   float4 Fgnd = GetPixel (s_Foreground, uv1);
+
+   if (Source == 0) {
+      float4 Bgnd = GetPixel (s_Background, uv2);
+
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb *= Fgnd.a;
+   }
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+}
 
 float4 ps_colour (float2 uv0 : TEXCOORD0) : COLOR
 {
@@ -233,43 +275,82 @@ float4 ps_colour (float2 uv0 : TEXCOORD0) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float Mix = (FxCentre + 1.0) / 2;
+   float4 gradient = GetPixel (s_Color, uv3);
 
-   Mix = (Mix <= 0.0) ? (Amount / 2.0) + 0.5 :
-         (Mix >= 1.0) ? Amount / 2.0 :
-         (Mix > Amount) ? Amount / (2.0 * Mix) : ((Amount - Mix) / (2.0 * (1.0 - Mix))) + 0.5;
+   if (gradSetup) return gradient;
 
-   float4 Fgnd   = GetPixel (s_Foreground, uv1);
-   float4 Bgnd   = GetPixel (s_Background, uv2);
-   float4 colour = GetPixel (s_Gradient, uv3);
-   float4 rawDx  = lerp (Fgnd, Bgnd, Mix);
-   float4 colDx;
+   float4 Bgnd = GetPixel (s_Foreground, uv1);
+   float4 Fgnd = GetPixel (s_Super, uv3);
 
-   float nonLin = sin (Mix * PI);
+   float level = min (1.0, cAmount * 2.0);
+   float c_Amt = cos (saturate (level * Amount) * HALF_PI);
 
-   Mix *= 2.0;
+   level = sin (Amount * HALF_PI);
+   Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
 
-   if (Mix > 1.0) {
-      Mix = lerp ((2.0 - Mix), nonLin, cCurve);
-      colDx = lerp (Bgnd, colour, Mix);
-   }
-   else {
-      Mix = lerp (Mix, nonLin, cCurve);
-      colDx = lerp (Fgnd, colour, Mix);
-   }
+   return lerp (Bgnd, Fgnd, Fgnd.a * level);
+}
 
-   return lerp (rawDx, colDx, cAmount);
+float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+{
+   float4 gradient = GetPixel (s_Color, uv3);
+
+   if (gradSetup) return gradient;
+
+   float4 Bgnd = GetPixel (s_Background, uv2);
+   float4 Fgnd = GetPixel (s_Super, uv3);
+
+   float level = min (1.0, cAmount * 2.0);
+   float c_Amt = cos (saturate (level * Amount) * HALF_PI);
+
+   level = sin (Amount * HALF_PI);
+   Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * level);
+}
+
+float4 ps_main_O (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+{
+   float4 gradient = GetPixel (s_Color, uv3);
+
+   if (gradSetup) return gradient;
+
+   float4 Bgnd = GetPixel (s_Background, uv2);
+   float4 Fgnd = GetPixel (s_Super, uv3);
+
+   float level = min (1.0, cAmount * 2.0);
+   float c_Amt = sin (saturate (level * Amount) * HALF_PI);
+
+   level = cos (Amount * HALF_PI);
+   Fgnd.rgb = lerp (Fgnd.rgb, gradient.rgb, c_Amt);
+
+   return lerp (Bgnd, Fgnd, Fgnd.a * level);
 }
 
 //-----------------------------------------------------------------------------------------//
-// Technique
+// Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Colour_Dx
+technique Colour_Kx_F
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Gradient;"; > ExecuteShader (ps_colour)
-   pass P_2 ExecuteShader (ps_main)
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen_F)
+   pass P_2 < string Script = "RenderColorTarget0 = Color;"; > ExecuteShader (ps_colour)
+   pass P_3 ExecuteShader (ps_main_F)
+}
+
+technique Colour_Kx_I
+{
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = Color;"; > ExecuteShader (ps_colour)
+   pass P_3 ExecuteShader (ps_main_I)
+}
+
+technique Colour_Kx_O
+{
+   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
+   pass P_2 < string Script = "RenderColorTarget0 = Color;"; > ExecuteShader (ps_colour)
+   pass P_3 ExecuteShader (ps_main_O)
 }
 

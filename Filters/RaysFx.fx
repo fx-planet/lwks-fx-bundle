@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author khaver
 // @Created 2012-01-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rays_640.png
@@ -12,6 +12,9 @@
 // Lightworks user effect RaysFx.fx
 //
 // Version history:
+//
+// Update 2021-10-05 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Update 2020-11-12 jwrl.
 // Added CanSize switch for LW 2021 support.
@@ -43,118 +46,133 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
-texture Partial : RenderColorTarget;
-texture Mask    : RenderColorTarget;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state {
-	Texture = <Input>;
-	AddressU = Clamp;
-	AddressV = Clamp;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+DefineInput (Input, s_RawInp);
 
-sampler M1 = sampler_state {
-	Texture = <Mask>;
-	AddressU = Clamp;
-	AddressV = Clamp;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
+DefineTarget (FixInp, InputSampler);
+DefineTarget (Partial, M2);
+DefineTarget (Mask, M1);
 
-sampler M2 = sampler_state {
-	Texture = <Partial>;
-	AddressU = Clamp;
-	AddressV = Clamp;
-	MinFilter = Linear;
-	MagFilter = Linear;
-	MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float CX
 <
    string Description = "Center";
    string Flags = "SpecifiesPointX";
-   float MinVal = -1.50;
-   float MaxVal = 2.50;
+   float MinVal = -1.5;
+   float MaxVal = 2.5;
 > = 0.5;
 
 float CY
 <
    string Description = "Center";
    string Flags = "SpecifiesPointY";
-   float MinVal = -1.50;
-   float MaxVal = 2.50;
+   float MinVal = -1.5;
+   float MaxVal = 2.5;
 > = 0.5;
 
 float BlurAmount
 <
    string Description = "Length";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 float Radius
 <
    string Description = "Radius";
-   float MinVal = 0.00;
-   float MaxVal = 2.00;
+   float MinVal = 0.0;
+   float MaxVal = 2.0;
 > = 2.0;
 
 float RThreshold
 <
    string Description = "Red Threshold";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.8;
 
 float GThreshold
 <
    string Description = "Green Threshold";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.8;
 
 float BThreshold
 <
    string Description = "Blue Threshold";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.8;
 
 float Mix
 <
    string Description = "Brightness";
-   float MinVal = 0.00;
-   float MaxVal = 10.00;
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
 > = 2.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 main (float2 uv : TEXCOORD2) : COLOR
 {
    float4 color = 0.0.xxxx;
    float2 Center = float2 (CX, 1 - CY) - 0.5.xx;
@@ -177,7 +195,7 @@ float4 main (float2 uv : TEXCOORD1) : COLOR
    return color * factor;
 }
 
-float4 prebuild (float2 uv : TEXCOORD1) : COLOR
+float4 prebuild (float2 uv : TEXCOORD2) : COLOR
 {
    float4 c = 0.0.xxxx;
    float2 xy, Center = float2 (CX, 1 - CY);
@@ -195,7 +213,7 @@ float4 prebuild (float2 uv : TEXCOORD1) : COLOR
    return c;
 }
 
-float4 combine (float2 uv : TEXCOORD1) : COLOR
+float4 combine (float2 uv : TEXCOORD2) : COLOR
 {
    float4 c = 0.0.xxxx;
    float2 xy, Center = float2 (CX, 1 - CY);
@@ -223,24 +241,9 @@ float4 combine (float2 uv : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   pass Pass0
-   <
-      string Script = "RenderColorTarget0 = Mask;";
-   >
-   {
-      PixelShader = compile PROFILE main ();
-   }
-
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Partial;";
-   >
-   {
-      PixelShader = compile PROFILE prebuild ();
-   }
-
-   pass Pass2
-   {
-      PixelShader = compile PROFILE combine ();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass Pass0 < string Script = "RenderColorTarget0 = Mask;"; > ExecuteShader (main)
+   pass Pass1 < string Script = "RenderColorTarget0 = Partial;"; > ExecuteShader (prebuild)
+   pass Pass2 ExecuteShader (combine)
 }
+

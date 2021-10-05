@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author khaver
 // @Created 2011-05-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flare_640.png
@@ -14,6 +14,9 @@
 // Lightworks user effect FlareFx.fx
 //
 // Version history:
+//
+// Update 2021-10-05 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Update 2020-11-12 jwrl.
 // Added CanSize switch for LW 2021 support.
@@ -48,35 +51,63 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-texture Sample : RenderColorTarget;
+DefineInput (Input, s_RawInp);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture   = <Sample>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, InputSampler);
+DefineTarget (Sample, Samp1);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -86,84 +117,80 @@ float CentreX
 <
    string Description = "Origin";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float CentreY
 <
    string Description = "Origin";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Strength
 <
    string Description = "Strength";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.1f;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
 
 float Stretch
 <
    string Description = "Stretch";
-   float MinVal = 0.0f;
-   float MaxVal = 100.0f;
-> = 5.0f;
+   float MinVal = 0.0;
+   float MaxVal = 100.0;
+> = 5.0;
 
 float adjust
 <
    string Description = "Adjust";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.25f;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.25;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_adjust ( float2 xy : TEXCOORD1 ) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_adjust (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 Color = tex2D( InputSampler, xy);
-   if (Color.r < 1.0f-adjust) Color.r = 0.0f;
-   if (Color.g < 1.0f-adjust) Color.g = 0.0f;
-   if (Color.b < 1.0f-adjust) Color.b = 0.0f;
+   float4 Color = GetPixel (InputSampler, uv);
+
+   if (Color.r < 1.0 - adjust) Color.r = 0.0;
+   if (Color.g < 1.0 - adjust) Color.g = 0.0;
+   if (Color.b < 1.0 - adjust) Color.b = 0.0;
+
    return Color;
 }
 
-float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 ret;
-   float2 amount = float2( 1.0, _OutputAspectRatio ) * Stretch / _OutputWidth;
+   float4 source = GetPixel (InputSampler, uv);
+   float4 negative = tex2D (Samp1, uv);
 
-   float centreY = 1.0f - CentreY;
-
-   float x = xy1.x - CentreX;
-   float y = xy1.y - centreY;
-
+   float2 centre = float2 (CentreX, 1.0 - CentreY);
+   float2 amount = float2 (1.0, _OutputAspectRatio) * Stretch / _OutputWidth;
    float2 adj = amount;
+   float2 xy = uv - centre;
+
+   float scale = 0.0;
    
-   float4 source = tex2D( InputSampler, xy1 );
-   float4 negative = tex2D( Samp1, xy1 );
-   ret = tex2D( Samp1, float2( x * adj.x + CentreX, y * adj.y + centreY ) );
+   float4 ret = tex2D (Samp1, (xy * adj) + centre);
 
    for (int count = 1; count < 13; count++) {
-   adj += amount;
-   ret += tex2D( Samp1, float2( x * adj.x + CentreX, y * adj.y + centreY ) )*(count*Strength);
+      scale += Strength;
+      adj += amount;
+      ret += tex2D (Samp1, (xy * adj) + centre) * scale;
    }
 
-   ret = ret / 15.0f;
-   ret = ret + source;
+   ret /= 15.0;
+   ret.a = 0.0;
 
-   return saturate(float4(ret.rgb,1.0f));
+   return saturate (ret + source);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -172,16 +199,8 @@ float4 ps_main( float2 xy1 : TEXCOORD1 ) : COLOR
 
 technique Blur
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Sample;";
-   >
-   {
-      PixelShader = compile PROFILE ps_adjust();
-   }
-
-   pass Pass2
-   {
-      PixelShader = compile PROFILE ps_main();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = Sample;"; > ExecuteShader (ps_adjust)
+   pass P_2 ExecuteShader (ps_main)
 }
+

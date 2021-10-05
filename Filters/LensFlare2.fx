@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author khaver
 // @Author toninoni
 // @Created 2018-06-12
@@ -25,6 +25,9 @@
 //
 // Version history:
 //
+// Update 2021-10-05 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
+//
 // Update 2020-11-12 jwrl.
 // Added CanSize switch for LW 2021 support.
 //
@@ -44,16 +47,64 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _Progress;
+float _OutputWidth;
+float _OutputHeight;
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state { Texture = <Input>; };
+DefineInput (Input, s_RawInp);
+
+DefineTarget (FixInp, InputSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -125,101 +176,113 @@ float THRESH
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-
-float _Progress;
-float _OutputWidth;
-float _OutputHeight;
-float _OutputAspectRatio;
-
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-float vary()
+float vary ()
 {
-	float pixX = 1.0/_OutputWidth;
-	float pixY = 1.0/_OutputHeight;
-	float2 iMouse = float2(CENTERX,1.0 - CENTERY);
-	float4 col = tex2D(InputSampler,iMouse);
-	col += tex2D(InputSampler,iMouse - float2(pixX,pixY));
-	col += tex2D(InputSampler,float2(iMouse.x,iMouse.y - pixY));
-	col += tex2D(InputSampler,iMouse + float2(pixX,-pixY));
+   float pixX = 1.0 / _OutputWidth;
+   float pixY = 1.0 / _OutputHeight;
 
-	col += tex2D(InputSampler,float2(iMouse.x - pixX,iMouse.y));
-	col += tex2D(InputSampler,float2(iMouse.x + pixX,iMouse.y));
+   float2 iMouse = float2 (CENTERX, 1.0 - CENTERY);
 
-	col += tex2D(InputSampler,iMouse - float2(pixX,-pixY));
-	col += tex2D(InputSampler,float2(iMouse.x,iMouse.y + pixY));
-	col += tex2D(InputSampler,iMouse + float2(pixX,pixY));
+   float4 col = tex2D(InputSampler,iMouse);
 
-	col = col / 9.0;
-	float cout = dot(col.rgb,float3(0.33333,0.33334,0.33333));
+   col += tex2D (InputSampler, iMouse - float2 (pixX, pixY));
+   col += tex2D (InputSampler, float2 (iMouse.x, iMouse.y - pixY));
+   col += tex2D (InputSampler, iMouse + float2 (pixX, -pixY));
 
-	return cout;
+   col += tex2D (InputSampler, float2 (iMouse.x - pixX, iMouse.y));
+   col += tex2D (InputSampler, float2 (iMouse.x + pixX, iMouse.y));
+
+   col += tex2D (InputSampler, iMouse - float2 (pixX, -pixY));
+   col += tex2D (InputSampler, float2 (iMouse.x, iMouse.y + pixY));
+   col += tex2D (InputSampler, iMouse + float2 (pixX, pixY));
+
+   col /= 9.0;
+
+   return dot (col.rgb, float3(0.33333,0.33334,0.33333));
 }
 
-
-float3 lensflare(float2 uv,float2 pos)
+float3 lensflare (float2 uv, float2 pos)
 {
-	float v = vary();
-	if (v < THRESH) v = 0.0;
-	if (!AFFECT) v = 1.0;
+   float v = vary ();
 
-	pos *= DISTANCE;
-    float intensity = AMOUNT;
-	float scatter = (1.0 - SCATTER) * 0.85;
-	float2 uvd = uv*(length(uv) * COMPLEXITY);
+   if (v < THRESH) v = 0.0;
 
-	float f1 = max(0.01-pow(length(uv+1.2*pos),1.9*ZOOM*v),.0)*7.0;
+   if (!AFFECT) v = 1.0;
 
-	float f2 = max(1.0/(1.0+32.0*pow(length(uvd+0.8*pos),2.0*ZOOM*v)),.0)*00.1;
-	float f22 = max(1.0/(1.0+32.0*pow(length(uvd+0.85*pos),2.0*ZOOM*v)),.0)*00.08;
-	float f23 = max(1.0/(1.0+32.0*pow(length(uvd+0.9*pos),2.0*ZOOM*v)),.0)*00.06;
+   pos *= DISTANCE;
 
-	float2 uvx = lerp(uv,uvd,-0.5);
+   float intensity = AMOUNT;
+   float scatter = (1.0 - SCATTER) * 0.85;
 
-	float f4 = max(0.01-pow(length(uvx+0.4*pos),2.4*ZOOM*v),.0)*6.0;
-	float f42 = max(0.01-pow(length(uvx+0.45*pos),2.4*ZOOM*v),.0)*5.0;
-	float f43 = max(0.01-pow(length(uvx+0.5*pos),2.4*ZOOM*v),.0)*3.0;
+   float2 uvd = uv * (length (uv) * COMPLEXITY);
 
-	uvx = lerp(uv,uvd,-.4);
+   float f1 = max (0.01 - pow (length (uv + 1.2 * pos), 1.9 * ZOOM * v), 0.0) * 7.0;
+   float f2 = max (1.0 / (1.0 + 32.0 * pow (length (uvd + 0.8 * pos), 2.0 * ZOOM * v)), 0.0) * 0.1;
+   float f22 = max (1.0 / (1.0 + 32.0 * pow (length (uvd + 0.85 * pos), 2.0 * ZOOM * v)), 0.0) * 0.08;
+   float f23 = max (1.0 / (1.0 + 32.0 * pow (length (uvd + 0.9 * pos), 2.0 * ZOOM * v)), 0.0) * 0.06;
 
-	float f5 = max(0.01-pow(length(uvx+0.2*pos),5.5*ZOOM*v),.0)*2.0;
-	float f52 = max(0.01-pow(length(uvx+0.4*pos),5.5*ZOOM*v),.0)*2.0;
-	float f53 = max(0.01-pow(length(uvx+0.6*pos),5.5*ZOOM*v),.0)*2.0;
+   float2 uvx = lerp (uv, uvd, -0.5);
 
-	uvx = lerp(uv,uvd,-0.5);
+   float f4 = max (0.01 - pow (length (uvx + 0.4 * pos), 2.4 * ZOOM * v), 0.0) * 6.0;
+   float f42 = max (0.01 - pow (length (uvx + 0.45 * pos), 2.4 * ZOOM * v), 0.0) * 5.0;
+   float f43 = max (0.01 - pow (length (uvx + 0.5 * pos), 2.4 * ZOOM * v), 0.0) * 3.0;
 
-	float f6 = max(0.01-pow(length(uvx-0.3*pos),1.6*ZOOM*v),.0)*6.0;
-	float f62 = max(0.01-pow(length(uvx-0.325*pos),1.6*ZOOM*v),.0)*3.0;
-	float f63 = max(0.01-pow(length(uvx-0.35*pos),1.6*ZOOM*v),.0)*5.0;
+   uvx = lerp (uv, uvd, -0.4);
 
-	float3 c = float3(.0,.0,.0);
+   float f5 = max (0.01 - pow (length (uvx + 0.2 * pos), 5.5 * ZOOM * v), 0.0) * 2.0;
+   float f52 = max (0.01 - pow (length (uvx + 0.4 * pos), 5.5 * ZOOM * v), 0.0) * 2.0;
+   float f53 = max (0.01 - pow (length (uvx + 0.6 * pos), 5.5 * ZOOM * v), 0.0) * 2.0;
 
-	c.r+=f2+f4+f5+f6; c.g+=f22+f42+f52+f62; c.b+=f23+f43+f53+f63;
-	c = c*1.3 - float3(length(uvd)*scatter,length(uvd)*scatter,length(uvd)*scatter);
+   uvx = lerp (uv, uvd, -0.5);
 
-	return c * intensity;
+   float f6 = max (0.01 - pow (length (uvx - 0.3 * pos), 1.6 * ZOOM * v), 0.0) * 6.0;
+   float f62 = max (0.01 - pow (length (uvx - 0.325 * pos), 1.6 * ZOOM * v), 0.0) * 3.0;
+   float f63 = max (0.01 - pow (length (uvx - 0.35 * pos), 1.6 * ZOOM * v), 0.0) * 5.0;
+
+   float3 c = 0.0.xxx;
+
+   c.r += f2 + f4 + f5 + f6;
+   c.g += f22 + f42 + f52 + f62;
+   c.b += f23 + f43 + f53 + f63;
+
+   return ((c * 1.3) - (length (uvd) * scatter).xxx) * intensity;
 }
 
-float3 cc(float3 color, float factor,float factor2)
+float3 cc (float3 color, float factor, float factor2)
 {
-	float w = color.x+color.y+color.z;
-	return lerp(color,float3(w,w,w)*factor,w*factor2);
+   float w = color.r +color.g + color.b;
+
+   return lerp (color, w.xxx * factor, w * factor2);
 }
 
-float4 mainImage( float2 fragCoord : TEXCOORD1) : COLOR
-{
-	float4 fragColor;
-	float3 orig = tex2D (InputSampler, fragCoord).rgb;
-	float2 uv = fragCoord.xy - 0.5;
-	uv.x *= _OutputAspectRatio;
-	float2 mouse = float2(CENTERX - 0.5, (1.0 - CENTERY) - 0.5);
-	mouse.x *= _OutputAspectRatio;
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
 
-	float3 color = float3(1.5,1.2,1.2)*lensflare(uv,mouse.xy);
-	color = saturate(cc(color,.5,.1));
-	fragColor = float4(color,1.0);
-	fragColor = float4(saturate( orig.rgb + fragColor.rgb), 1.0);
-	return fragColor;
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 mainImage (float2 fragCoord : TEXCOORD2) : COLOR
+{
+   float4 fragColor;
+
+   float3 orig = tex2D (InputSampler, fragCoord).rgb;
+
+   float2 uv = fragCoord - 0.5.xx;
+   float2 mouse = float2 (CENTERX - 0.5, (1.0 - CENTERY) - 0.5);
+
+   uv.x *= _OutputAspectRatio;
+   mouse.x *= _OutputAspectRatio;
+
+   float3 color = float3 (1.5, 1.2, 1.2) * lensflare (uv, mouse);
+
+   color = saturate (cc (color, 0.5, 0.1));
+
+   fragColor = float4 (color, 1.0);
+
+   return float4 (saturate (orig + fragColor.rgb), 1.0);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -228,8 +291,7 @@ float4 mainImage( float2 fragCoord : TEXCOORD1) : COLOR
 
 technique Flare
 {
-   pass Pass1
-   {
-      PixelShader = compile PROFILE mainImage ();
-   }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass Pass1 ExecuteShader (mainImage)
 }
+

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author khaver
 // @Created 2012-10-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/Glint_640.png
@@ -14,6 +14,9 @@
 // Lightworks user effect GlintFx.fx by Gary Hango (khaver)
 //
 // Version history:
+//
+// Update 2021-10-05 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Update 2020-11-12 jwrl.
 // Added CanSize switch for LW 2021 support.
@@ -50,69 +53,80 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define ExecuteParam(SHD,PRM) { PixelShader = compile PROFILE SHD (PRM); }
+#define Execute2param(SHD,P1,P2) { PixelShader = compile PROFILE SHD (P1, P2); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+# define ROTATE_0    0.0      // 0.0, 1.0
+# define ROTATE_30   0.5236   // 30.0, 1.0
+# define ROTATE_45   0.7854   // 45.0, 1.0
+# define ROTATE_90   1.5708   // 90.0, 1.0
+# define ROTATE_135  2.35619  // 135.0, 1.0
+# define ROTATE_150  2.61799  // 150.0, 1.0
+# define ROTATE_180  3.14159  // 180.0, 1.0
+# define ROTATE_210  3.66519  // 30.0, -1.0
+# define ROTATE_225  3.92699  // 45.0, -1.0
+# define ROTATE_270  4.71239  // 90.0, -1.0
+# define ROTATE_315  5.49779  // 135.0, -1.0
+# define ROTATE_330  5.75959  // 150.0, -1.0
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, InputSampler);
 
-texture Sample1 : RenderColorTarget;
-texture Sample2 : RenderColorTarget;
-texture Sample3 : RenderColorTarget;
-texture Sample4 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture   = <Sample1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp2 = sampler_state
-{
-   Texture   = <Sample2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp3 = sampler_state
-{
-   Texture   = <Sample3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp4 = sampler_state
-{
-   Texture   = <Sample4>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Sample1, Samp1);
+DefineTarget (Sample2, Samp2);
+DefineTarget (Sample3, Samp3);
+DefineTarget (Sample4, Samp4);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -175,37 +189,17 @@ bool flare
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-# define ROTATE_0    0.0      // 0.0, 1.0
-# define ROTATE_30   0.5236   // 30.0, 1.0
-# define ROTATE_45   0.7854   // 45.0, 1.0
-# define ROTATE_90   1.5708   // 90.0, 1.0
-# define ROTATE_135  2.35619  // 135.0, 1.0
-# define ROTATE_150  2.61799  // 150.0, 1.0
-# define ROTATE_180  3.14159  // 180.0, 1.0
-# define ROTATE_210  3.66519  // 30.0, -1.0
-# define ROTATE_225  3.92699  // 45.0, -1.0
-# define ROTATE_270  4.71239  // 90.0, -1.0
-# define ROTATE_315  5.49779  // 135.0, -1.0
-# define ROTATE_330  5.75959  // 150.0, -1.0
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_adjust (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 Color = tex2D (InputSampler, xy);
+   float4 Color = GetPixel (InputSampler, xy);
 
    return float4 (!((Color.r + Color.g + Color.b) / 3.0 > 1.0 - adjust) ? 0.0 : (colorit) ? 1.0 : Color);
 }
 
-float4 ps_stretch_1 (float2 xy1 : TEXCOORD1, uniform float rn_angle) : COLOR
+float4 ps_stretch_1 (float2 xy1 : TEXCOORD2, uniform float rn_angle) : COLOR
 {
    float3 delt, ret = 0.0.xxx;
    float3 bow = float2 (1.0, 0.0).xxy;
@@ -224,7 +218,7 @@ float4 ps_stretch_1 (float2 xy1 : TEXCOORD1, uniform float rn_angle) : COLOR
 
    for (int count = 0; count < 16; count++) {
       bow.g = count / 16.0;
-      delt = tex2D (Samp1, xy1 - (offset * count));
+      delt = tex2D (Samp1, xy1 - (offset * count)).rgb;
       delt *= 1.0 - (count / 36.0);
       ret += (colorit) ? delt * bow : delt;
    }
@@ -233,7 +227,7 @@ float4 ps_stretch_1 (float2 xy1 : TEXCOORD1, uniform float rn_angle) : COLOR
 
    for (int count = 16; count < 22; count++) {
       bow.r = (21.0 - count) / 6.0;
-      delt = tex2D (Samp1, xy1 - (offset * count));
+      delt = tex2D (Samp1, xy1 - (offset * count)).rgb;
       delt *= 1.0 - (count / 36.0);
       ret += (colorit) ? delt * bow : delt;
    }
@@ -241,7 +235,7 @@ float4 ps_stretch_1 (float2 xy1 : TEXCOORD1, uniform float rn_angle) : COLOR
    return float4 (ret, 1.0);
 }
 
-float4 ps_stretch_2 (float2 xy1 : TEXCOORD1, uniform float rn_angle, uniform int samp) : COLOR
+float4 ps_stretch_2 (float2 xy1 : TEXCOORD2, uniform float rn_angle, uniform int samp) : COLOR
 {
    float3 delt, ret = 0.0.xxx;
    float3 bow = float3 (0.0, 1.0, 1.0);
@@ -262,7 +256,7 @@ float4 ps_stretch_2 (float2 xy1 : TEXCOORD1, uniform float rn_angle, uniform int
 
    for (int count = 22; count < 36; count++) {
       bow.b = (36.0 - count) / 15.0;
-      delt = tex2D (Samp1, xy1 - (offset * count));
+      delt = tex2D (Samp1, xy1 - (offset * count)).rgb;
       delt *= 1.0 - (count / 36.0);
       ret += (colorit) ? delt * bow : delt;
    }
@@ -272,34 +266,34 @@ float4 ps_stretch_2 (float2 xy1 : TEXCOORD1, uniform float rn_angle, uniform int
    return max (float4 (ret * bright, 1.0), insamp);
 }
 
-float4 Poisson (float2 xy : TEXCOORD1) : COLOR
+float4 Poisson (float2 xy : TEXCOORD2) : COLOR
 {
    float2 coord, pixelSize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
 
    float2 poisson [24] = { float2 ( 0.326212,  0.40581),
-                           float2 ( 0.840144,  0.07358f),
-                           float2 ( 0.695914, -0.457137f),
-                           float2 ( 0.203345, -0.620716f),
-                           float2 (-0.96234,   0.194983f),
-                           float2 (-0.473434,  0.480026f),
-                           float2 (-0.519456, -0.767022f),
-                           float2 (-0.185461,  0.893124f),
-                           float2 (-0.507431, -0.064425f),
-                           float2 (-0.89642,  -0.412458f),
-                           float2 ( 0.32194,   0.932615f),
-                           float2 ( 0.791559,  0.59771f),
-                           float2 (-0.326212, -0.40581f),
-                           float2 (-0.840144, -0.07358f),
-                           float2 (-0.695914,  0.457137f),
-                           float2 (-0.203345,  0.620716f),
-                           float2 ( 0.96234,  -0.194983f),
-                           float2 ( 0.473434, -0.480026f),
-                           float2 ( 0.519456,  0.767022f),
-                           float2 ( 0.185461, -0.893124f),
-                           float2 ( 0.507431,  0.064425f),
-                           float2 ( 0.89642,   0.412458f),
-                           float2 (-0.32194,  -0.932615f),
-                           float2 (-0.791559, -0.59771f)};
+                           float2 ( 0.840144,  0.07358),
+                           float2 ( 0.695914, -0.457137),
+                           float2 ( 0.203345, -0.620716),
+                           float2 (-0.96234,   0.194983),
+                           float2 (-0.473434,  0.480026),
+                           float2 (-0.519456, -0.767022),
+                           float2 (-0.185461,  0.893124),
+                           float2 (-0.507431, -0.064425),
+                           float2 (-0.89642,  -0.412458),
+                           float2 ( 0.32194,   0.932615),
+                           float2 ( 0.791559,  0.59771),
+                           float2 (-0.326212, -0.40581),
+                           float2 (-0.840144, -0.07358),
+                           float2 (-0.695914,  0.457137),
+                           float2 (-0.203345,  0.620716),
+                           float2 ( 0.96234,  -0.194983),
+                           float2 ( 0.473434, -0.480026),
+                           float2 ( 0.519456,  0.767022),
+                           float2 ( 0.185461, -0.893124),
+                           float2 ( 0.507431,  0.064425),
+                           float2 ( 0.89642,   0.412458),
+                           float2 (-0.32194,  -0.932615),
+                           float2 (-0.791559, -0.59771)};
 
    float4 cOut = tex2D (Samp4, xy);
 
@@ -320,13 +314,13 @@ float4 Poisson (float2 xy : TEXCOORD1) : COLOR
    return cOut;
 }
 
-float4 ps_combine (float2 xy : TEXCOORD1) : COLOR
+float4 ps_combine (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 blr = tex2D (Samp2, xy);
+   float4 blr = GetPixel (Samp2, xy2);
 
    if (flare) return blr;
 
-   float4 source = tex2D (InputSampler, xy);
+   float4 source = GetPixel (InputSampler, xy1);
    float4 comb = source + (blr * (1.0 - source));
 
    return lerp (source, comb, Strength);
@@ -338,360 +332,64 @@ float4 ps_combine (float2 xy : TEXCOORD1) : COLOR
 
 technique One
 {
-   pass Pass_0
-   <
-      string Script = "RenderColorTarget0 = Sample1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_adjust ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = Sample1;"; > ExecuteShader (ps_adjust)
 
-   pass Pass_a_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_45);
-   }
+   pass A_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_45)
+   pass A_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_45, -1)
+   pass B_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_135)
+   pass B_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_135, 0)
+   pass C_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_225)
+   pass C_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_225, 1)
+   pass D_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_315)
+   pass D_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_315, 0)
 
-   pass Pass_a_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_45, -1);
-   }
-
-   pass Pass_b_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_135);
-   }
-
-   pass Pass_b_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_135, 0);
-   }
-
-   pass Pass_c_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_225);
-   }
-
-   pass Pass_c_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_225, 1);
-   }
-
-   pass Pass_d_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_315);
-   }
-
-   pass Pass_d_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_315, 0);
-   }
-
-   pass Pass_4
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE Poisson ();
-   }
-
-   pass Pass_5
-   {
-      PixelShader = compile PROFILE ps_combine ();
-   }
+   pass P_2 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteShader (Poisson)
+   pass P_2 ExecuteShader (ps_combine)
 }
  		 	   		  
 technique Two
 {
-   pass Pass_0
-   <
-      string Script = "RenderColorTarget0 = Sample1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_adjust ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = Sample1;"; > ExecuteShader (ps_adjust)
 
-   pass Pass_a_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_30);
-   }
+   pass A_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_30)
+   pass A_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_30, -1)
+   pass B_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_90)
+   pass B_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_90, 0)
+   pass C_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_150)
+   pass C_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_150, 1)
+   pass D_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_210)
+   pass D_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_210, 0)
+   pass E_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_270)
+   pass E_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_270, 1)
+   pass F_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_330)
+   pass F_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_330, 0)
 
-   pass Pass_a_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_30, -1);
-   }
-
-   pass Pass_b_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_90);
-   }
-
-   pass Pass_b_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_90, 0);
-   }
-
-   pass Pass_c_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_150);
-   }
-
-   pass Pass_c_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_150, 1);
-   }
-
-   pass Pass_d_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_210);
-   }
-
-   pass Pass_d_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_210, 0);
-   }
-
-   pass Pass_e_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_270);
-   }
-
-   pass Pass_e_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_270, 1);
-   }
-
-   pass Pass_f_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_330);
-   }
-
-   pass Pass_f_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_330, 0);
-   }
-
-   pass Pass_4
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE Poisson ();
-   }
-
-   pass Pass_5
-   {
-      PixelShader = compile PROFILE ps_combine ();
-   }
+   pass P_2 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteShader (Poisson)
+   pass P_3 ExecuteShader (ps_combine)
 }
 
 technique Three
 {
-   pass Pass_0
-   <
-      string Script = "RenderColorTarget0 = Sample1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_adjust ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = Sample1;"; > ExecuteShader (ps_adjust)
 
-   pass Pass_a_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_0);
-   }
+   pass A_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_0)
+   pass A_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_0, -1)
+   pass B_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_45)
+   pass B_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_45, 0)
+   pass C_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_90)
+   pass C_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_90, 1)
+   pass D_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_135)
+   pass D_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_135, 0)
+   pass E_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_180)
+   pass E_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_180, 1)
+   pass F_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_225)
+   pass F_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_225, 0)
+   pass G_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_270)
+   pass G_2 < string Script = "RenderColorTarget0 = Sample3;"; > Execute2param (ps_stretch_2, ROTATE_270, 1)
+   pass H_1 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteParam (ps_stretch_1, ROTATE_315)
+   pass H_2 < string Script = "RenderColorTarget0 = Sample4;"; > Execute2param (ps_stretch_2, ROTATE_315, 0)
 
-   pass Pass_a_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_0, -1);
-   }
-
-   pass Pass_b_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_45);
-   }
-
-   pass Pass_b_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_45, 0);
-   }
-
-   pass Pass_c_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_90);
-   }
-
-   pass Pass_c_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_90, 1);
-   }
-
-   pass Pass_d_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_135);
-   }
-
-   pass Pass_d_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_135, 0);
-   }
-
-   pass Pass_e_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_180);
-   }
-
-   pass Pass_e_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_180, 1);
-   }
-
-   pass Pass_f_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_225);
-   }
-
-   pass Pass_f_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_225, 0);
-   }
-
-   pass Pass_g_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_270);
-   }
-
-   pass Pass_g_2
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_270, 1);
-   }
-
-   pass Pass_h_1
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_1 (ROTATE_315);
-   }
-
-   pass Pass_h_2
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_stretch_2 (ROTATE_315, 0);
-   }
-
-   pass Pass_4
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE Poisson ();
-   }
-
-   pass Pass_5
-   {
-      PixelShader = compile PROFILE ps_combine ();
-   }
+   pass P_2 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteShader (Poisson)
+   pass P_3 ExecuteShader (ps_combine)
 }
+

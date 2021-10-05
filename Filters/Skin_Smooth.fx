@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author baopao
 // @Created 2014-07-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SkinSmooth_640.png
@@ -16,6 +16,9 @@
 // Based on: http://www.blosser.org/d9/dlAviShader042.rar
 //
 // Version history:
+//
+// Update 2021-10-05 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Update 2020-11-12 jwrl.
 // Added CanSize switch for LW 2021 support.
@@ -60,33 +63,64 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture IMG;
-texture MSK;
+DefineInput (IMG, s_RawImg);
+DefineInput (MSK, s_RawMsk);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler2D frameSampler = sampler_state {
-   Texture   = <IMG>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler2D MaskSampler = sampler_state {
-   Texture   = <MSK>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixImg, frameSampler);
+DefineTarget (FixMsk, MaskSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -154,17 +188,13 @@ float ShowMSKAmount
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 fold_bilateral (float2 tTex : TEXCOORD1) : COLOR
+float4 ps_initImg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawImg, uv); }
+float4 ps_initMsk (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawMsk, uv); }
+
+float4 fold_bilateral (float2 tTex : TEXCOORD3) : COLOR
 {
    float stepX = _OutputWidth * (1.0 - (min (1.0, FrameSize) * 0.75));
    float stepY = stepX / _OutputAspectRatio;
@@ -284,5 +314,8 @@ float4 fold_bilateral (float2 tTex : TEXCOORD1) : COLOR
 
 technique BilateralFilter
 {
-   pass Single_Pass { PixelShader = compile PROFILE fold_bilateral (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixImg;"; > ExecuteShader (ps_initImg)
+   pass P_2 < string Script = "RenderColorTarget0 = FixMsk;"; > ExecuteShader (ps_initMsk)
+   pass P_3 ExecuteShader (fold_bilateral)
 }
+

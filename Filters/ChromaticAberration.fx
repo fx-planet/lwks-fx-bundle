@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author josely
 // @Created 2012-06-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromAb_640.png
@@ -14,6 +14,9 @@
 // Chromatic Abberation Copyright (c) Johannes Bausch (josely). All rights reserved.
 //
 // Version history:
+//
+// Update 2021-10-05 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Update 2020-11-12 jwrl.
 // Added CanSize switch for LW 2021 support.
@@ -44,20 +47,64 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define STEPS   12
+#define STEPS_2 24               // STEPS * 2
+#define STEPS_3 36               // STEPS * 3
+#define STEP_RB 1.846            // STEPS / (1 - 0.5 * (STEPS + 1) + STEPS)
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler texColor = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -72,24 +119,17 @@ int SetTechnique
 float Amount
 <
    string Description = "Amount";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
-> = 0.10;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define STEPS   12
-#define STEPS_2 24               // STEPS * 2
-#define STEPS_3 36               // STEPS * 3
-#define STEP_RB 1.846            // STEPS / (1 - 0.5 * (STEPS + 1) + STEPS)
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.1;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_half (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main_half (float2 uv : TEXCOORD2) : COLOR
 {
    float4 fragColor = float4 (0.0, 0.0, 0.0, 1.0);
 
@@ -102,7 +142,7 @@ float4 ps_main_half (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < STEPS; i ++) {
       xy = uv - (i * coord);
       Scale = (float) i / STEPS;
-      color = tex2D (texColor, xy).rg / STEPS;
+      color = tex2D (s_Input, xy).rg / STEPS;
       color.x *= (1.0 - Scale);
       color.y *= Scale;
       fragColor.rg += color.xy;
@@ -111,7 +151,7 @@ float4 ps_main_half (float2 uv : TEXCOORD1) : COLOR
    for (int i = STEPS; i <= STEPS_2; i ++) {
       xy = uv - (i * coord);
       Scale = (float) (i - STEPS) / STEPS;
-      color = tex2D (texColor, xy).gb / STEPS;
+      color = tex2D (s_Input, xy).gb / STEPS;
       color.x *= (1.0 - Scale);
       color.y *= Scale;
       fragColor.gb += color.xy;
@@ -122,7 +162,7 @@ float4 ps_main_half (float2 uv : TEXCOORD1) : COLOR
    return fragColor;
 }
 
-float4 ps_main_full (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_full (float2 uv : TEXCOORD2) : COLOR
 {
    float4 fragColor = float4 (0.0, 0.0, 0.0, 1.0);
 
@@ -135,7 +175,7 @@ float4 ps_main_full (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < STEPS; i ++) {
       xy = uv - (i * coord);
       Scale = (float) i / STEPS;
-      color = tex2D (texColor, xy).rg / STEPS;
+      color = tex2D (s_Input, xy).rg / STEPS;
       color.x *= (1.0 - Scale);
       color.y *= Scale;
       fragColor.rg += color.xy;
@@ -144,7 +184,7 @@ float4 ps_main_full (float2 uv : TEXCOORD1) : COLOR
    for (int i = STEPS; i <= STEPS_2; i ++) {
       xy = uv - (i * coord);
       Scale = (float) (i - STEPS) / STEPS;
-      color = tex2D (texColor, xy).gb / STEPS;
+      color = tex2D (s_Input, xy).gb / STEPS;
       color.x *= (1.0 - Scale);
       color.y *= Scale;
       fragColor.gb += color.xy;
@@ -153,7 +193,7 @@ float4 ps_main_full (float2 uv : TEXCOORD1) : COLOR
    for (int i = STEPS_2; i < STEPS_3; i ++) {
       xy = uv - (i * coord);
       Scale = (float) (i - STEPS_2) / STEPS;
-      color = tex2D (texColor, xy).br / STEPS;
+      color = tex2D (s_Input, xy).br / STEPS;
       color.x *= (1.0 - Scale);
       color.y *= Scale;
       fragColor.br += color.xy;
@@ -168,16 +208,13 @@ float4 ps_main_full (float2 uv : TEXCOORD1) : COLOR
 
 technique Half
 {
-   pass Single_Pass
-   {
-      PixelShader = compile PROFILE ps_main_half ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main_half)
 }
 
 technique Full
 {
-   pass Single_Pass
-   {
-      PixelShader = compile PROFILE ps_main_full ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main_full)
 }
+

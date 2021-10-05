@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author jwrl
-// @Created 2019-01-30
+// @Created 2021-10-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/DeBlemish_640.png
 
 /**
@@ -20,21 +20,8 @@
 //
 // Version history:
 //
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2019-01-31:
-// Relabelled "White levels" to "White clip" and changed the direction of operation.
-// Relabelled "Black levels" to "Black crush".
-// Added "Peak cleanup" to allow mask peaks exceeding the white clip to be set to zero.
-//
-// Modified jwrl 2019-02-04:
-// Added a flesh tone color selector, "Skin colour".
-// Added "Mask clip" to support it.
-// Added a "Mask linearity" adjustment, which is really a gamma trim for the mask.
-// Added a simple four-way crop to the mask.
-// Removed the now redundant "Peak cleanup" setting.
-// Commented the code to make it simpler for someone else to follow.
+// Rewrite 2021-10-05 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,36 +35,72 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define MIN_GAMMA 0.316227766
+#define MAX_GAMMA 1.683772234
+
+#define LEVELS    0.9
+#define OFFSET    1.0 - LEVELS
+
+#define LOOP      12
+#define DIVIDE    49
+#define ANGLE     0.2617993878
+#define RADIUS    0.002
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_Input);
 
-texture Fgd : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fgd>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Fgd, s_Foreground);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -187,23 +210,6 @@ float CropBottom
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define MIN_GAMMA 0.316227766
-#define MAX_GAMMA 1.683772234
-
-#define LEVELS    0.9
-#define OFFSET    1.0 - LEVELS
-
-#define LOOP      12
-#define DIVIDE    49
-#define ANGLE     0.2617993878
-#define RADIUS    0.002
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -239,7 +245,7 @@ float3 fn_hsv (float3 rgb)
 
 float4 ps_mask (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd = tex2D (s_Input, uv);        // First get the input to process
+   float4 Fgnd = GetPixel (s_Input, uv);     // First get the input to process
 
    // Before we do anything set up the crop.  First invert the Y settings.
 
@@ -283,17 +289,17 @@ float4 ps_mask (float2 uv : TEXCOORD1) : COLOR
    return Fgnd;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 retval = tex2D (s_Foreground, uv); // Get the maked input
+   float4 retval = tex2D (s_Foreground, uv2);   // Get the masked input
 
-   if (ShowMask) return retval.aaaa;         // Show it if we need to
+   if (ShowMask) return retval.aaaa;            // Show it if we need to
 
-   float4 Fgnd = tex2D (s_Input, uv);        // Now get the raw input
+   float4 Fgnd = GetPixel (s_Input, uv1);       // Now get the raw input
 
-   if ((Size > 0.0) && (Amount > 0.0)) {     // Process the image if required
+   if ((Size > 0.0) && (Amount > 0.0)) {        // Process the image if required
 
-      float angle = 0.0;                     // Set the blur rotation to zero
+      float angle = 0.0;                        // Set the blur rotation to zero
 
       // Calculate the blur radius based on size and aspect ratio.
 
@@ -307,11 +313,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       for (int i = 0; i < LOOP; i++) {
          sincos (angle, xy.x, xy.y);
          xy *= radius;
-         retval += tex2D (s_Foreground, uv + xy);
-         retval += tex2D (s_Foreground, uv - xy);
+         retval += tex2D (s_Foreground, uv2 + xy);
+         retval += tex2D (s_Foreground, uv2 - xy);
          xy += xy;
-         retval += tex2D (s_Foreground, uv + xy);
-         retval += tex2D (s_Foreground, uv - xy);
+         retval += tex2D (s_Foreground, uv2 + xy);
+         retval += tex2D (s_Foreground, uv2 - xy);
          angle  += ANGLE;
       }
 
@@ -332,10 +338,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique DeBlemish
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Fgd;"; > 
-   { PixelShader = compile PROFILE ps_mask (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Fgd;"; > ExecuteShader (ps_mask)
+   pass P_2 ExecuteShader (ps_main)
 }
+

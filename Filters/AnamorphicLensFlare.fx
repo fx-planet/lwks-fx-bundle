@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-12
+// @Released 2021-10-05
 // @Author khaver
 // @Created 2011-05-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/AnaFlare_640.png
@@ -16,6 +16,10 @@
 // Lightworks user effect AnamorphicLensFlare.fx
 //
 // Version history:
+//
+// Update 2021-10-05 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
+// Simplified code considerably.
 //
 // Update 2020-11-12 jwrl.
 // Added CanSize switch for LW 2021 support.
@@ -48,79 +52,62 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-texture Sample1 : RenderColorTarget;
-texture Sample2 : RenderColorTarget;
-texture Sample3 : RenderColorTarget;
-texture Sample4 : RenderColorTarget;
-texture Sample5 : RenderColorTarget;
+DefineInput (Input, InputSampler);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture = <Sample1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp2 = sampler_state
-{
-   Texture = <Sample2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp3 = sampler_state
-{
-   Texture = <Sample3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp4 = sampler_state
-{
-   Texture = <Sample4>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp5 = sampler_state
-{
-   Texture = <Sample5>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Sample1, Samp1);
+DefineTarget (Sample2, Samp2);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -129,30 +116,30 @@ sampler Samp5 = sampler_state
 float BlurAmount
 <
    string Description = "Length";
-   float MinVal = 0.0f;
-   float MaxVal = 50.0f;
-> = 12.0f;
+   float MinVal = 0.0;
+   float MaxVal = 50.0;
+> = 12.0;
 
 float Strength
 <
    string Description = "Strength";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.75f;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.75;
 
 float adjust
 <
    string Description = "Threshold";
-   float MinVal = 0.0f;
-   float MaxVal = 1.0f;
-> = 0.25f;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.25;
 
 float Hue
 <
    string Description = "Hue";
-   float MinVal = -0.5f;
-   float MaxVal = 0.5f;
-> = 0.0f;
+   float MinVal = -0.5;
+   float MaxVal = 0.5;
+> = 0.0;
 
 bool flare
 <
@@ -160,101 +147,70 @@ bool flare
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputWidth;//  = 1.0;
-float _OutputHeight;// = 1.0;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_adjust ( float2 xy : TEXCOORD1 ) : COLOR {
-   float4 Color = tex2D( InputSampler, xy);
-   float red = Color.r; float green = Color.g; float blue = Color.b; float alpha = Color.a;
-   float rhue = 0.1f;
-   float ghue = 0.1f;
-   float bhue = 1.2f;
-   if (Hue < 0.0f) rhue += abs (Hue);
-   if (Hue > 0.0f) ghue += Hue;
-   if ((red+green+blue)/3.0f < 1.0f-adjust) {
-      red = 0.0f; green = 0.0f; blue = 0.0f;
-   }
-   return float4(red*rhue,green*ghue,blue*bhue,alpha);
+float4 ps_adjust (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 Color = GetPixel (InputSampler, uv);
+   float4 c_hue = float4 (0.1.xx, 1.2, 1.0);
+
+   float luma = (Color.r + Color.g + Color.b) / 3.0;
+
+   if (Hue < 0.0) c_hue.r += abs (Hue);
+
+   if (Hue > 0.0) c_hue.g += Hue;
+
+   if (luma < 1.0 - adjust) Color.rgb = 0.0.xxx;
+
+   return Color * c_hue;
 }
 
-float4 ps_blur1( float2 xy1 : TEXCOORD1 ) : COLOR {
-   float pixel = 1.0f / _OutputWidth;
-   float bluramount = pixel;
-   float4 ret=0.0.xxxx;
-   float2 offset;
-   float MapAngle = 0.0f * 6.3500;
-   sincos(MapAngle, offset.y, offset.x);
-   offset *= bluramount;
+float4 ps_blur1 (float2 uv : TEXCOORD2) : COLOR
+{
+   float4 ret = 0.0.xxxx;
+
+   float2 offset = 0.0.xx;
+   float2 displacement = float2 (1.0 / _OutputWidth, 0.0);
 
    for (int count = 0; count < 24; count++) {
-   ret += tex2D( Samp1, xy1 - offset * count);
+      ret += tex2D (Samp1, uv + offset);
+      ret += tex2D (Samp1, uv - offset);
+      offset += displacement;
    }
-   ret = ret / 24.0f;
-   return float4(ret.rgb,1.0f);
+
+   ret /= 48.0;
+
+   return ret;
 }
 
-float4 ps_blur2( float2 xy1 : TEXCOORD1 ) : COLOR {
-   float pixel = 1.0f / _OutputWidth;
-   float bluramount = pixel;
-   float4 ret=0.0.xxxx;
-   float2 offset;
-   float MapAngle = 0.0f * 6.3500;
-   sincos(MapAngle, offset.y, offset.x);
-   offset *= bluramount;
+float4 ps_blur2 (float2 uv : TEXCOORD2) : COLOR
+{
+   float4 ret = 0.0.xxxx;
+
+   float2 offset = 0.0.xx;
+   float2 displacement = float2 (BlurAmount / _OutputWidth, 0.0);
 
    for (int count = 0; count < 24; count++) {
-   ret += tex2D( Samp1, xy1 + offset * count);
+      ret += tex2D (Samp2, uv + offset);
+      ret += tex2D (Samp2, uv - offset);
+      offset += displacement;
    }
-   ret = ret / 24.0f;
-   return float4(ret.rgb,1.0f);
+
+   ret /= 24.0;
+
+   return ret;
 }
 
+float4 ps_combine (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+{
+   float3 blr = tex2D (Samp1, uv2).rgb;
 
-float4 ps_blur3( float2 xy1 : TEXCOORD1 ) : COLOR {
-   float pixel = 1.0f / _OutputWidth;
-   float bluramount = BlurAmount * pixel;
-   float4 ret=0.0.xxxx;
-   float2 offset;
-   float MapAngle = 0.0f * 6.3500;
-   sincos(MapAngle, offset.y, offset.x);
-   offset *= bluramount;
+   float4 source = GetPixel (InputSampler, uv1);
+   float4 comb = saturate (float4 (source.rgb + blr, source.a));
 
-   for (int count = 0; count < 24; count++) {
-   ret += tex2D( Samp3, xy1 - offset * count);
-   }
-   ret = ret / 12.0f;
-   return float4(ret.rgb,1.0f);
-}
-
-float4 ps_blur4( float2 xy1 : TEXCOORD1 ) : COLOR {
-   float pixel = 1.0f / _OutputWidth;
-   float bluramount = BlurAmount * pixel;
-   float4 ret=0.0.xxxx;
-   float2 offset;
-   sincos(0.0f, offset.y, offset.x);
-   offset *= bluramount;
-
-   for (int count = 0; count < 24; count++) {
-   ret += tex2D( Samp4, xy1 + offset * count);
-   }
-   ret = ret / 12.0f;
-   return float4(ret.rgb,1.0f);
-}
-
-
-float4 ps_combine( float2 xy : TEXCOORD1 ) : COLOR {
-   float3 blr = tex2D( Samp5, xy).rgb;
-   float4 source = tex2D( InputSampler, xy);
-   float4 comb = saturate(float4(source.rgb + blr.rgb,source.a));
-   if (!flare) return lerp(source,comb,Strength);
-   else return float4(blr.rgb*Strength*2.0f,source.a);
+   return (!flare) ? lerp (source, comb, Strength)
+                   : float4 (blr * Strength * 2.0, source.a);
 }
    
 //-----------------------------------------------------------------------------------------//
@@ -263,48 +219,9 @@ float4 ps_combine( float2 xy : TEXCOORD1 ) : COLOR {
 
 technique Blur
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Sample1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_adjust();
-   }
-
-   pass Pass2
-   <
-      string Script = "RenderColorTarget0 = Sample2;";
-   >
-   {
-      PixelShader = compile PROFILE ps_blur1();
-   }
-
-   pass Pass3
-   <
-      string Script = "RenderColorTarget0 = Sample3;";
-   >
-   {
-      PixelShader = compile PROFILE ps_blur2();
-   }
-
-   pass Pass4
-   <
-      string Script = "RenderColorTarget0 = Sample4;";
-   >
-   {
-      PixelShader = compile PROFILE ps_blur3();
-   }
-
-   pass Pass5
-   <
-      string Script = "RenderColorTarget0 = Sample5;";
-   >
-   {
-      PixelShader = compile PROFILE ps_blur4();
-   }
-
-   pass Pass6
-   {
-      PixelShader = compile PROFILE ps_combine();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = Sample1;"; > ExecuteShader (ps_adjust)
+   pass P_2 < string Script = "RenderColorTarget0 = Sample2;"; > ExecuteShader (ps_blur1)
+   pass P_3 < string Script = "RenderColorTarget0 = Sample1;"; > ExecuteShader (ps_blur2)
+   pass P_4 ExecuteShader (ps_combine)
 }
+

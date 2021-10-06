@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-07
 // @Author windsturm
 // @Created 2012-06-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxColorHalftone2_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -51,20 +51,55 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define SQRT_2 1.414214
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler2D s0 = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s0);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -74,23 +109,23 @@ float centerX
 <
    string Description = "Center";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float centerY
 <
    string Description = "Center";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float dotSize
 <
    string Description = "Size";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.01;
 
 float angleC
@@ -161,14 +196,6 @@ float4 colorBG
 > = { 1.0, 1.0, 1.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define SQRT_2 1.414214
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -180,10 +207,6 @@ float2x2 RotationMatrix (float rotation)
 
    return float2x2 (c, -s, s, c);
 }
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
 
 float4 half_tone (float2 uv, float i, float s, float angle, float a)
 {
@@ -217,16 +240,18 @@ float4 half_tone (float2 uv, float i, float s, float angle, float a)
 
    float2 aspectAdjustedpos = ((xy - pointXY) / asp) + pointXY;
 
-   float dist = distance (aspectAdjustedpos, pointXY);
-
-   if (dist < 0.5) return cmykcol [i];
-
-   return (-1.0).xxxx;
+   return (distance (aspectAdjustedpos, pointXY) < 0.5) ? cmykcol [i] : (-1.0).xxxx;
 }
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 source = tex2D (s0, xy);
+   float4 source = tex2D (s0, uv2);
 
    if (dotSize <= 0.0) { return source; }
 
@@ -234,34 +259,36 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
    float4 ret = colorBG;
 
-   float4 ret1 = half_tone (xy, 0, 0.0, cmykang [0], 0.0);
-   float4 ret2 = half_tone (xy, 0, dotSize, cmykang [0], 45.0);
+   float4 ret1 = half_tone (uv2, 0, 0.0, cmykang [0], 0.0);
+   float4 ret2 = half_tone (uv2, 0, dotSize, cmykang [0], 45.0);
 
    if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   ret1 = half_tone (xy, 1, 0.0, cmykang [1], 0.0);
-   ret2 = half_tone (xy, 1, dotSize, cmykang [1], 45.0);
+   ret1 = half_tone (uv2, 1, 0.0, cmykang [1], 0.0);
+   ret2 = half_tone (uv2, 1, dotSize, cmykang [1], 45.0);
 
    if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   ret1 = half_tone (xy, 2, 0.0, cmykang [2], 0.0);
-   ret2 = half_tone (xy, 2, dotSize, cmykang [2], 45.0);
+   ret1 = half_tone (uv2, 2, 0.0, cmykang [2], 0.0);
+   ret2 = half_tone (uv2, 2, dotSize, cmykang [2], 45.0);
 
    if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   ret1 = half_tone (xy, 3, 0.0, cmykang [3], 0.0);
-   ret2 = half_tone (xy, 3, dotSize, cmykang [3], 45.0);
+   ret1 = half_tone (uv2, 3, 0.0, cmykang [3], 0.0);
+   ret2 = half_tone (uv2, 3, dotSize, cmykang [3], 45.0);
 
    if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   return ret;
+   return Overflow (uv1) ? EMPTY : ret;
 }
 
+//-----------------------------------------------------------------------------------------//
+// Techniques
+//-----------------------------------------------------------------------------------------//
 
 technique ColourHalftone
 {
-   pass pass1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

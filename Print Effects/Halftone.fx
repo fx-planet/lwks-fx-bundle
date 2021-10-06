@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-07
 // @Author windsturm
 // @Created 2012-12-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxHalfTone2_640.png
@@ -14,8 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -47,20 +47,55 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-sampler2D s0 = sampler_state
-{
-    Texture = <Input>;
-    AddressU = Clamp;
-    AddressV = Clamp;
-    MinFilter = Linear;
-    MagFilter = Linear;
-    MipFilter = Linear;
-};
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define SQRT_2 1.414214
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
+// Input and sampler
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Input, s_RawInp);
+
+DefineTarget (FixInp, s0);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -82,30 +117,30 @@ float centerX
 <
     string Description = "Center";
     string Flags = "SpecifiesPointX";
-    float MinVal = 0.00;
-    float MaxVal = 1.00;
+    float MinVal = 0.0;
+    float MaxVal = 1.0;
 > = 0.5;
 
 float centerY
 <
     string Description = "Center";
     string Flags = "SpecifiesPointY";
-    float MinVal = 0.00;
-    float MaxVal = 1.00;
+    float MinVal = 0.0;
+    float MaxVal = 1.0;
 > = 0.5;
 
 float dotSize
 <
     string Description = "Size";
-    float MinVal = 0.00;
-    float MaxVal = 1.00;
+    float MinVal = 0.0;
+    float MaxVal = 1.0;
 > = 0.01;
 
 float Angle
 <
     string Description = "Angle";
-    float MinVal = 0.00;
-    float MaxVal = 360.00;
+    float MinVal = 0.0;
+    float MaxVal = 360.0;
 > = 0.0;
 
 float4 colorFG
@@ -123,14 +158,6 @@ float4 colorBG
 > = { 1.0, 1.0, 1.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-
-#define SQRT_2 1.414214
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -142,10 +169,6 @@ float2x2 RotationMatrix (float rotation)
 
    return float2x2 (c, -s, s ,c);
 }
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
 
 float4 half_tone (float2 uv, float s, float angle, float a)
 {
@@ -177,30 +200,30 @@ float4 half_tone (float2 uv, float s, float angle, float a)
 
    if (toneMode == 2) fgColor = pointCol;
 
-   float Width = dotSize * ((toneMode == 0) ? 1.0f - luma : luma);
-
-   asp *= Width;
    xy += slideXY;
+   asp *= dotSize * ((toneMode == 0) ? 1.0 - luma : luma);
 
    float2 aspectAdjustedpos = ((xy - pointXY) / asp) + pointXY;
 
-   if (distance (aspectAdjustedpos, pointXY) < 0.5) return fgColor;
-
-   return (-1.0).xxxx;
+   return (distance (aspectAdjustedpos, pointXY) < 0.5) ? fgColor : (-1.0).xxxx;
 }
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 source = tex2D (s0, xy);
+   if (dotSize <= 0.0) return tex2D (s0, uv2);
 
-   if (dotSize <= 0.0) return source;
+   float4 ret1 = half_tone (uv2, 0.0, Angle, 0.0);
+   float4 ret2 = half_tone (uv2, dotSize, Angle, 45.0);
 
-   float4 ret1 = half_tone (xy, 0.0, Angle, 0.0);
-   float4 ret2 = half_tone (xy, dotSize, Angle, 45.0);
+   float4 retval = (ret1.a > -1.0 || ret2.a > -1.0) ? max (ret1, ret2) : colorBG;
 
-   if (ret1.a > -1.0 || ret2.a > -1.0) return max (ret1, ret2);
-
-   return colorBG;
+   return Overflow (uv1) ? EMPTY : retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -209,8 +232,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique Halftone
 {
-   pass pass1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

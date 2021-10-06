@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-07
 // @Author windsturm
 // @Created 2012-06-16
 // @OriginalAuthor "Evan Wallace"
@@ -44,8 +44,8 @@ THE SOFTWARE.
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -90,24 +90,56 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define PI 3.14159265358979323846264
+
+float _OutputAspectRatio;
+float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_RawInp);
+
+DefineTarget (FixInp, InputSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -157,21 +189,14 @@ float Strength
 > = 4.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI 3.14159265358979323846264
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 FxDotScreen (float2 xy : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-    float4 color = tex2D (InputSampler, xy);
+    float4 color = tex2D (InputSampler, uv2);
 
     float2 center = float2 (centerX, 1.0 - centerY);
     
@@ -181,14 +206,14 @@ float4 FxDotScreen (float2 xy : TEXCOORD1) : COLOR
 
     sincos (radians (angle), s, c);
 
-    float2 uv1 = (xy - center) * float2 (1.0, 1.0 / _OutputAspectRatio) * _OutputWidth;
-    float2 uv2 = (uv1 * c - float2 (uv1.y, -uv1.x) * s) * PI / max (3.0, dotSize);
+    float2 xy1 = (uv2 - center) * float2 (1.0, 1.0 / _OutputAspectRatio) * _OutputWidth;
+    float2 xy2 = (xy1 * c - float2 (xy1.y, -xy1.x) * s) * PI / max (3.0, dotSize);
 
-    float pattern = sin (uv2.x) * sin (uv2.y) * Strength;
+    float pattern = sin (xy2.x) * sin (xy2.y) * Strength;
 
     color.rgb = ((luma * 10.0) + pattern - 5.0).xxx;
 
-    return color;
+    return Overflow (uv1) ? EMPTY : color;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -197,6 +222,7 @@ float4 FxDotScreen (float2 xy : TEXCOORD1) : COLOR
 
 technique FxTechnique
 {
-    pass P_1
-    { PixelShader = compile PROFILE FxDotScreen (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

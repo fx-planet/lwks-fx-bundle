@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author jwrl
-// @Created 2018-06-08
+// @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumaMatte_640.png
 
 /**
@@ -22,26 +22,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
-//
-// Modified 22 Feb 2019 by user jwrl:
-// Modified the key generation so that selecting key alpha bypasses the key clip.
-// Key clip and tolerance is now calculated from the RGB sum, not the RGB maximum.
-//
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 4 July 2018
-// Improved key tolerance calculation.  It's now symmetrical around clip.
-// Fixed a bug in border generation causing aspect ratio to not be correctly applied.
-// Improved border antialias routine.  It's now much smoother.
-//
-// Modified 3 July 2018
-// Added ability to key in external video.
+// Rewrite 2021-10-06 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,61 +37,82 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define X_SCALE 0.005
+#define OFFSET  0.04
+
+#define INVSQR2 0.7071067812
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+float2 _rot_0 [] = { { 0.0, 1.0 }, { 0.2588190451, 0.9659258263 }, { 0.5, 0.8660254038 },
+                     { 0.7071067812, 0.7071067812 }, { 0.8660254038, 0.5 },
+                     { 0.9659258263, 0.2588190451 }, { 1.0, 0.0 } };
+
+float2 _rot_1 [] = { { 0.1305261922, 0.9914448614 }, { 0.3826834324, 0.9238795325 },
+                     { 0.6087614290, 0.7933533403 }, { 0.7933533403, 0.6087614290 },
+                     { 0.9238795325, 0.3826834324 }, { 0.9914448614, 0.1305261922 } };
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Key;
-texture V_1;
-texture V_2;
+DefineInput (Key, s_Key_Vid);
+DefineInput (V_1, s_Video_1);
+DefineInput (V_2, s_Video_2);
 
-texture KeyFgd : RenderColorTarget;
-texture Part_1 : RenderColorTarget;
-texture Part_2 : RenderColorTarget;
-texture Border : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Key_Vid = sampler_state { Texture = <Key>; };
-sampler s_Video_1 = sampler_state { Texture = <V_1>; };
-sampler s_Video_2 = sampler_state { Texture = <V_2>; };
-
-sampler s_Foreground = sampler_state {
-   Texture   = <KeyFgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Part_1 = sampler_state {
-   Texture   = <Part_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Part_2 = sampler_state {
-   Texture   = <Part_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Border = sampler_state {
-   Texture   = <Border>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (KeyFgd, s_Foreground);
+DefineTarget (Part_1, s_Part_1);
+DefineTarget (Part_2, s_Part_2);
+DefineTarget (Border, s_Border);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -225,50 +228,30 @@ float4 S_colour
 > = { 0.0, 0.0, 0.0, 0.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define X_SCALE 0.005
-#define OFFSET  0.04
-
-#define INVSQR2 0.7071067812
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-float2 _rot_0 [] = { { 0.0, 1.0 }, { 0.2588190451, 0.9659258263 }, { 0.5, 0.8660254038 },
-                     { 0.7071067812, 0.7071067812 }, { 0.8660254038, 0.5 },
-                     { 0.9659258263, 0.2588190451 }, { 1.0, 0.0 } };
-
-float2 _rot_1 [] = { { 0.1305261922, 0.9914448614 }, { 0.3826834324, 0.9238795325 },
-                     { 0.6087614290, 0.7933533403 }, { 0.7933533403, 0.6087614290 },
-                     { 0.9238795325, 0.3826834324 }, { 0.9914448614, 0.1305261922 } };
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_key_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_key_gen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 Fgnd   = tex2D (s_Key_Vid, xy1);
+   float4 Fgnd   = GetPixel (s_Key_Vid, uv1);
    float4 retval = (K_fill == 2) ? K_matte
-                 : (K_fill == 1) ? tex2D (s_Video_1, xy2) : Fgnd;
+                 : (K_fill == 1) ? BdrPixel (s_Video_1, uv2) : Fgnd;
 
    float2 half_pix = float2 (1.0, _OutputAspectRatio) / (_OutputWidth * 2.0);
    float2 quad_pix = half_pix * INVSQR2;
 
-   Fgnd += tex2D (s_Key_Vid, xy1 + float2 (half_pix.x, 0.0));
-   Fgnd += tex2D (s_Key_Vid, xy1 - float2 (half_pix.x, 0.0));
-   Fgnd += tex2D (s_Key_Vid, xy1 + quad_pix);
-   Fgnd += tex2D (s_Key_Vid, xy1 - quad_pix);
+   Fgnd += tex2D (s_Key_Vid, uv1 + float2 (half_pix.x, 0.0));
+   Fgnd += tex2D (s_Key_Vid, uv1 - float2 (half_pix.x, 0.0));
+   Fgnd += tex2D (s_Key_Vid, uv1 + quad_pix);
+   Fgnd += tex2D (s_Key_Vid, uv1 - quad_pix);
    half_pix.x = 0.0;
    quad_pix.x = -quad_pix.x;
-   Fgnd += tex2D (s_Key_Vid, xy1 + half_pix);
-   Fgnd += tex2D (s_Key_Vid, xy1 - half_pix);
-   Fgnd += tex2D (s_Key_Vid, xy1 + quad_pix);
-   Fgnd += tex2D (s_Key_Vid, xy1 - quad_pix);
+   Fgnd += tex2D (s_Key_Vid, uv1 + half_pix);
+   Fgnd += tex2D (s_Key_Vid, uv1 - half_pix);
+   Fgnd += tex2D (s_Key_Vid, uv1 + quad_pix);
+   Fgnd += tex2D (s_Key_Vid, uv1 - quad_pix);
 
-   Fgnd /= 9.0;
+   Fgnd = Overflow (uv1) ? EMPTY : Fgnd / 9.0;
 
    if (K_alpha) { retval.a = Fgnd.a; }
    else {
@@ -280,10 +263,10 @@ float4 ps_key_gen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    if (K_invert) retval.a = 1.0 - retval.a;
 
-   return retval;
+   return Overflow (uv1) ? EMPTY : retval;
 }
 
-float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_A (float2 uv : TEXCOORD4) : COLOR
 {
    if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
@@ -307,7 +290,7 @@ float4 ps_border_A (float2 uv : TEXCOORD1) : COLOR
    return saturate (alpha).xxxx;
 }
 
-float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_B (float2 uv : TEXCOORD4) : COLOR
 {
    if (B_amount <= 0.0) return tex2D (s_Foreground, uv);
 
@@ -331,7 +314,7 @@ float4 ps_border_B (float2 uv : TEXCOORD1) : COLOR
    return saturate (alpha).xxxx;
 }
 
-float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
+float4 ps_border_C (float2 uv : TEXCOORD4) : COLOR
 {
    float4 Fgnd = tex2D (s_Foreground, uv);
 
@@ -363,7 +346,7 @@ float4 ps_border_C (float2 uv : TEXCOORD1) : COLOR
    return float4 (Fgnd.rgb, alpha);
 }
 
-float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
+float4 ps_shadow (float2 uv : TEXCOORD4) : COLOR
 {
    float2 scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
    float2 xy2, xy1 = uv - float2 (S_offset_X / _OutputAspectRatio, -S_offset_Y) * OFFSET;
@@ -389,9 +372,9 @@ float4 ps_shadow (float2 uv : TEXCOORD1) : COLOR
    return alpha.xxxx;
 }
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3, float2 uv4 : TEXCOORD4) : COLOR
 {
-   float4 retval = tex2D (s_Part_1, xy1);
+   float4 retval = tex2D (s_Part_1, uv4);
 
    float2 xy, scale = float2 (1.0, _OutputAspectRatio) * S_feather * X_SCALE;
 
@@ -401,13 +384,13 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
       for (int i = 0; i < 6; i++) {
          xy = scale * _rot_1 [i];
 
-         alpha += tex2D (s_Part_1, xy1 + xy).a;
-         alpha += tex2D (s_Part_1, xy1 - xy).a;
+         alpha += tex2D (s_Part_1, uv4 + xy).a;
+         alpha += tex2D (s_Part_1, uv4 - xy).a;
 
          xy.y = -xy.y;
 
-         alpha += tex2D (s_Part_1, xy1 + xy).a;
-         alpha += tex2D (s_Part_1, xy1 - xy).a;
+         alpha += tex2D (s_Part_1, uv4 + xy).a;
+         alpha += tex2D (s_Part_1, uv4 - xy).a;
       }
 
    alpha /= 25.0;
@@ -415,11 +398,11 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    alpha *= S_amount;
 
-   retval = tex2D (s_Border, xy1);
+   retval = tex2D (s_Border, uv4);
    alpha  = max (alpha, retval.a);
    retval = lerp (S_colour, retval, retval.a);
 
-   float4 Bgnd = (K_fill == 1) ? tex2D (s_Video_2, xy2) : tex2D (s_Video_1, xy1);
+   float4 Bgnd = (K_fill == 1) ? BdrPixel (s_Video_2, uv3) : BdrPixel (s_Video_1, uv2);
 
    retval = lerp (Bgnd, retval, alpha * Amount);
 
@@ -432,26 +415,11 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique LumakeyAndMatte
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = KeyFgd;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Part_1;"; >
-   { PixelShader = compile PROFILE ps_border_A (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Part_2;"; >
-   { PixelShader = compile PROFILE ps_border_B (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = Border;"; >
-   { PixelShader = compile PROFILE ps_border_C (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Part_1;"; >
-   { PixelShader = compile PROFILE ps_shadow (); }
-
-   pass P_6
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = KeyFgd;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Part_1;"; > ExecuteShader (ps_border_A)
+   pass P_3 < string Script = "RenderColorTarget0 = Part_2;"; > ExecuteShader (ps_border_B)
+   pass P_4 < string Script = "RenderColorTarget0 = Border;"; > ExecuteShader (ps_border_C)
+   pass P_5 < string Script = "RenderColorTarget0 = Part_1;"; > ExecuteShader (ps_shadow)
+   pass P_6 ExecuteShader (ps_main)
 }
+

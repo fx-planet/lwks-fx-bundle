@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author jwrl
-// @Created 2016-09-08
+// @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyPlus_640.png
 
 /**
@@ -11,7 +11,7 @@
  because after many attempts to, I couldn't improve on it.
 
  It comes with a fair degree of cleanup and despill, and top/ bottom, left/right cropping
- is also provided with Â±45 degree angular adjustment of the four individual crops.  Inner
+ is also provided with ±45 degree angular adjustment of the four individual crops.  Inner
  and outer external masks are also supported.
 */
 
@@ -20,47 +20,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
-//
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 7 July 2018 jwrl.
-// Made blur routines resolution independent.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// 8 December 2017 by jwrl:
-// The mask inputs were renamed so that they didn't obscure each other when routing
-// was shown vertically.  This then necessitated a change to the mask settings
-// dialogue so that there was absolute clarity on what each mask did.  Finally the
-// ShowOverlay parameter was grouped at the top of the crop setting parameters.
-//
-// Bug fix 20 July 2017 by jwrl:
-// There was a compatibility issue between D3D (Windows) and Cg (Mac/Linux) compilers
-// which caused this effect to fail on the latter.  The default state of the samplers
-// differs between the two.  In this version all samplers have now been fully defined
-// where they weren't previously.
-//
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.  When
-// a height parameter is needed one cannot reliably use _OutputHeight, which can give
-// the wrong result with interlaced media when stationary.  That is now fixed.
-//
-// Modified 11 September 2016 by jwrl.
-// Added an erode/expand capability as well as reorganising and renaming some of the
-// parameters for better clarity.
-// Despill now operates on the inner masked key component, not the outer.
-// The mask and crop overlay parameters have been expanded into their own group and now
-// have a processed mask in and mask out display.
-// The overlay displays the required colour normally, but as black when over a matching
-// saturated background.
+// Rewrite 2021-10-06 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -74,69 +35,151 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+#define Execute2param(SHD,P1,P2) { PixelShader = compile PROFILE SHD (P1, P2); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define BLACK     float2(0.0,1.0).xxxy
+#define GREEN     float2(0.0,1.0).xyxx
+
+#define LOOP_1    16
+#define END_1     65
+#define RADIUS_1  0.00225
+#define ANGLE_1   0.19634954
+
+#define LOOP_2    12
+#define END_2     25
+#define RADIUS_2  1.5
+#define ANGLE_2   0.26179939
+
+#define HUE_IDX   0
+#define SAT_IDX   1
+#define VAL_IDX   2
+
+#define ONE_SIXTH  0.16666667
+#define MIN_VALUE  0.00390625
+
+#define MAX_GAMMA  10.0
+
+// Display mode values
+
+#define FGND       1
+#define BGND       2
+#define MASK_IN    3
+#define MASK_OUT   4
+#define PREBLUR    5
+#define RAW_KEY    6
+#define PROC_KEY   7
+#define PROC_M_IN  8
+#define PROC_M_OUT 9
+
+// Display mask values
+
+#define NO_MASKS   0
+#define ALL_MASKS  1
+#define CROP       2
+#define CROP_IN    5
+#define CROP_OUT   6
+#define MARK_IO    7
+
+// Mask and crop settings
+
+#define MASK_OFF  0
+#define MASKINV   2
+#define LUMA      4
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+SetInputMode (Fg, s_RawFg, Mirror);
+DefineInput (Bg, s_RawBg);
+DefineInput (M1, s_RawM1);
+DefineInput (M2, s_RawM2);
 
-texture M1;
-texture M2;
+SetTargetMode (RawFg, s_Foreground, Mirror);
+DefineTarget (RawBg, s_Background);
+DefineTarget (RawM1, s_Mask_1);
+DefineTarget (RawM2, s_Mask_2);
 
-texture RawKey : RenderColorTarget;
-texture Crops  : RenderColorTarget;
-
-texture Buff_1 : RenderColorTarget;
-texture Buff_2 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state {
-   Texture = <Fg>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_Mask_1  = sampler_state { Texture = <M1>; };
-sampler s_Mask_2  = sampler_state { Texture = <M2>; };
-sampler s_Cropped = sampler_state { Texture = <Crops>; };
-
-sampler s_RawKey = sampler_state
-{
-   Texture   = <RawKey>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Buffer_1 = sampler_state
-{
-   Texture   = <Buff_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Buffer_2 = sampler_state
-{
-   Texture   = <Buff_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (RawKey, s_RawKey, Mirror);
+DefineTarget (Crops, s_Cropped);
+SetTargetMode (Buff_1, s_Buffer_1, Mirror);
+SetTargetMode (Buff_2, s_Buffer_2, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -154,7 +197,7 @@ float Preblur
    string Group = "Chromakey";
    string Description = "Preblur";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float4 KeyColour
@@ -190,32 +233,32 @@ float alphaWhites
 <
    string Group = "Fine tune";
    string Description = "Alpha whites";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float alphaBlacks
 <
    string Group = "Fine tune";
    string Description = "Alpha blacks";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float alphaGamma
 <
    string Group = "Fine tune";
    string Description = "Alpha gamma";
-   float MinVal = 0.10;
-   float MaxVal = 4.00;
-> = 1.00;
+   float MinVal = 0.1;
+   float MaxVal = 4.0;
+> = 1.0;
 
 float Erode
 <
    string Group = "Fine tune";
    string Description = "Erode/expand";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float Feather
@@ -223,15 +266,15 @@ float Feather
    string Group = "Fine tune";
    string Description = "Feather";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float RemoveSpill
 <
    string Group = "Fine tune";
    string Description = "Remove spill";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 int showOverlay
@@ -340,66 +383,15 @@ int maskOut
 > = 4;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define BLACK     (0.0).xxxx
-#define GREEN     float2(0.0,1.0).xyxx
-
-#define LOOP_1    16
-#define END_1     65
-#define RADIUS_1  0.00225
-#define ANGLE_1   0.19634954
-
-#define LOOP_2    12
-#define END_2     25
-#define RADIUS_2  1.5
-#define ANGLE_2   0.26179939
-
-#define HUE_IDX   0
-#define SAT_IDX   1
-#define VAL_IDX   2
-
-#define ONE_SIXTH  0.16666667
-#define MIN_VALUE  0.00390625
-
-#define MAX_GAMMA  10.0
-
-// Display mode values
-
-#define FGND       1
-#define BGND       2
-#define MASK_IN    3
-#define MASK_OUT   4
-#define PREBLUR    5
-#define RAW_KEY    6
-#define PROC_KEY   7
-#define PROC_M_IN  8
-#define PROC_M_OUT 9
-
-// Display mask values
-
-#define NO_MASKS   0
-#define ALL_MASKS  1
-#define CROP       2
-#define CROP_IN    5
-#define CROP_OUT   6
-#define MARK_IO    7
-
-// Mask and crop settings
-
-#define MASK_OFF  0
-#define MASKINV   2
-#define LUMA      4
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return Overflow (uv) ? BLACK : tex2D (s_RawBg, uv); }
+float4 ps_initM1 (float2 uv : TEXCOORD3) : COLOR { return GetPixel (s_RawM1, uv); }
+float4 ps_initM2 (float2 uv : TEXCOORD4) : COLOR { return GetPixel (s_RawM2, uv); }
+
+float4 ps_crop (float2 uv : TEXCOORD5) : COLOR
 {
    float2 xy = uv - 0.5;
 
@@ -408,7 +400,7 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    float crop_L = uv.x - CropL - (xy.y * AngL / _OutputAspectRatio);
    float crop_R = uv.x - CropR + (xy.y * AngR / _OutputAspectRatio);
 
-   float4 retval = ((crop_T < 0.0) || (crop_B > 0.0) || (crop_L < 0.0) || (crop_R > 0.0)) ? GREEN : BLACK;
+   float4 retval = ((crop_T < 0.0) || (crop_B > 0.0) || (crop_L < 0.0) || (crop_R > 0.0)) ? GREEN : EMPTY;
 
    if (MaskInState != MASK_OFF) {
       float4 inMask = tex2D (s_Mask_1, uv);
@@ -428,7 +420,7 @@ float4 ps_crop (float2 uv : TEXCOORD1) : COLOR
    return float4 (retval.rgb, max (retval.g, retval.b));
 }
 
-float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform float feather) : COLOR
+float4 ps_blur (float2 uv : TEXCOORD5, uniform sampler blurSampler, uniform float feather) : COLOR
 {
    float4 retval = tex2D (blurSampler, uv);
 
@@ -462,7 +454,7 @@ float4 ps_blur (float2 uv : TEXCOORD1, uniform sampler blurSampler, uniform floa
    return (ret_1 + retval) / 2.0;
 }
 
-float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
+float4 ps_keygen (float2 uv : TEXCOORD5) : COLOR
 {
    float4 rgba = tex2D (s_Buffer_1, uv);
 
@@ -503,7 +495,7 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
    return (Invert) ? float4 ((1.0 - keyVal).xxx, hueSimilarity) : float4 (keyVal.xxx, 1.0 - hueSimilarity);
 }
 
-float4 ps_erode (float2 uv : TEXCOORD1) : COLOR
+float4 ps_erode (float2 uv : TEXCOORD5) : COLOR
 {
    float4 retval = tex2D (s_Buffer_2, uv);
 
@@ -534,21 +526,21 @@ float4 ps_erode (float2 uv : TEXCOORD1) : COLOR
    return float4 (ret_1.xx, retval.ba);
 }
 
-float4 ps_composite (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_composite (float2 uv : TEXCOORD5) : COLOR
 {
-   float4 Fgd  = tex2D (s_Foreground, xy1);
-   float4 Bgd  = tex2D (s_Background, xy2);
-   float4 key  = tex2D (s_RawKey, xy1);
-   float4 crop = tex2D (s_Cropped, xy1);
+   float4 Fgd  = tex2D (s_Foreground, uv);
+   float4 Bgd  = tex2D (s_Background, uv);
+   float4 key  = tex2D (s_RawKey, uv);
+   float4 crop = tex2D (s_Cropped, uv);
 
-   if (showData == PREBLUR) return tex2D (s_Buffer_2, xy1);
-   else if (showData == MASK_IN) return tex2D (s_Mask_1, xy1);
-   else if (showData == MASK_OUT) return tex2D (s_Mask_2, xy1);
+   if (showData == PREBLUR) return tex2D (s_Buffer_2, uv);
+   else if (showData == MASK_IN) return tex2D (s_Mask_1, uv);
+   else if (showData == MASK_OUT) return tex2D (s_Mask_2, uv);
    else if (showData == FGND) return Fgd;
    else if (showData == BGND) return Bgd;
    else if (showData == RAW_KEY) return float2 (1.0 - key.b, 1.0).xxxy;
 
-   key.r = tex2D (s_Buffer_1, xy1).r;
+   key.r = tex2D (s_Buffer_1, uv).r;
    key.r = saturate ((((1.0 - min (key.r, key.g) * Fgd.a) * 2.0) * (1.0 + alphaWhites)) + alphaBlacks);
 
    float gamma = (alphaGamma <= 0.1) ? MAX_GAMMA : 1.0 / alphaGamma;
@@ -580,7 +572,7 @@ float4 ps_composite (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return float4 (retval.rgb, max (Bgd.a, 1.0 - mix));
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD5) : COLOR
 {
    float4 Comp = tex2D (s_Buffer_2, uv);
 
@@ -626,30 +618,17 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique ChromakeyPlusFx
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Crops;"; >
-   { PixelShader = compile PROFILE ps_crop (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass PM1 < string Script = "RenderColorTarget0 = RawM1;"; > ExecuteShader (ps_initM1)
+   pass PM2 < string Script = "RenderColorTarget0 = RawM2;"; > ExecuteShader (ps_initM2)
 
-   pass P_2
-   < string Script = "RenderColorTarget0 = Buff_1;"; >
-   { PixelShader = compile PROFILE ps_blur (s_Foreground, Preblur); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Buff_2;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = RawKey;"; >
-   { PixelShader = compile PROFILE ps_erode (); }
-
-   pass P_5
-   < string Script = "RenderColorTarget0 = Buff_1;"; >
-   { PixelShader = compile PROFILE ps_blur (s_RawKey, Feather); }
-
-   pass P_6
-   < string Script = "RenderColorTarget0 = Buff_2;"; >
-   { PixelShader = compile PROFILE ps_composite (); }
-
-   pass P_7
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Crops;"; >  ExecuteShader (ps_crop)
+   pass P_2 < string Script = "RenderColorTarget0 = Buff_1;"; > Execute2param (ps_blur, s_Foreground, Preblur)
+   pass P_3 < string Script = "RenderColorTarget0 = Buff_2;"; > ExecuteShader (ps_keygen)
+   pass P_4 < string Script = "RenderColorTarget0 = RawKey;"; > ExecuteShader (ps_erode)
+   pass P_5 < string Script = "RenderColorTarget0 = Buff_1;"; > Execute2param (ps_blur, s_RawKey, Feather)
+   pass P_6 < string Script = "RenderColorTarget0 = Buff_2;"; > ExecuteShader (ps_composite)
+   pass P_7 ExecuteShader (ps_main)
 }
+

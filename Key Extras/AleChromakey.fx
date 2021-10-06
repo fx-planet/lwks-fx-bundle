@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author baopao
 // @Created 2013-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/Ale_ChromaKey_640.png
@@ -15,6 +15,9 @@
 // Created by baopao (http://www.alessandrodallafontana.com).
 //
 // Version history:
+//
+// Update 2021-10-06 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Update 2020-11-13 jwrl.
 // Added Cansize switch for LW 2021 support.
@@ -49,46 +52,46 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture fg;
-texture bg;
-texture despill;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state
-{
-   Texture   = <bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgBlurSampler = sampler_state
-{
-   Texture   = <despill>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (fg, FgSampler);
+DefineInput (bg, BgSampler);
+DefineInput (despill, BgBlurSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -104,7 +107,7 @@ float RedAmount
 <
    string Description = "RedAmount";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float FgVal
@@ -151,96 +154,59 @@ float4 ColorReplace
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 Green(float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR 
+float4 Green (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR 
 {
-// Color FG
-    float4 color = tex2D (FgSampler, xy1);
-// Color BG
-    float4 colorBG = tex2D (BgSampler, xy2);
-// BG Blur imput
-    float4 colorBGblur = tex2D (BgBlurSampler, xy3);
+   float4 color = GetPixel (FgSampler, uv1);                         // Color FG
+   float4 colorBG = Overflow (uv2) ? BLACK : tex2D (BgSampler, uv2); // Color BG
+   float4 colorBGblur = GetPixel (BgBlurSampler, uv3);               // BG Blur imput
 
-// MixRB
-    float MixRB = saturate (color.g-lerp(color.r, color.b, RedAmount));
+   float MixRB  = saturate (color.g - lerp (color.r, color.b, RedAmount));
+   float KeyG   = color.g - MixRB;
+   float MaskFG = saturate (1.0 - MixRB * FgVal / KeyG);
+   float MaskBG = saturate (MixRB / BgVal);
 
-// KeyG
-    float KeyG = color.g - MixRB;
+   MaskFG = pow (MaskFG, 1.0 / GammaFG);
+   MaskBG = pow (MaskBG, 1.0 / GammaBG);
 
-// MaskFG
-    float MaskFG = saturate (1.0 - MixRB * FgVal / KeyG);
+   float OverMask = 1.0 - MaskFG - MaskBG;
 
-    MaskFG = pow (MaskFG, 1.0 / GammaFG);
+   color.g = KeyG;
+   color   = lerp (color, ColorReplace + colorBGblur, MixRB);
+   color  *= MaskFG;
+   color  += colorBG * MaskBG;
 
-// MaskBG
-    float MaskBG = saturate (MixRB / BgVal);
-
-    MaskBG = pow (MaskBG, 1.0 / GammaBG);
-
-    float OverMask = (1.0 - MaskFG) - MaskBG;
-
-    color.g = KeyG;
-    color = lerp (color, ColorReplace + colorBGblur, MixRB);
-
-    color *= MaskFG;
-
-    color += colorBG * MaskBG;
-
-    return lerp (color, pow (color, 1.0 / GammaMix), OverMask);
+   return lerp (color, pow (color, 1.0 / GammaMix), OverMask);
 }
 
-float4 Blue(float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2, float2 xy3 : TEXCOORD3) : COLOR 
+float4 Blue (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR 
 {
-// Color FG
-    float4 color = tex2D (FgSampler, xy1);
-// Color BG
-    float4 colorBG = tex2D (BgSampler, xy2);
-// BG Blur imput
-    float4 colorBGblur = tex2D (BgBlurSampler, xy3);
+   float4 color = GetPixel (FgSampler, uv1);
+   float4 colorBG = Overflow (uv2) ? BLACK : tex2D (BgSampler, uv2);
+   float4 colorBGblur = GetPixel (BgBlurSampler, uv3);
 
-// MixRB
-    float MixRB = clamp(color.b-lerp(color.r, color.g, RedAmount), 0, 1);
+   float MixRB = saturate (color.b - lerp (color.r, color.g, RedAmount));
+   float KeyG = color.b - MixRB;
+   float MaskFG = saturate (1.0 - MixRB / KeyG / FgVal);
+   float MaskBG = saturate (MixRB / BgVal);
 
-// KeyG
-    float KeyG = color.b-MixRB;
+   MaskFG = pow (MaskFG, 1.0 / GammaFG);
+   MaskBG = pow (MaskBG, 1.0 / GammaBG);
 
-// MaskFG
-    float MaskFG = clamp(1-MixRB/KeyG/FgVal, 0, 1);
+   float OverMask = 1.0 - MaskFG - MaskBG;
 
-    MaskFG = pow(MaskFG, 1/GammaFG);
+   color.b = KeyG;
+   color   = lerp (color, ColorReplace + colorBGblur, MixRB);
+   color  *= MaskFG;
+   color  += colorBG * MaskBG;
 
-// MaskBG
-    float MaskBG = clamp(MixRB/BgVal, 0, 1);
-
-    MaskBG = pow(MaskBG, 1/GammaBG);
-
-    float OverMask = (1-MaskFG)-MaskBG;
-
-    color.b = KeyG;
-    color = lerp(color, ColorReplace+colorBGblur, MixRB);
-
-    color *= MaskFG;
-
-    color += colorBG*MaskBG;
-
-    return lerp(color, pow(color, 1/GammaMix), OverMask);
+   return lerp (color, pow (color, 1.0 / GammaMix), OverMask);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Green2
-{
-   pass Single_Pass
-   {
-      PixelShader = compile PROFILE Green();
-   }
-}
+technique Green2 { pass P_1 ExecuteShader (Green) }
 
-technique Blue2
-{
-   pass Single_Pass
-   {
-      PixelShader = compile PROFILE Blue();
-   }
-}
+technique Blue2 { pass P_1 ExecuteShader (Blue) }
+

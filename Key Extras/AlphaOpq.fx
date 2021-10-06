@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author jwrl
-// @Created 2019-05-12
+// @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/AlphaOpq_640.png
 
 /**
@@ -19,8 +19,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
+// Rewrite 2021-10-06 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,12 +34,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -69,12 +100,12 @@ float4 Colour
 
 float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
 {
-   return float4 (tex2D (s_Input, uv).rgb, 1.0);
+   return float4 (GetPixel (s_Input, uv).rgb, 1.0);
 }
 
 float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgd = tex2D (s_Input, uv);
+   float4 Fgd = GetPixel (s_Input, uv);
 
    if (KeyMode == 2) Fgd.a = pow (Fgd.a, 0.5);
    if (KeyMode > 0) Fgd.rgb /= Fgd.a;
@@ -86,14 +117,7 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique AlphaOpq_0
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_0 (); }
-}
+technique AlphaOpq_0 { pass P_1 ExecuteShader (ps_main_0) }
 
-technique AlphaOpq_1
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_1 (); }
-}
+technique AlphaOpq_1 { pass P_1 ExecuteShader (ps_main_1) }
+

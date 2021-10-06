@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author jwrl
-// @Created 2020-07-23
+// @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyAndBg_640.png
 
 /**
@@ -20,8 +20,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
+// Rewrite 2021-10-06 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -35,61 +35,78 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define IsPos(RGB) any(RGB.rgb > 0.0)
+
+#define HUE_IDX 0
+#define SAT_IDX 1
+#define VAL_IDX 2
+
+float _OutputWidth;
+float _OutputHeight;
+
+float _FallOff = 0.12;
+float _oneSixth = 1.0 / 6.0;
+float _minTolerance = 1.0 / 256.0;
+
+float blur [] = { 20.0 / 64.0, 15.0 / 64.0, 6.0 / 64.0, 1.0 / 64.0 };  // See Pascal's Triangle
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Inp, s_RawInp);
 
-texture DVEvid  : RenderColorTarget;
-texture RawKey  : RenderColorTarget;
-texture BlurKey : RenderColorTarget;
-texture FullKey : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_DVEvideo = sampler_state
-{
-   Texture   = <DVEvid>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_RawKey = sampler_state
-{
-   Texture   = <RawKey>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_BlurKey = sampler_state
-{
-   Texture   = <BlurKey>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_FullKey = sampler_state { Texture = <FullKey>; };
+DefineTarget (FixInp, s_Input);
+DefineTarget (DVEvid, s_DVEvideo);
+DefineTarget (RawKey, s_RawKey);
+DefineTarget (BlurKey, s_BlurKey);
+DefineTarget (FullKey, s_FullKey);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -232,43 +249,10 @@ float Horizon
 > = 0.3;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define HUE_IDX 0
-#define SAT_IDX 1
-#define VAL_IDX 2
-
-#define EMPTY   (0.0).xxxx
-
-float _OutputWidth;
-float _OutputHeight;
-
-float _FallOff = 0.12;
-float _oneSixth = 1.0 / 6.0;
-float _minTolerance = 1.0 / 256.0;
-
-float blur [] = { 20.0 / 64.0, 15.0 / 64.0, 6.0 / 64.0, 1.0 / 64.0 };  // See Pascal's Triangle
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-//-----------------------------------------------------------------------------------------//
-// fn_allPos
-//
-// This function is a replacement for all(), which has a Cg implementation bug.  It returns
-// true if all of the RGB values are above 0.0.
-//-----------------------------------------------------------------------------------------//
-
-bool fn_allPos (float4 pixel)
-{
-   return (pixel.r > 0.0) && (pixel.g > 0.0) && (pixel.b > 0.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
 
 //-----------------------------------------------------------------------------------------//
 // ps_dve
@@ -277,7 +261,7 @@ bool fn_allPos (float4 pixel)
 // It is a new addition to the original Lightworks chromakey effect.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
+float4 ps_dve (float2 uv : TEXCOORD2) : COLOR
 {
    // Calculate the crop boundaries.  These are limited to the edge of frame so that no
    // illegal addresses for the input sampler ranges can ever be produced.
@@ -314,7 +298,7 @@ float4 ps_dve (float2 uv : TEXCOORD1) : COLOR
 // A new flag is also set in the returned z component if the key is valid.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
+float4 ps_keygen (float2 uv : TEXCOORD2) : COLOR
 {
    // First recover the cropped image.
 
@@ -370,8 +354,8 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 
    // Work out how transparent/opaque the corrected pixel will be
 
-   if (fn_allPos (tolerance2 - diff)) {
-      if (fn_allPos (tolerance1 - diff)) { keyVal = 0.0; }
+   if (IsPos (tolerance2 - diff)) {
+      if (IsPos (tolerance1 - diff)) { keyVal = 0.0; }
       else {
          diff -= tolerance1;
          hueSimilarity = diff [HUE_IDX];
@@ -397,7 +381,7 @@ float4 ps_keygen (float2 uv : TEXCOORD1) : COLOR
 // the start of the shader using the new flag in result.z.  If it isn't set, quit.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_blur1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_blur1 (float2 uv : TEXCOORD2) : COLOR
 {
    float4 result = tex2D (s_RawKey, uv);
 
@@ -429,7 +413,7 @@ float4 ps_blur1 (float2 uv : TEXCOORD1) : COLOR
 // of the shader using the new flag in result.z.  If it isn't set, quit.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_blur2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_blur2 (float2 uv : TEXCOORD2) : COLOR
 {
    float4 result = tex2D (s_BlurKey, uv);
 
@@ -464,7 +448,7 @@ float4 ps_blur2 (float2 uv : TEXCOORD1) : COLOR
 //      4.  Redundant TEXCOORD2 has been removed.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
    float4 Fgd = tex2D (s_DVEvideo, uv);
    float4 Key = tex2D (s_FullKey, uv);
@@ -524,22 +508,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique ChromakeyAndBg
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = DVEvid;"; >
-   { PixelShader = compile PROFILE ps_dve (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = RawKey;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = BlurKey;"; >
-   { PixelShader = compile PROFILE ps_blur1 (); }
-
-   pass P_4
-   < string Script = "RenderColorTarget0 = FullKey;"; >
-   { PixelShader = compile PROFILE ps_blur2 (); }
-
-   pass P_5
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_1 < string Script = "RenderColorTarget0 = DVEvid;"; > ExecuteShader (ps_dve)
+   pass P_2 < string Script = "RenderColorTarget0 = RawKey;"; > ExecuteShader (ps_keygen)
+   pass P_3 < string Script = "RenderColorTarget0 = BlurKey;"; > ExecuteShader (ps_blur1)
+   pass P_4 < string Script = "RenderColorTarget0 = FullKey;"; > ExecuteShader (ps_blur2)
+   pass P_5 ExecuteShader (ps_main)
 }
+

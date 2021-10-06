@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author jwrl
-// @Created 2016-09-01
+// @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/SimpleCkey_640.png
 
 /**
@@ -16,32 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
-//
-// Modified 2018-12-23 jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 2018-11-26 schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 2018-09-29 jwrl:
-// Added notes to header.
-//
-// Modified 2018-07-06 jwrl:
-// Made feathering resolution-independent.
-//
-// Modified 2018-05-01 jwrl:
-// Added feathering to the key, which operates entirely within the key boundaries.
-// Picked up on the fact that I had failed to credit baopao, on who's KeyDespill.fx I
-// based my defringing routines.
-//
-// Original release 2018-04-30 jwrl:
-// The creation date is a guess only, because I couldn't find the original version.  This
-// is a reconstruction from several experimental fragments.  It was really more of an
-// intellectual challenge to create a chromakey and defringe entirely in the RGB domain
-// rather than using the more common HSL approach.  I dare say that if there was anyone
-// interested enough to work with it, it could become a much more sophisticated effect.
+// Rewrite 2021-10-06 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,41 +31,73 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define LUMACONV float3(0.2989, 0.5866, 0.1145)
+
+#define LOOP   12
+#define DIVIDE 24
+
+#define RADIUS 0.002
+#define ANGLE  0.2617993878
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
-texture Key_1 : RenderColorTarget;
-texture Key_2 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_Key_1 = sampler_state
-{
-   Texture   = <Key_1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Key_2 = sampler_state
-{
-   Texture   = <Key_2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Key_1, s_Key_1);
+DefineTarget (Key_2, s_Key_2);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -150,26 +158,12 @@ float DeFringe
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define LUMACONV float3(0.2989, 0.5866, 0.1145)
-
-#define LOOP   12
-#define DIVIDE 24
-
-#define RADIUS 0.002
-#define ANGLE  0.2617993878
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_key_gen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd = tex2D (s_Foreground, uv);
+   float4 Fgnd = GetPixel (s_Foreground, uv);
 
    float cDiff = distance (Colour.r, Fgnd.r);
 
@@ -181,10 +175,10 @@ float4 ps_key_gen (float2 uv : TEXCOORD1) : COLOR
    return float4 (alpha.xxx, Fgnd.a);
 }
 
-float4 ps_feather (float2 uv : TEXCOORD) : COLOR
+float4 ps_feather (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = tex2D (s_Foreground, uv);
-   float4 retval = tex2D (s_Key_1, uv);
+   float4 Fgnd = GetPixel (s_Foreground, uv1);
+   float4 retval = tex2D (s_Key_1, uv3);
 
    float alpha = retval.r;
 
@@ -193,22 +187,22 @@ float4 ps_feather (float2 uv : TEXCOORD) : COLOR
    for (int i = 0; i < LOOP; i++) {
       sincos ((i * ANGLE), xy.x, xy.y);
       xy *= radius;
-      alpha += tex2D (s_Key_1, uv + xy).r;
-      alpha += tex2D (s_Key_1, uv - xy).r;
+      alpha += tex2D (s_Key_1, uv3 + xy).r;
+      alpha += tex2D (s_Key_1, uv3 - xy).r;
       xy += xy;
-      alpha += tex2D (s_Key_1, uv + xy).r;
-      alpha += tex2D (s_Key_1, uv - xy).r;
+      alpha += tex2D (s_Key_1, uv3 + xy).r;
+      alpha += tex2D (s_Key_1, uv3 - xy).r;
    }
 
    alpha = saturate ((alpha / DIVIDE) - 1.0);
    Fgnd.a = min (Fgnd.a, alpha);
 
-   return Fgnd;
+   return Overflow (uv1) ? EMPTY : Fgnd;
 }
 
-float4 ps_main_0 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_0 (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = tex2D (s_Key_2, xy1);
+   float4 Fgnd = tex2D (s_Key_2, uv3);
 
    float3 Frng = Fgnd.rgb;
 
@@ -233,13 +227,13 @@ float4 ps_main_0 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    Fgnd.rgb = lerp (Fgnd.rgb, Frng, DeFringeAmt);
    Fgnd.a  *= Amount;
 
-   return lerp (tex2D (s_Background, xy2), Fgnd, Fgnd.a);
+   return lerp (BdrPixel (s_Background, uv2), Fgnd, Fgnd.a);
 }
 
-float4 ps_main_1 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_1 (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = tex2D (s_Key_2, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Bgnd = BdrPixel (s_Background, uv2);
+   float4 Fgnd = tex2D (s_Key_2, uv3);
 
    float3 Frng = Fgnd.rgb;
 
@@ -267,10 +261,10 @@ float4 ps_main_1 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-float4 ps_main_2 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main_2 (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float4 Fgnd = tex2D (s_Key_2, xy1);
-   float4 Bgnd = tex2D (s_Background, xy2);
+   float4 Bgnd = BdrPixel (s_Background, uv2);
+   float4 Fgnd = tex2D (s_Key_2, uv3);
 
    float3 Frng = Fgnd.rgb;
 
@@ -303,42 +297,22 @@ float4 ps_main_2 (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique SimpleChromakey_0
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key_1;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Key_2;"; >
-   { PixelShader = compile PROFILE ps_feather (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main_0 (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key_1;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Key_2;"; > ExecuteShader (ps_feather)
+   pass P_3 ExecuteShader (ps_main_0)
 }
 
 technique SimpleChromakey_1
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key_1;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Key_2;"; >
-   { PixelShader = compile PROFILE ps_feather (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main_1 (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key_1;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Key_2;"; > ExecuteShader (ps_feather)
+   pass P_3 ExecuteShader (ps_main_1)
 }
 
 technique SimpleChromakey_2
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Key_1;"; >
-   { PixelShader = compile PROFILE ps_key_gen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Key_2;"; >
-   { PixelShader = compile PROFILE ps_feather (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main_2 (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Key_1;"; > ExecuteShader (ps_key_gen)
+   pass P_2 < string Script = "RenderColorTarget0 = Key_2;"; > ExecuteShader (ps_feather)
+   pass P_3 ExecuteShader (ps_main_2)
 }
+

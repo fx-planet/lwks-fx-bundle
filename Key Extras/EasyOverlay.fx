@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author hugly
 // @Author schrauber
 // @Created 2019-08-09
@@ -22,6 +22,9 @@
 //
 // Version history:
 //
+// Update 2021-10-06 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
+//
 // Update 2020-11-13 jwrl.
 // Added Cansize switch for LW 2021 support.
 //
@@ -39,6 +42,47 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
+// Inputs and samplers
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (fg, FgSampler);
+DefineInput (bg, BgSampler);
+
+//-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
@@ -50,8 +94,8 @@ float MaskGain
 
 float FgLift
 <  string Description = "Fg Lift";
-   float MinVal =  -1.0;
-   float MaxVal =   1.0;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0;
 
 float FgOpacity
@@ -61,25 +105,19 @@ float FgOpacity
 > = 1;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-texture fg;
-texture bg;
-
-sampler FgSampler   = sampler_state { Texture = <fg>; };
-sampler BgSampler   = sampler_state { Texture = <bg>; };
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 setFgLift (float4 x, float lift)
-{  lift *= 0.55;
-   float3 gamma1 = 1.0 - pow ( 1.0 - x.rgb, 1.0 / max ((1.0 - lift), 1E-6));
-   float3 gamma2 =       pow ( x.rgb , 1.0      / max (lift + 1.0, 1E-6));
+float4 setFgLift (float4 x)
+{
+   float lift = FgLift * 0.55;
+
+   float3 gamma1 = 1.0 - pow (1.0 - x.rgb, 1.0 / max ((1.0 - lift), 1E-6));
+   float3 gamma2 =       pow (x.rgb , 1.0      / max (lift + 1.0, 1E-6));
    float3 gamma = (lift > 0) ? gamma1 : gamma2;
+
    gamma =  saturate (lerp ( gamma , (gamma1 + gamma2) / 2.0, 0.8));
+
    return float4 (gamma.rgb, x.a);
 }
 
@@ -87,17 +125,20 @@ float4 setFgLift (float4 x, float lift)
 // Samplers
 //-----------------------------------------------------------------------------------------//
 
-float4 oa_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
+float4 oa_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 {
-   float4 fg = tex2D( FgSampler, xy1 );
-   float4 bg = tex2D( BgSampler, xy2 );
-   float4 mask = fg;  
+   float4 fg = GetPixel (FgSampler, xy1);
+   float4 bg = Overflow (xy2) ? BLACK : tex2D (BgSampler, xy2);
+   float4 mask = fg;
 
-   fg = setFgLift (fg, FgLift);
-   float alpha = mask.a * min ((( mask.r + mask.g + mask.b ) / 3.0) * MaskGain, 1.0);		
+   fg = setFgLift (fg);
 
-   float4 ret = lerp( bg, fg, alpha * FgOpacity);
+   float alpha = mask.a * min (((mask.r + mask.g + mask.b) / 3.0) * MaskGain, 1.0);
+
+   float4 ret = lerp (bg, fg, alpha * FgOpacity);
+
    ret.a = 1.0;
+
    return ret;
 }
 
@@ -105,4 +146,5 @@ float4 oa_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique ps { pass SinglePass { PixelShader = compile PROFILE oa_main(); } }
+technique ps { pass SinglePass ExecuteShader (oa_main) }
+

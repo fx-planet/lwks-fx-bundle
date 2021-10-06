@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-05-16
+// @Released 2021-10-06
 // @Author jwrl
-// @Created 2021-05-16
+// @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/LumakeyWithDVE_640.png
 
 /**
@@ -39,7 +39,7 @@
 //
 // Version history:
 //
-// Rewrite 2021-05-16 jwrl.
+// Rewrite 2021-10-06 jwrl.
 // Complete rewrite of the original effect to make it fully compliant with the resolution
 // independent model used in Lightworks 2021 and higher.
 //-----------------------------------------------------------------------------------------//
@@ -80,12 +80,31 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
 
 #define BadPos(P, p1, p2) (P < max (0.0, p1)) || (P > min (1.0, 1.0 - p2))
 #define Bad_XY(XY, L, R, T, B)  (BadPos (XY.x, L, R) || BadPos (XY.y, T, B))
 
 #define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
 
 #define R_LUMA 0.2989
 #define G_LUMA 0.5866
@@ -104,6 +123,8 @@ float _FgYScale = 1.0;
 
 DefineInput (Fg, s_Foreground);
 DefineInput (Bg, s_Background);
+
+DefineTarget (DVEvid, s_DVEvideo);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -226,27 +247,29 @@ float Opacity
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Foreground, uv); }
+
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
    // This DVE section is a much cutdown version of the Lightworks 2D DVE.  It doesn't
    // include drop shadow generation which would be pointless in this configuration.
    // The first section adjusts the position allowing for the foreground resolution.
    // A resolution corrected scale factor is also created and applied.
 
-   float Xpos = (0.5 - CentreX) * _BgXScale / _FgXScale;
-   float Ypos = (CentreY - 0.5) * _BgYScale / _FgYScale;
-   float scaleX = max (0.00001, MasterScale * XScale / _FgXScale);
-   float scaleY = max (0.00001, MasterScale * YScale / _FgYScale);
+   float Xpos = (0.5 - CentreX);
+   float Ypos = (CentreY - 0.5);
+   float scaleX = max (0.00001, MasterScale * XScale);
+   float scaleY = max (0.00001, MasterScale * YScale);
 
-   float2 xy = uv1 + float2 (Xpos, Ypos);
+   float2 xy = uv3 + float2 (Xpos, Ypos);
 
    xy.x = ((xy.x - 0.5) / scaleX) + 0.5;
    xy.y = ((xy.y - 0.5) / scaleY) + 0.5;
 
    // Now the scaled, positioned and cropped Fg is recovered along with Bg.
 
-   float4 Fgd = Bad_XY (xy, CropL, CropR, CropT, CropB) ? EMPTY : tex2D (s_Foreground, xy);
-   float4 Bgd = HideBg ? EMPTY : tex2D (s_Background, uv2);
+   float4 Fgd = Bad_XY (xy, CropL, CropR, CropT, CropB) ? EMPTY : tex2D (s_DVEvideo, xy);
+   float4 Bgd = HideBg ? BLACK : BdrPixel (s_Background, uv2);
 
    // From now on is the lumakey.  We first set up the key clip and softness from the
    // Fgd luminance.
@@ -273,5 +296,7 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
 technique LumakeyWithDVE
 {
-   pass P_1 CompileShader (ps_main)
+   pass P_1 < string Script = "RenderColorTarget0 = DVEvid;"; > ExecuteShader (ps_initFg)
+   pass P_2 ExecuteShader (ps_main)
 }
+

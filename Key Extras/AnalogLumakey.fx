@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author jwrl
-// @Created 2019-07-30
+// @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/AnalogLumakey_640.png
 
 /**
@@ -30,8 +30,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
+// Rewrite 2021-10-06 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,18 +45,49 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define R_LUMA    0.2989
+#define G_LUMA    0.5866
+#define B_LUMA    0.1145
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture   = <Fg>; };
-sampler s_Background = sampler_state { Texture   = <Bg>; };
+DefineInput (Fg, s_Foreground);
+DefineInput (Bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -99,27 +130,16 @@ bool InvertKey
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Shaders
 //-----------------------------------------------------------------------------------------//
 
-#define R_LUMA    0.2989
-#define G_LUMA    0.5866
-#define B_LUMA    0.1145
-
-#define KEEP_BGD  0
-#define ADD_ALPHA 1
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   int BgMode = (int)floor (KeyMode * 0.5);
-   int FgMode = KeyMode - (BgMode * 2);
+   bool BgBlack = KeyMode > 1;
+   bool FgAlpha = abs (KeyMode - 2) == 1;
 
-   float4 Fgd = tex2D (s_Foreground, uv);
-   float4 Bgd = (BgMode == KEEP_BGD) ? tex2D (s_Background, uv) : 0.0.xxxx;
+   float4 Fgd = GetPixel (s_Foreground, uv1);
+   float4 Bgd = (BgBlack || Overflow (uv2)) ? BLACK : tex2D (s_Background, uv2);
 
    float luma  = dot (Fgd.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
    float edge  = max (0.00001, Softness);
@@ -128,7 +148,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    if (InvertKey) alpha = 1.0 - alpha;
 
-   if (FgMode == ADD_ALPHA) alpha = min (Fgd.a, alpha);
+   if (FgAlpha) alpha = min (Fgd.a, alpha);
 
    return lerp (Bgd, Fgd, alpha * Amount);
 }
@@ -137,7 +157,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique AnalogLumakey
-{
-   pass P_1 { PixelShader = compile PROFILE ps_main (); }
-}
+technique AnalogLumakey { pass P_1 ExecuteShader (ps_main) }
+

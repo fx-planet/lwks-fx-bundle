@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-07
 // @Author brdloush
 // @Created 2013-02-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/CubicLensDistortion_640.png
@@ -12,7 +12,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CubicLensDistortion.fx 
 //
-// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by FranÃ§ois Tarlier
+// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by François Tarlier
 //
 // Following settings worked nicely:
 // - Comp Size - X: 100%
@@ -24,7 +24,7 @@
 // Feel free to share/modify or implement all the functions of original
 // "ft-CubicLensDistortion".
 //
-// Pixel Bender shader written by FranÃ§ois Tarlier
+// Pixel Bender shader written by François Tarlier
 // http://www.francois-tarlier.com/blog/index.php/2010/03/update-cubic-lens-distortion-pixel-bender-shader-for-ae-with-scale-chroamtic-aberration/
 //     
 // Original Lens Distortion Algorithm from SSontech (Syntheyes)
@@ -34,7 +34,7 @@
 //     u' = f*u
 //     v' = f*v
 //
-// Copyright (c) 2010 FranÃ§ois Tarlier
+// Copyright (c) 2010 François Tarlier
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in the
 // Software without restriction, including without limitation the rights to use, copy,
@@ -56,8 +56,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -92,24 +92,53 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler FgSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_RawInp);
+
+DefineTarget (FixInp, FgSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -137,29 +166,14 @@ float cubicDistortion
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-
-#define EMPTY    (0.0).xxxx
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float2 uv = (xy - (0.5).xx) * 2.0;
+   float2 uv = (uv2 - 0.5.xx) * 2.0;
 
    float scaleFactor = 1.0 / scale;
    float r2 = dot (uv, float2 (_OutputAspectRatio * _OutputAspectRatio * uv.x, uv.y));
@@ -168,7 +182,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
    uv = (uv * f * scaleFactor * 0.5) + (0.5).xx;
 
-   return fn_illegal (uv) ? EMPTY : tex2D (FgSampler, uv);
+   return Overflow (uv1) ? EMPTY : GetPixel (FgSampler, uv);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -177,6 +191,7 @@ float4 ps_main (float2 xy : TEXCOORD1) : COLOR
 
 technique CubicLensDistortion
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

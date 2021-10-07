@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-07
 // @Author khaver
 // @Created 2013-02-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/PixelFixer_640.png
@@ -14,6 +14,9 @@
  Using the on-screen cross-hairs, move the magnified area to the dead pixels and use the X
  Adjust and Y Adjust to fine tune the target over the dead pixel(s).  Check the "Fix" box
  to hide the dead pixel(s), then un-check "Magnify".
+
+ Note that this effect destroys resolution independence.  What leaves the effect is video
+ the size and aspect ratio of the sequence that it's used in.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -21,8 +24,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -50,37 +53,61 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Repair tools";
    string Notes       = "Pixel Fixer repairs dead pixels based on adjacent pixel content";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-texture Bars1 : RenderColorTarget;
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+float4 _red = float4 (0.0, 1.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler InputSampler = sampler_state {
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Point;
-   MipFilter = Point;
-};
+DefineInput (Input, s_RawInp);
 
-sampler BarSampler1 = sampler_state {
-   Texture = <Bars1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Point;
-   MipFilter = Point;
-};
+DefineTarget (FixInp, InputSampler);
+DefineTarget (Bars1, BarSampler1);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -94,8 +121,8 @@ bool Glass
 float mag
 <
    string Description = "Magnification";
-   float MinVal = 1.00;
-   float MaxVal = 10.00;
+   float MinVal = 1.0;
+   float MaxVal = 10.0;
 > = 2.0;
 
 bool Proc //Fix
@@ -113,48 +140,41 @@ float c1x
 <
    string Description = "Pixel";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.25;
 
 float c1y
 <
    string Description = "Pixel";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.75;
 
 float fineX
 <
    string Description = "X Adjust";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float fineY
 <
    string Description = "Y Adjust";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-float4 _red = float4 (0.0, 1.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main_1 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -177,17 +197,17 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + a2 + A0 + A2 + B0 + B1 + B2) / 8.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_2H (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_2H (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -213,22 +233,22 @@ float4 ps_main_2H (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + A0 + B0 + B1) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixA2l.x && uv.x <= pixA2r.x && uv.y <= pixA2l.y && uv.y >= pixA2r.y) {
+   if (uv2.x >= pixA2l.x && uv2.x <= pixA2r.x && uv2.y <= pixA2l.y && uv2.y >= pixA2r.y) {
       pixels = (Proc) ? (a2 + a3 + A3 + B2 + B3) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_2V (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_2V (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -254,22 +274,22 @@ float4 ps_main_2V (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + a2 + A0 + A2) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB1l.x && uv.x <= pixB1r.x && uv.y <= pixB1l.y && uv.y >= pixB1r.y) {
+   if (uv2.x >= pixB1l.x && uv2.x <= pixB1r.x && uv2.y <= pixB1l.y && uv2.y >= pixB1r.y) {
       pixels = (Proc) ? (B0 + B2 + b0 + b1 + b2) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_2DF (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_2DF (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -297,22 +317,22 @@ float4 ps_main_2DF (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA2l.x && uv.x <= pixA2r.x && uv.y <= pixA2l.y && uv.y >= pixA2r.y) {
+   if (uv2.x >= pixA2l.x && uv2.x <= pixA2r.x && uv2.y <= pixA2l.y && uv2.y >= pixA2r.y) {
       pixels = (Proc) ? (a1 + a2 + a3 + A1 + A3 + B2 + B3) / 7.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB1l.x && uv.x <= pixB1r.x && uv.y <= pixB1l.y && uv.y >= pixB1r.y) {
+   if (uv2.x >= pixB1l.x && uv2.x <= pixB1r.x && uv2.y <= pixB1l.y && uv2.y >= pixB1r.y) {
       pixels = (Proc) ? (A0 + A1 + B0 + B2 + b0 + b1 + b2) / 7.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_2DB (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_2DB (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -340,22 +360,22 @@ float4 ps_main_2DB (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + a2 + A0 + A2 + B0 + B1) / 7.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB2l.x && uv.x <= pixB2r.x && uv.y <= pixB2l.y && uv.y >= pixB2r.y) {
+   if (uv2.x >= pixB2l.x && uv2.x <= pixB2r.x && uv2.y <= pixB2l.y && uv2.y >= pixB2r.y) {
       pixels = (Proc) ? (A2 + A3 + B1 + B3 + b1 + b2 + b3) / 7.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_3A (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_3A (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -385,27 +405,27 @@ float4 ps_main_3A (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + a2 + A0 + B0 + B1) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixA2l.x && uv.x <= pixA2r.x && uv.y <= pixA2l.y && uv.y >= pixA2r.y) {
+   if (uv2.x >= pixA2l.x && uv2.x <= pixA2r.x && uv2.y <= pixA2l.y && uv2.y >= pixA2r.y) {
       pixels = (Proc) ? (a1 + a2 + a3 + A3 + B1 + B3) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB2l.x && uv.x <= pixB2r.x && uv.y <= pixB2l.y && uv.y >= pixB2r.y) {
+   if (uv2.x >= pixB2l.x && uv2.x <= pixB2r.x && uv2.y <= pixB2l.y && uv2.y >= pixB2r.y) {
       pixels = (Proc) ? (A3 + B1 + B3 + b1 + b2 + b3) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_3B (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_3B (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -435,27 +455,27 @@ float4 ps_main_3B (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA2l.x && uv.x <= pixA2r.x && uv.y <= pixA2l.y && uv.y >= pixA2r.y) {
+   if (uv2.x >= pixA2l.x && uv2.x <= pixA2r.x && uv2.y <= pixA2l.y && uv2.y >= pixA2r.y) {
       pixels = (Proc) ? (a1 + a2 + a3 + A1 + A3 + B3) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB1l.x && uv.x <= pixB1r.x && uv.y <= pixB1l.y && uv.y >= pixB1r.y) {
+   if (uv2.x >= pixB1l.x && uv2.x <= pixB1r.x && uv2.y <= pixB1l.y && uv2.y >= pixB1r.y) {
       pixels = (Proc) ? (A0 + A1 + B0 + b0 + b1 + b2) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB2l.x && uv.x <= pixB2r.x && uv.y <= pixB2l.y && uv.y >= pixB2r.y) {
+   if (uv2.x >= pixB2l.x && uv2.x <= pixB2r.x && uv2.y <= pixB2l.y && uv2.y >= pixB2r.y) {
       pixels = (Proc) ? (A1 + A3 + B3 + b1 + b2 + b3) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_3C (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_3C (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -485,27 +505,27 @@ float4 ps_main_3C (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + a2 + A0 + A2 + B0) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB1l.x && uv.x <= pixB1r.x && uv.y <= pixB1l.y && uv.y >= pixB1r.y) {
+   if (uv2.x >= pixB1l.x && uv2.x <= pixB1r.x && uv2.y <= pixB1l.y && uv2.y >= pixB1r.y) {
       pixels = (Proc) ? (A0 + A2 + B0 + b0 + b1 + b2) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB2l.x && uv.x <= pixB2r.x && uv.y <= pixB2l.y && uv.y >= pixB2r.y) {
+   if (uv2.x >= pixB2l.x && uv2.x <= pixB2r.x && uv2.y <= pixB2l.y && uv2.y >= pixB2r.y) {
       pixels = (Proc) ? (A2 + A3 + B3 + b1 + b2 + b3) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_3D (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_3D (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -535,27 +555,27 @@ float4 ps_main_3D (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + a2 + A0 + B0 + B2) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixA2l.x && uv.x <= pixA2r.x && uv.y <= pixA2l.y && uv.y >= pixA2r.y) {
+   if (uv2.x >= pixA2l.x && uv2.x <= pixA2r.x && uv2.y <= pixA2l.y && uv2.y >= pixA2r.y) {
       pixels = (Proc) ? (a1 + a2 + a3 + A3 + B2 + B3) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB1l.x && uv.x <= pixB1r.x && uv.y <= pixB1l.y && uv.y >= pixB1r.y) {
+   if (uv2.x >= pixB1l.x && uv2.x <= pixB1r.x && uv2.y <= pixB1l.y && uv2.y >= pixB1r.y) {
       pixels = (Proc) ? (A0 + B0 + B2 + b0 + b1 + b2) / 6.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_4 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float4 pixels = tex2D (InputSampler, uv);
+   float4 pixels = tex2D (InputSampler, uv2);
 
    float pixX = 1.0 / _OutputWidth;
    float pixY = pixX * _OutputAspectRatio;
@@ -587,45 +607,45 @@ float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
 
    pixels.a = 0.0;
 
-   if (uv.x >= pixA1l.x && uv.x <= pixA1r.x && uv.y <= pixA1l.y && uv.y >= pixA1r.y) {
+   if (uv2.x >= pixA1l.x && uv2.x <= pixA1r.x && uv2.y <= pixA1l.y && uv2.y >= pixA1r.y) {
       pixels = (Proc) ? (a0 + a1 + a2 + A0 + B0) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixA2l.x && uv.x <= pixA2r.x && uv.y <= pixA2l.y && uv.y >= pixA2r.y) {
+   if (uv2.x >= pixA2l.x && uv2.x <= pixA2r.x && uv2.y <= pixA2l.y && uv2.y >= pixA2r.y) {
       pixels = (Proc) ? (a1 + a2 + a3 + A3 + B3) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB1l.x && uv.x <= pixB1r.x && uv.y <= pixB1l.y && uv.y >= pixB1r.y) {
+   if (uv2.x >= pixB1l.x && uv2.x <= pixB1r.x && uv2.y <= pixB1l.y && uv2.y >= pixB1r.y) {
       pixels = (Proc) ? (A0 + B0 + b0 + b1 + b2) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   if (uv.x >= pixB2l.x && uv.x <= pixB2r.x && uv.y <= pixB2l.y && uv.y >= pixB2r.y) {
+   if (uv2.x >= pixB2l.x && uv2.x <= pixB2r.x && uv2.y <= pixB2l.y && uv2.y >= pixB2r.y) {
       pixels = (Proc) ? (A3 + B3 + b1 + b2 + b3) / 5.0 : _red;
       pixels.a = 1.0;
    }
 
-   return pixels;
+   return Overflow (uv1) ? EMPTY : pixels;
 }
 
-float4 last (float2 uv : TEXCOORD1) : COLOR
+float4 last (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float2 Center = float2 (c1x, 1.0 - c1y);
-   float2 xy = uv;
+   float2 xy = uv2;
 
    float Radius = 50.0 / _OutputWidth * mag;
    float Magnification = mag * 10.0;
 
    if (Glass) {
-      float2 centerToPixel = uv - Center;
+      float2 centerToPixel = uv2 - Center;
       float dist = length (centerToPixel / float2 (1, _OutputAspectRatio));
 
       if (dist < Radius) { xy = Center + centerToPixel / Magnification; }
    }
 
-   return tex2D (BarSampler1, xy);
+   return Overflow (uv1) ? EMPTY : tex2D (BarSampler1, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -634,150 +654,71 @@ float4 last (float2 uv : TEXCOORD1) : COLOR
 
 technique pnum1
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_1 ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_1)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum2H
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_2H ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_2H)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum2V
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_2V ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_2V)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum2DF
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_2DF ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_2DF)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum2DB
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_2DB ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_2DB)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum3A
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_3A ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_3A)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum3B
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_3B ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_3B)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum3C
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_3C ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_3C)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum3D
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_3D ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_3D)
+   pass P_3 ExecuteShader (last)
 }
 
 technique pnum4
 {
-   pass Pass1
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE ps_main_4 ();
-   }
-   pass Last
-   {
-      PixelShader = compile PROFILE last ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (ps_main_4)
+   pass P_3 ExecuteShader (last)
 }
+

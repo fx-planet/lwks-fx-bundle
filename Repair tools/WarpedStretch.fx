@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-07
 // @Author khaver
 // @Created 2013-12-04
 // @see https://www.lwks.com/media/kunena/attachments/6375/WarpedStretch_640.png
@@ -11,7 +11,9 @@
  and set the outer limits at the edges of the crop.
 
  It defaults to a 4:3 image in a 16:9 frame, but since a "Strength" slider is provided it can
- be used for other purposes as well.
+ be used for other purposes as well.  Note that because of its intended purpose of correcting
+ aspect ratios it destroys resolution independence.  What leaves the effect is the size and
+ aspect ratio of the sequence that it's used in.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,8 +21,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -50,23 +52,56 @@ int _LwksEffectInfo
    string Category    = "DVE";
    string SubCategory = "Repair tools";
    string Notes       = "This effect is intended for use as a means of helping handle mixed aspect ratio media";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler InputSampler = sampler_state {
-   Texture   = <Input>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, InputSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -85,94 +120,81 @@ bool Stretch
 float Strength
 <
    string Description = "Strength";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float ILX
 <
    string Description = "Inner Left";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.42;
 
 float ILY
 <
    string Description = "Inner Left";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float IRX
 <
    string Description = "Inner Right";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.58;
 
 float IRY
 <
    string Description = "Inner Right";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float OLX
 <
    string Description = "Outer Left";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.125;
 
 float OLY
 <
    string Description = "Outer Left";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float ORX
 <
    string Description = "Outer Right";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.875;
 
 float ORY
 <
    string Description = "Outer Right";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define BLACK float2(0.0, 1.0).xxxy
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 main1 (float2 uv : TEXCOORD2) : COLOR
 {
    float4 color;
 
@@ -202,7 +224,7 @@ float4 main1 (float2 uv : TEXCOORD1) : COLOR
    
       outp.x = lerp (norm.x, xy.x, Strength);
 
-      color = fn_illegal (outp) ? BLACK : tex2D (InputSampler, outp);
+      color = Overflow (outp) ? BLACK : tex2D (InputSampler, outp);
    }
 
    if (Grid
@@ -220,8 +242,7 @@ float4 main1 (float2 uv : TEXCOORD1) : COLOR
 
 technique NoStretchTechnique
 {
-   pass Pass1
-   {
-      PixelShader = compile PROFILE main1 ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (main1)
 }
+

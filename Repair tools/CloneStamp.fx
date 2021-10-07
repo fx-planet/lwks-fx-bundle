@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-06
 // @Author nouanda
 // @Created 2014-10-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/CloneStamp_640.png
@@ -15,7 +15,7 @@
 // Collective effort from Lightworks Forum members nouanda // brdloush // jwrl
 // Ok, we're amateurs, but we managed to do it!
 //
-// Absolutely no copyright - none - zero - nietchevo - rien - it's no rocket science,
+// Absolutely no copyright - none - zero - nietchevo - rien - it's not rocket science,
 // why should we claim a copyright?  Feel free to use at your envy!
 //
 // Function aspectAdjustedpos from Lwks' shapes2.fx shader
@@ -27,8 +27,8 @@
 // Update 2020-11-13 jwrl.
 // Added CanSize switch for LW 2021 support.
 //
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 2018-12-05 jwrl.
 // Added creation date.
@@ -77,24 +77,56 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define PI      3.14159265
+#define PI_AREA 1.27323954
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-sampler SourceSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_RawInp);
+
+DefineTarget (FixInp, SourceSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -134,8 +166,8 @@ float SrcPosX
    string Description = "Source Position";
    string Group = "Parameters";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float SrcPosY
@@ -143,8 +175,8 @@ float SrcPosY
    string Description = "Source Position";
    string Group = "Parameters";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float AspectRatio
@@ -160,8 +192,8 @@ float DestPosX
    string Description = "Destination Position";
    string Group = "Parameters";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.7;
 
 float DestPosY
@@ -169,16 +201,16 @@ float DestPosY
    string Description = "Destination Position";
    string Group = "Parameters";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.7;
 
 float BlendOpacity
 <
    string Description = "Blend Opacity";
    string Group       = "Overlay";
-   float MinVal       = 0.00;
-   float MaxVal       = 1.00;
+   float MinVal       = 0.0;
+   float MaxVal       = 1.0;
 > = 1.0;
 
 float DestRed
@@ -186,8 +218,8 @@ float DestRed
    string Description = "Red correction";
    string Group = "Color Correction";
    string Flags = "Red";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float DestGreen
@@ -195,8 +227,8 @@ float DestGreen
    string Description = "Green correction";
    string Group = "Color Correction";
    string Flags = "Green";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float DestBlue
@@ -204,33 +236,26 @@ float DestBlue
    string Description = "Blue correction";
    string Group = "Color Correction";
    string Flags = "Blue";
-   float MinVal = -1.00;
-   float MaxVal = 1.00;
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI      3.14159265
-#define PI_AREA 1.27323954
-
-float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_ellipse (float2 uv : TEXCOORD1): COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_ellipse (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2): COLOR
 {
-   float4 Src = tex2D (SourceSampler, uv);            // get background texture for edge softness
+   float4 Src = tex2D (SourceSampler, uv2);            // get background texture for edge softness
 
    //Adjust size for circle
    float CircleSize = Size * PI_AREA;
 
    //Adjust aspect ratio
    float2 DestPos = float2 (DestPosX, 1.0 - DestPosY);
-   float2 DestAspectAdjustedPos = ((uv - DestPos) / (float2 (AspectRatio, _OutputAspectRatio) * CircleSize)) + DestPos;
+   float2 DestAspectAdjustedPos = ((uv2 - DestPos) / (float2 (AspectRatio, _OutputAspectRatio) * CircleSize)) + DestPos;
 
    float DestDelta = distance (DestAspectAdjustedPos, DestPos);
 
@@ -256,7 +281,7 @@ float4 ps_ellipse (float2 uv : TEXCOORD1): COLOR
    }
 
    //Offset Source and Destination
-   float2 xy = uv + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
+   float2 xy = uv2 + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
 
    // get texture for Destination replacement
    float4 Dest = tex2D (SourceSampler, xy);
@@ -268,12 +293,13 @@ float4 ps_ellipse (float2 uv : TEXCOORD1): COLOR
    Dest = lerp (Dest, Src, Soft);
 
    // Apply opacity the same way
-   return float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
+
+   return Overflow (uv1) ? EMPTY : float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
 }
 
-float4 ps_rectangle (float2 uv : TEXCOORD1): COLOR
+float4 ps_rectangle (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2): COLOR
 {
-   float4 Src = tex2D (SourceSampler, uv);            // get sampler of the backgroung for edge softness
+   float4 Src = tex2D (SourceSampler, uv2);            // get sampler of the backgroung for edge softness
 
    //get Destination Position - so it can be modified (parameters are constant, not variables)
    float2 DestPos  = float2 (DestPosX, 1.0 - DestPosY);
@@ -285,15 +311,15 @@ float4 ps_rectangle (float2 uv : TEXCOORD1): COLOR
    float2 BoxMax = BoxMin + DestSize;
 
    //apply effect only in the effect radius
-   if (any ((uv - BoxMin) < 0.0.xx) || any ((uv - BoxMax) > 0.0.xx)) return Src;
+   if (any ((uv2 - BoxMin) < 0.0.xx) || any ((uv2 - BoxMax) > 0.0.xx)) return Src;
 
    //define softness effect limits
    float2 SoftMin = DestPos - SoftSize / 2.00;
    float2 SoftMax = SoftMin + SoftSize;
 
    //define softness range
-   float2 RangeMin = (uv - SoftMin) / (BoxMin - SoftMin);
-   float2 RangeMax = (uv - SoftMax) / (BoxMax - SoftMax);
+   float2 RangeMin = (uv2 - SoftMin) / (BoxMin - SoftMin);
+   float2 RangeMax = (uv2 - SoftMax) / (BoxMax - SoftMax);
 
    // if the pixel is in the soft area, interpolate softness as per Interpolation parameter
 
@@ -309,16 +335,16 @@ float4 ps_rectangle (float2 uv : TEXCOORD1): COLOR
    RangeMin = 1.0.xx - RangeMin;
    RangeMax = 1.0.xx - RangeMax;
 
-   float Soft_1 = ((uv.x >= BoxMin.x) && (uv.x <= SoftMin.x)) ? RangeMin.x : 1.0;
-   float Soft_2 = ((uv.y >= BoxMin.y) && (uv.y <= SoftMin.y)) ? RangeMin.y : 1.0;
+   float Soft_1 = ((uv2.x >= BoxMin.x) && (uv2.x <= SoftMin.x)) ? RangeMin.x : 1.0;
+   float Soft_2 = ((uv2.y >= BoxMin.y) && (uv2.y <= SoftMin.y)) ? RangeMin.y : 1.0;
 
-   if ((uv.x <= BoxMax.x) && (uv.x >= SoftMax.x)) Soft_1 = min (Soft_1, RangeMax.x);
-   if ((uv.y <= BoxMax.y) && (uv.y >= SoftMax.y)) Soft_2 = min (Soft_2, RangeMax.y);
+   if ((uv2.x <= BoxMax.x) && (uv2.x >= SoftMax.x)) Soft_1 = min (Soft_1, RangeMax.x);
+   if ((uv2.y <= BoxMax.y) && (uv2.y >= SoftMax.y)) Soft_2 = min (Soft_2, RangeMax.y);
 
    float Soft = saturate (min (Soft_1, Soft_2) * Soft_1 * Soft_2);
 
    //Offset Source and Destination
-   float2 xy = uv + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
+   float2 xy = uv2 + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
 
    // get texture for Destination replacement
    float4 Dest = tex2D (SourceSampler, xy);
@@ -330,7 +356,8 @@ float4 ps_rectangle (float2 uv : TEXCOORD1): COLOR
    Dest = lerp (Src, Dest, Soft);
 
    // Apply opacity the same way
-   return float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
+
+   return Overflow (uv1) ? EMPTY : float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -339,12 +366,13 @@ float4 ps_rectangle (float2 uv : TEXCOORD1): COLOR
 
 technique Ellipse
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_ellipse (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_ellipse)
 }
 
 technique Rectangle
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_rectangle (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_rectangle)
 }
+

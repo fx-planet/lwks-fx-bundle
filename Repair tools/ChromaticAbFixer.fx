@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-07
 // @Author khaver
 // @Created 2011-05-18
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromaticAbberationFixer_640.png
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-10-07 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 26 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -50,20 +50,53 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture V;
+DefineInput (V, s_RawInp);
 
-sampler VSampler = sampler_state
-{
-   Texture = <V>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, VSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -72,23 +105,23 @@ sampler VSampler = sampler_state
 float radjust
 <
    string Description = "Red adjust";
-   float MinVal       = -1.0f;
-   float MaxVal       = 1.0f;
-> = 0.0f; // Default value
+   float MinVal       = -1.0;
+   float MaxVal       = 1.0;
+> = 0.0; // Default value
 
 float gadjust
 <
    string Description = "Green adjust";
-   float MinVal       = -1.0f;
-   float MaxVal       = 1.0f;
-> = 0.0f; // Default value
+   float MinVal       = -1.0;
+   float MaxVal       = 1.0;
+> = 0.0; // Default value
 
 float badjust
 <
    string Description = "Blue adjust";
-   float MinVal       = -1.0f;
-   float MaxVal       = 1.0f;
-> = 0.0f; // Default value
+   float MinVal       = -1.0;
+   float MaxVal       = 1.0;
+> = 0.0; // Default value
 
 bool saton
 <
@@ -100,36 +133,37 @@ float sat
 <
    string Description = "Adjustment";
    string Group = "Saturation";
-   float MinVal       = 0.0f;
-   float MaxVal       = 4.0f;
-> = 2.0f; // Default value
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
+   float MinVal       = 0.0;
+   float MaxVal       = 4.0;
+> = 2.0; // Default value
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 CAFix( float2 xy : TEXCOORD1 ) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 CAFix (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-   float satad = sat;
-   if (!saton) satad = 1.0f;
-   float lumw = float3(0.299,0.587,0.114);
-   float rad = ((radjust * 2 + 4)/100) + 0.96;
-   float gad = ((gadjust * 2 + 4)/100) + 0.96;
-   float bad = ((badjust * 2 + 4)/100) + 0.96;
-   float red = tex2D(VSampler, float2( ((xy.x-0.5f)/(rad*_OutputAspectRatio/_OutputAspectRatio))+0.5f, ((xy.y-0.5f)/rad)+0.5f )).r;
-   float green = tex2D(VSampler, float2( ((xy.x-0.5f)/(gad*_OutputAspectRatio/_OutputAspectRatio))+0.5f, ((xy.y-0.5f)/gad)+0.5f )).g;
-   float blue = tex2D(VSampler, float2( ((xy.x-0.5f)/(bad*_OutputAspectRatio/_OutputAspectRatio))+0.5f, ((xy.y-0.5f)/bad)+0.5f )).b;
-   float alpha = tex2D(VSampler,xy).a;
-   float3 source = float3(red,green,blue);
-   float3 lum = dot(source, lumw);
-   float3 dest = lerp(lum, source, satad);
-   return float4(dest,alpha);
+   float satad = (!saton) ? 1.0 : sat;
+   float rad = ((radjust * 2.0 + 4.0) / 100.0) + 0.96;
+   float gad = ((gadjust * 2.0 + 4.0) / 100.0) + 0.96;
+   float bad = ((badjust * 2.0 + 4.0) / 100.0) + 0.96;
+
+   float2 xy = uv2 - 0.5.xx;
+
+   float3 source;
+
+   source.r = tex2D (VSampler, (xy / rad) + 0.5.xx).r;
+   source.g = tex2D (VSampler, (xy / gad) + 0.5.xx).g;
+   source.b = tex2D (VSampler, (xy / bad) + 0.5.xx).b;
+
+   float alpha = tex2D (VSampler, uv2).a;
+
+   float3 lum  = dot (source, float3 (0.299, 0.587, 0.114)).xxx;
+   float3 dest = lerp (lum, source, satad);
+
+   return Overflow (uv1) ? EMPTY : float4 (dest, alpha);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -138,8 +172,7 @@ float4 CAFix( float2 xy : TEXCOORD1 ) : COLOR
 
 technique CAFixer
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE CAFix();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (CAFix)
 }
+

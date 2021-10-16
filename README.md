@@ -1,4 +1,4 @@
-# Lightworks user Fx library, October 4, 2021.
+# Lightworks user Fx library, October 16, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -21,6 +21,19 @@ Lightworks does not overwrite existing effects but simply adds new ones to the l
 If you need to use two effects that have the same name, simply open one of them with any plain text editor (definitely not a word processor) and look for the line up near the top of the file that says something like ' string Description = "Effect name"; '. Type in your new name in place of the existing effect name inside the quotes and save the file. When you load that version it will now have the name that you gave it.
 
 **NOTE:** Every attempt has been made to ensure that these effects will compile and run on any version of Lightworks on any supported operating system. If you have trouble installing them, please make a note of any error message that Lightworks gives you. Post the complete details [here](https://forum.lwks.com/threads/custom-and-user-effects-feedback.191071/). It will be followed up.
+
+## CATEGORY FOLDER: Animated Lower 3rds
+|EFFECT                        |FILE NAME               |
+|:---------------------------- |:---------------------- |
+|Lower 3rd toolkit A           |Lower3rdToolkitA.fx     |
+|Lower 3rd toolkit B           |Lower3rdToolkitB.fx     |
+|Lower third A                 |LowerThirdA.fx          |
+|Lower third B                 |LowerThirdB.fx          |
+|Lower third C                 |LowerThirdC.fx          |
+|Lower third D                 |LowerThirdD.fx          |
+|Lower third E                 |LowerThirdE.fx          |
+|Lower third F                 |LowerThirdF.fx          |
+|Lower third G                 |LowerThirdG.fx          |
 
 ## CATEGORY FOLDER: Art Effects
 |EFFECT                        |FILE NAME               |
@@ -335,19 +348,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Texturiser                    |Texturiser.fx           |
 |Tiles                         |TilesFx.fx              |
 |Variable film grain           |Variable_Film_Grain.fx  |
-
-## CATEGORY FOLDER: User Lower 3rds
-|EFFECT                        |FILE NAME               |
-|:---------------------------- |:---------------------- |
-|Lower 3rd toolkit A           |Lower3rdToolkitA.fx     |
-|Lower 3rd toolkit B           |Lower3rdToolkitB.fx     |
-|Lower third A                 |LowerThirdA.fx          |
-|Lower third B                 |LowerThirdB.fx          |
-|Lower third C                 |LowerThirdC.fx          |
-|Lower third D                 |LowerThirdD.fx          |
-|Lower third E                 |LowerThirdE.fx          |
-|Lower third F                 |LowerThirdF.fx          |
-|Lower third G                 |LowerThirdG.fx          |
 
 ## CATEGORY FOLDER: Video artefacts
 |EFFECT                        |FILE NAME               |

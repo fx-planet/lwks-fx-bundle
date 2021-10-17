@@ -1,12 +1,14 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2021-10-18
 // @Author khaver
 // @Created 2011-12-08
 // @see https://www.lwks.com/media/kunena/attachments/6375/Polymask_640.png
 
 /**
- This a user adjustable mask with sixteen sides.  The edges of the mask can be feathered, and
- a background colour can be set.
+ This a user adjustable mask with sixteen sides.  The edges of the mask can be feathered,
+ and a background colour can also be applied.  Zoom, aspect ratio and position adjustments
+ are available, but using any them will disconnect the on-screen pin display from the
+ corners to which they are connected.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,20 +16,10 @@
 //
 // Version history.
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
-//
-// Modified 2 December 2018 jwrl.
-// Changed subcategory.
-// Added creation date.
-//
-// 4 April 2018: Modification by jwrl
-// Metadata header block added to better support GitHub repository.
-//
-// 21 March 2018: Version 14.5 modification by jwrl
-// This will compile in all Lightworks versions on Linux or OS-X, and Lightworks versions
-// 14.5+ running under Windows.  If running Lightworks version 14.0 or lower Windows users
-// should use the older Windows version.
+// Update 2021-10-18 jwrl.
+// As well as compensating for resolution independence, this update also performed some
+// code optimisations to cut the number of passes of the main code from three to one.
+// Improvements to the mask generation functions also increased the efficiency somewhat.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,522 +33,497 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-texture fg;
-texture bg;
-texture Tex1 : RenderColorTarget;
-texture Tex2 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FGround = sampler_state {
-        Texture = <fg>;
-        AddressU = Clamp;
-        AddressV = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler BGround = sampler_state {
-        Texture = <bg>;
-        AddressU = Clamp;
-        AddressV = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler Samp1 = sampler_state {
-        Texture = <Tex1>;
-        AddressU = Clamp;
-        AddressV = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler Samp2 = sampler_state {
-        Texture = <Tex2>;
-        AddressU = Clamp;
-        AddressV = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-bool colormask
-<
-	string Description = "Color Mask";
-> = false;
-
-float4 MaskColor
-<
-   string Description = "Color";
-> = {0.0,0.5,0.0,1.0};
-
-bool invert
-<
-	string Description = "Invert";
-> = false;
-
-float feather
-<
-	string Description = "Feather";
-	float MinVal = 0.0f;
-	float MaxVal = 0.5f;
-> = 0.0f;
-
-float zoomit
-<
-	string Description = "Zoom";
-	float MinVal = 0.0f;
-	float MaxVal = 10.0f;
-> = 1.0f;
-
-float PanX
-<
-   string Description = "Move";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.00;
-   float MaxVal = 2.00;
-> = 0.5;
-
-float PanY
-<
-   string Description = "Move";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.00;
-   float MaxVal = 2.00;
-> = 0.5;
-
-bool aspect
-<
-	string Description = "Aspect Compensation";
-> = false;
-
-bool show
-<
-	string Description = "Show mask";
-> = false;
-
-float P1X
-<
-   string Description = "P1";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P1Y
-<
-   string Description = "P1";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P2X
-<
-   string Description = "P2";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.375;
-
-float P2Y
-<
-   string Description = "P2";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P3X
-<
-   string Description = "P3";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
-
-float P3Y
-<
-   string Description = "P3";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P4X
-<
-   string Description = "P4";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.625;
-
-float P4Y
-<
-   string Description = "P4";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P5X
-<
-   string Description = "P5";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P5Y
-<
-   string Description = "P5";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P6X
-<
-   string Description = "P6";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P6Y
-<
-   string Description = "P6";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.375;
-
-float P7X
-<
-   string Description = "P7";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P7Y
-<
-   string Description = "P7";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
-
-float P8X
-<
-   string Description = "P8";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P8Y
-<
-   string Description = "P8";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.625;
-
-float P9X
-<
-   string Description = "P9";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P9Y
-<
-   string Description = "P9";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P10X
-<
-   string Description = "P10";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.625;
-
-float P10Y
-<
-   string Description = "P10";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P11X
-<
-   string Description = "P11";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
-
-float P11Y
-<
-   string Description = "P11";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P12X
-<
-   string Description = "P12";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.375;
-
-float P12Y
-<
-   string Description = "P12";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P13X
-<
-   string Description = "P13";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P13Y
-<
-   string Description = "P13";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float P14X
-<
-   string Description = "P14";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P14Y
-<
-   string Description = "P14";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.625;
-
-float P15X
-<
-   string Description = "P15";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P15Y
-<
-   string Description = "P15";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
-
-float P16X
-<
-   string Description = "P16";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float P16Y
-<
-   string Description = "P16";
-   string Group = "Coordinates";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.375;
-
-//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float _OutputWidth,  _OutputHeight, _OutputAspectRatio;
-
-#define _psize 16
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
 
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define P_SIZE 16
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (fg, s_RawFg);
+DefineInput (bg, s_RawBg);
+
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+bool ColourMask
+<
+   string Description = "Color Mask";
+> = false;
+
+float4 MaskColour
+<
+   string Description = "Color";
+> = {0.0, 0.5, 0.0, 1.0};
+
+bool Invert
+<
+   string Description = "Invert";
+> = true;
+
+float Feather
+<
+   string Description = "Feather";
+   float MinVal = 0.0;
+   float MaxVal = 0.5;
+> = 0.0;
+
+float ZoomIt
+<
+   string Description = "Zoom";
+   float MinVal = 0.0;
+   float MaxVal = 10.0;
+> = 1.0;
+
+float PanX
+<
+   string Description = "Move";
+   string Flags = "SpecifiesPointX|DisplayAsPercentage";
+   float MinVal = -1.0;
+   float MaxVal = 2.0;
+> = 0.5;
+
+float PanY
+<
+   string Description = "Move";
+   string Flags = "SpecifiesPointY|DisplayAsPercentage";
+   float MinVal = -1.0;
+   float MaxVal = 2.0;
+> = 0.5;
+
+bool AspectRatio
+<
+   string Description = "Aspect Compensation";
+> = false;
+
+bool ShowMask
+<
+   string Description = "Show mask";
+> = false;
+
+float P1X
+<
+   string Group = "Coordinates";
+   string Description = "P 1";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.432;
+
+float P1Y
+<
+   string Group = "Coordinates";
+   string Description = "P 1";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.155;
+
+float P2X
+<
+   string Group = "Coordinates";
+   string Description = "P 2";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.305;
+
+float P2Y
+<
+   string Group = "Coordinates";
+   string Description = "P 2";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.207;
+
+float P3X
+<
+   string Group = "Coordinates";
+   string Description = "P 3";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.207;
+
+float P3Y
+<
+   string Group = "Coordinates";
+   string Description = "P 3";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.305;
+
+float P4X
+<
+   string Group = "Coordinates";
+   string Description = "P 4";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.155;
+
+float P4Y
+<
+   string Group = "Coordinates";
+   string Description = "P 4";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.432;
+
+float P5X
+<
+   string Group = "Coordinates";
+   string Description = "P 5";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.155;
+
+float P5Y
+<
+   string Group = "Coordinates";
+   string Description = "P 5";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.568;
+
+float P6X
+<
+   string Group = "Coordinates";
+   string Description = "P 6";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.207;
+
+float P6Y
+<
+   string Group = "Coordinates";
+   string Description = "P 6";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.695;
+
+float P7X
+<
+   string Group = "Coordinates";
+   string Description = "P 7";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.305;
+
+float P7Y
+<
+   string Group = "Coordinates";
+   string Description = "P 7";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.793;
+
+float P8X
+<
+   string Group = "Coordinates";
+   string Description = "P 8";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.432;
+
+float P8Y
+<
+   string Group = "Coordinates";
+   string Description = "P 8";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.845;
+
+float P9X
+<
+   string Group = "Coordinates";
+   string Description = "P 9";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.568;
+
+float P9Y
+<
+   string Group = "Coordinates";
+   string Description = "P 9";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.845;
+
+float P10X
+<
+   string Group = "Coordinates";
+   string Description = "P 10";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.695;
+
+float P10Y
+<
+   string Group = "Coordinates";
+   string Description = "P 10";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.793;
+
+float P11X
+<
+   string Group = "Coordinates";
+   string Description = "P 11";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.793;
+
+float P11Y
+<
+   string Group = "Coordinates";
+   string Description = "P 11";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.695;
+
+float P12X
+<
+   string Group = "Coordinates";
+   string Description = "P 12";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.845;
+
+float P12Y
+<
+   string Group = "Coordinates";
+   string Description = "P 12";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.568;
+
+float P13X
+<
+   string Group = "Coordinates";
+   string Description = "P 13";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.845;
+
+float P13Y
+<
+   string Group = "Coordinates";
+   string Description = "P 13";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.432;
+
+float P14X
+<
+   string Group = "Coordinates";
+   string Description = "P 14";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.793;
+
+float P14Y
+<
+   string Group = "Coordinates";
+   string Description = "P 14";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.305;
+
+float P15X
+<
+   string Group = "Coordinates";
+   string Description = "P 15";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.695;
+
+float P15Y
+<
+   string Group = "Coordinates";
+   string Description = "P 15";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.207;
+
+float P16X
+<
+   string Group = "Coordinates";
+   string Description = "P 16";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.568;
+
+float P16Y
+<
+   string Group = "Coordinates";
+   string Description = "P 16";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.155;
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float fn_LineDistance (float2 xy, float2 l1, float2 l2)
+{
+   float2 Delta = l2 - l1;
+   float2 D_sqr = Delta * Delta;
+   float2 uv = (xy - l1) * Delta;
+
+   float u = (uv.x + uv.y) / (D_sqr.x + D_sqr.y);
+
+   float2 closestPointOnLine = (u < 0.0) ? l1 : (u > 1.0) ? l2 : l1 + (u * Delta);
+
+   return distance (xy, closestPointOnLine);
+}
+
+float fn_PolyDistance (float2 xy, float2 poly [P_SIZE])
+{
+   float result = 100.0;
+
+   for (int i = 0; i < P_SIZE; i++) {
+      int j = (i < 1) ? P_SIZE - 1 : i - 1;
+
+      float2 currentPoint  = poly [i];
+      float2 previousPoint = poly [j];
+
+      float segmentDistance = fn_LineDistance (xy, previousPoint, currentPoint);
+
+      if (segmentDistance < result) result = segmentDistance;
+   }
+
+   return result;
+}
+
+float fn_makePoly (float2 xy, float2 poly [P_SIZE])
+{
+   float retval = 0.0;
+
+   for (int i = 0; i < P_SIZE; i++) {
+      int j = (i < 1) ? P_SIZE - 1 : i - 1;
+
+      if (((poly [j].y > xy.y ) != (poly [i].y > xy.y)) &&
+          (xy.x < (poly [i].x - poly [j].x) * (xy.y - poly [j].y) / (poly [i].y - poly [j].y) + poly [j].x))
+      retval = abs (retval - 1.0);
+   }
+
+   return retval;
+}
+
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 makePoly(float2 p, float2 poly[_psize]) {
-	bool oddNodes = false;
-	for(int i = 0; i < _psize; i++){
-		int j = i + 1;
-		if (j == _psize) j = 0;
-  		if (((poly[i].y > p.y ) != (poly[j].y > p.y)) && (p.x < (poly[j].x-poly[i].x) * (p.y - poly[i].y) / (poly[j].y-poly[i].y) + poly[i].x)) oddNodes=!oddNodes;
-	}
-	float io;
-	if (oddNodes) io = 1.0f;
-	else io = 0.0f;
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return BdrPixel (s_RawBg, uv); }
 
-	return float4(io,io,io,io);
-}
-
-float distanceFromLine(float2 p, float2 l1, float2 l2) {
-	float xDelta = l2.x - l1.x;
-	float yDelta = l2.y - l1.y;
-	
-	float u = ((p.x - l1.x) * xDelta + (p.y - l1.y) * yDelta) / (xDelta * xDelta + yDelta * yDelta);
-	float2 closestPointOnLine;
-	if (u < 0) {
-			closestPointOnLine = l1;
-		} else if (u > 1) {
-			closestPointOnLine = l2;
-		} else {
-			closestPointOnLine = float2(l1.x + u * xDelta, l1.y + u * yDelta);
-		}
-	float2 d = p - closestPointOnLine;
-	return sqrt(d.x * d.x + d.y * d.y);
-}
-
-float distanceFromPoly(float2 p, float2 poly[_psize]) {
-	float result = 100.0f;
-	
-	for(int i = 0; i < _psize; i++){
-		int previousIndex = i - 1;
-		if (previousIndex < 0) previousIndex = _psize - 1;
-	
-		float2 currentPoint = poly[i];
-		float2 previousPoint = poly[previousIndex];
-	
-		float segmentDistance = distanceFromLine(p, previousPoint, currentPoint);
-	
-		if(segmentDistance < result) result = segmentDistance;
-	}
-	return result;
-}
-
-float4 main1( float2 xy : TEXCOORD1, uniform int run ) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
+   float2 poly [P_SIZE] = { { P1X,  1.0 - P1Y },  { P2X,  1.0 - P2Y },  { P3X,  1.0 - P3Y },
+                            { P4X,  1.0 - P4Y },  { P5X,  1.0 - P5Y },  { P6X,  1.0 - P6Y },
+                            { P7X,  1.0 - P7Y },  { P8X,  1.0 - P8Y },  { P9X,  1.0 - P9Y },
+                            { P10X, 1.0 - P10Y }, { P11X, 1.0 - P11Y }, { P12X, 1.0 - P12Y },
+                            { P13X, 1.0 - P13Y }, { P14X, 1.0 - P14Y }, { P15X, 1.0 - P15Y },
+	                    { P16X, 1.0 - P16Y } };
 
-	float asp = 1.0f;
-	if (aspect) asp = _OutputAspectRatio;
-	float zoom = zoomit;
-	if (zoom == 0.0f) zoom = 0.00001f;
-	float z = zoom / asp;
-	float2 poly[_psize];
-	//float4 themask = tex2D(Samp1, xy);
-	
-	poly[0] = float2(P1X,1.0f - P1Y);
-	poly[1] = float2(P2X,1.0f - P2Y);
-	poly[2] = float2(P3X,1.0f - P3Y);
-	poly[3] = float2(P4X,1.0f - P4Y);
-	poly[4] = float2(P5X,1.0f - P5Y);
-	poly[5] = float2(P6X,1.0f - P6Y);
-	poly[6] = float2(P7X,1.0f - P7Y);
-	poly[7] = float2(P8X,1.0f - P8Y);
-	poly[8] = float2(P9X,1.0f - P9Y);
-	poly[9] = float2(P10X,1.0f - P10Y);
-	poly[10] = float2(P11X,1.0f - P11Y);
-	poly[11] = float2(P12X,1.0f - P12Y);
-	poly[12] = float2(P13X,1.0f - P13Y);
-	poly[13] = float2(P14X,1.0f - P14Y);
-	poly[14] = float2(P15X,1.0f - P15Y);
-	poly[15] = float2(P16X,1.0f - P16Y);
+   float aspect = AspectRatio ? _OutputAspectRatio : 1.0;
 
-	float X = ((xy.x - 0.5f) / z) + 0.5f;
-	float Y = ((xy.y - 0.5f) / zoom) + 0.5f;
-	X = X - ((PanX - 0.5f)/z);
-	Y = Y + ((PanY - 0.5f)/zoom);
-	if (run == 0) {
-		return makePoly(float2(X,Y), poly);
-	}
-	else {
-		float4 themask = tex2D(Samp1, xy);
-		float change;
-		float distancefrom = distanceFromPoly(float2(X,Y),poly);
-		if (distancefrom < feather) {
-			change = ((1.0f / feather) * distancefrom)/2.0f;
-			if (themask.a > 0.5f) themask = 1.0f - (0.5f - change);
-			if (themask.a <= 0.5f) themask = 0.0f + (0.5f - change);
-			return themask;
-		}
-		else return themask;
-	}
-}
+   float2 xy = float2 ((uv.x - PanX) * aspect, uv.y + PanY - 1.0) / max (ZoomIt, 1.0e-6) + 0.5.xx;
 
-float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
-{
-  float4 color;
-  float4 FG = tex2D( FGround, uv);
-  float4 BG = tex2D( BGround, uv);
-  if (colormask) BG = MaskColor;
-  float4 Mask = tex2D( Samp2, uv);
-  if (invert) Mask = 1.0f-Mask;
-  if (show) color = Mask;
-  else color = lerp(FG,BG,Mask.a);
-  return color;
+   float mask  = fn_makePoly (xy, poly);
+   float range = fn_PolyDistance (xy, poly);
+
+   if (range < Feather) {
+      range *= 0.5 / Feather;
+      mask   = (mask > 0.5) ? 0.5 + range : 0.5 - range;
+   }
+
+   float4 Mask = (Invert) ? (1.0 - mask).xxxx : mask.xxxx;
+   float4 Bgnd = (ColourMask) ? MaskColour : GetPixel (s_Background, uv);
+
+   return (ShowMask) ? Mask : lerp (GetPixel (s_Foreground, uv), Bgnd, Mask.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -565,23 +532,8 @@ float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
 
 technique PolyMask16
 {
-
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE main1(0);
-   }
-   pass Pass2
-   <
-   string Script = "RenderColorTarget0 = Tex2;";
-   >
-   {
-      PixelShader = compile PROFILE main1(1);
-   }
-   pass Pass3
-   {
-      PixelShader = compile PROFILE Combine();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_main)
 }
+

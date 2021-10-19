@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2019-07-27
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/TitleFix_640.png
 
 /**
@@ -24,14 +24,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-07-02 jwrl:
-// Changed the gaussian blur default to zero to bypass the gaussian blur.
-//
-// Modified 2020-03-07 jwrl:
-// Added a gaussian blur to smooth and antialias text edges.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,20 +39,58 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define STRENGTH  0.00125
+
+float _OutputAspectRatio;
+
+float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375,
+                      0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -72,21 +104,12 @@ float Smoothing
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define STRENGTH  0.00125
-
-float _OutputAspectRatio;
-
-float _gaussian[] = { 0.2255859375, 0.193359375, 0.120849609375,
-                      0.0537109375, 0.01611328125, 0.0029296875, 0.000244140625 };
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
    float4 retval = tex2D (s_Input, uv);
 
@@ -95,36 +118,26 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
       float2 xy2 = uv + xy1;
 
       retval *= _gaussian [0];
-      retval += tex2D (s_Input, xy2) * _gaussian [1];
-      xy2 += xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [2];
-      xy2 += xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [3];
-      xy2 += xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [4];
-      xy2 += xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [5];
-      xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [1]; xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [2]; xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [3]; xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [4]; xy2 += xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [5]; xy2 += xy1;
       retval += tex2D (s_Input, xy2) * _gaussian [6];
 
       xy2 = uv - xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [1];
-      xy2 -= xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [2];
-      xy2 -= xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [3];
-      xy2 -= xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [4];
-      xy2 -= xy1;
-      retval += tex2D (s_Input, xy2) * _gaussian [5];
-      xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [1]; xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [2]; xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [3]; xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [4]; xy2 -= xy1;
+      retval += tex2D (s_Input, xy2) * _gaussian [5]; xy2 -= xy1;
       retval += tex2D (s_Input, xy2) * _gaussian [6];
    }
 
    retval.a = pow (retval.a, 0.5);
    retval.rgb /= retval.a;
 
-   return retval;
+   return (Overflow (uv)) ? EMPTY : retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -133,6 +146,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique TitleFix
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = RawInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

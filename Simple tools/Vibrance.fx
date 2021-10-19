@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2020-01-04
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Vibrance_640.png
 
 /**
@@ -15,12 +15,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-09-27
-// Clamped video levels on exit from the effect.  Floating point processing can result
-// in video level overrun which can impact exports poorly.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,12 +30,34 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -58,6 +76,8 @@ float Vibrance
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
    float4 retval = tex2D (s_Input, uv);
 
    float amount = pow (1.0 + Vibrance, 2.0) - 1.0;
@@ -71,8 +91,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Vibrance_fx
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
-}
+technique Vibrance_fx { pass P_1 ExecuteShader (ps_main) }
+

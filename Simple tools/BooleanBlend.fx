@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2020-02-25
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/BooleanBlend_640.png
 
 /**
@@ -17,15 +17,10 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BooleanBlend.fx
 //
-// The date shown above is when I cleaned this effect up for posting.  The main changes
-// from my private original are the addition of NOR logic and the definition of "Category",
-// "Subcategory" and "Notes".  It was originally categorised as "User" with no subcategory
-// or notes, since the latter two weren't supported when it was written.
-//
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,18 +34,61 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture A;
-texture B;
+DefineInput (A, s_RawFg);
+DefineInput (B, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler Sampler_A = sampler_state { Texture = <A>; };
-sampler Sampler_B = sampler_state { Texture = <B>; };
+DefineTarget (RawFg, Sampler_A);
+DefineTarget (RawBg, Sampler_B);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -80,10 +118,13 @@ float Amount_B
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_AND (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_AND (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 vidA = tex2D (Sampler_A, xy1) * Amount_A;
-   float4 vidB = tex2D (Sampler_B, xy2) * Amount_B;
+   float4 vidA = tex2D (Sampler_A, uv) * Amount_A;
+   float4 vidB = tex2D (Sampler_B, uv) * Amount_B;
 
    vidA.rgb *= vidA.a;
    vidB.rgb *= vidB.a;
@@ -95,10 +136,10 @@ float4 ps_AND (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return retval;
 }
 
-float4 ps_OR (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_OR (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 vidA = tex2D (Sampler_A, xy1) * Amount_A;
-   float4 vidB = tex2D (Sampler_B, xy2) * Amount_B;
+   float4 vidA = tex2D (Sampler_A, uv) * Amount_A;
+   float4 vidB = tex2D (Sampler_B, uv) * Amount_B;
 
    vidA.rgb *= vidA.a;
    vidB.rgb *= vidB.a;
@@ -106,10 +147,10 @@ float4 ps_OR (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return max (vidA, vidB);
 }
 
-float4 ps_NAND (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_NAND (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 vidA = tex2D (Sampler_A, xy1) * Amount_A;
-   float4 vidB = tex2D (Sampler_B, xy2) * Amount_B;
+   float4 vidA = tex2D (Sampler_A, uv) * Amount_A;
+   float4 vidB = tex2D (Sampler_B, uv) * Amount_B;
 
    vidA.rgb *= vidA.a;
    vidB.rgb *= vidB.a;
@@ -121,10 +162,10 @@ float4 ps_NAND (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return retval;
 }
 
-float4 ps_NOR (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_NOR (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 vidA = tex2D (Sampler_A, xy1) * Amount_A;
-   float4 vidB = tex2D (Sampler_B, xy2) * Amount_B;
+   float4 vidA = tex2D (Sampler_A, uv) * Amount_A;
+   float4 vidB = tex2D (Sampler_B, uv) * Amount_B;
 
    vidA.rgb *= vidA.a;
    vidB.rgb *= vidB.a;
@@ -136,10 +177,10 @@ float4 ps_NOR (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    return retval;
 }
 
-float4 ps_XOR (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_XOR (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 vidA = tex2D (Sampler_A, xy1) * Amount_A;
-   float4 vidB = tex2D (Sampler_B, xy2) * Amount_B;
+   float4 vidA = tex2D (Sampler_A, uv) * Amount_A;
+   float4 vidB = tex2D (Sampler_B, uv) * Amount_B;
 
    vidA.rgb *= vidA.a;
    vidB.rgb *= vidB.a;
@@ -155,8 +196,39 @@ float4 ps_XOR (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique AND  { pass P_1 { PixelShader = compile PROFILE ps_AND (); } }
-technique OR   { pass P_1 { PixelShader = compile PROFILE ps_OR (); } }
-technique NAND { pass P_1 { PixelShader = compile PROFILE ps_NAND (); } }
-technique NOR  { pass P_1 { PixelShader = compile PROFILE ps_NOR (); } }
-technique XOR  { pass P_1 { PixelShader = compile PROFILE ps_XOR (); } }
+technique AND 
+{
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_AND)
+}
+
+technique OR  
+{
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_OR)
+}
+
+technique NAND
+{
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_NAND)
+}
+
+technique NOR 
+{
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_NOR)
+}
+
+technique XOR 
+{
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_XOR)
+}
+
+

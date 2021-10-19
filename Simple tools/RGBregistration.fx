@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2020-05-18
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/RGBregistration_640.png
 
 /**
@@ -16,8 +16,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -31,12 +31,54 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputWidth;
+float _OutputHeight;
+
+//-----------------------------------------------------------------------------------------//
 // Input and shader
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-sampler s_Input  = sampler_state { Texture = <Inp>; };
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -66,31 +108,19 @@ float Ydisplace
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY   0.0.xxxx
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler S, float2 p)
-{
-   return (p.x < 0.0) || (p.y < 0.0) || (p.x > 1.0) || (p.y > 1.0) ? EMPTY : tex2D (S, p);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
    float2 xy = float2 (Xdisplace, Ydisplace);
 
    float4 Input  = tex2D (s_Input, uv);
-   float4 retval = float4 (fn_tex2D (s_Input, uv - xy).r, Input.g,
-                           fn_tex2D (s_Input, uv + xy).b, Input.a);
+   float4 retval = Input;
+
+   retval.rb = float2 (tex2D (s_Input, uv - xy).r, tex2D (s_Input, uv + xy).b);
 
    return lerp (Input, retval, Opacity);
 }
@@ -101,8 +131,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique RGBregistration
 {
-   pass P1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

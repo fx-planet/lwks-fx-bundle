@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2020-04-29
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Simple_S_640.png
 
 /**
@@ -15,12 +15,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-09-29
-// Clamped video levels on entry to and exit from the effect.  Floating point processing
-// can result in video level overrun which can impact exports poorly.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,12 +30,41 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-sampler s_Input = sampler_state { Texture = <Inp>; };
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+/**
+ If V is less than 0.5 this macro will double it and raise it to the power P, then
+ halve it.  If it is greater than 0.5 it will invert it then double and raise it to
+ the power of P before inverting and halving it again.  This applies an S curve to V
+ when the two components are combined.
+*/
+#define S_curve(V,P) (V > 0.5 ? 1.0 - (pow (2.0 - V - V, P) * 0.5) : pow (V + V, P) * 0.5)
+
+//-----------------------------------------------------------------------------------------//
+// Input
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -84,28 +109,15 @@ float CurveB
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-// If the input video is less than 0.5 this function will double it and raise it to
-// the power of the value in curve, then halve it.  If it is greater than 0.5 it will
-// invert it then double and raise it to the power of the curve before inverting and
-// halving it again.  This will give an S curve when the two components are combined.
-
-float fn_s_curve (float video, float curve)
-{
-   return (video > 0.5) ? 1.0 - (pow (2.0 - video - video, curve) * 0.5)
-                        : pow (video + video, curve) * 0.5;
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
    float4 inp = saturate (tex2D (s_Input, uv)); // Recover the video source
-   float4 retval = inp;                         // Only really needs inp.a
+   float4 retval = inp;                         // Only really needs inp.a at the moment
 
    // Now load a float3 variable with double the Y curve and offset it
    // by 1 to give us a range from 1 to 3, limited to a minimum of 1.
@@ -119,9 +131,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // Now place the individual S-curve modified RGB channels into retval
 
-   retval.r = fn_s_curve (inp.r, curves.r);
-   retval.g = fn_s_curve (inp.g, curves.g);
-   retval.b = fn_s_curve (inp.b, curves.b);
+   retval.r = S_curve (inp.r, curves.r);
+   retval.g = S_curve (inp.g, curves.g);
+   retval.b = S_curve (inp.b, curves.b);
 
    // Return the processed video, mixing it back with the input video
 
@@ -132,8 +144,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique SimpleS
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
-}
+technique SimpleS { pass P_1 ExecuteShader (ps_main) }
+

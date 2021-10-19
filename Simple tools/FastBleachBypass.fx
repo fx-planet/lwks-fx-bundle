@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2019-05-30
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/FastBleachBypassRev_640.png
 
 /**
@@ -12,24 +12,10 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FastBleachBypass.fx
 //
-// MSI's earlier bleach bypass effect was based on sample code provided by Nvidia.  This
-// version is all original and designed from first principles.
-//
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-09-29
-// Clamped video levels on entry to and exit from the effect.  Floating point processing
-// can result in video level overrun which can impact exports poorly.
-//
-// Rewrite jwrl 2020-08-04:
-// Never very happy with any of the previous attempts, this is yet another rewrite of the
-// bleach bypass effect.  The negative version has the S-curve biassed towards the blacks
-// and averages the RGB components to create the desaturated image.  The print version
-// biasses the S-curve towards whites, and uses an empirically derived conversion profile
-// to create the desaturated image.  As it is now it feels pretty right.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,12 +29,63 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define NEG    0.33333333.xxx
+
+#define POS    float3(0.217, 0.265, 0.518)
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-sampler InpSampler = sampler_state { Texture = <Inp>; };
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -68,20 +105,14 @@ float Amount
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Declarations and definitions
-//-----------------------------------------------------------------------------------------//
-
-#define NEG    0.33333333.xxx
-
-#define POS    float3(0.217, 0.265, 0.518)
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main_neg (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main_neg (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 Input = saturate (tex2D (InpSampler, uv));
+   float4 Input = saturate (tex2D (s_Input, uv));
 
    float amnt = Amount * 0.75;
    float prof = 1.0 / (1.0 + amnt);
@@ -94,9 +125,9 @@ float4 main_neg (float2 uv : TEXCOORD1) : COLOR
    return float4 (saturate (lerp (Input.rgb, luma.xxx, amnt)), Input.a);
 }
 
-float4 main_pos (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_pos (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 Input = saturate (tex2D (InpSampler, uv));
+   float4 Input = saturate (tex2D (s_Input, uv));
 
    float amnt = Amount * 0.75;
    float prof = 1.0 / (1.0 + amnt);
@@ -113,12 +144,15 @@ float4 main_pos (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique FastBleachBypass_1
+technique FastBleachBypass_0
 {
-   pass P1 { PixelShader = compile PROFILE main_neg (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main_neg)
 }
 
-technique FastBleachBypass_2
+technique FastBleachBypass_1
 {
-   pass P1 { PixelShader = compile PROFILE main_pos (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main_pos)
 }
+

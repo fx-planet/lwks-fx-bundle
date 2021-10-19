@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
 // @Created 2020-04-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/RadialGrad_640.png
@@ -14,6 +14,9 @@
 // Lightworks user effect RadialGrad.fx
 //
 // Version history:
+//
+// Update 2021-10-19 jwrl.
+// Corrected CanSize switch to false.
 //
 // Updated 2020-11-14 jwrl.
 // Added CanSize switch for LW 2021 support.
@@ -35,16 +38,43 @@ int _LwksEffectInfo
    string Category    = "Mattes";
    string SubCategory = "Simple tools";
    string Notes       = "Creates a colour field with a radial gradiant";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Declarations and definitons
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY  0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define PI    3.141592654
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -98,34 +128,26 @@ float Offs_Y
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Declarations and definitons
-//-----------------------------------------------------------------------------------------//
-
-#define PI    3.141592654
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1) : COLOR
 {
-   float2 xy2 = xy0 - 0.5.xx;
+   float2 xy = uv0 - 0.5.xx;
 
    float ratio = max (Aspect, 0.0001) * _OutputAspectRatio;
 
-   if (ratio < 1.0) xy2.x *= ratio;
-   else xy2.y /= ratio;
+   if (ratio < 1.0) xy.x *= ratio;
+   else xy.y /= ratio;
 
-   xy2 /= Radius;
-   xy2 += float2 (1.0 - Offs_X, ((Offs_Y - 0.5) / _OutputAspectRatio) + 0.5);
+   xy /= Radius;
+   xy += float2 (1.0 - Offs_X, ((Offs_Y - 0.5) / _OutputAspectRatio) + 0.5);
 
-   float2 mask = sin (saturate (xy2) * PI);
+   float2 mask = sin (saturate (xy) * PI);
 
    float4 retval = lerp (Colour_1, lerp (Colour_1, Colour_2, mask.x), mask.y);
 
-   return lerp (tex2D (s_Input, xy1), retval, retval.a);
+   return lerp (GetPixel (s_Input, uv1), retval, retval.a);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -134,6 +156,6 @@ float4 ps_main (float2 xy0 : TEXCOORD0, float2 xy1 : TEXCOORD1) : COLOR
 
 technique RadialGrad
 {
-   pass P_1 
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 ExecuteShader (ps_main)
 }
+

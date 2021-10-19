@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2018-03-14
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Flip_Flop_640.png
 
 /**
@@ -17,24 +17,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 4 January 2020 by user jwrl:
-// Renamed subcategory to "Simple tools", changed notes to be more explicit.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 2018-12-05 jwrl.
-// Changed subcategory.
-//
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,12 +32,43 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler InputSampler = sampler_state { Texture = <Input>; };
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -61,14 +76,12 @@ sampler InputSampler = sampler_state { Texture = <Input>; };
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (InputSampler, (1.0).xx - uv);
+   return GetPixel (s_Input, 1.0.xx - uv);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique FlipFlop
-{
-   pass P_1 { PixelShader = compile PROFILE ps_main (); }
-}
+technique FlipFlop { pass P_1 ExecuteShader (ps_main) }
+

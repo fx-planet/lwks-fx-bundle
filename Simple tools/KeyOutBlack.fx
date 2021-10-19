@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2020-01-04
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/KeyOutBlack_640.png
 
 /**
@@ -33,16 +33,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-06-15 jwrl:
-// Changed "Black offset" in Offset parameter to read "Black clip".
-// Added DisplayAsPercentage flag to the Offset parameter.
-// Changed Offset range to run from 0.0 to 0.05 (5%).
-// Changed Offset default value to 0.025 (2.5%).
-// In the shader, changed the black range used to generate alpha from 3.125% to 2.5%.
-// Changed alpha curve generation from inverse parabolic to trigonometric S-curve.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -56,18 +48,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define PI 3.1415926536
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -89,24 +128,21 @@ float Offset
 > = 0.025;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI 3.1415926536
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return BdrPixel (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float4 Fgd = tex2D (s_Foreground, xy1);
+   float4 Fgd = tex2D (s_Foreground, uv);
 
    float3 v = saturate (Fgd.rgb - Offset.xxx);
 
    float alpha = (1.0 - cos (saturate (max (v.r, max (v.g, v.b)) * 40.0) * PI)) * 0.5;
 
-   return lerp (tex2D (s_Background, xy2), Fgd, min (alpha, Fgd.a) * Opacity);
+   return lerp (tex2D (s_Background, uv), Fgd, min (alpha, Fgd.a) * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -115,6 +151,8 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
 technique KeyOutBlack
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_main)
 }
+

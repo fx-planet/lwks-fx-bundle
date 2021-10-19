@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author "Nicholas Carroll"
 // @Created 2016-05-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/INK_640.png
@@ -25,27 +25,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 14 Jan 2020 by user jwrl:
-// Changed subcategory from "Key Extras" to "Simple tools".
-//
-// Modified 23 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 26 Nov 2018 by user schrauber:
-// Changed subcategory from "User Effects" to "Key Extras".
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Changed category from "Keying" to "Key", added subcategory to effect header.
+// Update 2021-10-19 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,35 +40,63 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0,1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture fg;
-texture bg;
+DefineInput (fg, s_RawFg);
+DefineInput (bg, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state
-{
-   Texture   = <bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -102,19 +111,20 @@ float bal
 <
    string Description = "Key Balance";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.5;
-
-#pragma warning ( disable : 3571 )
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 MyFunction (float2 xy : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return BdrPixel (s_RawBg, uv); }
+
+float4 ps_main (float2 xy : TEXCOORD3) : COLOR
 {
-   float4 foreground = tex2D (FgSampler, xy);
-   float4 background = tex2D (BgSampler, xy);
+   float4 foreground = tex2D (s_Foreground, xy);
+   float4 background = tex2D (s_Background, xy);
 
    float3 chan, P = foreground.rgb;
    float3 K = keyColor.rgb;
@@ -208,8 +218,8 @@ float4 MyFunction (float2 xy : TEXCOORD1) : COLOR
 
 technique MyTechnique
 {
-   pass p0
-   {
-      PixelShader = compile PROFILE MyFunction ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_main)
 }
+

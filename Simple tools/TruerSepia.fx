@@ -64,24 +64,41 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define SEPIA   float3(0.732, 0.899, 1.0)
+
+#define LUMA    float3(0.299, 0.587, 0.114)
+#define AVERAGE (1.0 / 3.0).xxx
+#define PANCHRO float3(0.217, 0.265, 0.518)
+#define ORTHO   float3(0.025, 0.463, 0.512)
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -118,22 +135,13 @@ float SepiaTone
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define SEPIA     float3(0.732, 0.899, 1.0)
-
-#define LUMA      float3(0.299, 0.587, 0.114)
-#define AVERAGE   (1.0 / 3.0).xxx
-#define PANCHRO   float3(0.217, 0.265, 0.518)
-#define ORTHO     float3(0.025, 0.463, 0.512)
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main_L (float2 uv : TEXCOORD1) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
    float4 retval = tex2D (s_Input, uv);
 
    float print = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
@@ -154,6 +162,8 @@ float4 ps_main_L (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_A (float2 uv : TEXCOORD1) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
    float4 retval = tex2D (s_Input, uv);
 
    float print = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
@@ -174,6 +184,8 @@ float4 ps_main_A (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_P (float2 uv : TEXCOORD1) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
    float4 retval = tex2D (s_Input, uv);
 
    float print = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
@@ -197,6 +209,8 @@ float4 ps_main_P (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 {
+   if (Overflow (uv)) return EMPTY;
+
    float4 retval = tex2D (s_Input, uv);
 
    float print = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
@@ -223,26 +237,8 @@ float4 ps_main_O (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique TrueSepia_0
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_L (); }
-}
+technique TrueSepia_0 { pass P_1 ExecuteShader (ps_main_L) }
+technique TrueSepia_1 { pass P_1 ExecuteShader (ps_main_A) }
+technique TrueSepia_2 { pass P_1 ExecuteShader (ps_main_P) }
+technique TrueSepia_3 { pass P_1 ExecuteShader (ps_main_O) }
 
-technique TrueSepia_1
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_A (); }
-}
-
-technique TrueSepia_2
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_P (); }
-}
-
-technique TrueSepia_3
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_O (); }
-}

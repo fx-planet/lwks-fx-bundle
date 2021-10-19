@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
-// @Maintainer jwrl
-// @Created 2020-04-11
+// @Released 2021-10-19
+// @Author jwrl
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Simple_star_640.png
 
 /**
@@ -33,17 +33,13 @@
 // coloured and mixed as required.  Smaller star points around the centre hotspot are
 // added, and an anular halo is finally overlaid.
 //
-// This looks considerably more complex than it in fact is.  Although between three and
-// four passes are used the simplicity of each one should keep the overall GPU load low.
+// This looks considerably more complex than it in fact is.  Although between four and
+// five passes are used the simplicity of each one should keep the overall GPU load low.
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-04-12 jwrl
-// Explicitly defined linear filtration in target samplers.  This fixes a problem with
-// jaggy edges when rotating at other than right angles.  See note in declaration.
+// Rewrite 2021-10-19 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -57,46 +53,96 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define GetAlpha(SHADER,XY) (Overflow(XY) ? 0.0 : tex2D(SHADER, XY).a)
+
+#define CENTRE      0.5.xx
+
+#define RADIUS      0.03125
+#define LENGTH      0.125
+#define WIDTH       0.003
+
+#define RING_RAD    0.0175
+#define RING_AMT    6.0
+#define RING_LVL    0.375
+
+#define SINE_22_5   0.3826834324
+#define COSINE_22_5 0.9238795325
+
+#define SINE_45     0.7071067812
+
+#define SINE_51     0.7818314825
+#define COSINE_51   0.6234898019
+
+#define SINE_60     0.8660254038
+#define COSINE_60   0.5
+
+#define SINE_72     0.9510565163
+#define COSINE_72   0.3090169944
+
+#define SINE_103    0.97492791218
+#define COSINE_103 -0.22252093396
+
+#define SINE_144    0.5877852523
+#define COSINE_144 -0.8090169944
+
+#define SINE_154    0.4338837391
+#define COSINE_154 -0.9009688679
+
+#define QUAD_PI     12.566370614
+#define ONE_THIRD   0.3333333333
+#define SCALE_45    1.2374368671   // 1.75 * sine 45
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-texture Points_1 : RenderColorTarget;
-texture Points_2 : RenderColorTarget;
+DefineTarget (FixInp, s_Input);
 
-texture Glint : RenderColorTarget;
+DefineTarget (Points_1, s_Points_1);
+DefineTarget (Points_2, s_Points_2);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
-
-// NOTE: Linear filteration has been explicitly defined here.  This is because it
-// appears that Cg defaults to point filtration in targets, not linear as I had
-// assumed it to be.  This becomes a very important issue when rotating an image.
-
-sampler s_Points_1 = sampler_state {
-   Texture   = <Points_1>;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Points_2 = sampler_state {
-   Texture   = <Points_2>;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Glint = sampler_state {
-   Texture   = <Glint>;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Glint, s_Glint);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -166,67 +212,10 @@ float CentreY
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY       0.0.xxxx
-
-#define CENTRE      0.5.xx
-
-#define RADIUS      0.03125
-#define LENGTH      0.125
-#define WIDTH       0.003
-
-#define RING_RAD    0.0175
-#define RING_AMT    6.0
-#define RING_LVL    0.375
-
-#define SINE_22_5   0.3826834324
-#define COSINE_22_5 0.9238795325
-
-#define SINE_45     0.7071067812
-
-#define SINE_51     0.7818314825
-#define COSINE_51   0.6234898019
-
-#define SINE_60     0.8660254038
-#define COSINE_60   0.5
-
-#define SINE_72     0.9510565163
-#define COSINE_72   0.3090169944
-
-#define SINE_103    0.97492791218
-#define COSINE_103 -0.22252093396
-
-#define SINE_144    0.5877852523
-#define COSINE_144 -0.8090169944
-
-#define SINE_154    0.4338837391
-#define COSINE_154 -0.9009688679
-
-#define QUAD_PI     12.566370614
-#define ONE_THIRD   0.3333333333
-#define SCALE_45    1.2374368671   // 1.75 * sine 45
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float fn_xtra (sampler s, float2 p)
-{
-   return (p.x < 0.0) || (p.y < 0.0) || (p.x > 1.0) || (p.y > 1.0) ? 0.0 : tex2D (s, p).a;
-}
-
-float4 fn_tex2D (sampler s, float2 p)
-{
-   return (p.x < 0.0) || (p.y < 0.0) || (p.x > 1.0) || (p.y > 1.0) ? EMPTY : tex2D (s, p);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
 
 float4 ps_line (float2 uv : TEXCOORD0) : COLOR
 {
@@ -280,7 +269,7 @@ float4 ps_line (float2 uv : TEXCOORD0) : COLOR
    return saturate (retval + max (0.0, 0.5 - d).xxxx);
 }
 
-float4 ps_halve_line (float2 uv : TEXCOORD1) : COLOR
+float4 ps_halve_line (float2 uv : TEXCOORD2) : COLOR
 {
    // This shader takes the horizontal line created in ps_line() and rotates
    // it through 90 degrees.  It then bisects it, discarding the lower half.
@@ -297,12 +286,12 @@ float4 ps_halve_line (float2 uv : TEXCOORD1) : COLOR
 
    xy += CENTRE;
 
-   // Using fn_tex2D() returns the shader contents only if xy is legal
+   // Using GetPixel() returns the shader contents only if xy is legal
 
-   return fn_tex2D (s_Points_1, xy);
+   return GetPixel (s_Points_1, xy);
 }
 
-float4 ps_star_4 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_star_4 (float2 uv : TEXCOORD2) : COLOR
 {
    // This takes the horizontal line created in ps_line() and rotates it through
    // 90 degrees.  It then adds it to the original to create a four pointed star.
@@ -314,14 +303,14 @@ float4 ps_star_4 (float2 uv : TEXCOORD1) : COLOR
    // Recover the original horizontal line and a copy rotated through 90 degrees
 
    float4 retval = tex2D (s_Points_1, uv);
-   float4 overlay = fn_tex2D (s_Points_1, xy);
+   float4 overlay = GetPixel (s_Points_1, xy);
 
    // Return the overlaid pair of lines to give a four armed star
 
    return max (retval, overlay);
 }
 
-float4 ps_star_5 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_star_5 (float2 uv : TEXCOORD2) : COLOR
 {
    // This takes the vertical half line created in ps_halve_line() and rotates it
    // through plus and minus 72 degrees, then plus and minus 144 degrees.  These
@@ -342,8 +331,8 @@ float4 ps_star_5 (float2 uv : TEXCOORD1) : COLOR
    // Recover the vertical half line and two copies rotated through plus and minus 72 degrees
 
    float4 retval = tex2D (s_Points_2, uv);
-   float4 ovrly1 = fn_tex2D (s_Points_2, xy);
-   float4 ovrly2 = fn_tex2D (s_Points_2, xy1);
+   float4 ovrly1 = GetPixel (s_Points_2, xy);
+   float4 ovrly2 = GetPixel (s_Points_2, xy1);
 
    // Combine them to create three points of a five armed star.
 
@@ -354,15 +343,15 @@ float4 ps_star_5 (float2 uv : TEXCOORD1) : COLOR
    xy  = xy3 + xy4.yx;
    xy1 = xy3 - xy4.yx;
 
-   ovrly1 = fn_tex2D (s_Points_2, xy);
-   ovrly2 = fn_tex2D (s_Points_2, xy1);
+   ovrly1 = GetPixel (s_Points_2, xy);
+   ovrly2 = GetPixel (s_Points_2, xy1);
 
    // Combine the two to create the final five armed star.
 
    return max (max (retval, ovrly1), ovrly2);
 }
 
-float4 ps_star_6 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_star_6 (float2 uv : TEXCOORD2) : COLOR
 {
    // This takes the horizontal line created in ps_line() and rotates it through
    // plus and minus 60 degrees.  It then uses them to create a six pointed star.
@@ -379,13 +368,13 @@ float4 ps_star_6 (float2 uv : TEXCOORD1) : COLOR
    xy1 -= xy2.yx;
 
    float4 retval = tex2D (s_Points_1, uv);
-   float4 ovrly1 = fn_tex2D (s_Points_1, xy);
-   float4 ovrly2 = fn_tex2D (s_Points_1, xy1);
+   float4 ovrly1 = GetPixel (s_Points_1, xy);
+   float4 ovrly2 = GetPixel (s_Points_1, xy1);
 
    return max (max (retval, ovrly1), ovrly2);
 }
 
-float4 ps_star_7 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_star_7 (float2 uv : TEXCOORD2) : COLOR
 {
    // This takes the vertical half line created in ps_halve_line() and rotates it
    // through plus and minus 51 and 103 degrees, then plus and minus 154 degrees.
@@ -405,28 +394,28 @@ float4 ps_star_7 (float2 uv : TEXCOORD1) : COLOR
    xy1 = xy1 - xy2.yx;
 
    float4 retval = tex2D (s_Points_2, uv);
-   float4 ovrly1 = fn_tex2D (s_Points_2, xy);
-   float4 ovrly2 = fn_tex2D (s_Points_2, xy1);
+   float4 ovrly1 = GetPixel (s_Points_2, xy);
+   float4 ovrly2 = GetPixel (s_Points_2, xy1);
 
    retval = max (max (retval, ovrly1), ovrly2);
 
    xy  = xy3 + xy4.yx;
    xy1 = xy3 - xy4.yx;
 
-   ovrly1 = fn_tex2D (s_Points_2, xy);
-   ovrly2 = fn_tex2D (s_Points_2, xy1);
+   ovrly1 = GetPixel (s_Points_2, xy);
+   ovrly2 = GetPixel (s_Points_2, xy1);
    retval = max (max (retval, ovrly1), ovrly2);
 
    xy  = xy5 + xy6.yx;
    xy1 = xy5 - xy6.yx;
 
-   ovrly1 = fn_tex2D (s_Points_2, xy);
-   ovrly2 = fn_tex2D (s_Points_2, xy1);
+   ovrly1 = GetPixel (s_Points_2, xy);
+   ovrly2 = GetPixel (s_Points_2, xy1);
 
    return max (max (retval, ovrly1), ovrly2);
 }
 
-float4 ps_star_8 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_star_8 (float2 uv : TEXCOORD2) : COLOR
 {
    // This takes the four point star created in ps_star_4() and rotates it through
    // 45 degrees.  It then adds it to the original to create an eight pointed star.
@@ -441,14 +430,14 @@ float4 ps_star_8 (float2 uv : TEXCOORD1) : COLOR
    // Recover the four point star and a copy rotated through 45 degrees
 
    float4 retval = tex2D (s_Points_2, uv);
-   float4 overlay = fn_tex2D (s_Points_2, xy);
+   float4 overlay = GetPixel (s_Points_2, xy);
 
    // Return the eight pointed star
 
    return max (retval, overlay);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
    // Calculate the coordinates for the rotated and/or repositioned star
 
@@ -484,17 +473,17 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // Recover the input video and the star, using our blanking function for the star
 
-   float4 Star = fn_tex2D (s_Glint, xy);
+   float4 Star = GetPixel (s_Glint, xy);
    float4 Bgnd = tex2D (s_Input, uv);
 
-   // Now get the first mini star from the star alpha using fn_xtra()
+   // Now get the first mini star from the star alpha using GetAlpha()
 
-   float xtra = fn_xtra (s_Glint, xy1);
+   float xtra = GetAlpha (s_Glint, xy1);
 
    // Get the other two and combine them with the main star as a luminance value
 
-   xtra = max (xtra, fn_xtra (s_Glint, xy2));
-   xtra = max (xtra, fn_xtra (s_Glint, xy3));
+   xtra = max (xtra, GetAlpha (s_Glint, xy2));
+   xtra = max (xtra, GetAlpha (s_Glint, xy3));
    xtra = max ((xtra * 4.0) - 2.0, 0.0) * 0.4;
    Star = max (Star, xtra.xxxx);
 
@@ -530,82 +519,44 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique SimpleStar_4
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Points_1;"; >
-   { PixelShader = compile PROFILE ps_line (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glint;"; >
-   { PixelShader = compile PROFILE ps_star_4 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
+   pass P_3 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_4)
+   pass P_4 ExecuteShader (ps_main)
 }
  		 	   		  
 technique SimpleStar_5
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Points_1;"; >
-   { PixelShader = compile PROFILE ps_line (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Points_2;"; >
-   { PixelShader = compile PROFILE ps_halve_line (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Glint;"; >
-   { PixelShader = compile PROFILE ps_star_5 (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
+   pass P_3 < string Script = "RenderColorTarget0 = Points_2;"; > ExecuteShader (ps_halve_line)
+   pass P_4 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_5)
+   pass P_5 ExecuteShader (ps_main)
 }
 
 technique SimpleStar_6
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Points_1;"; >
-   { PixelShader = compile PROFILE ps_line (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Glint;"; >
-   { PixelShader = compile PROFILE ps_star_6 (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
+   pass P_3 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_6)
+   pass P_4 ExecuteShader (ps_main)
 }
 
 technique SimpleStar_7
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Points_1;"; >
-   { PixelShader = compile PROFILE ps_line (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Points_2;"; >
-   { PixelShader = compile PROFILE ps_halve_line (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Glint;"; >
-   { PixelShader = compile PROFILE ps_star_7 (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
+   pass P_3 < string Script = "RenderColorTarget0 = Points_2;"; > ExecuteShader (ps_halve_line)
+   pass P_4 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_7)
+   pass P_5 ExecuteShader (ps_main)
 }
 
 technique SimpleStar_8
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Points_1;"; >
-   { PixelShader = compile PROFILE ps_line (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = Points_2;"; >
-   { PixelShader = compile PROFILE ps_star_4 (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = Glint;"; >
-   { PixelShader = compile PROFILE ps_star_8 (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
+   pass P_3 < string Script = "RenderColorTarget0 = Points_2;"; > ExecuteShader (ps_star_4)
+   pass P_4 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_8)
+   pass P_5 ExecuteShader (ps_main)
 }
+

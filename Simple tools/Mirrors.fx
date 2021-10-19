@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-19
 // @Author jwrl
-// @Created 2020-05-08
+// @Created 2021-10-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/Mirrors_640.png
 
 /**
@@ -21,7 +21,7 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
+// Updated 2021-10-19 jwrl.
 // Added CanSize switch for LW 2021 support.
 //-----------------------------------------------------------------------------------------//
 
@@ -36,28 +36,59 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY  0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_Input);
 
-texture Img : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
-
-sampler s_Image = sampler_state
-{
-   Texture   = <Img>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Img, s_Image);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -106,37 +137,22 @@ float PosY
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY  0.0.xxxx
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler S, float2 s)
-{
-   return (s.x < 0.0) || (s.y < 0.0) || (s.x > 1.0) || (s.y > 1.0) ? EMPTY : tex2D (S, s);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_scale (float2 uv : TEXCOORD1) : COLOR
 {
-   return fn_tex2D (s_Input, (uv - float2 (PosX, 1.0 - PosY)) / max (0.25, Scale) + 0.5.xx);
+   return GetPixel (s_Input, (uv - float2 (PosX, 1.0 - PosY)) / max (0.25, Scale) + 0.5.xx);
 }
 
-float4 ps_main_H (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_H (float2 uv : TEXCOORD2) : COLOR
 {
-   return tex2D (s_Image, uv - float2 (Centre, 0.0));
+   return GetPixel (s_Image, abs (uv - float2 (Centre, 0.0)));
 }
 
-float4 ps_main_V (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main_V (float2 uv : TEXCOORD2) : COLOR
 {
-   return tex2D (s_Image, uv - float2 (0.0, Centre));
+   return GetPixel (s_Image, abs (uv - float2 (0.0, Centre)));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -145,20 +161,13 @@ float4 ps_main_V (float2 uv : TEXCOORD1) : COLOR
 
 technique Mirrors_H
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main_H (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale)
+   pass P_2 ExecuteShader (ps_main_H)
 }
 
 technique Mirrors_V
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main_V (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale)
+   pass P_2 ExecuteShader (ps_main_V)
 }
+

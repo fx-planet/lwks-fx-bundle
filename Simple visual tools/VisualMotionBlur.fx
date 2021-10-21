@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-21
 // @Author jwrl
-// @Created 2020-07-09
+// @Created 2021-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/VisMotionBlur_640.png
 
 /**
@@ -15,12 +15,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-07-10 jwrl.
-// Corrected cross-platform discrepancy in float/float2 calculation in distance().
-// Fully commented the effect (finally!!!)
+// Rewrite 2021-10-21 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -34,19 +30,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define XY      1.0.xx
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-sampler s_Input = sampler_state {
-   Texture   = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -76,42 +118,17 @@ float Blur_Y
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Lightworks version must be 14.5 or better
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define EMPTY   0.0.xxxx
-#define XY      1.0.xx
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   // This in conjunction with Mirror addressing guarantees that edge pixels repeat.
-   // This is necessary because Mirror addressing alone can result in wrap around.
-   // Clamp/ClampToEdge UV addressing can create unpredictable edge artefacts too.
-
-   return tex2D (s, saturate (uv));
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd = tex2D (s_Input, uv);
+   return Overflow (uv) ? BLACK : tex2D (s_RawInp, uv);
+}
+
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
+{
+   float4 Fgnd = GetPixel (s_Input, uv);
 
    // Centre the cursor X-Y coordiantes around zero.
 
@@ -137,7 +154,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    for (int i = 0; i < 60; i++) {
       mix -= 0.0005464481;
       xy1 += xy0;
-      Blur += fn_tex2D (s_Input, xy1) * mix;
+      Blur += GetPixel (s_Input, xy1) * mix;
    }
 
    // Finally mix the blur back into the original foreground video.
@@ -151,6 +168,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique VisualMotionBlur
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

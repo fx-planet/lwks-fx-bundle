@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-21
 // @Author jwrl
-// @Created 2020-07-05
+// @Created 2021-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/VisualQuad_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Visualquadsettings.mp4
 
@@ -38,13 +38,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 2020-07-08 jwrl.
-// Placed the border settings immediately under the opacity settings.  This was done to
-// give the channel settings the lowest priority in the UI.
-// Commented the source code.
+// Rewrite 2021-10-21 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -58,26 +53,71 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture A;
-texture B;
-texture C;
-texture D;
+DefineInput (A, s_RawA);
+DefineInput (B, s_RawB);
+DefineInput (C, s_RawC);
+DefineInput (D, s_RawD);
 
-texture X;
+DefineInput (X, s_RawBg);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
+DefineTarget (RawA, s_Input_A);
+DefineTarget (RawB, s_Input_B);
+DefineTarget (RawC, s_Input_C);
+DefineTarget (RawD, s_Input_D);
 
-sampler s_Input_A = sampler_state { Texture = <A>; };
-sampler s_Input_B = sampler_state { Texture = <B>; };
-sampler s_Input_C = sampler_state { Texture = <C>; };
-sampler s_Input_D = sampler_state { Texture = <D>; };
-
-sampler s_Background = sampler_state { Texture = <X>; };
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -480,7 +520,14 @@ float4 fn_DVE (sampler s, float2 uv, float2 z, float2 p, float2 u, float2 l, flo
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initA (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawA, uv); }
+float4 ps_initB (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawB, uv); }
+float4 ps_initC (float2 uv : TEXCOORD3) : COLOR { return GetPixel (s_RawC, uv); }
+float4 ps_initD (float2 uv : TEXCOORD4) : COLOR { return GetPixel (s_RawD, uv); }
+
+float4 ps_initBg (float2 uv : TEXCOORD5) : COLOR { return BdrPixel (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD6) : COLOR
 {
    // The master size setting is determined from the X position of the selected input
 
@@ -547,6 +594,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique VisualQuadSplit
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = RawA;"; > ExecuteShader (ps_initA)
+   pass P_2 < string Script = "RenderColorTarget0 = RawB;"; > ExecuteShader (ps_initB)
+   pass P_3 < string Script = "RenderColorTarget0 = RawC;"; > ExecuteShader (ps_initC)
+   pass P_4 < string Script = "RenderColorTarget0 = RawD;"; > ExecuteShader (ps_initD)
+   pass P_5 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_6 ExecuteShader (ps_main)
 }
+

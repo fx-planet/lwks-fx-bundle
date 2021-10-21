@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-14
+// @Released 2021-10-21
 // @Author gr00by
 // @OriginalAuthor LWKS Software Ltd
 // @Created 2016-11-26
@@ -18,27 +18,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 8 January 2020 jwrl.
-// Changed subcategory (again)!
-// Changed the markup text to match the on-line description.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Changed name from vicrop.fx to VisualCrop.fx.
-// Formatted the descriptive block so that it can automatically be read.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modifications for version 14 by jwrl 11 February 2017.
-// Category changed and subcategory added.
-//
-// Bug fix by LW user jwrl 13 July 2017
-// This effect didn't work as expected on Linux/Mac platforms.
+// Update 2021-10-21 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -51,7 +32,62 @@ int _LwksEffectInfo
    bool CanSize       = true;
 > = 0;
 
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
 float _OutputAspectRatio;
+
+float _FgNormWidth = 1.0;
+float _FgWidth  = 10.0;
+float _FgHeight = 10.0;
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
+
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -61,95 +97,69 @@ float CropLeft
 <
    string Description = "Top-Left";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 float CropTop
 <
    string Description = "Top-Left";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 1;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
 
 float CropRight
 <
    string Description = "Bottom-Right";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 1;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
 
 float CropBottom
 <
    string Description = "Bottom-Right";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-texture Fg;
-texture Bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgSampler = sampler_state
-{
-   Texture = <Fg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgSampler = sampler_state
-{
-   Texture = <Bg>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-float _FgNormWidth = 1.0;
-float _FgWidth  = 10.0;
-float _FgHeight = 10.0;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.0;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main( float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2 ) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return BdrPixel (s_RawBg, uv); }
+
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
-   float croppedL      = CropLeft;
-   float croppedT      = 1.0-CropTop;
-   float croppedR      = CropRight;
-   float croppedB      = 1.0-CropBottom;
+   float croppedL = CropLeft;
+   float croppedT = 1.0 - CropTop;
+   float croppedR = CropRight;
+   float croppedB = 1.0 - CropBottom;
 
-   if ((xy1.x < croppedL) ||  (xy1.x > croppedR) || (xy1.y < croppedT) || (xy1.y > croppedB)) return tex2D( BgSampler, xy2 );
+   float4 Bgnd = tex2D (s_Background, uv);
 
-   float2 texAddressAdjust = float2( 0.5 / _FgWidth, 0.5 / _FgHeight );
-   float2 fgPos = xy1;
+   if ((uv.x < croppedL) || (uv.x > croppedR) || (uv.y < croppedT) || (uv.y > croppedB))
+      return Bgnd;
 
-   // Remember that the texCoords for the FG may not be 0 -> 1
+   // Remember that the texCoords for Fg may overflow 0 -> 1 so we may have
+   // transparency in our legally addressed s_Foreground.
 
-   fgPos.x *= _FgNormWidth;
-   fgPos += texAddressAdjust;
+   float4 Fgnd = tex2D (s_Foreground, uv);
 
-   return tex2D( FgSampler, fgPos );
+   return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique DVE { pass Single_Pass { PixelShader = compile PROFILE ps_main(); } }
+technique VisualCrop
+{
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_main)
+}
+

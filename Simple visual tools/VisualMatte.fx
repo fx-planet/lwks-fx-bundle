@@ -1,7 +1,7 @@
 // @Maintainer jwrl
 // @Released 2020-11-14
 // @Author jwrl
-// @Created 2020-07-15
+// @Created 2021-10-21
 // @see https://www.lwks.com/media/kunena/attachments/6375/VisualMatte_640.png
 
 /**
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Updated 2020-11-14 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-10-21 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -30,16 +30,49 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define inRange(XY,MIN,MAX) (all (XY >= MIN) && all (XY <= MAX))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state { Texture   = <Inp>; };
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -57,49 +90,54 @@ float CropLeft
    string Group = "Crop";
    string Description = "Top left";
    string Flags = "SpecifiesPointX|DisplayAsPercentage";
-   float MinVal = 0.1;
-   float MaxVal = 0.9;
-> = 0.1;
+   float MinVal = 0.01;
+   float MaxVal = 0.99;
+> = 0.01;
 
 float CropTop
 <
    string Group = "Crop";
    string Description = "Top left";
    string Flags = "SpecifiesPointY|DisplayAsPercentage";
-   float MinVal = 0.1;
-   float MaxVal = 0.9;
-> = 0.9;
+   float MinVal = 0.01;
+   float MaxVal = 0.99;
+> = 0.99;
 
 float CropRight
 <
    string Group = "Crop";
    string Description = "Bottom right";
    string Flags = "SpecifiesPointX|DisplayAsPercentage";
-   float MinVal = 0.1;
-   float MaxVal = 0.9;
-> = 0.9;
+   float MinVal = 0.01;
+   float MaxVal = 0.99;
+> = 0.99;
 
 float CropBottom
 <
    string Group = "Crop";
    string Description = "Bottom right";
    string Flags = "SpecifiesPointY|DisplayAsPercentage";
-   float MinVal = 0.1;
-   float MaxVal = 0.9;
-> = 0.1;
+   float MinVal = 0.01;
+   float MaxVal = 0.99;
+> = 0.01;
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 xy1 = saturate (float2 (CropLeft - 0.1, 0.9 - CropTop) * 1.25);
-   float2 xy2 = saturate (float2 (CropRight - 0.1, 0.9 - CropBottom) * 1.25);
+   return Overflow (uv) ? Colour : tex2D (s_RawInp, uv);
+}
 
-   if ((uv.x < xy1.x) || (uv.x > xy2.x) || (uv.y < xy1.y) || (uv.y > xy2.y)) return Colour;
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
+{
+   float2 xy1 = saturate (float2 (CropLeft - 0.01, 0.99 - CropTop) * 1.02041);
+   float2 xy2 = saturate (float2 (CropRight - 0.01, 0.99 - CropBottom) * 1.02041);
 
-   return tex2D (s_Input, uv);
+   if (inRange (uv, xy1, xy2)) return tex2D (s_Input, uv);
+
+   return Colour;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -108,6 +146,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique VisualMatte
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main)
 }
+

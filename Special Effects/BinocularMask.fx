@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-22
 // @Author jwrl
-// @Created 2020-08-24
+// @Created 2021-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/BinocularMask_640.png
 
 /**
@@ -15,8 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-10-22 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -30,28 +30,76 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+#define WHITE   1.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define FEATHER 0.05
+#define CIRCLE  0.25
+#define RADIUS  1.6666666667
+
+#define CENTRE  0.5.xx
+
+#define SIZE    3.25
+
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
+
+float _OutputAspectRatio; 
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-texture Msk : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
-
-sampler s_Mask = sampler_state
-{
-   Texture   = <Msk>;
-   AddressU  = Border;
-   AddressV  = Border;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
+DefineTarget (Msk, s_Mask);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -86,28 +134,10 @@ float Fringing
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define FEATHER 0.05
-#define CIRCLE  0.25
-#define RADIUS  1.6666666667
-
-#define CENTRE  0.5.xx
-
-#define SIZE    3.25
-
-#define PI      3.1415926536
-#define HALF_PI 1.5707963268
-
-#define WHITE   1.0.xxxx
-#define EMPTY   0.0.xxxx
-
-float _OutputAspectRatio; 
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return BdrPixel (s_RawInp, uv); }
 
 float4 ps_circle (float2 uv : TEXCOORD0) : COLOR
 {
@@ -122,7 +152,7 @@ float4 ps_circle (float2 uv : TEXCOORD0) : COLOR
    return lerp (WHITE, EMPTY, saturate ((radius - edge) / soft));
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
    float2 xy1 = (uv - CENTRE) / (Size * SIZE);
    float2 xy2 = float2 (0.5 - uv.x, uv.y - 0.5) / (Size * SIZE);
@@ -130,8 +160,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    xy1 += CENTRE;
    xy2 += CENTRE;
 
-   float Mgrn = 1.0 - tex2D (s_Mask, xy1).x;
-   float Mred = 1.0 - tex2D (s_Mask, xy2).x;
+   float Mgrn = 1.0 - GetPixel (s_Mask, xy1).x;
+   float Mred = 1.0 - GetPixel (s_Mask, xy2).x;
    float Mask = 1.0 - (Mgrn * Mred);
 
    Mask = lerp (1.0 - min (Mgrn, Mred), Mask, saturate (Offset * 4.0));
@@ -140,7 +170,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    Mred = lerp (Mask, Mgrn, Fringing);
    Mgrn = 1.0 - cos (Mgrn * HALF_PI);
 
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    retval.r  *= Mred;
    retval.g  *= lerp (Mask, Mgrn, Fringing);
@@ -155,10 +185,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique BinocularMask
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Msk;"; >
-   { PixelShader = compile PROFILE ps_circle (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Msk;"; > ExecuteShader (ps_circle)
+   pass P_3 ExecuteShader (ps_main)
 }
+

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-22
 // @Author jwrl
-// @Created 2017-12-29
+// @Created 2021-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/SpotlightEffect_640.png
 
 /**
@@ -21,22 +21,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
-//
-// Modified 2018-07-07 jwrl:
-// Blur is now resolution independent.
-//
-// Bug fix and modification 2018-04-29 jwrl:
-// Corrected a bug which caused the angular adjustment to be always centred on the frame
-// centre, regardless of the spot position.  In the process the subcategory was changed
-// to "Matte" and the filename from SpotEffect.fx to SpotlightEffect.fx.
+// Rewrite 2021-10-22 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,41 +36,77 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define MIN_EXP  0.00000001
+#define LUMAFIX  float3(0.299,0.587,0.114)
+
+#define ASPECT_RATIO  0.2
+#define FEATHER_SCALE 0.05
+#define RADIUS_SCALE  1.6666666667
+#define FOCUS_SCALE   0.002
+
+#define PI            3.1415926536
+#define ROTATE        0.0174532925
+
+float _OutputAspectRatio;
+
+float _Pascal [] = { 3432.0 / 16384.0, 3003.0 / 16384.0, 2002.0 / 16384.0, 1001.0 / 16384.0,
+                     364.0 / 16384.0, 91.0 / 16384.0, 14.0 / 16384.0, 1.0 / 16384.0 };
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
+DefineInput (Fg, s_Foreground);
 
-texture FgdProc : RenderColorTarget;
-texture BgdProc : RenderColorTarget;
-texture BgdBlur : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_FgdProc    = sampler_state { Texture = <FgdProc>; };
-
-sampler s_BgdProc = sampler_state
-{
-   Texture   = <BgdProc>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_BgdBlur = sampler_state
-{
-   Texture   = <BgdBlur>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FgdProc, s_FgdProc);
+DefineTarget (BgdProc, s_BgdProc);
+DefineTarget (BgdBlur, s_BgdBlur);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -227,32 +249,12 @@ float4 BgdColour
 > = { 0.0, 0.5, 1.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define MIN_EXP  0.00000001
-#define LUMAFIX  float3(0.299,0.587,0.114)
-
-#define ASPECT_RATIO  0.2
-#define FEATHER_SCALE 0.05
-#define RADIUS_SCALE  1.6666666667
-#define FOCUS_SCALE   0.002
-
-#define PI            3.1415926536
-#define ROTATE        0.0174532925
-
-float _OutputAspectRatio;
-
-float _Pascal [] = { 3432.0 / 16384.0, 3003.0 / 16384.0, 2002.0 / 16384.0, 1001.0 / 16384.0,
-                     364.0 / 16384.0, 91.0 / 16384.0, 14.0 / 16384.0, 1.0 / 16384.0 };
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_fgd (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Foreground, uv);
+   float4 retval = GetPixel (s_Foreground, uv);
 
    float alpha = retval.a;
    float gamma = saturate ((1.0 - FgdExposure) * 0.5);
@@ -290,7 +292,7 @@ float4 ps_fgd (float2 uv : TEXCOORD1) : COLOR
 
 float4 ps_bgd (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Foreground, uv);
+   float4 retval = GetPixel (s_Foreground, uv);
 
    float alpha = retval.a;
    float gamma = saturate ((1.0 - BgdExposure) * 0.5);
@@ -318,7 +320,7 @@ float4 ps_bgd (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_bgd_blur (float2 uv : TEXCOORD1) : COLOR
+float4 ps_bgd_blur (float2 uv : TEXCOORD2) : COLOR
 {
    // This is a simple box blur using Pascal's triangle to calculate the blur
 
@@ -338,7 +340,7 @@ float4 ps_bgd_blur (float2 uv : TEXCOORD1) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
    float4 retval = tex2D (s_BgdBlur, uv) * _Pascal [0];
 
@@ -393,18 +395,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique SpotEffect
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = FgdProc;"; > 
-   { PixelShader = compile PROFILE ps_fgd (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = BgdProc;"; > 
-   { PixelShader = compile PROFILE ps_bgd (); }
-
-   pass P_3
-   < string Script = "RenderColorTarget0 = BgdBlur;"; > 
-   { PixelShader = compile PROFILE ps_bgd_blur (); }
-
-   pass P_4
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FgdProc;"; > ExecuteShader (ps_fgd)
+   pass P_2 < string Script = "RenderColorTarget0 = BgdProc;"; > ExecuteShader (ps_bgd)
+   pass P_3 < string Script = "RenderColorTarget0 = BgdBlur;"; > ExecuteShader (ps_bgd_blur)
+   pass P_4 ExecuteShader (ps_main)
 }
+

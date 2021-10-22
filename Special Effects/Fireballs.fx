@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-22
 // @Author jwrl
 // @Author Unknown
-// @Created 2020-06-28
+// @Created 2021-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay.mp4
 
@@ -22,7 +22,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Fireballs.fx
 //
-// Author's note 2020-06-28:
+// jwrl's note:
 // This effect is based on a matchbook fireball effect called CPGP_Fireball.glsl found
 // at https://logik-matchbook.org and designed for Autodesk applications.  I don't know
 // the original author to credit them properly but I am very grateful to them.
@@ -34,15 +34,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-09-29
-// Improved alpha channel generation.
-// Isolated non-input from input/overlay version.
-//
-// Built jwrl 2020-06-28:
-// Combined two earlier effects, "Fireball" and "Fireball overlay".
+// Rewrite 2021-10-22 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -56,16 +49,67 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH   // Only available in version 14.5 and up
+Bad_LW_version    // Forces a compiler error if the Lightworks version is bad.
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define MINIMUM 0.00001
+#define TWO_PI  6.2831853072
+
+float _Progress;
+float _Length;
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_RawInp);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -142,26 +186,6 @@ float PosY
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH   // Only available in version 14.5 and up
-Bad_LW_version    // Forces a compiler error if the Lightworks version is bad.
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define MINIMUM 0.00001
-#define TWO_PI  6.2831853072
-
-float _Progress;
-float _Length;
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
@@ -225,7 +249,9 @@ float4 fn_hueShift (float4 rgb)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 ps_main_0 (float2 uv : TEXCOORD2) : COLOR
 {
    float4 Bgnd = tex2D (s_Input, uv);
 
@@ -249,17 +275,14 @@ float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
       power += 16.0;
    }
 
-   red = max (red, 0.0);
+   float4 Fgnd = max (red, 0.0).xxxx;
 
-   float blue  = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
-   float green = red * red;
-
-   blue = min (blue, green * red * 0.15);
-
-   float4 Fgnd = float4 (red, green * 0.4, blue, green);
+   Fgnd.g *= Fgnd.g;
+   Fgnd.b  = min (1.0 - (max (1.0 - Intensity, 0.0) * 0.025), Fgnd.r * Fgnd.g * 0.15);
+   Fgnd.a  = saturate (Fgnd.r + Fgnd.g + Fgnd.b);
+   Fgnd.g *= 0.4;
 
    Fgnd = fn_hueShift (saturate (Fgnd * Intensity));
-   Fgnd.a = saturate (red + green + blue) * Amount;
 
    return (InvertAlpha) ? lerp (Fgnd, Bgnd, Fgnd.a) : lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -286,14 +309,12 @@ float4 ps_main_1 (float2 uv : TEXCOORD0) : COLOR
       power += 16.0;
    }
 
-   red = max (red, 0.0);
+   float4 Fgnd = max (red, 0.0).xxxx;
 
-   float blue = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
-   float green = red * red;
-
-   blue = min (blue, green * red * 0.15);
-
-   float4 Fgnd = float4 (red, green * 0.4, blue, saturate (red + green + blue));
+   Fgnd.g *= Fgnd.g;
+   Fgnd.b  = min (1.0 - (max (1.0 - Intensity, 0.0) * 0.025), Fgnd.r * Fgnd.g * 0.15);
+   Fgnd.a  = saturate (Fgnd.r + Fgnd.g + Fgnd.b);
+   Fgnd.g *= 0.4;
 
    return fn_hueShift (saturate (Fgnd * Intensity));
 }
@@ -304,12 +325,12 @@ float4 ps_main_1 (float2 uv : TEXCOORD0) : COLOR
 
 technique Fireballs_0
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_0 (); }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (ps_main_0)
 }
 
 technique Fireballs_1
 {
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_1 (); }
+   pass P_1 ExecuteShader (ps_main_1)
 }
+

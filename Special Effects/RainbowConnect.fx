@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-22
 // @Author jwrl
-// @Created 2018-09-04
+// @Created 2021-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/RainbowConnectionA_640.png
 
 /**
@@ -15,14 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
+// Rewrite 2021-10-22 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -36,20 +30,45 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define SQRT_3 1.7320508076
+#define TWO_PI 6.2831853072
+
+#define H_MIN  0.3333333333
+#define H_MAX  0.6666666667
+
+#define R_LUMA 0.2989
+#define G_LUMA 0.5866
+#define B_LUMA 0.1145
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state
-{
-   Texture =   <Inp>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -103,26 +122,12 @@ float Softness
 > = 0.5;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define SQRT_3 1.7320508076
-#define TWO_PI 6.2831853072
-
-#define H_MIN  0.3333333333
-#define H_MAX  0.6666666667
-
-#define R_LUMA 0.2989
-#define G_LUMA 0.5866
-#define B_LUMA 0.1145
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 Fgnd   = tex2D (s_Input, uv);
+   float4 Fgnd   = GetPixel (s_Input, uv);
    float4 premix = float4 (1.0.xxx - Fgnd.rgb, Fgnd.a);
    float4 nonAdd = max (Fgnd * min (1.0, 2.0 * (1.0 - Amount)), premix * min (1.0, 2.0 * Amount));
 
@@ -161,8 +166,5 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Rainbow_Connection
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
-}
+technique Rainbow_Connection { pass P_1 ExecuteShader (ps_main) }
+

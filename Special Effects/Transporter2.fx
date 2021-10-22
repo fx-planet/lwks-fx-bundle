@@ -1,7 +1,7 @@
 // @maintainer jwrl
-// @released 2020-11-15
+// @released 2021-10-22
 // @author jwrl
-// @created 2018-07-09
+// @created 2021-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/TransporterA_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/Transporter.mp4
 
@@ -26,14 +26,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 5 December 2018 jwrl.
-// Changed subcategory.
+// Rewrite 2021-10-22 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,30 +41,73 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define PI       3.1415926536
+
+#define S_SCALE  0.000868
+#define FADER    0.9333333333
+#define FADE_DEC 0.0666666667
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-texture Sparkles : RenderColorTarget;
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state { Texture = <Fg>; };
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_Sparkles = sampler_state
-{
-   Texture   = <Sparkles>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Sparkles, s_Sparkles);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -120,7 +157,7 @@ int KeySetup
 <
    string Group = "Key settings";
    string Description = "Set up key";
-   string Enum = "Use the effect,Show foreground over black,Show key over black";
+   string Enum = "Transition fade in,Transition fade out,Show foreground over black,Show key over black";
 > = 0;
 
 float KeyClip
@@ -176,22 +213,14 @@ float CropBottom
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define PI       3.1415926536
-
-#define S_SCALE  0.000868
-#define FADER    0.9333333333
-#define FADE_DEC 0.0666666667
-
-#define EMPTY    (0.0).xxxx
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+// These first two shaders simply isolate the foreground and background nodes from the
+// resolution.  It does this by mapping all shaders onto the same texture coordinates.
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return BdrPixel (s_RawBg, uv); }
 
 //-----------------------------------------------------------------------------------------//
 // ps_keygen
@@ -203,25 +232,28 @@ float _OutputAspectRatio;
 // effect.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_keygen (float2 uv : TEXCOORD3) : COLOR
 {
-   // Calculate the image cropping.  If the xy1 address falls outside the crop area,
+   // Calculate the image cropping.  If the uv address falls outside the crop area,
    // black with no alpha is returned.
 
    float left = max (0.0, CropLeft);
    float top = max (0.0, 1.0 - CropTop);
    float right = min (1.0, CropRight);
    float bottom = min (1.0, 1.0 - CropBottom);
+   float Amount = KeySetup == 1 ? Transition : 1.0 - Transition;
 
-   if ((xy1.x < left) || (xy1.x > right) || (xy1.y < top) || (xy1.y > bottom)) return EMPTY;
+   Amount = saturate (Amount);
+
+   if ((uv.x < left) || (uv.x > right) || (uv.y < top) || (uv.y > bottom)) return EMPTY;
 
    // Now we generate the key by calculating the difference between foreground and
    // background.  We get the differences of R, G and B independently and use the
    // maximum value so obtained to get the cleanest key possible.  It doesn't have
    // to be fantastic, because it will only be used to gate the sparkle noise.
 
-   float3 Fgd = tex2D (s_Foreground, xy1).rgb;
-   float3 Bgd = tex2D (s_Background, xy2).rgb;
+   float3 Fgd = tex2D (s_Foreground, uv).rgb;
+   float3 Bgd = tex2D (s_Background, uv).rgb;
 
    float kDiff = distance (Bgd.g, Fgd.g);
 
@@ -233,12 +265,12 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    // Produce the noise required for the stars.
 
    float scale = (1.0 - starSize) * 800.0;
-   float seed = Transition;
-   float Y = saturate ((round (xy1.y * scale) / scale) + 0.000123);
+   float seed = Amount;
+   float Y = saturate ((round (uv.y * scale) / scale) + 0.000123);
 
    scale *= _OutputAspectRatio;
 
-   float X = saturate ((round (xy1.x * scale) / scale) + 0.00013);
+   float X = saturate ((round (uv.x * scale) / scale) + 0.00013);
    float rndval = frac (sin ((X * 13.9898) + (Y * 79.233) + seed) * 43758.5453);
 
    rndval = sin (X) + cos (Y) + rndval * 1000.0;
@@ -247,7 +279,7 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
    // control the star density.
 
    float amt = frac (fmod (rndval, 17.0) * fmod (rndval, 94.0));
-   float alpha = abs (cos (Transition * PI));
+   float alpha = abs (cos (Amount * PI));
 
    amt = smoothstep (0.975 - (starStrength * 0.375), 1.0, amt);
    retval.z *= (amt <= alpha) ? 0.0 : amt;
@@ -262,11 +294,11 @@ float4 ps_keygen (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 // sparkle transition as we go.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float fader = FADER;
 
-   float2 key = tex2D (s_Sparkles, uv1).zy;
+   float2 key = tex2D (s_Sparkles, uv).zy;
    float2 xy1 = float2 (starLength * S_SCALE, 0.0);
    float2 xy2 = xy1.yx * _OutputAspectRatio;
    float2 xy3 = xy1;
@@ -276,10 +308,10 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    // points of the stars fall will overlap the image and won't be cut off.
 
    for (int i = 0; i <= 15; i++) {
-      key.x += tex2D (s_Sparkles, uv1 + xy1).z * fader;
-      key.x += tex2D (s_Sparkles, uv1 - xy1).z * fader;
-      key.x += tex2D (s_Sparkles, uv1 + xy2).z * fader;
-      key.x += tex2D (s_Sparkles, uv1 - xy2).z * fader;
+      key.x += tex2D (s_Sparkles, uv + xy1).z * fader;
+      key.x += tex2D (s_Sparkles, uv - xy1).z * fader;
+      key.x += tex2D (s_Sparkles, uv + xy2).z * fader;
+      key.x += tex2D (s_Sparkles, uv - xy2).z * fader;
 
       xy1 += xy3;
       xy2 += xy4;
@@ -288,12 +320,12 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
    // Recover the foreground, and if required, use it to generate the key setup display.
 
-   float4 Fgd = tex2D (s_Foreground, uv1);
+   float4 Fgd = tex2D (s_Foreground, uv);
 
-   if (KeySetup > 0) {
+   if (KeySetup > 1) {
       float mix = saturate (2.0 - (key.y * Fgd.a * 2.0));
 
-      if (KeySetup == 1) return lerp (Fgd, EMPTY, mix);
+      if (KeySetup == 2) return lerp (Fgd, EMPTY, mix);
 
       return lerp (1.0.xxxx, EMPTY, mix);
    }
@@ -301,9 +333,11 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    // Create a non-linear transition starting at 0.3 and ending at 0.7.  Using
    // the cosine function gives us a smooth start and end to the transition.
 
-   float Amount = (cos (smoothstep (0.3, 0.7, Transition) * PI) * 0.5) + 0.5;
+   float Amount = KeySetup == 1 ? Transition : 1.0 - Transition;
 
-   float4 retval = lerp (tex2D (s_Background, uv2), Fgd, Amount);
+   Amount = (cos (smoothstep (0.3, 0.7, saturate (Amount)) * PI) * 0.5) + 0.5;
+
+   float4 retval = lerp (tex2D (s_Background, uv), Fgd, Amount);
 
    // Key the star colour over the transition.  The stars already vary in
    // density as the transition progresses so no further action is needed.
@@ -317,10 +351,9 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
 technique Transporter2
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Sparkles;"; >
-   { PixelShader = compile PROFILE ps_keygen (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 < string Script = "RenderColorTarget0 = Sparkles;"; > ExecuteShader (ps_keygen)
+   pass P_4 ExecuteShader (ps_main)
 }
+

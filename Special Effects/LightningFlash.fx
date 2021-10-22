@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2019-11-15
+// @Released 2021-10-22
 // @Author jwrl
-// @Created 2019-04-10
+// @Created 2021-10-22
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightningFlash_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/LightningFlash.mp4
 
@@ -20,7 +20,7 @@
  fully function.  Once the flash sequence fade ends it will not affect the image further
  and can be left in place.
 
- NOTE: THIS EFFECT WILL ONLY COMPILE ON VERSIONS OF LIGHTWORKS LATER THAN 14.0.
+ NOTE: THIS EFFECT WILL ONLY COMPILE ON VERSIONS OF LIGHTWORKS LATER THAN 14.5.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -28,8 +28,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Rewrite 2021-10-22 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -43,12 +43,46 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH            // Only available in version 14.5 and up
+Wrong_LW_version           // Forces a compiler error if the Lightworks version is wrong.
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0     // Not really necessary, but a better profile for Windows.
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _LengthFrames;
+float _Progress;
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -80,27 +114,12 @@ float4 ColourCast
 > = { 0.33, 0.67, 1.0, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH            // Only available in version 14.5 and up
-Wrong_LW_version           // Forces a compiler error if the Lightworks version is wrong.
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0     // Not really necessary, but a better profile for Windows.
-#endif
-
-float _LengthFrames;
-float _Progress;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 video = tex2D (s_Input, uv);
+   float4 video = GetPixel (s_Input, uv);
    float4 flash = float4 ((ColourCast.rgb * 0.2) + 0.8.xxx, 1.0);
    float4 ngtve = float4 (flash.rgb - pow ((video.r + video.g + video.b) / 3.0, 1.5).xxx, 1.0);
 
@@ -117,19 +136,11 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float fade = saturate ((frame - cycle) / floor (FadeAmount + 0.5));
 
    return lerp (ngtve, video, fade);
-/*
-   float fade = max (1.0 + (cycle - frame) / floor (FadeAmount + 0.5), 0.0);
-
-   return lerp (video, ngtve, fade);
-*/
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Lightning
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
-}
+technique Lightning { pass P_1 ExecuteShader (ps_main) }
+

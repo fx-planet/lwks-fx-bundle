@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-22
 // @Author khaver
 // @Created 2011-06-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Kaleidoscope_640.png
@@ -13,8 +13,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
+// Update 2021-10-22 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //
 // Modified 27 Dec 2018 by user jwrl:
 // Reformatted the effect description for markup purposes.
@@ -46,69 +46,66 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-texture Tex1 : RenderColorTarget;
-texture Tex2 : RenderColorTarget;
-texture Tex3 : RenderColorTarget;
-texture Tex4 : RenderColorTarget;
+DefineTarget (FixInp, s_Input);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture   = <Tex1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp2 = sampler_state
-{
-   Texture   = <Tex2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp3 = sampler_state
-{
-   Texture   = <Tex3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp4 = sampler_state
-{
-   Texture   = <Tex4>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Tex1, Samp1);
+DefineTarget (Tex2, Samp2);
+DefineTarget (Tex3, Samp3);
+DefineTarget (Tex4, Samp4);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -124,79 +121,58 @@ float ORGX
 <
    string Description = "Pan";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float ORGY
 <
    string Description = "Pan";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
+
 float Zoom
 <
-	string Description = "Zoom";
-   float MinVal = 0.00;
-   float MaxVal = 2.00;
+   string Description = "Zoom";
+   float MinVal = 0.0;
+   float MaxVal = 2.0;
 > = 1.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY    (0.0).xxxx
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main1( float2 uv : TEXCOORD1 ) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
+float4 main1 (float2 uv : TEXCOORD2) : COLOR
 {
-	float2 xy = uv;
-   float2 zoomit = ((xy - 0.5.xx) / Zoom) + 0.5.xx;
-   zoomit.x = zoomit.x + (0.5f-ORGX);
-   zoomit.y = zoomit.y + (ORGY-0.5f);
+   float2 zoomit = ((uv - 0.5.xx) / Zoom) + 0.5.xx;
 
-   float4 color = fn_illegal (zoomit) ? EMPTY : tex2D (InputSampler, zoomit);
+   zoomit += float2 (0.5 - ORGX, ORGY - 0.5);
 
-   if (zoomit.x < 0.0 || zoomit.x > 1.0) color = 0.0.xxxx;
-   if (zoomit.y < 0.0 || zoomit.y > 1.0) color = 0.0.xxxx;
-   return saturate(color);
+   return saturate (GetPixel (s_Input, zoomit));
 }
 
-float4 main2( float2 uv : TEXCOORD1 ) : COLOR
+float4 main2 (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 color = tex2D (Samp1, abs (uv - 0.5.xx));
-   return saturate(color);
+   return saturate (tex2D (Samp1, abs (uv - 0.5.xx)));
 }
 
-float4 main3( float2 uv : TEXCOORD1 ) : COLOR
+float4 main3 (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 color = tex2D (Samp2, abs ((uv * 2.0) - 1.0.xx));
-   return saturate(color);
+   return saturate (tex2D (Samp2, abs (uv + uv - 1.0.xx)));
 }
 
-float4 main4( float2 uv : TEXCOORD1 ) : COLOR
+float4 main4 (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 color = tex2D(Samp3, abs ((uv * 2.0) - 1.0.xx));
-   return saturate(color);
+   return saturate (tex2D (Samp3, abs (uv + uv - 1.0.xx)));
 }
 
-float4 main5( float2 uv : TEXCOORD1 ) : COLOR
+float4 main5 (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 color = tex2D (Samp4, abs ((uv * 2.0) - 1.0.xx));
-   return saturate(color);
+   return saturate (tex2D (Samp4, abs (uv + uv - 1.0.xx)));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -205,102 +181,35 @@ float4 main5( float2 uv : TEXCOORD1 ) : COLOR
 
 technique One
 {
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE main1();
-   }
-   pass Pass2
-   {
-      PixelShader = compile PROFILE main2();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Tex1;"; > ExecuteShader (main1)
+   pass P_3 ExecuteShader (main2)
 }
 
 technique Two
 {
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE main1();
-   }
-   pass Pass2
-   <
-   string Script = "RenderColorTarget0 = Tex2;";
-   >
-   {
-      PixelShader = compile PROFILE main2();
-   }
-   pass Pass3
-   {
-      PixelShader = compile PROFILE main3();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Tex1;"; > ExecuteShader (main1)
+   pass P_3 < string Script = "RenderColorTarget0 = Tex2;"; > ExecuteShader (main2)
+   pass P_4 ExecuteShader (main3)
 }
 
 technique Three
 {
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE main1();
-   }
-   pass Pass2
-   <
-   string Script = "RenderColorTarget0 = Tex2;";
-   >
-   {
-      PixelShader = compile PROFILE main2();
-   }
-   pass Pass3
-   <
-   string Script = "RenderColorTarget0 = Tex3;";
-   >
-   {
-      PixelShader = compile PROFILE main3();
-   }
-   pass Pass4
-   {
-      PixelShader = compile PROFILE main4();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Tex1;"; > ExecuteShader (main1)
+   pass P_3 < string Script = "RenderColorTarget0 = Tex2;"; > ExecuteShader (main2)
+   pass P_4 < string Script = "RenderColorTarget0 = Tex3;"; > ExecuteShader (main3)
+   pass P_5 ExecuteShader (main4)
 }
 
 technique Four
 {
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE main1();
-   }
-   pass Pass2
-   <
-   string Script = "RenderColorTarget0 = Tex2;";
-   >
-   {
-      PixelShader = compile PROFILE main2();
-   }
-   pass Pass3
-   <
-   string Script = "RenderColorTarget0 = Tex3;";
-   >
-   {
-      PixelShader = compile PROFILE main3();
-   }
-   pass Pass4
-   <
-   string Script = "RenderColorTarget0 = Tex4;";
-   >
-   {
-      PixelShader = compile PROFILE main4();
-   }
-   pass Pass5
-   {
-      PixelShader = compile PROFILE main5();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Tex1;"; > ExecuteShader (main1)
+   pass P_3 < string Script = "RenderColorTarget0 = Tex2;"; > ExecuteShader (main2)
+   pass P_4 < string Script = "RenderColorTarget0 = Tex3;"; > ExecuteShader (main3)
+   pass P_5 < string Script = "RenderColorTarget0 = Tex4;"; > ExecuteShader (main4)
+   pass P_6 ExecuteShader (main5)
 }
+

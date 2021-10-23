@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-01-01
+// @Released 2021-10-23
 // @Author jwrl
-// @Created 2021-01-01
+// @Created 2021-09-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_Enhanced_640.png
 
 /**
@@ -24,11 +24,27 @@
  way that they function.  The right and top crops operate from -100% to 0%, to give
  them a more natural feel.  The default for all crops is still 0%.
 
- The final difference is in the way that the drop shadow is produced.  Instead of it
- being derived from the cropped edges of the frame as it is in the Lightworks 2D DVE
- the cropped foreground alpha channel is used.  This means that the drop shadow will
- only appear where it should and not just at the edge of frame, as it does with the
- Lightworks effect.
+ There is also a difference in the way that the drop shadow is produced.  Instead
+ of it being derived from the cropped edges of the frame as it is in the Lightworks
+ 2D DVE the cropped foreground alpha channel is used.  This means that the drop
+ shadow will only appear where it should and not just at the edge of frame, as it
+ does with the Lightworks effect.
+
+ Next, as part of the resolution independence support two further changes have
+ been made when compared to the Lightworks effect.  You may have noticed that if
+ you apply the LW DVE over images with differing aspect ratios that the foreground
+ can change position unpredicatbly.  The situation is even much worse with rotated
+ footage, where changing position vertically moves the image horizontally and vice
+ versa.  This effect corrects those issues.  Additionally it's also now possible
+ to optionally crop the foreground to the boundaries of the background.  This can
+ be extremely useful if you need to maintain DVE overlays inside portrait and
+ letterboxed backgrounds, for example.
+
+ Finally, Z-axis rotation has been added.  Because I don't have access to the
+ widgets that Lightworks uses for rotation I have had to use faders to set that.
+ It is at best a workaround, and has the unfortunate side effect that complete
+ revolutions can't be set as integer values.  If you need that degree of accuracy
+ you must type in the number of revolutions that you need manually.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -36,7 +52,12 @@
 //
 // Version history:
 //
-// Built jwrl 2021-01-01.
+// Modified jwrl 2021-10-23.
+// Added Z-axis rotation to the DVE.
+//
+// Rebuilt jwrl 2021-09-10.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,7 +66,7 @@ int _LwksEffectInfo
    string Description = "2D DVE (enhanced)";
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
-   string Notes       = "An enhanced 2D DVE for the 21st century";
+   string Notes       = "An enhanced 2D DVE for the 21st century with Z-axis rotation.";
    bool CanSize       = true;
 > = 0;
 
@@ -75,60 +96,59 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
  }
 
-#define DeclareTarget( TARGET, TSAMPLE ) \
-                                         \
-   texture TARGET : RenderColorTarget;   \
-                                         \
-   sampler TSAMPLE = sampler_state       \
-   {                                     \
-      Texture   = <TARGET>;              \
-      AddressU  = Mirror;                \
-      AddressV  = Mirror;                \
-      MinFilter = Linear;                \
-      MagFilter = Linear;                \
-      MipFilter = Linear;                \
-   }
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
 
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
 #define BadPos(P, p1, p2) (P < max (0.0, p1)) || (P > min (1.0, 1.0 - p2))
-#define Bad_XY(XY, L, R, T, B)  (BadPos (XY.x, L, R) || BadPos (XY.y, T, B))
+#define CropXY(XY, L, R, T, B)  (BadPos (XY.x, L, -R) || BadPos (XY.y, -T, B))
 
 #define EMPTY 0.0.xxxx
 
-#define GetPixel(SHADER,XY)  (any (XY < 0.0) || any (XY > 1.0) ? EMPTY : tex2D (SHADER, XY))
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
-#define SCALE_RANGE  2.0            // Gives a scale range from 0 to roughly 10x
-#define SCALE_POWER  3.32193
-#define SHADOW_SCALE 0.2            // Carryover from the Lightworks original
+// Definitions used by this shader
+
+#define SCALE_RANGE  2.0            // These two give a scale range from 0 to
+#define SCALE_POWER  3.3219         // roughly 10x
+#define SHADOW_MAX 0.1
 
 #define OUTER_LOOP   8
-#define INNER_LOOP   6
-#define DIVIDE       97
+#define INNER_LOOP   4
+#define DIVIDE       65
 #define RADIUS       0.0005
-#define ANGLE        0.3926990817
+#define ANGLE        0.3927
 
 float _OutputAspectRatio;
-
-float _BgXScale = 1.0;
-float _BgYScale = 1.0;
-float _FgXScale = 1.0;
-float _FgYScale = 1.0;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-DeclareTarget (dve, s_DVE);
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float CentreX
+float Xpos
 <
    string Description = "Position";
    string Flags = "SpecifiesPointX";
@@ -136,7 +156,7 @@ float CentreX
    float MaxVal = 2.0;
 > = 0.5;
 
-float CentreY
+float Ypos
 <
    string Description = "Position";
    string Flags = "SpecifiesPointY";
@@ -219,7 +239,7 @@ float ShadowTransparency
    float MaxVal = 1.0;
 > = 0.5;
 
-float ShadowXOffset
+float ShadowX
 <
    string Description = "X Offset";
    string Group = "Shadow";
@@ -227,7 +247,7 @@ float ShadowXOffset
    float MaxVal = 1.0;
 > = 0.0;
 
-float ShadowYOffset
+float ShadowY
 <
    string Description = "Y Offset";
    string Group = "Shadow";
@@ -242,96 +262,118 @@ float Opacity
    float MaxVal = 1.0;
 > = 1.0;
 
+bool CropToBgd
+<
+   string Description = "Crop to background";
+> = false;
+
+float Degrees
+<
+   string Group = "Rotation";
+   string Description = "Degrees";
+   float MinVal = -360.0;
+   float MaxVal = 360.0;
+> = 0.0;
+
+float Revolutions
+<
+   string Group = "Rotation";
+   string Description = "Revolutions";
+   float MinVal = -20.0;
+   float MaxVal = 20.0;
+> = 0.0;
+
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_dve (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   // Standard position adjustment to cope with resolution independence
+   // First we recover the raw (scale) and square law (XYscale) scale factors.
+   // We then adjust the foreground size and position addresses and put them
+   // in xy1.  Finally, calculate the drop shadow offset and put that in xy2.
 
-   float Xpos = (0.5 - CentreX) * _BgXScale / _FgXScale;
-   float Ypos = (CentreY - 0.5) * _BgYScale / _FgYScale;
+   float2 scale = MasterScale * float2 (XScale, YScale);
+   float2 XYscale = pow (max (0.0001.xx, scale), SCALE_POWER);
+   float2 xy1 = uv3 - 0.5.xx;
 
-   // Now calculate the square law scale factors and correct for res. independence
+   xy1.x *= _OutputAspectRatio;
 
-   float scaleX = pow (max (0.0001, MasterScale * XScale), SCALE_POWER) / _FgXScale;
-   float scaleY = pow (max (0.0001, MasterScale * YScale), SCALE_POWER) / _FgYScale;
+   // Now we perform the rotation of the foreground coordinates
 
-   // Adjust the foreground size and position addresses
+   float c, s, angle = radians (Revolutions * 360.0 + Degrees);
+   
+   sincos (-angle, s, c);
 
-   float2 xy1 = uv1 + float2 (Xpos, Ypos);
+   float2 xy2 = float2 ((xy1.x * c - xy1.y * s), (xy1.x * s + xy1.y * c)); 
 
-   xy1.x = ((xy1.x - 0.5) / scaleX) + 0.5;
-   xy1.y = ((xy1.y - 0.5) / scaleY) + 0.5;
+   xy2.x /= _OutputAspectRatio;
+   xy2 += 0.5.xx;
+   xy1 = ((xy2 - float2 (Xpos, 1.0 - Ypos)) / XYscale) + 0.5.xx;
+   xy2 = xy1 - (float2 (ShadowX, ShadowY * _OutputAspectRatio) * SHADOW_MAX);
 
-   // Calculate the drop shadow offset
+   // Recover foreground and background images and the drop shadow alpha
 
-   float2 xy2 = xy1 - (float2 (ShadowXOffset, ShadowYOffset * _OutputAspectRatio) * SHADOW_SCALE);
+   float4 Fgnd = GetPixel (s_Foreground, xy1);
+   float4 Bgnd = GetPixel (s_Background, uv3);
 
-   // Recover foreground image, ensuring edges are cropped
+   float shadow = Overflow (xy2) ? 0.0 : tex2D (s_Foreground, xy2).a;
 
-   float4 Fgnd = Bad_XY (xy1, CropL, -CropR, -CropT, CropB) ? EMPTY : tex2D (s_Foreground, xy1);
+   // Check whether we need to do any antialiasing at all
 
-   // Blank the foreground if its alpha is zero
+   if (Antialias && any (scale != 1.0)) {
 
-   Fgnd.rgb *= Fgnd.a;
+      float2 xy, xy0;
 
-   // Recover the drop shadow alpha data
+      angle = 0.0;
 
-   float alpha = Bad_XY (xy2, CropL, -CropR, -CropT, CropB) ? 0.0 : tex2D (s_Foreground, xy2).a;
+      // Adjust the antialias blur scale factor so that it's 0 at 1x scaling and limited
+      // to 1.0 maximum.  If it's less than 1x scaling the max blur radius is very small.
+      // Finally the scale is squared and corrected for aspect ratio and preset radius.
 
-   alpha *= 1.0 - ShadowTransparency;
+      scale.x = scale.x < 1.0 ? (1.0 - max (0.0, scale.x)) / 3.0 : pow (scale.x - 1.0, 2.0);
+      scale.y = scale.y < 1.0 ? (1.0 - max (0.0, scale.y)) / 3.0 : pow (scale.y - 1.0, 2.0);
+      scale   = float2 (1.0, _OutputAspectRatio) * scale * RADIUS;
 
-   // Combine the foreground with its drop shadow
+      // The antialias is a sixteen by 22.5 degrees rotary blur at four samples deep.
+      // The outer loop achieves sixteen steps in 8 passes by using both positive and
+      // negative offsets.
 
-   Fgnd.a = lerp (alpha, 1.0, Fgnd.a);
+      for (int i = 0; i < OUTER_LOOP; i++) {
+         sincos (angle, xy.x, xy.y);
+         xy *= scale;
+         xy0 = xy;
 
-   // Return the foreground and drop shadow composite
-
-   return Fgnd;
-}
-
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   // First get the already processed DVE and the background
-
-   float4 Fgnd = tex2D (s_DVE, uv3);
-   float4 Bgnd = GetPixel (s_Background, uv2);
-
-   if (Antialias) {
-
-      // Recover the linear scale factor to use for antialiassing
-
-      float scale = max (0.0001, MasterScale * max (XScale, YScale));
-
-      scale = scale < 1.0 ? (1.0 - scale) / 6.0 : scale - 1.0;
-      scale = saturate (scale * scale);
-
-      // The antialias is a rotary blur at 22.5 degrees by twelve samples
-
-      if (scale > 0.0) {
-         float2 xy, radius = float2 (1.0, _OutputAspectRatio) * scale * RADIUS;
-
-         for (int i = 0; i < OUTER_LOOP; i++) {
-
-            sincos ((i * ANGLE), xy.x, xy.y);
-            xy *= radius;
-
-            for (int j = 0; j < INNER_LOOP; j++) {
-               Fgnd += tex2D (s_DVE, uv3 + xy);
-               Fgnd += tex2D (s_DVE, uv3 - xy);
-               xy   += xy;
-            }
+         for (int j = 0; j < INNER_LOOP; j++) {
+            Fgnd += GetPixel (s_Foreground, xy1 + xy);
+            Fgnd += GetPixel (s_Foreground, xy1 - xy);
+            shadow += GetPixel (s_Foreground, xy2 + xy).a;
+            shadow += GetPixel (s_Foreground, xy2 - xy).a;
+            xy += xy0;
          }
 
-         Fgnd /= DIVIDE;
+         angle += ANGLE;
       }
+
+      Fgnd = Overflow (xy1) ? EMPTY : Fgnd / DIVIDE;
+      shadow = Overflow (xy2) ? 0.0 : shadow / DIVIDE;
    }
+
+   // Now we apply the crop AFTER any antialias to both foreground and shadow
+
+   if (CropXY (xy1, CropL, CropR, CropT, CropB)) Fgnd = EMPTY;
+   if (CropXY (xy2, CropL, CropR, CropT, CropB)) shadow = 0.0;
+
+   Fgnd.rgb *= Fgnd.a;                    // Blank the foreground if alpha is zero
+   shadow *= 1.0 - ShadowTransparency;    // Adjust the drop shadow alpha data
+   Fgnd.a = lerp (shadow, 1.0, Fgnd.a);   // Combine foreground and drop shadow
 
    // Return the foreground, drop shadow and background composite
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -340,6 +382,8 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
 
 technique DVE_Enhanced
 {
-   pass P_1 < string Script = "RenderColorTarget0 = dve;"; > CompileShader (ps_dve)
-   pass P_2 CompileShader (ps_main)
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_1 ExecuteShader (ps_main)
 }
+

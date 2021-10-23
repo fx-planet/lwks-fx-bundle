@@ -1,22 +1,27 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-09-17
 // @Author jwrl
-// @Created 2017-06-06
+// @Created 2021-09-17
 // @see https://www.lwks.com/media/kunena/attachments/6375/TripleDVE_640.png
 
 /**
- This is a combination of three DVEs each of which has been reverse engineered to match
- Lightworks' 2D DVE parameters.  DVE 1 adjusts the foreground and DVE 2 adjusts the
- background.  The foreground can be cropped with rounded corners and given a bi-colour
- border.  Both the edges and borders can be feathered, and a drop shadow is also provided.
+ This is a new version of an earlier effect with the same name.  It's a combination of
+ three DVEs.  The foreground DVE and bacground DVE 2 operate independently of each other.
+ The foreground can be cropped with rounded corners and given a bi-colour border.  Both
+ the edges and borders can be feathered, and a drop shadow can be applied.
 
- DVE 3 takes the cropped, bordered output of DVE 1 as its input.  This means that you can
- scale the background and foreground independently, then adjust position and size of the
- cropped foreground.
+ The master DVE takes the cropped, bordered output of DVE 1 as its input.  This means
+ that it's possible to scale the background and foreground independently, then adjust
+ the position and size of the cropped foreground.  New in this version is the ability
+ to crop the output of the effect to sit inside the boundaries of the background video.
+ This means that if your background is letterboxed, the effect can be too.
 
- Because of the way that the DVEs are created and applied they have exactly the same
- quality impact on the final result as a single DVE would.  In effect it's three DVEs for
- the price of one.
+ Apart from the above, this effect is functionally identical to the earlier one but has
+ another major difference.  Scaling is now done quite differently.  The settings for that
+ now follow a square law, which means that although the range covered is still 0 to 10,
+ the settings range from 0 to just over 3.  This has two advantages.  The first is that
+ there is more control over size reduction.  The second is more subtle.  Doubling the
+ scale setting doubles the area of the image.  This makes a keyframed zoom feel linear.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,31 +29,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize definition to support original media resolution.
-//
-// Modified 16 April 2020 jwrl.
-// Explicitly set SupportsAlpha flag for the border colours to false.
-// Added DisplayAsPercentage flags for version 2020 and higher.
-//
-// Modified 23 December 2018 jwrl.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 29 August 2018 jwrl.
-// Added notes to header.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect will function correctly when used with all
-// current and previous Lightworks versions.
-//
-// Bug fix 17 July 2017 by jwrl.
-// Corrected ambiguous declaration affecting Linux and Mac versions only.
+// Rewrite 2021-09-17 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -57,52 +40,86 @@ int _LwksEffectInfo
    string Description = "Triple DVE";
    string Category    = "DVE";
    string SubCategory = "DVE Extras";
-   string Notes       = "Background, foreground and the overall effect each have independent DVE adjustment.";
+   string Notes       = "Foreground, background and the overall effect each have independent DVE adjustment.";
    bool CanSize       = true;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+
+#define HALF_PI       1.5707963
+
+#define BORDER_SCALE  0.05
+#define FEATHER_SCALE 0.05
+#define RADIUS_SCALE  0.1
+
+#define SHADOW_DEPTH  0.1
+#define SHADOW_SCALE  0.05
+#define SHADOW_SOFT   0.025
+#define TRANSPARENCY  0.75
+
+#define MINIMUM       0.0001.xx
+
+#define CENTRE        0.5.xx
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Dve1;
-texture Dve2;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
 
-texture Msk : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgdSampler = sampler_state
-{
-   Texture   = <Dve1>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BgdSampler = sampler_state
-{
-   Texture   = <Dve2>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler MskSampler = sampler_state
-{
-   Texture   = <Msk>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (Msk, s_Mask);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -212,7 +229,7 @@ float ShadowY
 
 float PosX_1
 <
-   string Group = "DVE 1";
+   string Group = "Fill DVE";
    string Description = "Position";
    string Flags = "SpecifiesPointX|DisplayAsPercentage";
    float MinVal = -1.0;
@@ -221,7 +238,7 @@ float PosX_1
 
 float PosY_1
 <
-   string Group = "DVE 1";
+   string Group = "Fill DVE";
    string Description = "Position";
    string Flags = "SpecifiesPointY|DisplayAsPercentage";
    float MinVal = -1.0;
@@ -230,34 +247,31 @@ float PosY_1
 
 float Scale_1
 <
-   string Group = "DVE 1";
+   string Group = "Fill DVE";
    string Description = "Master scale";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float ScaleX_1
 <
-   string Group = "DVE 1";
+   string Group = "Fill DVE";
    string Description = "Scale X";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float ScaleY_1
 <
-   string Group = "DVE 1";
+   string Group = "Fill DVE";
    string Description = "Scale Y";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float PosX_2
 <
-   string Group = "DVE 2";
+   string Group = "Background DVE";
    string Description = "Position";
    string Flags = "SpecifiesPointX|DisplayAsPercentage";
    float MinVal = -1.0;
@@ -266,7 +280,7 @@ float PosX_2
 
 float PosY_2
 <
-   string Group = "DVE 2";
+   string Group = "Background DVE";
    string Description = "Position";
    string Flags = "SpecifiesPointY|DisplayAsPercentage";
    float MinVal = -1.0;
@@ -275,34 +289,31 @@ float PosY_2
 
 float Scale_2
 <
-   string Group = "DVE 2";
+   string Group = "Background DVE";
    string Description = "Master scale";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float ScaleX_2
 <
-   string Group = "DVE 2";
+   string Group = "Background DVE";
    string Description = "Scale X";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float ScaleY_2
 <
-   string Group = "DVE 2";
+   string Group = "Background DVE";
    string Description = "Scale Y";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float PosX_3
 <
-   string Group = "DVE 3";
+   string Group = "Foreground DVE";
    string Description = "Position";
    string Flags = "SpecifiesPointX|DisplayAsPercentage";
    float MinVal = -1.0;
@@ -311,7 +322,7 @@ float PosX_3
 
 float PosY_3
 <
-   string Group = "DVE 3";
+   string Group = "Foreground DVE";
    string Description = "Position";
    string Flags = "SpecifiesPointY|DisplayAsPercentage";
    float MinVal = -1.0;
@@ -320,77 +331,48 @@ float PosY_3
 
 float Scale_3
 <
-   string Group = "DVE 3";
+   string Group = "Foreground DVE";
    string Description = "Master scale";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float ScaleX_3
 <
-   string Group = "DVE 3";
+   string Group = "Foreground DVE";
    string Description = "Scale X";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float ScaleY_3
 <
-   string Group = "DVE 3";
+   string Group = "Foreground DVE";
    string Description = "Scale Y";
-   string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
-   float MaxVal = 10.0;
+   float MaxVal = 3.16227766;
 > = 1.0;
 
 float Amt_3
 <
-   string Group = "DVE 3";
-   string Description = "DVE 3 opacity";
+   string Group = "Foreground DVE";
+   string Description = "Opacity";
    float MinVal = 0.0;
    float MaxVal = 1.0;
 > = 1.0;
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define HALF_PI       1.5707963
-
-#define BORDER_SCALE  0.05
-#define FEATHER_SCALE 0.05
-#define RADIUS_SCALE  0.1
-
-#define SHADOW_DEPTH  0.1
-#define SHADOW_SCALE  0.05
-#define SHADOW_SOFT   0.025
-#define TRANSPARENCY  0.75
-
-#define MINIMUM       0.0001.xx
-
-#define CENTRE        0.5.xx
-
-#define BLACK         float2(0.0, 1.0).xxxy
-#define EMPTY         0.0.xxxx
-
-float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
+int Blanking
+<
+   string Description = "Crop image to background";
+   string Enum = "No,Yes";
+> = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
+
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return BdrPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
 
 float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
 {
@@ -454,30 +436,30 @@ float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
    return Mask;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
    float2 posn_Factor = float2 (PosX_3, 1.0 - PosY_3);
    float2 scaleFactor = max (MINIMUM, Scale_3 * float2 (ScaleX_3, ScaleY_3));
 
-   float2 uv1 = (uv - posn_Factor) / scaleFactor + CENTRE;
-   float2 uv2 = (uv - float2 (PosX_2, 1.0 - PosY_2)) / max (MINIMUM, Scale_2 * float2 (ScaleX_2, ScaleY_2)) + CENTRE;
-   float2 xy1 = (uv - posn_Factor) / scaleFactor + CENTRE;
-   float2 xy2 = xy1 - (float2 (ShadowX / _OutputAspectRatio, -ShadowY) * scaleFactor * SHADOW_DEPTH);
+   float2 xy1 = (uv3 - posn_Factor) / scaleFactor + CENTRE;
+   float2 xy2 = (uv3 - float2 (PosX_2, 1.0 - PosY_2)) / max (MINIMUM, Scale_2 * float2 (ScaleX_2, ScaleY_2)) + CENTRE;
+   float2 xy3 = (uv3 - posn_Factor) / scaleFactor + CENTRE;
+   float2 xy4 = xy3 - (float2 (ShadowX / _OutputAspectRatio, -ShadowY) * scaleFactor * SHADOW_DEPTH);
 
-   uv1 = (uv1 - float2 (PosX_1, 1.0 - PosY_1)) / max (MINIMUM, Scale_1 * float2 (ScaleX_1, ScaleY_1)) + CENTRE;
+   xy1 = (xy1 - float2 (PosX_1, 1.0 - PosY_1)) / max (MINIMUM, Scale_1 * float2 (ScaleX_1, ScaleY_1)) + CENTRE;
 
-   float4 Fgnd = fn_illegal (uv1) ? BLACK : tex2D (FgdSampler, uv1);
-   float4 Bgnd = fn_illegal (uv2) ? EMPTY : tex2D (BgdSampler, uv2);
-   float4 Mask = fn_illegal (xy1) ? EMPTY : tex2D (MskSampler, xy1);
+   float4 Fgnd = BdrPixel (s_Foreground, xy1);
+   float4 Bgnd = GetPixel (s_Background, xy2);
+   float4 Mask = GetPixel (s_Mask, xy3);
 
-   float3 Bgd = fn_illegal (xy2) ? Bgnd.rgb : Bgnd.rgb * (1.0 - tex2D (MskSampler, xy2).w);
+   float3 Bgd = Overflow (xy4) ? Bgnd.rgb : Bgnd.rgb * (1.0 - GetPixel (s_Mask, xy4).w);
 
    float4 Colour = lerp (BorderColour_2, BorderColour_1, Mask.y);
    float4 retval = lerp (float4 (Bgd, Bgnd.a), Colour, Mask.z);
 
    retval = lerp (retval, Fgnd, Mask.x);
 
-   return lerp (Bgnd, retval, Amt_3);
+   return Blanking && Overflow (uv2) ? EMPTY : lerp (Bgnd, retval, Amt_3);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -486,10 +468,9 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Triple_DVE
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Msk;"; >
-   { PixelShader = compile PROFILE ps_crop (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 < string Script = "RenderColorTarget0 = Msk;"; > ExecuteShader (ps_crop)
+   pass P_4 ExecuteShader (ps_main)
 }
+

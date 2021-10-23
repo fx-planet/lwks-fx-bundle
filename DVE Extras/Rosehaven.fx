@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-09-16
 // @Author jwrl
-// @Created 2020-05-08
+// @Created 2021-09-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/Rosehaven_640.png
 
 /**
@@ -14,9 +14,9 @@
  Any black areas visible outside the active picture area are transparent, and can be
  blended with other effects to add complexity.
 
- The name of this effect comes from an Australian television series that I saw several
- years ago.  An effect similar to this was used in its opening title sequence.  Well,
- I had to call it something!
+ The name of this effect comes from an Australian television series about a small town
+ called Rosehaven.  An effect similar to this was used in its opening title sequence.
+ Well, I had to call it something!
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -27,10 +27,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize definition to support original media resolution.
-//
-// Built 2020-05-08 jwrl.
+// Rewrite 2021-09-16 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -44,47 +43,61 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+SetInputMode (Inp, s_Input, Mirror);
 
-texture Img : RenderColorTarget;
-texture Otd : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Oriented = sampler_state
-{
-   Texture   = <Otd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Image = sampler_state
-{
-   Texture   = <Img>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (Img, s_Image, Mirror);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -140,47 +153,27 @@ float PosY
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define EMPTY  0.0.xxxx
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler S, float2 s)
-{
-   return (s.x < 0.0) || (s.y < 0.0) || (s.x > 1.0) || (s.y > 1.0) ? EMPTY : tex2D (S, s);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_input_0 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_input_0 (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Input, uv); }
+
+float4 ps_input_1 (float2 uv : TEXCOORD2) : COLOR
 {
-   return fn_tex2D (s_Input, uv);
+   return tex2D (s_Image, float2 (uv.x, 1.0 - uv.y));
 }
 
-float4 ps_input_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_input_2 (float2 uv : TEXCOORD2) : COLOR
 {
-   return fn_tex2D (s_Input, float2 (uv.x, 1.0 - uv.y));
+   return tex2D (s_Image, float2 (1.0 - uv.x, uv.y));
 }
 
-float4 ps_input_2 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_input_3 (float2 uv : TEXCOORD2) : COLOR
 {
-   return fn_tex2D (s_Input, float2 (1.0 - uv.x, uv.y));
+   return tex2D (s_Image, 1.0.xx - uv);
 }
 
-float4 ps_input_3 (float2 uv : TEXCOORD1) : COLOR
-{
-   return fn_tex2D (s_Input, 1.0.xx - uv);
-}
-
-float4 ps_scale_N (float2 uv : TEXCOORD1) : COLOR
+float4 ps_scale_N (float2 uv : TEXCOORD2) : COLOR
 {
    float2 xy = float2 (uv.x - PosX, uv.y + PosY);
 
@@ -193,10 +186,10 @@ float4 ps_scale_N (float2 uv : TEXCOORD1) : COLOR
       xy.x += 0.5;
    }
 
-   return fn_tex2D (s_Oriented, xy);
+   return tex2D (s_Image, xy);
 }
 
-float4 ps_scale_R (float2 uv : TEXCOORD1) : COLOR
+float4 ps_scale_R (float2 uv : TEXCOORD2) : COLOR
 {
    float2 xy;
 
@@ -213,10 +206,10 @@ float4 ps_scale_R (float2 uv : TEXCOORD1) : COLOR
       xy = float2 (xy.y, xy.x + 0.5);
    }
 
-   return fn_tex2D (s_Oriented, xy);
+   return tex2D (s_Image, xy);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
    float2 xy = (Mode == 0) ? uv - float2 (Centre, 0.0) : uv + float2 (0.0, Centre - 1.0);
 
@@ -229,96 +222,63 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Rosehaven_0
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_0 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_N (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Rosehaven_1
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_1 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_N (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_1)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Rosehaven_2
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_2 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_N (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_2)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Rosehaven_3
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_3 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_N (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_3)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Rosehaven_4
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_0 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_R (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Rosehaven_5
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_1 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_R (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_1)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Rosehaven_6
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_2 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_R (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_2)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique Rosehaven_7
 {
-   pass P_0 < string Script = "RenderColorTarget0 = Otd;"; >
-   { PixelShader = compile PROFILE ps_input_3 (); }
-
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; >
-   { PixelShader = compile PROFILE ps_scale_R (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
+   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_3)
+   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
+   pass P_3 ExecuteShader (ps_main)
 }
+

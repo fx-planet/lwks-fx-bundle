@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-09-16
 // @Author jwrl
-// @Created 2018-11-14
+// @Created 2021-09-16
 // @see https://www.lwks.com/media/kunena/attachments/6375/Framed_DVE_640.png
 
 /**
@@ -22,28 +22,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize definition to support original media resolution.
-//
-// Modified jwrl 2018-12-23:
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified jwrl: 2018-11-16
-// Added antialiassing to the crop edges to reduce artefacts visible during rotation.
-// Added drop shadow scaling to compensate for varying shadow softness.
-//
-// TO DO LIST:
-// Given that currently X and Y rotation kills the frame depth illusion they have been
-// left out.  If a true depth component could be included though, immediately several
-// things would become possible.  Apart from allowing convincing X-Y axes of rotation,
-// directional edge illumination could be correctly supported and linked to drop shadow
-// angle, for example.
-//
-// Unfortunately although modern GPUs all support working in 3D space, there seems to
-// be no way to do that using Lightworks effects programming - well, no way that I can
-// work out, anyway.  For example, sampler3D and tex3D() both compile but neither seem
-// to do very much.  I suspect that this is fated to remain on the to-do list.
+// Rebuilt 2021-09-16 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -57,50 +38,91 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define BadPos(P, p1, p2) (P < max (0.0, p1)) || (P > min (1.0, 1.0 - p2))
+#define CropXY(XY, L, R, T, B)  (BadPos (XY.x, L, -R) || BadPos (XY.y, -T, B))
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+#define GetMirror(SHD,UV,XY) (any (abs (XY - 0.5.xx) > 0.5) \
+                             ? EMPTY \
+                             : tex2D (SHD, saturate (1.0.xx - abs (1.0.xx - abs (UV)))))
+
+// Definitions used by this shader
+
+#define HALF_PI      1.5707963268
+#define PI           3.1415926536
+
+#define BEVEL_SCALE  0.04
+#define BORDER_SCALE 0.05
+
+#define SHADOW_DEPTH 0.1
+#define SHADOW_SOFT  0.05
+
+#define CENTRE       0.5.xx
+
+#define WHITE        1.0.xxxx
+#define EMPTY        0.0.xxxx
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-texture Bg;
-texture Tx;
+DefineInput (Fg, s_RawFg);
+DefineInput (Bg, s_RawBg);
+DefineInput (Tx, s_RawTx);
 
-texture Mask : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state { Texture = <Bg>; };
-
-sampler s_Texture = sampler_state
-{
-   Texture   = <Tx>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_CropMask = sampler_state
-{
-   Texture   = <Mask>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (RawFg, s_Foreground);
+DefineTarget (RawBg, s_Background);
+DefineTarget (RawTx, s_Texture);
+DefineTarget (Mask, s_CropMask);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -305,55 +327,20 @@ float ShadowDistance
    float MaxVal = 1.0;
 > = 0.0;
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define HALF_PI      1.5707963268
-#define PI           3.1415926536
-
-#define BEVEL_SCALE  0.04
-#define BORDER_SCALE 0.05
-
-#define SHADOW_DEPTH 0.1
-#define SHADOW_SOFT  0.05
-
-#define CENTRE       0.5.xx
-
-#define BLACK        float2(0.0, 1.0).xxxy
-#define WHITE        1.0.xxxx
-#define EMPTY        0.0.xxxx
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s_Sampler, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   if ((xy.x > 0.5) || (xy.y > 0.5)) return EMPTY;
-
-   return tex2D (s_Sampler, uv);
-}
-
-float4 fn_blk2D (sampler s_Sampler, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   if ((xy.x > 0.5) || (xy.y > 0.5)) return BLACK;
-
-   return tex2D (s_Sampler, uv);
-}
+bool CropToBgd
+<
+   string Description = "Crop to background";
+> = false;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return BdrPixel (s_RawFg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+float4 ps_initTx (float2 uv : TEXCOORD3, float2 xy : TEXCOORD4) : COLOR { return GetMirror (s_RawTx, uv, xy); }
+
+float4 ps_crop (float2 uv : TEXCOORD4) : COLOR
 {
 /* Returned values: crop.w - master crop 
                     crop.x - master border (inside crop) 
@@ -392,20 +379,22 @@ float4 ps_crop (float2 uv : TEXCOORD0) : COLOR
    return crop;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv4 : TEXCOORD4) : COLOR
 {
    float temp, ShadowX, ShadowY, scale = DVE_Scale < 0.0001 ? 10000.0 : 1.0 / DVE_Scale;
 
    sincos (radians (ShadowAngle), ShadowY, ShadowX);
 
-   float2 xy0, xy1 = (uv - CENTRE) * scale;
+   float2 xy0, xy1 = (uv4 - CENTRE) * scale;
    float2 xy2 = float2 (ShadowX, ShadowY * _OutputAspectRatio) * ShadowOffset * SHADOW_DEPTH;
+   float2 xy3;
 
    sincos (radians (DVE_Z_angle), xy0.x, xy0.y);
    temp = (xy0.y * xy1.y) - (xy0.x * xy1.x * _OutputAspectRatio);
    xy1  = float2 ((xy0.x * xy1.y / _OutputAspectRatio) + (xy0.y * xy1.x), temp);
 
    xy1 += CENTRE - (float2 (DVE_PosX, -DVE_PosY) * 2.0);
+   xy3  = xy1;
 
    float shadow = ShadowDistance * 0.3333333333;
 
@@ -414,18 +403,18 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    xy2  = float2 ((xy0.x * xy2.y / _OutputAspectRatio) + (xy0.y * xy2.x), temp);
    xy2  = ((xy1 - xy2 - CENTRE) * (shadow + 1.0) / ((ShadowSoft * 0.05) + 1.0)) + CENTRE;
 
-   float2 xy3 = ((xy1 - float2 (TexPosX, -TexPosY) - CENTRE) / TexScale) + CENTRE;
+   float4 Mask = GetPixel (s_CropMask, xy3);
 
-   float4 Mask = fn_tex2D (s_CropMask, xy3);
-
-   Mask.z = fn_tex2D (s_CropMask, xy2).z;
+   Mask.z = Overflow (xy2) ? 0.0 : tex2D (s_CropMask, xy2).z;
 
    scale = VideoScale < 0.0001 ? 10000.0 : 1.0 / VideoScale;
-   xy1  = (CENTRE + ((xy1 - CENTRE) * scale)) - (float2 (VideoPosX, -VideoPosY) * 2.0);
+   xy1   = (CENTRE + ((xy1 - CENTRE) * scale)) - (float2 (VideoPosX, -VideoPosY) * 2.0);
+   scale = TexScale < 0.0001 ? 10000.0 : 1.0 / TexScale;
+   xy3   = (CENTRE + ((xy3 - CENTRE) * scale)) - (float2 (TexPosX, -TexPosY) * 2.0);
 
-   float4 Fgnd = fn_blk2D (s_Foreground, xy1);
-   float4 Bgnd = tex2D (s_Background, uv);
-   float4 frame = tex2D (s_Texture, xy3);
+   float4 Fgnd = BdrPixel (s_Foreground, xy1);
+   float4 Bgnd = GetPixel (s_Background, uv4);
+   float4 frame = GetMirror (s_Texture, xy3, uv4);
    float4 retval = lerp (Bgnd, BLACK, Mask.z * ShadowOpacity);
 
    float alpha_O = ((2.0 * Mask.y) - 1.0);
@@ -437,7 +426,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    retval = lerp (retval, frame, Mask.w);
    retval = lerp (retval, Fgnd, Mask.x);
 
-   return lerp (Bgnd, retval, Opacity);
+   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, retval, Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -446,10 +435,10 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique Framed_DVE
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Mask;"; >
-   { PixelShader = compile PROFILE ps_crop (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass Ptx < string Script = "RenderColorTarget0 = RawTx;"; > ExecuteShader (ps_initTx)
+   pass P_1 < string Script = "RenderColorTarget0 = Mask;"; > ExecuteShader (ps_crop)
+   pass P_2 ExecuteShader (ps_main)
 }
+

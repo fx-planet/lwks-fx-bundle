@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-09-17
 // @Author windsturm
 // @Created 2012-05-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxTile_640.png
@@ -26,25 +26,12 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize definition to support original media resolution.
+// Update 2021-09-17 jwrl.
+// Update of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //
-// Modified jwrl 2020-04-12:
-// Changed clamp addressing to ClampToEdge for compatibility reasons.
-//
-// Modified jwrl 2018-10-23:
-// Added creation date.
-// Changed category.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Checked and modded for ps_2_b compliance by Lightworks user jwrl, 5 February 2016.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// LW 14+ version by jwrl 12 February 2017 - SubCategory added.
+// Prior to 2020-04-12:
+// Various compatibility updates.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -58,20 +45,61 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputAspectRatio;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_Input);
 
-sampler s0 = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (t0, s0);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -88,28 +116,22 @@ float angle
 <
    string Description = "Angle";
    float MinVal = 0.00;
-   float MaxVal = 360.00;
-> = 0.00;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-
-#pragma warning ( disable : 3571 )
+   float MaxVal = 360.0;
+> = 0.0;
 
 //-----------------------------------------------------------------------------------------//
 // Pixel Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 FxRotateTile (float2 xy : TEXCOORD1) : COLOR
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Input, uv); }
+
+float4 FxRotateTile (float2 uv : TEXCOORD2) : COLOR
 {
    float Tcos, Tsin;
 
    if (threshold >= 1.0) return float2 (0.5, 1.0).xxxy;
 
-   xy -= 0.5.xx;
+   float2 xy = uv - 0.5.xx;
 
    //rotation
 
@@ -133,8 +155,7 @@ float4 FxRotateTile (float2 xy : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE FxRotateTile ();
-   }
+   pass P_0 < string Script = "RenderColorTarget0 = t0;"; > ExecuteShader (ps_initInp)
+   pass SinglePass ExecuteShader (FxRotateTile)
 }
+

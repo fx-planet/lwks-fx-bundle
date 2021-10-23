@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-11
+// @Released 2021-09-10
 // @Author jwrl
-// @Created 2017-05-28
+// @Created 2021-09-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_vignette_640.png
 
 /**
@@ -28,38 +28,9 @@
 //
 // Version history:
 //
-// Update 2020-11-11 jwrl.
-// Added CanSize definition to support original media resolution.
-//
-// Modified jwrl 2020-04-12:
-// Added linear filtering to s_Background to improve smoothness.
-//
-// Modified jwrl 2018-12-23:
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 2018-07-07 jwrl:
-// Drop shadow feathering now resolution independent.
-//
-// Modified by LW user jwrl 4 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Version 14.5 update 28 March 2018 by jwrl.
-// This will now function correctly when used with Lightworks versions 14.5 and higher
-// under Linux or OS-X.  It addresses the "Clamp/ClampToEdge" bug associated with using
-// DVE effects with transitions on those platforms.
-//
-// Cross platform compatibility check 1 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// Modified by LW user jwrl 6 July 2017.
-// Master scaling has been added to the vignette so that it and the foreground will
-// track when zoomed.
-// A limited 2D DVE capability has been provided for the background image.
-// The circle and diamond scaling have been adjusted to more closely match that of the
-// square.
-// A bug which affected the position direction when the foreground was flipped or flopped
-// has been fixed.
+// Rebuilt 2021-09-10 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
+// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -73,44 +44,92 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0,1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D (SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D (SHADER, XY))
+
+#define odd(X) (X - floor (X / 2.0) * 2.0)
+
+#define RADIUS_SCALE  1.6666666667
+#define SQUARE_SCALE  2.0
+#define FEATHER_SCALE 0.05
+#define FEATHER_DMND  0.0375
+#define FEATHER_SOFT  0.0005
+#define BORDER_SCALE  0.1
+#define BORDER_DMND   0.075
+
+#define CIRCLE        2.0327959639
+#define SQUARE        2.0
+#define DIAMOND       1.4142135624
+
+#define MIN_SIZE      0.9
+#define MAX_SIZE      9.0
+#define MAX_ASPECT    5.0
+#define MIN_ASPECT    0.9999999999
+
+#define FLIP          1
+#define FLOP          2
+#define FLIP_FLOP     3
+
+#define FRAME_CENTRE  0.5.xx
+
+#define HALF_PI       1.5707963268
+
+float _OutputAspectRatio; 
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fgd;
-texture Bgd;
+DefineInput (Fgd, s_Foreground);
+DefineInput (Bgd, s_Background);
 
-texture Inp : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Foreground = sampler_state
-{
-   Texture   = <Fgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Background = sampler_state {
-   Texture = <Bgd>;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = Border;
-   AddressV  = Border;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Inp, s_Input);
+DefineTarget (InB, s_InBgd);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -203,7 +222,7 @@ float BorderFeather
    string Group ="Border";
    string Description = "Edge softness";
    float MinVal = 0.0;
-   float MaxVal = 1.00;
+   float MaxVal = 1.0;
 > = 0.05;
 
 float4 BorderColour
@@ -286,63 +305,24 @@ float BgPosY
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define RADIUS_SCALE  1.6666666667
-#define SQUARE_SCALE  2.0
-#define FEATHER_SCALE 0.05
-#define FEATHER_DMND  0.0375
-#define FEATHER_SOFT  0.0005
-#define BORDER_SCALE  0.1
-#define BORDER_DMND   0.075
-
-#define CIRCLE        2.0327959639
-#define SQUARE        2.0
-#define DIAMOND       1.4142135624
-
-#define MIN_SIZE      0.9
-#define MAX_SIZE      9.0
-#define MAX_ASPECT    5.0
-#define MIN_ASPECT    0.9999999999
-
-#define FLIP          1
-#define FLOP          2
-#define FLIP_FLOP     3
-
-#define FRAME_CENTRE  0.5.xx
-#define BLACK         float2(0.0,1.0).xxxy
-#define EMPTY         0.0.xxxx
-
-#define HALF_PI       1.5707963268
-
-float _OutputAspectRatio; 
-
-//-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-bool fn_illegal (float2 uv)
-{
-   return (uv.x < 0.0) || (uv.y < 0.0) || (uv.x > 1.0) || (uv.y > 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return BdrPixel (s_Foreground, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return BdrPixel (s_Background, uv); }
+
+float4 ps_circle (float2 uv : TEXCOORD3) : COLOR
 {
-   float2 xy1 = float2 (uv.x - OverlayPosX, OverlayPosY + uv.y);
+   float2 xy1 = float2 (uv.x - OverlayPosX, uv.y + OverlayPosY);
    float2 FgPos = float2 (FgPosX, -FgPosY);
 
-   if ((FlipFlop == FLIP) || (FlipFlop == FLIP_FLOP)) {
+   if (odd (FlipFlop)) {
       xy1.x = 0.5 - xy1.x;
       FgPos.x = -FgPos.x;
    }
    else xy1.x += 0.5;
 
-   if (FlipFlop >= FLOP) {
+   if (FlipFlop > FLIP) {
       xy1.y = 1.5 - xy1.y;
       FgPos.y = -FgPos.y;
    }
@@ -366,7 +346,7 @@ float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((radius - offset) / mix) : 0.0;
 
-   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (s_Foreground, xy2);
+   float4 retval = Overflow (xy2) ? BLACK : tex2D (s_Input, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (radius > border + fthr) return EMPTY;
@@ -380,18 +360,18 @@ float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
    return lerp (float4 (retval.rgb, alpha), colour, mix);
 }
 
-float4 ps_square (float2 uv : TEXCOORD1) : COLOR
+float4 ps_square (float2 uv : TEXCOORD3) : COLOR
 {
-   float2 xy1 = float2 (uv.x - OverlayPosX, OverlayPosY + uv.y);
+   float2 xy1 = float2 (uv.x - OverlayPosX, uv.y + OverlayPosY);
    float2 FgPos = float2 (FgPosX, -FgPosY);
 
-   if ((FlipFlop == FLIP) || (FlipFlop == FLIP_FLOP)) {
+   if (odd (FlipFlop)) {
       xy1.x = 0.5 - xy1.x;
       FgPos.x = -FgPos.x;
    }
    else xy1.x += 0.5;
 
-   if (FlipFlop >= FLOP) {
+   if (FlipFlop > FLIP) {
       xy1.y = 1.5 - xy1.y;
       FgPos.y = -FgPos.y;
    }
@@ -415,7 +395,7 @@ float4 ps_square (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((square - offset) / mix) : 0.0;
 
-   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (s_Foreground, xy2);
+   float4 retval = Overflow (xy2) ? BLACK : tex2D (s_Input, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (square > border + fthr) return EMPTY;
@@ -429,18 +409,18 @@ float4 ps_square (float2 uv : TEXCOORD1) : COLOR
    return lerp (float4 (retval.rgb, alpha), colour, mix);
 }
 
-float4 ps_diamond (float2 uv : TEXCOORD1) : COLOR
+float4 ps_diamond (float2 uv : TEXCOORD3) : COLOR
 {
-   float2 xy1 = float2 (uv.x - OverlayPosX, OverlayPosY + uv.y);
+   float2 xy1 = float2 (uv.x - OverlayPosX, uv.y + OverlayPosY);
    float2 FgPos = float2 (FgPosX, -FgPosY);
 
-   if ((FlipFlop == FLIP) || (FlipFlop == FLIP_FLOP)) {
+   if (odd (FlipFlop)) {
       xy1.x = 0.5 - xy1.x;
       FgPos.x = -FgPos.x;
    }
    else xy1.x += 0.5;
 
-   if (FlipFlop >= FLOP) {
+   if (FlipFlop > FLIP) {
       xy1.y = 1.5 - xy1.y;
       FgPos.y = -FgPos.y;
    }
@@ -461,7 +441,7 @@ float4 ps_diamond (float2 uv : TEXCOORD1) : COLOR
 
    mix = (mix > 0.0) ? saturate ((diamond - offset) / mix) : 0.0;
 
-   float4 retval = fn_illegal (xy2) ? BLACK : tex2D (s_Foreground, xy2);
+   float4 retval = Overflow (xy2) ? BLACK : tex2D (s_Input, xy2);
    float4 colour = float4 (lerp (BorderColour.rgb, BorderColour_1.rgb, mix), alpha);
 
    if (diamond > border + fthr) return EMPTY;
@@ -475,16 +455,16 @@ float4 ps_diamond (float2 uv : TEXCOORD1) : COLOR
    return lerp (float4 (retval.rgb, alpha), colour, mix);
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 {
    float2 xy1 = uv - float2 (ShadowX, -ShadowY * _OutputAspectRatio) * 0.04;
    float2 xy2 = float2 (1.0, _OutputAspectRatio) * FEATHER_SOFT;
    float2 xy3 = (uv - FRAME_CENTRE) * (1.0 - (max (BgSize, 0.0) * MIN_SIZE) - (min (BgSize, 0.0) * MAX_SIZE));
 
-   xy3.x = (BgFlipFlop == FLIP) || (BgFlipFlop == FLIP_FLOP) ? 0.5 + BgPosX - xy3.x : 0.5 + xy3.x - BgPosX;
-   xy3.y = BgFlipFlop >= FLOP ? 0.5 - xy3.y - BgPosY : 0.5 + xy3.y + BgPosY;
+   xy3.x = odd (BgFlipFlop)  ? 0.5 + BgPosX - xy3.x : 0.5 + xy3.x - BgPosX;
+   xy3.y = BgFlipFlop > FLIP ? 0.5 - xy3.y - BgPosY : 0.5 + xy3.y + BgPosY;
 
-   float alpha    = fn_illegal (xy1) ? 0.0 : tex2D (s_Input, xy1).a * 0.03125;
+   float alpha    = Overflow (xy1) ? 0.0 : tex2D (s_Input, xy1).a * 0.03125;
    float softness = ShadowSoft * 4.0;
    float amount   = 0.125;
    float feather  = 0.0;
@@ -508,8 +488,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    alpha = saturate (alpha * Shadow * 0.5);
 
-   float4 Fgnd   = tex2D (s_Input, uv);
-   float4 Bgnd   = fn_illegal (xy3) ? EMPTY : tex2D (s_Background, xy3);
+   float4 Fgnd   = GetPixel (s_Input, uv);
+   float4 Bgnd   = GetPixel (s_InBgd, xy3);
    float4 retval = float4 (lerp (Bgnd.rgb, 0.0.xxx, alpha), Bgnd.a);
 
    return lerp (retval, Fgnd, Fgnd.a);
@@ -521,30 +501,25 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique circle_DVE
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Inp;"; >
-   {   PixelShader = compile PROFILE ps_circle (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Inp;"; > ExecuteShader (ps_initFg)
+   pass P_1 < string Script = "RenderColorTarget0 = InB;"; > ExecuteShader (ps_initBg)
+   pass P_2 < string Script = "RenderColorTarget0 = Inp;"; > ExecuteShader (ps_circle)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique square_DVE
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Inp;"; >
-   {   PixelShader = compile PROFILE ps_square (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Inp;"; > ExecuteShader (ps_initFg)
+   pass P_1 < string Script = "RenderColorTarget0 = InB;"; > ExecuteShader (ps_initBg)
+   pass P_2 < string Script = "RenderColorTarget0 = Inp;"; > ExecuteShader (ps_square)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique diamond_DVE
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Inp;"; >
-   {   PixelShader = compile PROFILE ps_diamond (); }
-
-   pass P_2
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_0 < string Script = "RenderColorTarget0 = Inp;"; > ExecuteShader (ps_initFg)
+   pass P_1 < string Script = "RenderColorTarget0 = InB;"; > ExecuteShader (ps_initBg)
+   pass P_2 < string Script = "RenderColorTarget0 = Inp;"; > ExecuteShader (ps_diamond)
+   pass P_3 ExecuteShader (ps_main)
 }
+

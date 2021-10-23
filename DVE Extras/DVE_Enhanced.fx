@@ -9,7 +9,7 @@
  Lightworks version does, with some major differences.  The most obvious change is
  the nonlinear scaling.  This makes the adjustment of size reduction easier and
  more precise.  Instead of the size reduction occupying the bottom 10% of the
- scaling faders in this effect it occupies the bottom half.  The maximum 200% scale
+ scaling faders in this effect it occupies the bottom third.  The maximum scale
  factor gives the same enlargement as the 10x setting in the Lightworks' original.
 
  Next, some antialiasing is applied to the image as it is scaled.  This gives a
@@ -122,8 +122,8 @@ Wrong_Lightworks_version
 
 // Definitions used by this shader
 
-#define SCALE_RANGE  2.0            // These two give a scale range from 0 to
-#define SCALE_POWER  3.3219         // roughly 10x
+#define SCALE_POWER  2.0            // These two give a scale range from 0 to
+#define SCALE_RANGE  3.16227766     // 10x (the same as Lightworks does)
 #define SHADOW_MAX 0.1
 
 #define OUTER_LOOP   8
@@ -148,31 +148,54 @@ DefineTarget (RawBg, s_Background);
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
+float Opacity
+<
+   string Description = "Opacity";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
+
+float Degrees
+<
+   string Group = "Rotation";
+   string Description = "Degrees";
+   float MinVal = -360.0;
+   float MaxVal = 360.0;
+> = 0.0;
+
+float Revolutions
+<
+   string Group = "Rotation";
+   string Description = "Revolutions";
+   float MinVal = -20.0;
+   float MaxVal = 20.0;
+> = 0.0;
+
 float Xpos
 <
-   string Description = "Position";
-   string Flags = "SpecifiesPointX";
+   string Group = "Position";
+   string Description = "X";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
 
 float Ypos
 <
-   string Description = "Position";
-   string Flags = "SpecifiesPointY";
+   string Group = "Position";
+   string Description = "Y";
    float MinVal = -1.0;
    float MaxVal = 2.0;
 > = 0.5;
 
 bool Antialias
 <
-   string Group = "Nonlinear scaling";
+   string Group = "Square law scaling";
    string Description = "Antialiasing";
 > = true;
 
 float MasterScale
 <
-   string Group = "Nonlinear scaling";
+   string Group = "Square law scaling";
    string Description = "Master";
    string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
@@ -181,7 +204,7 @@ float MasterScale
 
 float XScale
 <
-   string Group = "Nonlinear scaling";
+   string Group = "Square law scaling";
    string Description = "X";
    string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
@@ -190,7 +213,7 @@ float XScale
 
 float YScale
 <
-   string Group = "Nonlinear scaling";
+   string Group = "Square law scaling";
    string Description = "Y";
    string Flags = "DisplayAsPercentage";
    float MinVal = 0.0;
@@ -255,33 +278,10 @@ float ShadowY
    float MaxVal = 1.0;
 > = 0.0;
 
-float Opacity
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
 bool CropToBgd
 <
    string Description = "Crop to background";
 > = false;
-
-float Degrees
-<
-   string Group = "Rotation";
-   string Description = "Degrees";
-   float MinVal = -360.0;
-   float MaxVal = 360.0;
-> = 0.0;
-
-float Revolutions
-<
-   string Group = "Rotation";
-   string Description = "Revolutions";
-   float MinVal = -20.0;
-   float MaxVal = 20.0;
-> = 0.0;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-09-22
+// @Released 2021-10-24
 // @Author jwrl
-// @Created 2018-06-10
+// @Created 2021-10-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChannelSelect_640.png
 
 /**
@@ -16,11 +16,8 @@
 //
 // Version history:
 //
-// Update 2021-09-22 jwrl:
-// Modified to support resolution independence.
-//
-// Prior to 2018-12-27:
-// Various updates and patches for cross platform support.
+// Rewrite 2021-10-24 jwrl.
+// Rewrite of the original effect to better support LW v2021 and later.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -143,9 +140,8 @@ float4 fn_select (sampler vidSample, float2 xy, int vidSelect)
    if (vidSelect == 2) return retval.rrrr;
    if (vidSelect == 3) return retval.gggg;
    if (vidSelect == 4) return retval.bbbb;
-   if (vidSelect == 5) return retval.aaaa;
 
-   return dot (retval.rgb, LUMA).xxxx;
+   return (vidSelect == 5) : dot (retval.rgb, LUMA).xxxx ? retval.aaaa;
 }
 
 float4 fn_route (float4 video_src, float4 video_ref, int vidRoute)
@@ -155,9 +151,8 @@ float4 fn_route (float4 video_src, float4 video_ref, int vidRoute)
    if (vidRoute == 3) return float4 (video_ref.r, video_src.g, video_ref.ba);
    if (vidRoute == 4) return float4 (video_ref.rg, video_src.b, video_ref.a);
    if (vidRoute == 5) return float4 (video_ref.rgb, video_src.a);
-   if (vidRoute == 6) return video_ref;
 
-   return video_src;
+   return (vidRoute == 6) ? video_ref : video_src;
 }
 
 //-----------------------------------------------------------------------------------------//

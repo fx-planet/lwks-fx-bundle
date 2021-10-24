@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-24
 // @Author khaver
 // @Created 2014-11-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/Strobe_640.png
@@ -16,25 +16,9 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 6 December 2018 jwrl.
-// Added creation date.
-// Changed name from "Strobe" to "Strobe light".
-// Changed category and subcategory.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers to avoid cross platform default sampler differences.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Update 2021-10-24 jwrl.
+// Update of the original effect to better support LW v2021 and later.  It will still
+// work with earlier versions.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -44,36 +28,42 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Switches";
    string Notes       = "Strobe is a two-input effect which switches rapidly between two video layers";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _Progress;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture fg;
-texture bg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FGround = sampler_state {
-        Texture = <fg>;
-        AddressU = Clamp;
-        AddressV = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler BGround = sampler_state {
-        Texture = <bg>;
-        AddressU = Clamp;
-        AddressV = Clamp;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
+DefineInput (fg, s_Foreground);
+DefineInput (bg, s_Background);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -81,54 +71,39 @@ sampler BGround = sampler_state {
 
 bool swap
 <
-	string Description = "Swap";
+   string Description = "Swap";
 > = false;
 
 float strobe
 <
-	string Description = "Strobe Spacing";
-	float MinVal = 0.0f;
-	float MaxVal = 1.0f;
-> = 1.0f;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _Progress;
+   string Description = "Strobe Spacing";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
 
 //-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
-  float maxi = 20000;
-  float theprogress = 20000.0 * _Progress;
-  float mini = 20000 * strobe;
-  float4 FG, BG;
-  if (swap) {
-	BG = tex2D( BGround, uv);
-	FG = tex2D( FGround, uv);
-  }
-  else {
-	BG = tex2D( FGround, uv);
-	FG = tex2D( BGround, uv);
-  }
-  float rem = frac(ceil(theprogress/mini) / 2.0);
-  if (rem == 0.0) return FG;
-  else return BG;
+   float4 FG, BG;
+
+   if (swap) {
+      FG = GetPixel (s_Foreground, uv1);
+      BG = GetPixel (s_Background, uv2);
+   }
+   else {
+      BG = GetPixel (s_Foreground, uv1);
+      FG = GetPixel (s_Background, uv2);
+   }
+
+   return (frac (ceil (_Progress / strobe) / 2.0) == 0.0) ? FG : BG;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Technique
 //-----------------------------------------------------------------------------------------//
 
-technique StrobeLight
-{
+technique StrobeLight { Pass P_1 ExecuteShader (ps_main) }
 
-   pass Pass1
-   {
-      PixelShader = compile PROFILE Combine();
-   }
-}

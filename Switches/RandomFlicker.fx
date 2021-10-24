@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-24
 // @Author jwrl
-// @Created 2018-08-24
+// @Created 2021-10-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/RandomSwitch_640.png
 
 /**
@@ -15,17 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 6 December 2018 jwrl.
-// Changed category and subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified jwrl 2018-08-24
-// Corrected the fact that opacity did nothing.  Thanks schrauber for picking that up.
+// Rewrite 2021-10-24 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,18 +30,50 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture In1;
-texture In2;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _Progress;
+float _LengthFrames = 750.0;
+
+#define OFFS_1  1.8571428571
+#define OFFS_2  1.3076923077
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler s_Input_1 = sampler_state { Texture = <In1>; };
-sampler s_Input_2 = sampler_state { Texture = <In2>; };
+DefineInput (In1, s_Input_1);
+DefineInput (In2, s_Input_2);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -79,30 +102,11 @@ float Random
    float MaxVal = 1.0;
 > = 0.5;
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _Progress;
-
-#ifdef _LENGTHFRAMES
-
-float _LengthFrames;
-
-#else
-
-float _LengthFrames = 750.0;
-
-#endif
-
-#define OFFS_1  1.8571428571
-#define OFFS_2  1.3076923077
-
 //-------------------------------------------------------------------------------------//
 // Shaders
 //-------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float freq = floor ((_LengthFrames * _Progress) + 0.5) * max (Speed, 0.01) * 19.0;
    float frq1 = max (0.5, Random + 0.5);
@@ -110,19 +114,16 @@ float4 ps_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
 
    frq1 *= freq * OFFS_1;
 
-   bool strobe = max (sin (freq) + sin (frq1) + sin (frq2), 0.0) == 0.0;
+   float strobe = max (sin (freq) + sin (frq1) + sin (frq2), 0.0);
 
-   float4 Bgnd = tex2D (s_Input_2, xy2);
+   float4 Bgnd = GetPixel (s_Input_2, uv2);
 
-   return strobe ? lerp (Bgnd, tex2D (s_Input_1, xy1), Opacity) : Bgnd;
+   return strobe == 0.0 ? lerp (Bgnd, GetPixel (s_Input_1, uv1), Opacity) : Bgnd;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Technique
 //-----------------------------------------------------------------------------------------//
 
-technique RandomFlicker
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
-}
+technique RandomFlicker { pass P_1 ExecuteShader (ps_main) }
+

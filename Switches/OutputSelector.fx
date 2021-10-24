@@ -1,7 +1,8 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-24
 // @Author baopao
-// @Created 2014-02-06
+// @Author jwrl
+// @Created 2021-10-24
 // @see https://www.lwks.com/media/kunena/attachments/6375/OutputSelect_640.png
 
 /**
@@ -15,23 +16,13 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect OutputSelector.fx
 //
-// Created by baopao (http://www.alessandrodallafontana.com/).
+// This is a rewrite to support Lightworks v2021 and later of an original effect created
+// by baopao (http://www.alessandrodallafontana.com/).
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 6 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-10-24 jwrl.
+// Rewrite of the original effect to better support LW v2021 and later.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -45,59 +36,52 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-texture In_1;
-texture In_2;
-texture In_3;
-texture In_4;
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-sampler2D In_1_sampler = sampler_state {
-   Texture = <In_1>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler2D In_2_sampler = sampler_state {
-   Texture = <In_2>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler2D In_3_sampler = sampler_state {
-   Texture = <In_3>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler2D In_4_sampler = sampler_state {
-   Texture = <In_4>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (In_1, s_Input_1);
+DefineInput (In_2, s_Input_2);
+DefineInput (In_3, s_Input_3);
+DefineInput (In_4, s_Input_4);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
+int GetInput
 <
    string Description = "Output";
    string Enum = "In_1,In_2,In_3,In_4";
@@ -107,46 +91,17 @@ int SetTechnique
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 OutputSelect_1 (float2 uv : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2,
+                float2 uv3 : TEXCOORD3, float2 uv4 : TEXCOORD4) : COLOR
 {
-   return tex2D (In_1_sampler, uv);
-}
-
-float4 OutputSelect_2 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (In_2_sampler, uv);
-}
-
-float4 OutputSelect_3 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D (In_3_sampler, uv);
-}
-
-float4 OutputSelect_4 (float2 uv : TEXCOORD1) : COLOR
-{
-   return tex2D(In_4_sampler, uv);
+   return (GetInput == 0) ? GetPixel (s_Input_1, uv1) :
+          (GetInput == 1) ? GetPixel (s_Input_2, uv2) :
+          (GetInput == 2) ? GetPixel (s_Input_3, uv3) : GetPixel (s_Input_4, uv4);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Input_1
-{
-   pass Single_Pass { PixelShader = compile PROFILE OutputSelect_1(); }
-}
+technique OutputSelector { Pass P_1 ExecuteShader (ps_main) }
 
-technique Input_2
-{
-   pass Single_Pass { PixelShader = compile PROFILE OutputSelect_2(); }
-}
-
-technique Input_3
-{
-   pass Single_Pass { PixelShader = compile PROFILE OutputSelect_3(); }
-}
-
-technique Input_4
-{
-   pass Single_Pass { PixelShader = compile PROFILE OutputSelect_4(); }
-}

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-10-23
+// @Released 2021-10-25
 // @Author jwrl
 // @Created 2021-09-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_Enhanced_640.png
@@ -52,12 +52,11 @@
 //
 // Version history:
 //
-// Modified jwrl 2021-10-23.
-// Added Z-axis rotation to the DVE.
+// Modified jwrl 2021-10-25.
+// Added Z-axis rotation to the DVE, cleaned up code somewhat.
 //
 // Rebuilt jwrl 2021-09-10.
 // Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -293,26 +292,27 @@ float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv)
 float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
    // First we recover the raw (scale) and square law (XYscale) scale factors.
-   // We then adjust the foreground size and position addresses and put them
-   // in xy1.  Finally, calculate the drop shadow offset and put that in xy2.
+   // We then xy1 for rotation calculations around the screen centre point.
 
    float2 scale = MasterScale * float2 (XScale, YScale);
    float2 XYscale = pow (max (0.0001.xx, scale), SCALE_POWER);
-   float2 xy1 = uv3 - 0.5.xx;
+   float2 xy2, xy1 = uv3 - 0.5.xx;
+
+   // Now we perform the rotation of the foreground coordinates, allowing for
+   // the aspect ratio non-linearity.
+
+   float c, s, angle = radians ((Revolutions * 360.0) + Degrees);
+   
+   sincos (angle, s, c);
 
    xy1.x *= _OutputAspectRatio;
+   xy1    = mul (float2x2 (c, s, -s, c), xy1);
+   xy1.x /= _OutputAspectRatio;
 
-   // Now we perform the rotation of the foreground coordinates
+   // We now adjust the foreground size and position addresses and put them in xy1.
+   // Finally, calculate the drop shadow offset and put that in xy2.
 
-   float c, s, angle = radians (Revolutions * 360.0 + Degrees);
-   
-   sincos (-angle, s, c);
-
-   float2 xy2 = float2 ((xy1.x * c - xy1.y * s), (xy1.x * s + xy1.y * c)); 
-
-   xy2.x /= _OutputAspectRatio;
-   xy2 += 0.5.xx;
-   xy1 = ((xy2 - float2 (Xpos, 1.0 - Ypos)) / XYscale) + 0.5.xx;
+   xy1 = ((xy1 + float2 (0.5 - Xpos, Ypos - 0.5)) / XYscale) + 0.5.xx;
    xy2 = xy1 - (float2 (ShadowX, ShadowY * _OutputAspectRatio) * SHADOW_MAX);
 
    // Recover foreground and background images and the drop shadow alpha
@@ -362,7 +362,7 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
       shadow = Overflow (xy2) ? 0.0 : shadow / DIVIDE;
    }
 
-   // Now we apply the crop AFTER any antialias to both foreground and shadow
+   // Now we apply the crop AFTER any rotation and antialias to both foreground and shadow
 
    if (CropXY (xy1, CropL, CropR, CropT, CropB)) Fgnd = EMPTY;
    if (CropXY (xy2, CropL, CropR, CropT, CropB)) shadow = 0.0;

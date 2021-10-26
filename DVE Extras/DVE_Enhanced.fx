@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-10-25
+// @Released 2021-10-26
 // @Author jwrl
 // @Created 2021-09-10
 // @see https://www.lwks.com/media/kunena/attachments/6375/DVE_Enhanced_640.png
@@ -17,6 +17,8 @@
  that can normally appear.  It also smooths the image during reduction.  It can of
  course be disabled if necessary.  Note that it isn't designed to remove aliasing
  already present in your video, only to reduce any aliasing contributed by the DVE.
+ It's a compromise between maintaining image sharpness as much as possible while
+ blurring the edges to hide the aliasing.
 
  Another difference is in the way that cropping is handled.  In this version the
  crop order is laid out differently to the Lightworks effect.  Instead of left, top,
@@ -52,7 +54,7 @@
 //
 // Version history:
 //
-// Modified jwrl 2021-10-25.
+// Modified jwrl 2021-10-26.
 // Added Z-axis rotation to the DVE, cleaned up code somewhat.
 //
 // Rebuilt jwrl 2021-09-10.
@@ -115,9 +117,11 @@ Wrong_Lightworks_version
 #define CropXY(XY, L, R, T, B)  (BadPos (XY.x, L, -R) || BadPos (XY.y, -T, B))
 
 #define EMPTY 0.0.xxxx
+#define BLACK float2(0.0,1.0).xxxy
 
 #define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
 #define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
 
 // Definitions used by this shader
 
@@ -125,11 +129,11 @@ Wrong_Lightworks_version
 #define SCALE_RANGE  3.16227766     // 10x (the same as Lightworks does)
 #define SHADOW_MAX 0.1
 
-#define OUTER_LOOP   8
-#define INNER_LOOP   4
-#define DIVIDE       65
-#define RADIUS       0.0005
-#define ANGLE        0.3927
+#define OUTER_LOOP   4
+#define INNER_LOOP   3
+#define DIVIDE       25
+#define RADIUS       0.000125
+#define ANGLE        0.7853981633
 
 float _OutputAspectRatio;
 
@@ -287,7 +291,7 @@ bool CropToBgd
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return BdrPixel (s_RawBg, uv); }
 
 float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
@@ -338,8 +342,8 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
       scale.y = scale.y < 1.0 ? (1.0 - max (0.0, scale.y)) / 3.0 : pow (scale.y - 1.0, 2.0);
       scale   = float2 (1.0, _OutputAspectRatio) * scale * RADIUS;
 
-      // The antialias is a sixteen by 22.5 degrees rotary blur at four samples deep.
-      // The outer loop achieves sixteen steps in 8 passes by using both positive and
+      // The antialias is an eight by 45 degree rotary blur at three samples deep.
+      // The outer loop achieves eight steps in 4 passes by using both positive and
       // negative offsets.
 
       for (int i = 0; i < OUTER_LOOP; i++) {
@@ -348,18 +352,18 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
          xy0 = xy;
 
          for (int j = 0; j < INNER_LOOP; j++) {
-            Fgnd += GetPixel (s_Foreground, xy1 + xy);
-            Fgnd += GetPixel (s_Foreground, xy1 - xy);
-            shadow += GetPixel (s_Foreground, xy2 + xy).a;
-            shadow += GetPixel (s_Foreground, xy2 - xy).a;
+            Fgnd += tex2D (s_Foreground, xy1 + xy);
+            Fgnd += tex2D (s_Foreground, xy1 - xy);
+            shadow += tex2D (s_Foreground, xy2 + xy).a;
+            shadow += tex2D (s_Foreground, xy2 - xy).a;
             xy += xy0;
          }
 
          angle += ANGLE;
       }
 
-      Fgnd = Overflow (xy1) ? EMPTY : Fgnd / DIVIDE;
-      shadow = Overflow (xy2) ? 0.0 : shadow / DIVIDE;
+      Fgnd   /= DIVIDE;
+      shadow /= DIVIDE;
    }
 
    // Now we apply the crop AFTER any rotation and antialias to both foreground and shadow
@@ -373,7 +377,7 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 
    // Return the foreground, drop shadow and background composite
 
-   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
+   return CropToBgd && Overflow (uv2) ? Bgnd : lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -382,8 +386,8 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 
 technique DVE_Enhanced
 {
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass P_1 ExecuteShader (ps_main)
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_main)
 }
 

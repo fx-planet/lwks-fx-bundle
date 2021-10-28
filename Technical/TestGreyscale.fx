@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-28
 // @Author jwrl
-// @Created 2017-04-01
+// @Created 2021-10-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/TestGreyscale_640.png
 
 /**
@@ -18,34 +18,12 @@
 // Inspired by an earlier version, this is a complete rewrite from the ground up.  The
 // multiple conditional statements of the original version have been replaced with a
 // worst case of four.  The bar test signals are now produced by indexing into arrays
-// where possible.  This has the advantages of speed and simplicity, but ps_2.b
-// constraints mean that the full gamut versions are produced by scaling the array
-// indeces.
+// where possible.  This has the advantages of speed and simplicity.
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Changed subcategory.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Bugfix 14 July 2017 by jwrl.
-// Corrected an issue with Linux/Mac versions of the Lightworks effects compiler that
-// caused the two bar patterns not to display.  The fix is to change all TEXCOORD1
-// declarations to TEXCOORD0.
-// A second known bug correction addresses another issue with the compiler.  It doesn't
-// like const declarations outside shaders on the Mac/Linux platforms.
+// Rewrite 2021-10-28 jwrl.
+// Rewrite of the original effect to better support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -59,24 +37,18 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int TestType
-<
-   string Description = "Bar scale";
-   string Enum = "BT 709 percentage scale,Full gamut decimal,Full gamut hexadecimal";
-> = 0;
-
-int SetTechnique
-<
-   string Description = "Display type";
-   string Enum = "Bars,Composite bars,Gradient,Composite gradient";
-> = 1;
-
-//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
 // TestType enumeration indexing
 
@@ -99,6 +71,22 @@ int SetTechnique
 float _binary [11] = { 0.0, BT709_B, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, BT709_W, 1.0 };
 float _BT_709 [11] = { BT709_B, 0.14862745, 0.2345098, 0.32039216, 0.40627451, 0.49215686,
                        0.57803922, 0.66392157, 0.74980392, 0.83568628, BT709_W };
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+int TestType
+<
+   string Description = "Bar scale";
+   string Enum = "BT 709 percentage scale,Full gamut decimal,Full gamut hexadecimal";
+> = 0;
+
+int SetTechnique
+<
+   string Description = "Display type";
+   string Enum = "Bars,Composite bars,Gradient,Composite gradient";
+> = 1;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -164,26 +152,8 @@ float4 ps_grad_main (float2 uv : TEXCOORD0) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Bars
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_bars (); }
-}
+technique Bars { pass P_1 ExecuteShader (ps_bars) }
+technique CompositeBars { pass P_1 ExecuteShader (ps_bars_main) }
+technique Grad { pass P_1 ExecuteShader (ps_grad) }
+technique CompositeGrad { pass P_1 ExecuteShader (ps_grad_main) }
 
-technique CompositeBars
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_bars_main (); }
-}
-
-technique Grad
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_grad (); }
-}
-
-technique CompositeGrad
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_grad_main (); }
-}

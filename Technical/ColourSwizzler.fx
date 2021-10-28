@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-28
 // @Author jwrl
-// @Created 2017-10-19
+// @Created 2021-10-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Swizzler_640.png
 
 /**
@@ -13,21 +13,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Changed category and subcategory.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Rewrite 2021-10-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -41,24 +28,35 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler FgdSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -76,70 +74,42 @@ int SetTechnique
 
 float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (FgdSampler, uv);
+   return GetPixel (s_Input, uv);
 }
 
 float4 ps_main_RGB_BRG (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (FgdSampler, uv).brga;
+   return GetPixel (s_Input, uv).brga;
 }
 
 float4 ps_main_RGB_GBR (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (FgdSampler, uv).gbra;
+   return GetPixel (s_Input, uv).gbra;
 }
 
 float4 ps_main_swap_RB (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (FgdSampler, uv).bgra;
+   return GetPixel (s_Input, uv).bgra;
 }
 
 float4 ps_main_swap_GB (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (FgdSampler, uv).rbga;
+   return GetPixel (s_Input, uv).rbga;
 }
 
 float4 ps_main_swap_RG (float2 uv : TEXCOORD1) : COLOR
 {
-   return tex2D (FgdSampler, uv).grba;
+   return GetPixel (s_Input, uv).grba;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique ColourSwizzler_0
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
-}
+technique ColourSwizzler_0 { pass P_1 ExecuteShader (ps_main) }
+technique ColourSwizzler_1 { pass P_1 ExecuteShader (ps_main_RGB_BRG) }
+technique ColourSwizzler_2 { pass P_1 ExecuteShader (ps_main_RGB_GBR) }
+technique ColourSwizzler_3 { pass P_1 ExecuteShader (ps_main_swap_RB) }
+technique ColourSwizzler_4 { pass P_1 ExecuteShader (ps_main_swap_GB) }
+technique ColourSwizzler_5 { pass P_1 ExecuteShader (ps_main_swap_RG) }
 
-technique ColourSwizzler_1
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_RGB_BRG (); }
-}
-
-technique ColourSwizzler_2
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_RGB_GBR (); }
-}
-
-technique ColourSwizzler_3
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_swap_RB (); }
-}
-
-technique ColourSwizzler_4
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_swap_GB (); }
-}
-
-technique ColourSwizzler_5
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_swap_RG (); }
-}

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-28
 // @Author khaver
 // @Created 2013-03-15
 // @see https://www.lwks.com/media/kunena/attachments/6375/HSVWheel_640.png
@@ -17,27 +17,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Added creation date.
-// Changed category and subcategory.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Bug fix 26 February 2017 by jwrl:
-// Corrected for a bug in the way that Lightworks handles interlaced media.
-//
-// Bug fix 10 July 2017 by jwrl.
-// Corrected modulo usage affecting Linux and Mac versions only.
-//
-// Cross platform conversion by jwrl April 30 2016
+// Update 2021-10-28 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -47,51 +28,63 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Technical";
    string Notes       = "A colour analysis tool which shows one or two pixel reference points mapped onto HSV wheels";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0,1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define RED float2(0.0,1.0).yxxy
+
+float _OutputAspectRatio;
+float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_Input);
 
-texture submaster : RenderColorTarget;
-
-texture Tex1 : RenderColorTarget;
-texture Tex2 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSamp = sampler_state {
-        Texture = <Input>;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-
-sampler SubMr = sampler_state {
-        Texture = <submaster>;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-
-sampler Samp1 = sampler_state {
-        Texture = <Tex1>;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-
-sampler Samp2 = sampler_state {
-        Texture = <Tex2>;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
+DefineTarget (submaster, SubMr);
+DefineTarget (Tex1, Samp1);
+DefineTarget (Tex2, Samp2);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -108,8 +101,8 @@ float Pix1X
    string Description = "Pixel 1";
    string Group = "HSV 1";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.15;
 
 float Pix1Y
@@ -117,16 +110,16 @@ float Pix1Y
    string Description = "Pixel 1";
    string Group = "HSV 1";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.75;
 
 float zoomit1
 <
    string Description = "Zoom";
    string Group = "HSV 1";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.25;
 
 float Pan1X
@@ -134,8 +127,8 @@ float Pan1X
    string Description = "Move 1";
    string Flags = "SpecifiesPointX";
    string Group = "HSV 1";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.15;
 
 float Pan1Y
@@ -143,8 +136,8 @@ float Pan1Y
    string Description = "Move 1";
    string Flags = "SpecifiesPointY";
    string Group = "HSV 1";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.25;
 
 bool CW2
@@ -158,8 +151,8 @@ float Pix2X
    string Description = "Pixel 2";
    string Group = "HSV 2";
    string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.85;
 
 float Pix2Y
@@ -167,16 +160,16 @@ float Pix2Y
    string Description = "Pixel 2";
    string Group = "HSV 2";
    string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.75;
 
 float zoomit2
 <
    string Description = "Zoom";
    string Group = "HSV 2";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.25;
 
 float Pan2X
@@ -184,8 +177,8 @@ float Pan2X
    string Description = "Move 2";
    string Flags = "SpecifiesPointX";
    string Group = "HSV 2";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.85;
 
 float Pan2Y
@@ -193,16 +186,9 @@ float Pan2Y
    string Description = "Move 2";
    string Flags = "SpecifiesPointY";
    string Group = "HSV 2";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.25;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -277,9 +263,11 @@ float3 rgb2hsv (float4 rgb)
 
 float4 wheel1 (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 pixel = tex2D (InputSamp, float2 (Pix1X, 1.0 - Pix1Y));
-   float4 color = 0.0;
+   float4 pixel = tex2D (s_Input, float2 (Pix1X, 1.0 - Pix1Y));
+   float4 color = EMPTY;
+
    float3 hsv = rgb2hsv (pixel);
+
    float2 polar = Polar (uv);
 
    float hc = polar.x;
@@ -288,11 +276,11 @@ float4 wheel1 (float2 uv : TEXCOORD1) : COLOR
    float sl = 1.0 - polar.y;
 
    if (polar.y < 0.99) {
-      color = float4 (hl, hl, hl, 1.0);
+      color = float4 (hl.xxx, 1.0);
 
-      if (vang > hc - 0.7 && vang <= hc) color = float4 (1.0, 0.0, 0.0, 1.0);
+      if (vang > hc - 0.7 && vang <= hc) color = RED;
 
-      if (vang < hc-0.7) color = float4 (0.0, 0.0, 0.0, 1.0);
+      if (vang < hc-0.7) color = BLACK;
    }
 
    if (polar.y <= 0.833333) {
@@ -306,47 +294,37 @@ float4 wheel1 (float2 uv : TEXCOORD1) : COLOR
    return color;
 }
 
-float4 prebuild (float2 xy : TEXCOORD1) : COLOR
+float4 prebuild (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 orig = tex2D (InputSamp, xy);
+   float4 orig = GetPixel (s_Input, uv);
 
    if (!CW1) return orig;
-
-   float4 Cout, wheel = 0.0;
 
    float pixX = 3.0 / _OutputWidth;
    float pixY = 3.0 * _OutputAspectRatio / _OutputWidth;
    float asp = _OutputAspectRatio;
 
-   float4 pixel = tex2D (InputSamp, float2 (Pix1X, 1.0 - Pix1Y));
+   float4 pixel = GetPixel (s_Input, float2 (Pix1X, 1.0 - Pix1Y));
+
    float3 hsv = rgb2hsv (pixel);
+
    float2 xxyy = Cart (hsv.r, hsv.g, hsv.b);
 
    xxyy /= 1.2;
    xxyy += 0.5;
 
-   float zoom = (zoomit1 == 0.0) ? 0.00001 : zoomit1;
+   float zoom = max (0.00001, zoomit1);
 
    float z = zoom / asp;
-   float X = ((xy.x - 0.5) / z) + 0.5;
-   float XX = ((xxyy.x - 0.5) * z) + 0.5;
-   float Y = ((xy.y - 0.5) / zoom) + 0.5;
-   float YY = ((xxyy.y - 0.5) * zoom) + 0.5;
+   float X = ((uv.x - Pan1X) / z) + 0.5;
+   float XX = ((xxyy.x - 0.5) * z) + Pan1X;
+   float Y = ((uv.y + Pan1Y - 1.0) / zoom) + 0.5;
+   float YY = ((xxyy.y - 0.5) * zoom) - Pan1Y + 1.0;
 
-   X -= (Pan1X - 0.5) / z;
-   Y += (Pan1Y - 0.5) / zoom;
-   XX += Pan1X - 0.5;
-   YY -= Pan1Y - 0.5;
+   float4 wheel = GetPixel (Samp1, float2 (X, Y));
 
-   wheel = tex2D (Samp1, float2 (X, Y));
-
-   if (X > 1.0 || X < 0.0) wheel = 0.0;
-
-   if (Y > 1.0 || Y < 0.0) wheel = 0.0;
-
-   if (xy.x >= XX - pixX && xy.x <= XX + pixX && xy.y >= YY - pixY && xy.y <= YY + pixY) {
-      wheel = float4 (0.0, 0.0, 0.0, 1.0);
-   }
+   if (uv.x >= XX - pixX && uv.x <= XX + pixX && uv.y >= YY - pixY && uv.y <= YY + pixY)
+      wheel = BLACK;
 
    return lerp (orig, wheel, wheel.a);
 }
@@ -354,7 +332,7 @@ float4 prebuild (float2 xy : TEXCOORD1) : COLOR
 float4 wheel2 (float2 uv : TEXCOORD1) : COLOR
 {
    float4 color = 0.0;
-   float4 pixel = tex2D (InputSamp, float2 (Pix2X, 1.0 - Pix2Y));
+   float4 pixel = tex2D (s_Input, float2 (Pix2X, 1.0 - Pix2Y));
    float3 hsv = rgb2hsv (pixel);
    float2 polar = Polar (uv);
 
@@ -366,9 +344,9 @@ float4 wheel2 (float2 uv : TEXCOORD1) : COLOR
    if (polar.y < 0.99) {
       color = float4 (hl, hl, hl, 1.0);
 
-      if (vang > hc-0.7 && vang <= hc) color = float4 (1.0, 0.0, 0.0, 1.0);
+      if (vang > hc-0.7 && vang <= hc) color = RED;
 
-      if (vang < hc-0.7) color = float4 (0.0, 0.0, 0.0, 1.0);
+      if (vang < hc-0.7) color = BLACK;
    }
 
    if (polar.y <= 0.833333) {
@@ -382,7 +360,7 @@ float4 wheel2 (float2 uv : TEXCOORD1) : COLOR
    return color;
 }
 
-float4 combine (float2 xy : TEXCOORD1) : COLOR
+float4 combine (float2 xy : TEXCOORD2) : COLOR
 {
    float4 orig = tex2D (SubMr, xy);
 
@@ -392,37 +370,27 @@ float4 combine (float2 xy : TEXCOORD1) : COLOR
    float pixY = 3.0 * _OutputAspectRatio / _OutputWidth;
    float asp = _OutputAspectRatio;
 
-   float4 Cout, wheel = 0.0;
-
    float4 pixel = tex2D (SubMr, float2 (Pix2X, 1.0 - Pix2Y));
+
    float3 hsv = rgb2hsv (pixel);
+
    float2 xxyy = Cart (hsv.r, hsv.g, hsv.b);
 
    xxyy /= 1.2;
-   xxyy += 0.5;
+   xxyy += 0.5.xx;
 
    float zoom = (zoomit2 == 0.0) ? 0.00001 : zoomit2;
 
    float z = zoom / asp;
-   float X = ((xy.x - 0.5) / z) + 0.5;
-   float XX = ((xxyy.x - 0.5) * z) + 0.5;
-   float Y = ((xy.y - 0.5) / zoom) + 0.5;
-   float YY = ((xxyy.y - 0.5) * zoom) + 0.5;
+   float X = ((xy.x - Pan2X) / z) + 0.5;
+   float XX = ((xxyy.x - 0.5) * z) + Pan2X;
+   float Y = ((xy.y + Pan2Y - 1.0) / zoom) + 0.5;
+   float YY = ((xxyy.y - 0.5) * zoom) - Pan2Y + 1.0;
 
-   X -= (Pan2X - 0.5) / z;
-   Y += (Pan2Y - 0.5) / zoom;
-   XX += Pan2X - 0.5;
-   YY -= Pan2Y - 0.5;
+   float4 wheel = GetPixel (Samp2, float2 (X, Y));
 
-   wheel = tex2D (Samp2, float2 (X, Y));
-
-   if (X > 1.0 || X < 0.0) wheel = 0.0;
-
-   if (Y > 1.0 || Y < 0.0) wheel = 0.0;
-
-   if (xy.x >= XX - pixX && xy.x <= XX + pixX && xy.y >= YY - pixY && xy.y <= YY + pixY) {
-      wheel = float4 (0.0, 0.0, 0.0, 1.0);
-   }
+   if (xy.x >= XX - pixX && xy.x <= XX + pixX && xy.y >= YY - pixY && xy.y <= YY + pixY)
+      wheel = BLACK;
 
    return lerp (orig, wheel, wheel.a);
 }
@@ -433,33 +401,9 @@ float4 combine (float2 xy : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   
-   pass Pass0
-   <
-   string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE wheel1 ();
-   }
-
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = submaster;";
-   >
-   {
-      PixelShader = compile PROFILE prebuild ();
-   }
-
-   pass Pass2
-   <
-   string Script = "RenderColorTarget0 = Tex2;";
-   >
-   {
-      PixelShader = compile PROFILE wheel2 ();
-   }
-
-   pass Pass3
-   {
-      PixelShader = compile PROFILE combine ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = Tex1;"; > ExecuteShader (wheel1)
+   pass P_2 < string Script = "RenderColorTarget0 = submaster;"; > ExecuteShader (prebuild)
+   pass P_3 < string Script = "RenderColorTarget0 = Tex2;"; > ExecuteShader (wheel2)
+   pass P_4 ExecuteShader (combine)
 }
+

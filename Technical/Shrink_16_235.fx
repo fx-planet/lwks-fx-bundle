@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-28
 // @Author khaver
 // @Created 2011-05-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/Shrink16_235_640.png
@@ -14,19 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
+// Update 2021-10-28 jwrl.
+// Updated the original effect to better support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -40,56 +29,65 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+//-----------------------------------------------------------------------------------------//
 // Input and shader
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-
-sampler FgSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 NullPS(float2 xy : TEXCOORD1) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-    float highc = 235.0f / 255.0f;
-    float lowc = 16.0f / 255.0f;
-    float scale = 255.0f / 219.0f;
+   float highc = 235.0 / 255.0;
+   float lowc = 16.0 / 255.0;
+   float scale = 255.0 / 219.0;
 
-    float4 color = tex2D(FgSampler, xy.xy);
+   float4 color = GetPixel (s_Input, uv);
 
-    color = (color / scale) + lowc;
+   color = (color / scale) + lowc;
 
-    if (color.r > highc) color.r = highc;
-    if (color.g > highc) color.g = highc;
-    if (color.b > highc) color.b = highc;
-    if (color.a > highc) color.a = highc;
-    if (color.r < lowc) color.r = lowc;
-    if (color.g < lowc) color.g = lowc;
-    if (color.b < lowc) color.b = lowc;
-    if (color.a < lowc) color.a = lowc;
+   if (color.r > highc) color.r = highc;
+   if (color.g > highc) color.g = highc;
+   if (color.b > highc) color.b = highc;
+   if (color.a > highc) color.a = highc;
+   if (color.r < lowc) color.r = lowc;
+   if (color.g < lowc) color.g = lowc;
+   if (color.b < lowc) color.b = lowc;
+   if (color.a < lowc) color.a = lowc;
 
-	return color;
+   return color;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Shrink16_235
-{
-   pass p0
-   {
-      PixelShader = compile PROFILE NullPS();
-   }
-}
+technique Shrink16_235 { pass p0 ExecuteShader (ps_main) }
+

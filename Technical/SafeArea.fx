@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-06-09
+// @Released 2021-10-28
 // @Author jwrl
-// @Created 2021-06-09
+// @Created 2021-10-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/SafeAreaAndXhatch_640.png
 
 /**
@@ -10,13 +10,10 @@
  useful for viewfinder simulations and the like.  Title safe, action safe and a centre
  cross can be selectively displayed, and center 4:3 can also be enabled if it is needed.
 
- Because the most likely use is as a viewfinder simulator this version has been rebuilt
- to ensure that the lines stay inside the active image area.  If it is necessary to lock
- the patterns to the sequence size and aspect ratio the frame lock effect (FrameLock.fx)
- should be applied first.
-
- The crosshatch pattern can be adjusted from 8 to 32 lines across the image width, and
- the line weight can be adjusted for best visibility.
+ Because this is designed to show the frame sitting inside the active area, the safe
+ area settings can fall outside the input.  This effect also kills any resolution
+ independence.  The crosshatch pattern can be adjusted from 8 to 32 lines across the
+ image width, and the line weight can be adjusted for best visibility.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -29,7 +26,8 @@
 //
 // Version history:
 //
-// Built 2021-06-09 jwrl.
+// Built 2021-10-28 jwrl.
+// Rewrote the original effect to better support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -39,8 +37,7 @@ int _LwksEffectInfo
    string Category       = "User";
    string SubCategory    = "Technical";
    string Notes          = "This effect is probably now redundant, but may be useful for viewfinder simulations";
-   bool CanSize          = true;
-   bool HasMinOutputSize = true;
+   bool CanSize          = false;
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
@@ -54,13 +51,6 @@ Wrong_Lightworks_version
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define EMPTY   0.0.xxxx
-#define BLACK   float2(0.0, 1.0).xxxy
-#define WHITE   1.0.xxxx
-
-#define Illegal(XY) any(saturate (XY) - XY)
-#define GetPixel(SHADER, XY) (Illegal (XY) ? EMPTY : tex2D (SHADER, XY))
 
 #define DefineInput(TEXTURE, SAMPLER) \
                                       \
@@ -90,7 +80,14 @@ Wrong_Lightworks_version
    MipFilter = Linear;                 \
 }
 
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY   0.0.xxxx
+#define BLACK   float2(0.0, 1.0).xxxy
+#define WHITE   1.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define SUBTRACT     1           // Subtract value used by showIt and showSafeArea
 #define DIFFERENCE   2           // Difference value used by showIt and showSafeArea
@@ -112,7 +109,7 @@ Wrong_Lightworks_version
 #define T_L_3        0.1         // These two give a title safe area of 80%,
 #define B_R_3        0.9         // consistent with legacy SMPTE RP 218
 
-// The next group of definitions only used to produce the 4x3 equivalents
+// The next group of definitions are only used to produce the 4x3 equivalents
 
 #define T_L_0_a      0.149375    // EBU R 95 action
 #define B_R_0_a      0.850625
@@ -487,7 +484,7 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1, float2 uv2 : TEX
 
 technique SafeArea
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Xhatch;"; > CompileShader (ps_crosshatch)
-   pass P_2 CompileShader (ps_main)
+   pass P_1 < string Script = "RenderColorTarget0 = Xhatch;"; > ExecuteShader (ps_crosshatch)
+   pass P_2 ExecuteShader (ps_main)
 }
 

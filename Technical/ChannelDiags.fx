@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-28
 // @Author jwrl
-// @Created 2015-12-20
+// @Created 2021-10-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640a.png
 
 /**
@@ -16,34 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 12 Feb 2019 by user jwrl:
-// Changed input addressing to defaults.  This allows it to be used on older LW versions.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Renamed effect.
-// Changed subcategory.
-//
-// Rewrite by LW user jwrl 5 November 2018.
-// Rewritten to add 2020 support and clean up code.
-//
-// Modified by LW user jwrl 26 September 2018.
-// Added notes to header.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Modified 16 August 2016 by jwrl.
-// Added 709 luminance matrix and the ability to show any or all RGB as negative.
-//
-// Modified 18 June 2016 by jwrl.
-// Added RGB sum, B - Y and R - Y display.
+// Rewrite 2021-10-28 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -57,12 +31,48 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define MATRIX601  float3(0.2989, 0.5866, 0.1145)
+#define MATRIX709  float3(0.2126, 0.7152, 0.0722)
+#define MATRIX2020 float3(0.2627, 0.678,  0.0593)
+
+#define U_601      0.564
+#define V_601      0.713
+
+#define U_709      0.635
+#define V_709      0.539
+
+#define U_2020     0.5315
+#define V_2020     0.6782
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
-
-sampler s_Input = sampler_state { Texture = <Inp>; };
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -86,29 +96,12 @@ bool Negative
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define MATRIX601  float3(0.2989, 0.5866, 0.1145)
-#define MATRIX709  float3(0.2126, 0.7152, 0.0722)
-#define MATRIX2020 float3(0.2627, 0.678,  0.0593)
-
-#define U_601      0.564
-#define V_601      0.713
-
-#define U_709      0.635
-#define V_709      0.539
-
-#define U_2020     0.5315
-#define V_2020     0.6782
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_main_601 (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 RGBval = tex2D (s_Input, xy);
+   float4 RGBval = GetPixel (s_Input, xy);
 
    if ((Channel == 1) || (Channel > 6)) {
       float luma = dot (RGBval.rgb, MATRIX601);
@@ -132,7 +125,7 @@ float4 ps_main_601 (float2 xy : TEXCOORD1) : COLOR
 
 float4 ps_main_709 (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 RGBval = tex2D (s_Input, xy);
+   float4 RGBval = GetPixel (s_Input, xy);
 
    if ((Channel == 1) || (Channel > 6)) {
       float luma = dot (RGBval.rgb, MATRIX709);
@@ -156,7 +149,7 @@ float4 ps_main_709 (float2 xy : TEXCOORD1) : COLOR
 
 float4 ps_main_2020 (float2 xy : TEXCOORD1) : COLOR
 {
-   float4 RGBval = tex2D (s_Input, xy);
+   float4 RGBval = GetPixel (s_Input, xy);
 
    if ((Channel == 1) || (Channel > 6)) {
       float luma = dot (RGBval.rgb, MATRIX2020);
@@ -182,19 +175,7 @@ float4 ps_main_2020 (float2 xy : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique ChannelDiags_601
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_601 (); }
-}
+technique ChannelDiags_601 { pass P_1 ExecuteShader (ps_main_601) }
+technique ChannelDiags_709 { pass P_1 ExecuteShader (ps_main_709) }
+technique ChannelDiags_2020 { pass P_1 ExecuteShader (ps_main_2020) }
 
-technique ChannelDiags_709
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_709 (); }
-}
-technique ChannelDiags_2020
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main_2020 (); }
-}

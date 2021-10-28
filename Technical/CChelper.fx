@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-28
 // @Author khaver
 // @Created 2013-02-14
 // @see https://www.lwks.com/media/kunena/attachments/6375/CCHelper2_640.png
@@ -17,6 +17,9 @@
  Bars".  When using the colour picker, you can click and drag to select a rectangular
  region.  The resultant colour will be the average of the selected pixels.  Then add
  a Colour Correction effect to the chain and adjust using CC Helper to assist.
+
+ NOTE:  This effect "works with" resolution independence in that it overrides it.  If
+ that is not it can become impossible to accurately position the sample points.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,23 +27,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Changed category and subcategory.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 30 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-//
-// This cross platform conversion by jwrl April 28 2016.
+// Update 2021-10-28 jwrl.
+// Updated the original effect to work with LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -50,278 +38,61 @@ int _LwksEffectInfo
    string Category    = "User";
    string SubCategory = "Technical";
    string Notes       = "Provides up to six user selectable reference colour patches";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-texture Input;
-
-texture Bars1 : RenderColorTarget;
-texture Bars2 : RenderColorTarget;
-texture Bars3 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BarSampler1 = sampler_state
-{
-   Texture   = <Bars1>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BarSampler2 = sampler_state
-{
-   Texture   = <Bars2>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler BarSampler3 = sampler_state
-{
-   Texture   = <Bars3>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-bool Graph
-<
-	string Description = "Display Bars";
-> = true;
-
-bool Grad
-<
-	string Description = "Add Gradient";
-> = false;
-
-bool Full
-<
-	string Description = "100% Colors";
-> = false;
-
-float Slide
-<
-	string Description = "Move Bars";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = -0.75;
-
-bool bC1
-<
-	string Description = "Show";
-	string Group = "Color 1";
-> = true;
-
-bool Lvl1
-<
-	string Description = "Display RGB Levels";
-	string Group = "Color 1";
-> = false;
-
-float C1X
-<
-   string Description = "C1";
-   string Group = "Color 1";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.08333;
-
-float C1Y
-<
-   string Description = "C1";
-   string Group = "Color 1";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.9;
-
-bool bC2
-<
-	string Description = "Show";
-	string Group = "Color 2";
-> = false;
-
-bool Lvl2
-<
-	string Description = "Display RGB Levels";
-	string Group = "Color 2";
-> = false;
-
-float C2X
-<
-   string Description = "C2";
-   string Group = "Color 2";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float C2Y
-<
-   string Description = "C2";
-   string Group = "Color 2";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.9;
-
-bool bC3
-<
-	string Description = "Show";
-	string Group = "Color 3";
-> = false;
-
-bool Lvl3
-<
-	string Description = "Display RGB Levels";
-	string Group = "Color 3";
-> = false;
-
-float C3X
-<
-   string Description = "C3";
-   string Group = "Color 3";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.41667;
-
-float C3Y
-<
-   string Description = "C3";
-   string Group = "Color 3";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.9;
-
-bool bC4
-<
-	string Description = "Show";
-	string Group = "Color 4";
-> = false;
-
-bool Lvl4
-<
-	string Description = "Display RGB Levels";
-	string Group = "Color 4";
-> = false;
-
-float C4X
-<
-   string Description = "C4";
-   string Group = "Color 4";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.58333;
-
-float C4Y
-<
-   string Description = "C4";
-   string Group = "Color 4";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.9;
-
-bool bC5
-<
-	string Description = "Show";
-	string Group = "Color 5";
-> = false;
-
-bool Lvl5
-<
-	string Description = "Display RGB Levels";
-	string Group = "Color 5";
-> = false;
-
-float C5X
-<
-   string Description = "C5";
-   string Group = "Color 5";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float C5Y
-<
-   string Description = "C5";
-   string Group = "Color 5";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.9;
-
-bool bC6
-<
-	string Description = "Show";
-	string Group = "Color 6";
-> = false;
-
-bool Lvl6
-<
-	string Description = "Display RGB Levels";
-	string Group = "Color 6";
-> = false;
-
-float C6X
-<
-   string Description = "C6";
-   string Group = "Color 6";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.91667;
-
-float C6Y
-<
-   string Description = "C6";
-   string Group = "Color 6";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.9;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#define ONE_SIXTH   0.1667    // float onesix   = 1.0 / 6.0
-#define TWO_SIXTH   0.3333    // float twosix   = 2.0 / 6.0
-#define THREE_SIXTH 0.5       // float threesix = 3.0 / 6.0
-#define FOUR_SIXTH  0.6667    // float foursix  = 4.0 / 6.0
-#define FIVE_SIXTH  0.8333    // float fivesix  = 5.0 / 6.0
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define ONE_SIXTH   0.1667
+#define TWO_SIXTH   0.3333
+#define THREE_SIXTH 0.5
+#define FOUR_SIXTH  0.6667
+#define FIVE_SIXTH  0.8333
 
 #define CONST_00    0.755
 #define CONST_01    0.75
@@ -370,156 +141,331 @@ float C6Y
 #define CONST_65    0.9259    // 1.0 - (ONE_SIXTH * 0.4444)
 #define CONST_66    0.9444    // 1.0 - (ONE_SIXTH * TWO_SIXTH)
 
-float4 _red   = float2 (0.0, 1.0).yxxy;
-float4 _green = float2 (0.0, 1.0).xyxy;
-float4 _blue  = float2 (0.0, 1.0).xxyy;
-float4 _black = float2 (0.0, 1.0).xxxy;
+#define RED   float2(0.0, 1.0).yxxy
+#define GREEN float2(0.0, 1.0).xyxy
+#define BLUE  float2(0.0, 1.0).xxyy
+#define BLACK float2(0.0, 1.0).xxxy
 
-float4 _white = (1.0).xxxx;
+#define WHITE 1.0.xxxx
+
+#define comax(COLOUR) (1.0 / max (max (COLOUR.r, COLOUR.g), COLOUR.b))
 
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-float comax (float4 color)
-{
-   float mcolor = max (color.r, color.g);
+DefineInput (Input, s_Input);
 
-   mcolor = max (mcolor, color.b);
+DefineTarget (Bars1, BarSampler1);
+DefineTarget (Bars2, BarSampler2);
+DefineTarget (Bars3, BarSampler3);
 
-   return 1.0 / mcolor;
-}
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+bool Graph
+<
+   string Description = "Display Bars";
+> = true;
+
+bool Grad
+<
+   string Description = "Add Gradient";
+> = false;
+
+bool Full
+<
+   string Description = "100% Colors";
+> = false;
+
+float Slide
+<
+   string Description = "Move Bars";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = -0.75;
+
+bool bC1
+<
+   string Description = "Show";
+   string Group = "Color 1";
+> = true;
+
+bool Lvl1
+<
+   string Description = "Display RGB Levels";
+   string Group = "Color 1";
+> = false;
+
+float C1X
+<
+   string Description = "C1";
+   string Group = "Color 1";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.08333;
+
+float C1Y
+<
+   string Description = "C1";
+   string Group = "Color 1";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
+
+bool bC2
+<
+   string Description = "Show";
+   string Group = "Color 2";
+> = false;
+
+bool Lvl2
+<
+   string Description = "Display RGB Levels";
+   string Group = "Color 2";
+> = false;
+
+float C2X
+<
+   string Description = "C2";
+   string Group = "Color 2";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.25;
+
+float C2Y
+<
+   string Description = "C2";
+   string Group = "Color 2";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
+
+bool bC3
+<
+   string Description = "Show";
+   string Group = "Color 3";
+> = false;
+
+bool Lvl3
+<
+   string Description = "Display RGB Levels";
+   string Group = "Color 3";
+> = false;
+
+float C3X
+<
+   string Description = "C3";
+   string Group = "Color 3";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.41667;
+
+float C3Y
+<
+   string Description = "C3";
+   string Group = "Color 3";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
+
+bool bC4
+<
+   string Description = "Show";
+   string Group = "Color 4";
+> = false;
+
+bool Lvl4
+<
+   string Description = "Display RGB Levels";
+   string Group = "Color 4";
+> = false;
+
+float C4X
+<
+   string Description = "C4";
+   string Group = "Color 4";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.58333;
+
+float C4Y
+<
+   string Description = "C4";
+   string Group = "Color 4";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
+
+bool bC5
+<
+   string Description = "Show";
+   string Group = "Color 5";
+> = false;
+
+bool Lvl5
+<
+   string Description = "Display RGB Levels";
+   string Group = "Color 5";
+> = false;
+
+float C5X
+<
+   string Description = "C5";
+   string Group = "Color 5";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.75;
+
+float C5Y
+<
+   string Description = "C5";
+   string Group = "Color 5";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
+
+bool bC6
+<
+   string Description = "Show";
+   string Group = "Color 6";
+> = false;
+
+bool Lvl6
+<
+   string Description = "Display RGB Levels";
+   string Group = "Color 6";
+> = false;
+
+float C6X
+<
+   string Description = "C6";
+   string Group = "Color 6";
+   string Flags = "SpecifiesPointX";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.91667;
+
+float C6Y
+<
+   string Description = "C6";
+   string Group = "Color 6";
+   string Flags = "SpecifiesPointY";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.9;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main1a (float2 uv : TEXCOORD1) : COLOR
+float4 main1a (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 cc5 = tex2D (InputSampler, float2 (C5X, 1.0 - C5Y));
-   float4 cc6 = tex2D (InputSampler, float2 (C6X, 1.0 - C6Y));
+   float4 cc5 = tex2D (s_Input, float2 (C5X, 1.0 - C5Y));
+   float4 cc6 = tex2D (s_Input, float2 (C6X, 1.0 - C6Y));
+   float4 graph = EMPTY;
 
    if (Full) {
-      cc5 = cc5 * comax (cc5);
-      cc6 = cc6 * comax (cc6);
+      cc5 *= comax (cc5);
+      cc6 *= comax (cc6);
    }
 
-   float4 graph = 0.0;
-
    if (bC6) {
-
       if (uv.x > FIVE_SIXTH) {
          graph = cc6;
 
-         if (Grad) graph = graph * (uv.x - FIVE_SIXTH) / ONE_SIXTH;
+         if (Grad) graph *= (uv.x - FIVE_SIXTH) / ONE_SIXTH;
 
          graph.a = 1.0;
       }
 
       if (Lvl6) {
-
-         if (uv.x <= CONST_61 && uv.x >= CONST_62 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = _black;
-
+         if (uv.x <= CONST_61 && uv.x >= CONST_62 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = BLACK;
          if (uv.x <= CONST_63 && uv.x >= CONST_64 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc6.r / 2.0 + CONST_03) graph = _red;
-            else graph = _white;
+            graph = (1.0 - uv.y) <= (cc6.r / 2.0 + CONST_03) ? RED : WHITE;
          }
 
          if (uv.x <= CONST_65 && uv.x >= CONST_63 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc6.g / 2.0 + CONST_03) graph = _green;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc6.g / 2.0 + CONST_03) ? GREEN : WHITE;
          }
 
          if (uv.x <= CONST_66 && uv.x >= CONST_65 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc6.b / 2.0 + CONST_03) graph = _blue;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc6.b / 2.0 + CONST_03) ? BLUE : WHITE;
          }
       }
    }
-      	
-   if (bC5) {
 
+   if (bC5) {
       if (uv.x <= FIVE_SIXTH && uv.x > FOUR_SIXTH) {
          graph = cc5;
 
-         if (Grad) graph = graph * (uv.x - FOUR_SIXTH) / ONE_SIXTH;
+         if (Grad) graph *= (uv.x - FOUR_SIXTH) / ONE_SIXTH;
 
          graph.a = 1.0;
       }
 
       if (Lvl5) {
-
-         if (uv.x <= CONST_51 && uv.x >= CONST_52 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = _black;
-
+         if (uv.x <= CONST_51 && uv.x >= CONST_52 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = BLACK;
          if (uv.x <= CONST_53 && uv.x >= CONST_54 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc5.r / 2.0 + CONST_03) graph = _red;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc5.r / 2.0 + CONST_03) ? RED : WHITE;
          }
 
          if (uv.x <= CONST_55 && uv.x >= CONST_53 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc5.g / 2.0 + CONST_03) graph = _green;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc5.g / 2.0 + CONST_03) ? GREEN : WHITE;
          }
 
          if (uv.x <= CONST_56 && uv.x >= CONST_55 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc5.b / 2.0 + CONST_03) graph = _blue;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc5.b / 2.0 + CONST_03) ? BLUE : WHITE;
          }
       }
    }
-      	
+
    return graph;
 }
 
-float4 main1b (float2 uv : TEXCOORD1) : COLOR
+float4 main1b (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 cc3 = tex2D (InputSampler, float2 (C3X, 1.0 - C3Y));
-   float4 cc4 = tex2D (InputSampler, float2 (C4X, 1.0 - C4Y));
+   float4 cc3 = tex2D (s_Input, float2 (C3X, 1.0 - C3Y));
+   float4 cc4 = tex2D (s_Input, float2 (C4X, 1.0 - C4Y));
+   float4 graph = EMPTY;
 
    if (Full) {
-      cc3 = cc3 * comax (cc3);
-      cc4 = cc4 * comax (cc4);
+      cc3 *= comax (cc3);
+      cc4 *= comax (cc4);
    }
 
-   float4 graph = 0.0;
-
-
    if (bC4) {
-
       if (uv.x <= FOUR_SIXTH && uv.x > THREE_SIXTH) {
          graph = cc4;
 
-         if (Grad) graph = graph * (uv.x - THREE_SIXTH) / ONE_SIXTH;
+         if (Grad) graph *= (uv.x - THREE_SIXTH) / ONE_SIXTH;
 
          graph.a = 1.0;
       }
 
       if (Lvl4) {
-
-         if (uv.x <= CONST_41 && uv.x >= CONST_42 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = _black;
-
+         if (uv.x <= CONST_41 && uv.x >= CONST_42 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = BLACK;
          if (uv.x <= CONST_43 && uv.x >= CONST_44 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc4.r / 2.0 + CONST_03) graph = _red;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc4.r / 2.0 + CONST_03) ? RED : WHITE;
          }
 
          if (uv.x <= CONST_45 && uv.x >= CONST_43 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc4.g / 2.0 + CONST_03) graph = _green;
-            else graph = _white;
+            graph =  (1.0 - uv.y <= cc4.g / 2.0 + CONST_03) ? GREEN : WHITE;
          }
 
          if (uv.x <= CONST_46 && uv.x >= CONST_45 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc4.b / 2.0 + CONST_03) graph = _blue;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc4.b / 2.0 + CONST_03) ? BLUE : WHITE;
          }
       }
    }
@@ -529,114 +475,90 @@ float4 main1b (float2 uv : TEXCOORD1) : COLOR
       if (uv.x <= THREE_SIXTH && uv.x > TWO_SIXTH) {
          graph = cc3;
 
-         if (Grad) graph = graph * (uv.x - TWO_SIXTH) / ONE_SIXTH;
+         if (Grad) graph *= (uv.x - TWO_SIXTH) / ONE_SIXTH;
 
          graph.a = 1.0;
       }
 
       if (Lvl3) {
 
-         if (uv.x <= CONST_31 && uv.x >= CONST_32 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = _black;
+         if (uv.x <= CONST_31 && uv.x >= CONST_32 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = BLACK;
 
          if (uv.x <= CONST_33 && uv.x >= CONST_34 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc3.r / 2.0 + CONST_03) graph = _red;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc3.r / 2.0 + CONST_03) ? RED : WHITE;
          }
 
          if (uv.x <= CONST_35 && uv.x >= CONST_33 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc3.g / 2.0 + CONST_03) graph = _green;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc3.g / 2.0 + CONST_03) ? GREEN : WHITE;
          }
 
          if (uv.x <= CONST_36 && uv.x >= CONST_35 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc3.b / 2.0 + CONST_03) graph = _blue;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc3.b / 2.0 + CONST_03) ? BLUE : WHITE;
          }
       }
    }
-      	
+
    return graph;
 }
 
-float4 main1c (float2 uv : TEXCOORD1) : COLOR
+float4 main1c (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 cc1 = tex2D (InputSampler, float2 (C1X, 1.0 - C1Y));
-   float4 cc2 = tex2D (InputSampler, float2 (C2X, 1.0 - C2Y));
+   float4 cc1 = tex2D (s_Input, float2 (C1X, 1.0 - C1Y));
+   float4 cc2 = tex2D (s_Input, float2 (C2X, 1.0 - C2Y));
+   float4 graph = EMPTY;
 
    if (Full) {
-      cc1 = cc1 * comax (cc1);
-      cc2 = cc2 * comax (cc2);
+      cc1 *= comax (cc1);
+      cc2 *= comax (cc2);
    }
 
-   float4 graph = 0.0;
-    
    if (bC2) {
-
       if (uv.x <= TWO_SIXTH && uv.x > ONE_SIXTH) {
          graph = cc2;
 
-         if (Grad) graph = graph * (uv.x - 0.1667) / ONE_SIXTH;
+         if (Grad) graph *= (uv.x - 0.1667) / ONE_SIXTH;
 
          graph.a = 1.0;
       }
 
       if (Lvl2) {
-
-         if (uv.x <= CONST_21 && uv.x >= CONST_22 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = _black;
-
+         if (uv.x <= CONST_21 && uv.x >= CONST_22 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = BLACK;
          if (uv.x <= CONST_23 && uv.x >= CONST_24 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc2.r / 2.0 + CONST_03) graph = _red;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc2.r / 2.0 + CONST_03) ? RED : WHITE;
          }
 
          if (uv.x <= CONST_25 && uv.x >= CONST_23 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc2.g / 2.0 + CONST_03) graph = _green;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc2.g / 2.0 + CONST_03) ? GREEN : WHITE;
          }
 
          if (uv.x <= CONST_26 && uv.x >= CONST_25 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc2.b / 2.0 + CONST_03) graph = _blue;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc2.b / 2.0 + CONST_03) ? BLUE : WHITE;
          }
       }
    }
-      	
+
    if (bC1) {
 
       if (uv.x <= ONE_SIXTH) {
          graph = cc1;
 
-         if (Grad) graph = graph * uv.x / ONE_SIXTH;
+         if (Grad) graph *= uv.x / ONE_SIXTH;
 
          graph.a = 1.0;
       }
 
       if (Lvl1) {
-
-         if (uv.x <= CONST_11 && uv.x >= CONST_12 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = _black;
-
+         if (uv.x <= CONST_11 && uv.x >= CONST_12 && uv.y <= CONST_00 && uv.y >= CONST_03) graph = BLACK;
          if (uv.x <= CONST_13 && uv.x >= CONST_14 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc1.r / 2.0 + CONST_03) graph = _red;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc1.r / 2.0 + CONST_03) ? RED : WHITE;
          }
 
          if (uv.x <= CONST_15 && uv.x >= CONST_13 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc1.g / 2.0 + CONST_03) graph = _green;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc1.g / 2.0 + CONST_03) ? GREEN : WHITE;
          }
 
          if (uv.x <= CONST_16 && uv.x >= CONST_15 && uv.y <= CONST_01 && uv.y >= CONST_02) {
-
-            if (1.0 - uv.y <= cc1.b / 2.0 + CONST_03) graph = _blue;
-            else graph = _white;
+            graph = (1.0 - uv.y <= cc1.b / 2.0 + CONST_03) ? BLUE : WHITE;
          }
       }
    }
@@ -644,15 +566,16 @@ float4 main1c (float2 uv : TEXCOORD1) : COLOR
    return graph;
 }
 
-float4 main2 (float2 uv : TEXCOORD1) : COLOR
+float4 main2 (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 orig = tex2D (InputSampler, uv);
+   float4 orig = tex2D (s_Input, uv);
    float4 graph;
+
    float yy = uv.y;
+
    float2 xy;
 
    if (Graph) {
-
       if (Slide < 0.0) {
          yy = 1.0 - ((1.0 - uv.y) / (1.0 + Slide));
          xy = float2 (uv.x, yy);
@@ -684,32 +607,9 @@ float4 main2 (float2 uv : TEXCOORD1) : COLOR
 
 technique CCHelper
 {
-   pass Pass1a
-   <
-      string Script = "RenderColorTarget0 = Bars1;";
-   >
-   {
-      PixelShader = compile PROFILE main1a ();
-   }
-   
-   pass Pass1b
-   <
-      string Script = "RenderColorTarget0 = Bars2;";
-   >
-   {
-      PixelShader = compile PROFILE main1b ();
-   }
-   
-   pass Pass1c
-   <
-      string Script = "RenderColorTarget0 = Bars3;";
-   >
-   {
-      PixelShader = compile PROFILE main1c ();
-   }
-   
-   pass Pass2
-   {
-      PixelShader = compile PROFILE main2 ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = Bars1;"; > ExecuteShader (main1a)
+   pass P_2 < string Script = "RenderColorTarget0 = Bars2;"; > ExecuteShader (main1b)
+   pass P_3 < string Script = "RenderColorTarget0 = Bars3;"; > ExecuteShader (main1c)
+   pass P_4 ExecuteShader (main2)
 }
+

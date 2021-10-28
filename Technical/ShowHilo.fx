@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-28
 // @Author juhartik
 // @AuthorEmail juha@linearteam.org
 // @Created 2016-05-09
@@ -17,24 +17,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified by LW user jwrl 6 December 2018.
-// Changed effect name.
-// Changed subcategory.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-// 
-// Modified 11 February 2017 jwrl.
-// Modified to sit in user category "Analysis" for version 14.  This will actually show
-// as category "User", subcategory "Analysis" in 14 and as category "User" in earlier
-// versions.
+// Update 2021-10-28 jwrl.
+// Updated the original effect to better support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,20 +32,46 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _Length;
+float _Progress;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and samplers
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler FgSampler = sampler_state
-{
-   Texture = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, FgSampler);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -82,30 +92,17 @@ float HiLimit
 > = 0.95;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _Progress = 1.0;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-half4 MainPS(float2 xy : TEXCOORD1) : COLOR
+float4 MainPS (float2 xy : TEXCOORD1) : COLOR
 {
-   float weight, flash;
+   float4 color = GetPixel (FgSampler, xy);
 
-   float4 color = tex2D(FgSampler, xy);
+   float weight = (color.r + color.g + color.b) / 3.0;
 
-   weight=(color.r+color.g+color.b)/3.0;
-
-   if ((weight <= LoLimit) || (weight >= HiLimit)) {
-      if (frac(_Progress*50)>0.5) {
-         flash = 1.0;
-      } else flash = 0.0;
-
-      color.r = color.g = color.b = flash;
-   }
+   if ((weight <= LoLimit) || (weight >= HiLimit))
+      color.rgb = frac (_Progress * _Length * 3.0) > 0.5 ? 1.0.xxx : 0.0.xxx;
 
    return color;
 }
@@ -114,10 +111,5 @@ half4 MainPS(float2 xy : TEXCOORD1) : COLOR
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique ShowHiLo
-{
-   pass p0
-   {
-      PixelShader = compile PROFILE MainPS();
-   }
-}
+technique ShowHiLo { pass p0 ExecuteShader (MainPS) }
+

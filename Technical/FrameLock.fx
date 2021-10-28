@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2021-06-09
+// @Released 2021-10-28
 // @Author jwrl
-// @Created 2021-06-09
+// @Created 2021-10-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/FrameLock_640.png
 
 /**
- Frame lock locks the frame size and aspect ratio of the image.
+ Frame lock locks the frame size and aspect ratio of the image to that of the sequence.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -13,7 +13,7 @@
 //
 // Version history:
 //
-// Built 2021-06-09 jwrl.
+// This version built 2021-10-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -38,11 +38,6 @@ Wrong_Lightworks_version
 #define PROFILE ps_3_0
 #endif
 
-#define EMPTY   0.0.xxxx
-
-#define Illegal(XY) any(saturate (XY) - XY)
-#define GetPixel(SHADER, XY) (Illegal (XY) ? EMPTY : tex2D (SHADER, XY))
-
 #define DefineInput(TEXTURE, SAMPLER) \
                                       \
  texture TEXTURE;                     \
@@ -57,7 +52,12 @@ Wrong_Lightworks_version
    MipFilter = Linear;                \
 }
 
-#define CompileShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 //-----------------------------------------------------------------------------------------//
 // Inputs and targets
@@ -75,10 +75,7 @@ DefineInput (Input, s_Input);
 // Pixel Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
-{
-   return GetPixel (s_Input, uv);
-}
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Input, uv); }
 
 //-----------------------------------------------------------------------------------------//
 // Technique
@@ -86,6 +83,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique FrameLock
 {
-   pass P_1 CompileShader (ps_main)
+   pass P_1 ExecuteShader (ps_main)
 }
 

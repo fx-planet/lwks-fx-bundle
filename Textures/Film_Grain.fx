@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-29
 // @Author khaver
 // @Created 2013-06-07
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmGrain_640.png
@@ -14,27 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined all samplers to fix crossplatform default sampler state differences.
-//
-// Subcategory added by jwrl 10 Feb 2017
-//
-// Bug fix 26 February 2017 by jwrl:
-// This corrects for a bug in the way that Lightworks handles interlaced media.
+// Update 2021-10-29 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -48,114 +29,44 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-texture fg;
-texture Grain : RenderColorTarget;
-texture Blur : RenderColorTarget;
-texture Emboss : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler Input = sampler_state {
-        Texture = <fg>;
-        AddressU = Wrap;
-        AddressV = Wrap;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler GSamp = sampler_state {
-        Texture = <Grain>;
-        AddressU = Mirror;
-        AddressV = Mirror;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler BSamp = sampler_state {
-        Texture = <Blur>;
-        AddressU = Mirror;
-        AddressV = Mirror;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler ESamp = sampler_state {
-        Texture = <Emboss>;
-        AddressU = Mirror;
-        AddressV = Mirror;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int show
-<
-	string Description = "Grain Type";
-	string Enum = "Bypass,Plain,Blurred,Film";
-> = 3;
-
-int gtype
-<
-	string Description = "Applied to";
-	string Enum = "Luma,Chroma,Luma+Chroma,RGB";
-> = 0;
-
-float Mstrength
-<
-	string Description = "Master Strength";
-	float MinVal = 0.0f;
-	float MaxVal = 1.0f;
-> = 0.1f;
-
-float Lstrength
-<
-	string Description = "Luma Strength";
-	float MinVal = 0.0f;
-	float MaxVal = 2.0f;
-> = 1.0f;
-
-float Cstrength
-<
-	string Description = "Chroma Strength";
-	float MinVal = 0.0f;
-	float MaxVal = 2.0f;
-> = 1.0f;
-
-float zoomit
-<
-	string Description = "Grain Size";
-	float MinVal = 0.05f;
-	float MaxVal = 5.0f;
-> = 1.0f;
-
-float Xbias
-<
-	string Description = "X";
-	float MinVal = -3.0f;
-	float MaxVal = 3.0f;
-	string Group = "Film Grain Bias";
-> = -1.0f;
-
-float Ybias
-<
-	string Description = "Y";
-	float MinVal = -3.0f;
-	float MaxVal = 3.0f;
-	string Group = "Film Grain Bias";
-> = 1.0f;
-
-//-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 float _Progress;
 
@@ -163,121 +74,227 @@ float _OutputAspectRatio;
 float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (fg, s_RawInp);
+
+DefineTarget (FixInp, s_Input);
+DefineTarget (Grain, s_Grain);
+DefineTarget (Blur, s_Blur);
+DefineTarget (Emboss, s_Emboss);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+int show
+<
+   string Description = "Grain Type";
+   string Enum = "Bypass,Plain,Blurred,Film";
+> = 3;
+
+int gtype
+<
+   string Description = "Applied to";
+   string Enum = "Luma,Chroma,Luma+Chroma,RGB";
+> = 0;
+
+float Mstrength
+<
+   string Description = "Master Strength";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+float Lstrength
+<
+   string Description = "Luma Strength";
+   float MinVal = 0.0;
+   float MaxVal = 2.0;
+> = 1.0;
+
+float Cstrength
+<
+   string Description = "Chroma Strength";
+   float MinVal = 0.0;
+   float MaxVal = 2.0;
+> = 1.0;
+
+float zoomit
+<
+   string Description = "Grain Size";
+   float MinVal = 0.05;
+   float MaxVal = 5.0;
+> = 1.0;
+
+float Xbias
+<
+   string Description = "X";
+   float MinVal = -3.0;
+   float MaxVal = 3.0;
+   string Group = "Film Grain Bias";
+> = -1.0;
+
+float Ybias
+<
+   string Description = "Y";
+   float MinVal = -3.0;
+   float MaxVal = 3.0;
+   string Group = "Film Grain Bias";
+> = 1.0;
+
+//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
 //---------------- rand function by Windsturm ------------------
-float rand(float2 uv, float seed){
-    float rn =  frac(sin(dot(uv, float2(12.9898,78.233)) + seed) * (43758.5453))-0.5f;
-    return clamp(rn, -0.5f, 0.5f);
+
+float rand (float2 uv, float seed)
+{
+   float rn = frac (sin (dot (uv, float2 (12.9898, 78.233)) + seed) * (43758.5453)) - 0.5;
+
+   return clamp (rn, -0.5, 0.5);
 }
  
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+
 //---------------------- Generate grain ------------------------
-float4 Graintex( float2 xy : TEXCOORD1) : COLOR
+
+float4 Graintex (float2 xy : TEXCOORD0) : COLOR
 {
-	float Prog = _Progress + 0.5f;
-	float Crand = rand(xy,Prog*xy.y);
-	float Rrand = 0.5f + (Crand * (Mstrength * Lstrength));
-	Crand = rand(xy,Prog*xy.x);
-	float Grand = 0.5f + (Crand * (Mstrength * Cstrength));
-	Crand = rand(xy,Prog*(1.0f-xy.x));
-	float Brand = 0.5f + (Crand * (Mstrength * Cstrength));
-	return float4(Rrand,Grand,Brand,1);
+   float Prog = _Progress + 0.5;
+   float Crand = rand (xy, Prog * xy.y);
+   float Rrand = 0.5 + (Crand * (Mstrength * Lstrength));
+
+   Crand = rand (xy, Prog * xy.x);
+
+   float Grand = 0.5 + (Crand * (Mstrength * Cstrength));
+
+   Crand = rand (xy, Prog * (1.0 - xy.x));
+
+   float Brand = 0.5 + (Crand * (Mstrength * Cstrength));
+
+   return float4 (Rrand, Grand, Brand, 1.0);
 }
 
 //---------------------- Blur the grain ------------------------
-float4 Blurtex( float2 xy : TEXCOORD1) : COLOR
+
+float4 Blurtex (float2 xy : TEXCOORD2) : COLOR
 {
-float2 _pixel = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
-	float4 bout = tex2D(GSamp,xy);
-	bout += tex2D(GSamp,xy + (_pixel * float2(-1,-1)));
-	bout += tex2D(GSamp,xy + (_pixel * float2(0,-1)));
-	bout += tex2D(GSamp,xy + (_pixel * float2(1,-1)));
-	bout += tex2D(GSamp,xy + (_pixel * float2(-1,0)));
-	bout += tex2D(GSamp,xy + (_pixel * float2(1,0)));
-	bout += tex2D(GSamp,xy + (_pixel * float2(-1,1)));
-	bout += tex2D(GSamp,xy + (_pixel * float2(0,1)));
-	bout += tex2D(GSamp,xy + (_pixel * float2(1,1)));
-	bout /= 9.0f;
-	return bout;
+   float2 _pixel = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+
+   float4 bout = tex2D (s_Grain, xy);
+
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (-1.0, -1.0)));
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (0.0, -1.0)));
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (1.0, -1.0)));
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (-1.0, 0.0)));
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (1.0, 0.0)));
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (-1.0, 1.0)));
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (0.0, 1.0)));
+   bout += tex2D (s_Grain, xy + (_pixel * float2 (1.0, 1.0)));
+
+   return bout / 9.0;
 }
 
 //---------------------- Emboss the grain -----------------------
-float4 Embosstex( float2 xy : TEXCOORD1) : COLOR
-{
-	float2 _pixel = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
-	float r22 = tex2D(BSamp,xy).r;
-	float r11 = tex2D(BSamp,xy + (_pixel * float2(-1*Xbias,-1*Ybias))).r * -1.5f;
-	float r33 = tex2D(BSamp,xy + (_pixel * float2(1*Xbias,1*Ybias))).r * 1.5;
-	
-	float g22 = tex2D(BSamp,xy).g;
-	float g11 = tex2D(BSamp,xy + (_pixel * float2(-1*Xbias,-1*Ybias))).g * 1.5f;
-	float g33 = tex2D(BSamp,xy + (_pixel * float2(1*Xbias,1*Ybias))).g * -1.5;
 
-	float b22 = tex2D(BSamp,xy).b;
-	float b11 = tex2D(BSamp,xy + (_pixel * float2(-1*Xbias,-1*Ybias))).b * -1.5f;
-	float b33 = tex2D(BSamp,xy + (_pixel * float2(1*Xbias,1*Ybias))).b * 1.5;
-	
-	return float4(r11+r22+r33,g11+g22+g33,b11+b22+b33,1);
+float4 Embosstex (float2 xy : TEXCOORD2) : COLOR
+{
+   float2 _pixel = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
+
+   float r22 = tex2D (s_Blur, xy).r;
+   float r11 = tex2D (s_Blur, xy - (_pixel * float2 (Xbias, Ybias))).r * -1.5;
+   float r33 = tex2D (s_Blur, xy + (_pixel * float2 (Xbias, Ybias))).r * 1.5;
+   
+   float g22 = tex2D (s_Blur, xy).g;
+   float g11 = tex2D (s_Blur, xy - (_pixel * float2 (Xbias, Ybias))).g * 1.5;
+   float g33 = tex2D (s_Blur, xy + (_pixel * float2 (Xbias, Ybias))).g * -1.5;
+
+   float b22 = tex2D (s_Blur, xy).b;
+   float b11 = tex2D (s_Blur, xy - (_pixel * float2 (Xbias, Ybias))).b * -1.5;
+   float b33 = tex2D (s_Blur, xy + (_pixel * float2 (Xbias, Ybias))).b * 1.5;
+   
+   return float4 (r11 + r22 + r33, g11 + g22 + g33, b11 + b22 + b33, 1.0);
 }
 
 //---------------------- Select the grain -----------------------
-float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
+
+float4 Combine (float2 uv : TEXCOORD2) : COLOR
 {
-  float4 cout = 0.0f;
-  float R,G,B;
+  float R, G, B;
+
   //------------Zoom the grain------------
+
   float2 xy = uv - 0.5;
-  xy = (xy / zoomit) + 0.5f;
-  if (xy.x > 0.99f) xy.x = frac(xy.x);
-  if (xy.y > 0.99f) xy.y = frac(xy.y);
-  if (xy.x < 0.01f) xy.x = abs(frac(xy.x));
-  if (xy.y < 0.01f) xy.y = abs(frac(xy.y));
+
+  xy = (xy / zoomit) + 0.5;
+
+  if (xy.x > 0.99) xy.x = frac (xy.x);
+  if (xy.y > 0.99) xy.y = frac (xy.y);
+  if (xy.x < 0.01) xy.x = abs (frac (xy.x));
+  if (xy.y < 0.01) xy.y = abs (frac (xy.y));
   
-  if (show == 0) return tex2D(Input, uv);     //-----Bypass-----
+  if (show == 0) return tex2D (s_Input, uv);       //------Bypass-----
   
-  if (show == 1) {					//------Plain Grain-------
-  	R = tex2D( GSamp, xy).r-0.5f;
-  	G = tex2D( GSamp, xy).g-0.5f;
-  	B = tex2D( GSamp, xy).b-0.5f;
+  if (show == 1) {                                 //------Plain Grain-------
+     R = tex2D (s_Grain, xy).r - 0.5;
+     G = tex2D (s_Grain, xy).g - 0.5;
+     B = tex2D (s_Grain, xy).b - 0.5;
   }
   
-  if (show == 2) {					//-----Blurred Grain------
-  	R = tex2D( BSamp, xy).r-0.5f;
-  	G = tex2D( BSamp, xy).g-0.5f;
-  	B = tex2D( BSamp, xy).b-0.5f;
+  if (show == 2) {                                 //-----Blurred Grain------
+     R = tex2D (s_Blur, xy).r - 0.5;
+     G = tex2D (s_Blur, xy).g - 0.5;
+     B = tex2D (s_Blur, xy).b - 0.5;
   }
   
-  if (show == 3) {					//-----Embossed Grain-----
-  	R = tex2D( ESamp, xy).r-0.5f;
-  	G = tex2D( ESamp, xy).g-0.5f;
-  	B = tex2D( ESamp, xy).b-0.5f;
+  if (show == 3) {                                 //-----Embossed Grain-----
+     R = tex2D (s_Emboss, xy).r - 0.5;
+     G = tex2D (s_Emboss, xy).g - 0.5;
+     B = tex2D (s_Emboss, xy).b - 0.5;
   }
   
-  float4 orig = tex2D(Input, uv);
+  float4 orig = tex2D (s_Input, uv);
   
   //----------------Convert RGB to YUV--------------
-  float Y = (0.299f * orig.r) + (0.587f * orig.g) + (0.114f * orig.b);
-  float Cb = ((-0.168736f * orig.r) + (-0.331264f * orig.g) + (0.5f * orig.b))+0.5f;
-  float Cr = ((0.5f * orig.r) + (-0.418688f * orig.g) - (0.081312f * orig.b))+0.5f;
+
+  float Y = (0.299 * orig.r) + (0.587 * orig.g) + (0.114 * orig.b);
+  float Cb = ((0.5 * orig.b) - (0.168736 * orig.r) - (0.331264 * orig.g)) + 0.5;
+  float Cr = ((0.5 * orig.r) - (0.418688 * orig.g) - (0.081312 * orig.b)) + 0.5;
 
   //--Adjust grain strength according to luma level - Black>Grey>White = 0.0>1.0>0.0
-  float Ydelta = 1.0f-abs((Y - 0.5)*2.0f);
-  if (gtype == 0 || gtype == 2) Y += (R*Ydelta);							//-----Luma & Luma+Chroma
-  if (gtype == 1 || gtype == 2) {Cb += (G*Ydelta); Cr += (B*Ydelta); }		//-----Chroma & Luma+Chroma
+
+  float Ydelta = 1.0 - abs ((Y - 0.5) * 2.0);
+
+  if (gtype == 0 || gtype == 2) Y += (R * Ydelta); //-----Luma & Luma+Chroma
+
+  if (gtype == 1 || gtype == 2) {                  //-----Chroma & Luma+Chroma
+      Cb += (G * Ydelta);
+      Cr += (B * Ydelta);
+   }
   
   //----------------Convert YUV to RGB--------------   
-  Cb -= 0.5f;
-  Cr -= 0.5f;
-  cout.r = Y + (0.0f * Cb) + (1.402f * Cr);
-  cout.g = Y + (-0.34414f * Cb) + (-0.71414 * Cr);
-  cout.b = Y + (1.772f * Cb) + (0.0f * Cr);
-  if (gtype == 3) {cout.r += (B*Ydelta); cout.g += (R*Ydelta); cout.b += (G*Ydelta); } //-----RGB
-  cout.a = 1;
+
+  float4 cout = float4 (Y.xxx, 1.0);
+
+  Cb -= 0.5;
+  Cr -= 0.5;
+
+  cout.r += 1.402 * Cr;
+  cout.g -= (0.34414 * Cb) + (0.71414 * Cr);
+  cout.b += 1.772 * Cb;
+
+  if (gtype == 3) {                                //-----RGB
+      cout.r += (B * Ydelta);
+      cout.g += (R * Ydelta);
+      cout.b += (G * Ydelta);
+   }
 
   return cout;
 }
@@ -288,33 +305,10 @@ float4 Combine( float2 uv : TEXCOORD1 ) : COLOR
 
 technique FilmGrain
 {
-
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = Grain;";
-   >
-   {
-      PixelShader = compile PROFILE Graintex();
-   }
-
-   pass Pass2
-   <
-   string Script = "RenderColorTarget0 = Blur;";
-   >
-   {
-      PixelShader = compile PROFILE Blurtex();
-   }
-   
-   pass Pass3
-   <
-   string Script = "RenderColorTarget0 = Emboss;";
-   >
-   {
-      PixelShader = compile PROFILE Embosstex();
-   }
-
-   pass Pass4
-   {
-      PixelShader = compile PROFILE Combine();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 < string Script = "RenderColorTarget0 = Grain;"; > ExecuteShader (Graintex)
+   pass P_3 < string Script = "RenderColorTarget0 = Blur;"; > ExecuteShader (Blurtex)
+   pass P_4 < string Script = "RenderColorTarget0 = Emboss;"; > ExecuteShader (Embosstex)
+   pass P_5 ExecuteShader (Combine)
 }
+

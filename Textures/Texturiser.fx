@@ -1,12 +1,14 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-29
 // @Author jwrl
-// @Created 2016-04-22
+// @Created 2021-10-29
 // @see https://www.lwks.com/media/kunena/attachments/6375/Texturizer_640.png
 
 /**
- This effect is designed to modulate the input with a texture from an external piece
- of art.  The texture may be coloured but only the luminance value will be used.
+ This effect is designed to modulate the input with a texture from an external piece of
+ art.  The texture may be coloured but only the luminance value will be used.  New in
+ this version is a means of applying an offset to the texture depending on the luminance
+ of the texture.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,20 +16,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 29 September 2018 jwrl.
-// Added notes to header.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14 update 18 Feb 2017 by jwrl - added subcategory to effect header.
+// Rewrite 2021-10-29 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -40,40 +30,77 @@ int _LwksEffectInfo
    bool CanSize       = true;
 > = 0;
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and constants
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SetInputMode(TEX, SMPL, MODE) \
+                                      \
+ texture TEX;                         \
+                                      \
+ sampler SMPL = sampler_state         \
+ {                                    \
+   Texture   = <TEX>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+
+#define AMT         0.2            // Amount scale factor
+
+#define DPTH        1.5            // Depth scale factor
+
+#define SIZE        0.75           // Size scale factor
+
+#define REDUCTION   0.9            // Foreground reduction for texture add
+
+#define RED_LUMA    0.3
+#define GREEN_LUMA  0.59
+#define BLUE_LUMA   0.11
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-texture Art;
-texture Inp;
+SetInputMode (Art, s_RawArt, Mirror);
+SetInputMode (Inp, s_RawInp, Mirror);
 
-//--------------------------------------------------------------//
-// Samplers
-//--------------------------------------------------------------//
+SetTargetMode (RawArt, s_Artwork, Mirror);
+SetTargetMode (RawInp, s_Input, Mirror);
 
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Artwork = sampler_state
-{
-   Texture   = <Art>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Parameters
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 float Amount
 <
@@ -87,7 +114,7 @@ float Size
    string Description = "Size";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.5;
+> = 0.0;
 
 float Depth
 <
@@ -96,57 +123,63 @@ float Depth
    float MaxVal = 1.0;
 > = 0.5;
 
-//--------------------------------------------------------------//
-// Definitions and constants
-//--------------------------------------------------------------//
+float OffsetX
+<
+   string Group = "Offset";
+   string Description = "X";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.5;
 
-#define AMT         0.2            // Amount scale factor
+float OffsetY
+<
+   string Group = "Offset";
+   string Description = "Y";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
+> = 0.5;
 
-#define DPTH        1.5            // Depth scale factor
-
-#define SIZE        0.75           // Size scale factor
-
-#define REDUCTION   0.9            // Foreground reduction for texture add
-#define OFFSET      0.0025         // Texture offset factor
-
-#define RED_LUMA    0.3
-#define GREEN_LUMA  0.59
-#define BLUE_LUMA   0.11
-
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Shaders
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy : TEXCOORD1) : COLOR
+float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawArt, uv); }
+float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return tex2D (s_RawInp, uv); }
+
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
    float amt = Amount * AMT;
-   float2 uv = xy - 0.5.xx;
 
-   uv *= 1.0 - (Size * SIZE);
-   uv += 0.5.xx;
+   float2 xy1 = uv3 - 0.5.xx;
+   float2 xy2 = float2 (OffsetX, -OffsetY) / 100.0;
 
-   float4 Img = tex2D (s_Artwork, uv);
+   xy1 *= 1.0 - (Size * SIZE);
+   xy1 += 0.5.xx;
 
-   float luma = dot (Img.rgb, float3(RED_LUMA, GREEN_LUMA, BLUE_LUMA)) * (Depth * DPTH);
+   float4 Img = tex2D (s_Artwork, xy1);
 
-   float4 Fgd = (tex2D (s_Input, xy + (luma * OFFSET).xx) * REDUCTION);
+   float luma = dot (Img.rgb, float3 (RED_LUMA, GREEN_LUMA, BLUE_LUMA)) * (Depth * DPTH);
+
+   Img.rgb = luma.xxx;
+
+   float4 Fgd = (tex2D (s_Input, uv3 + (luma * xy2)) * REDUCTION);
 
    Fgd = saturate (Fgd + (Img * amt));
    Fgd = lerp (Fgd, Img, amt);
 
-   float alpha = tex2D (s_Input, xy).a;
+   float alpha = tex2D (s_Input, uv3).a;
 
-   return float4 (Fgd.rgb, alpha);
+   return Overflow (uv2) ? EMPTY : float4 (Fgd.rgb, alpha);
 }
 
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 // Techniques
-//--------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
 
 technique Texturiser
 {
-   pass P_1
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = RawArt;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawInp;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_main)
 }
+

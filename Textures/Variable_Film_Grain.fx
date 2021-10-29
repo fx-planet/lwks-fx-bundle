@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-29
 // @Author khaver
 // @Created 2017-05-05
 // @see https://www.lwks.com/media/kunena/attachments/6375/VariFilmGrain_640.png
@@ -26,29 +26,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Corrected creation date.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Explicitly defined all float4 variables to address the behavioural difference
-// between the D3D and Cg compilers.
-//
-// Bug fix 8 May 2017 by jwrl.
-// Added workaround for the interlaced media height bug in Lightworks effects.
-//
-// Subcategory added by jwrl 10 Feb 2017
+// Update 2021-10-29 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -62,57 +41,69 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define HALF_PI 1.5707963268
+
+float _Progress;
+
+float _OutputAspectRatio;
+float _OutputWidth;
+
+float2 _TexelKernel[13] = { { -6.0, 0.0 }, { -5.0, 0.0 }, { -4.0, 0.0 }, { -3.0, 0.0 },
+                            { -2.0, 0.0 }, { -1.0, 0.0 }, {  0.0, 0.0 }, {  1.0, 0.0 },
+                            {  2.0, 0.0 }, {  3.0, 0.0 }, {  4.0, 0.0 }, {  5.0, 0.0 },
+                            {  6.0, 0.0 } };
+
+float _BlurWeights[13] = { 0.002216, 0.008764, 0.026995, 0.064759, 0.120985,  0.176033,
+                           0.199471, 0.176033, 0.120985, 0.064759, 0.026995, 0.008764,
+                           0.002216 };
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-texture Tex1 : RenderColorTarget;
-texture Tex2 : RenderColorTarget;
-texture Tex3 : RenderColorTarget;
+DefineInput (Input,  s_Input);
 
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler Samp0 = sampler_state
-{
-   Texture = <Input>;
-	AddressU = Clamp;
-	AddressV = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp1 = sampler_state
-{
-   Texture = <Tex1>;
-	AddressU = Wrap;
-	AddressV = Wrap;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp2 = sampler_state
-{
-   Texture = <Tex2>;
-	AddressU = Wrap;
-	AddressV = Wrap;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler Samp3 = sampler_state
-{
-   Texture = <Tex3>;
-	AddressU = Wrap;
-	AddressV = Wrap;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+SetTargetMode (Tex1, Samp1, Wrap);
+SetTargetMode (Tex2, Samp2, Wrap);
+SetTargetMode (Tex3, Samp3, Wrap);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -120,181 +111,127 @@ sampler Samp3 = sampler_state
 
 float Strength
 <
-	string Description = "Strength";
-	float MinVal = 0.00;
-	float MaxVal = 1.0;
+   string Description = "Strength";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.1;
 
 float Size
 <
-	string Description = "Size";
-	float MinVal = 0.25;
-	float MaxVal = 4.0;
+   string Description = "Size";
+   float MinVal = 0.25;
+   float MaxVal = 4.0;
 > = 0.67;
 
 float Shape
 <
-	string Description = "Distribution";
-	float MinVal = 0.00;
-	float MaxVal = 1.0;
+   string Description = "Distribution";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.9;
 
 float Bias
 <
-	string Description = "Roll-off Bias";
-	float MinVal = 0.0;
-	float MaxVal = 1.0;
+   string Description = "Roll-off Bias";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.50;
 
 float blur
 <
-	string Description = "Grain Blur";
-	float MinVal = 0.0f;
-	float MaxVal = 1.0f;
-> = 0.50f;
+   string Description = "Grain Blur";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.50;
 
 bool show
 <
-	string Description = "Show grain";
+   string Description = "Show grain";
 > = false;
-
 
 bool agrain
 <
-	string Description = "Alpha grain only";
-	string Group = "Alpha";
+   string Description = "Alpha grain only";
+   string Group = "Alpha";
 > = false;
 
 float aadjust
 <
-	string Description = "Alpha adjustment";
-	string Group = "Alpha";
-	float MinVal = -1.0;
-	float MaxVal = 1.0;
+   string Description = "Alpha adjustment";
+   string Group = "Alpha";
+   float MinVal = -1.0;
+   float MaxVal = 1.0;
 > = 0.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _Progress;
-
-float _OutputAspectRatio;
-float _OutputWidth;
-
-float2 _TexelKernel[13] =
-	{
-	    { -6, 0 },
-	    { -5, 0 },
-	    { -4, 0 },
-	    { -3, 0 },
-	    { -2, 0 },
-	    { -1, 0 },
-	    {  0, 0 },
-	    {  1, 0 },
-	    {  2, 0 },
-	    {  3, 0 },
-	    {  4, 0 },
-	    {  5, 0 },
-	    {  6, 0 }
-	};
-
-float _BlurWeights[13] =
-	{
-	    0.002216,
-	    0.008764,
-	    0.026995,
-	    0.064759,
-	    0.120985,
-	    0.176033,
-	    0.199471,
-	    0.176033,
-	    0.120985,
-	    0.064759,
-	    0.026995,
-	    0.008764,
-	    0.002216
-	};
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float _rand(float2 co, float seed){
-	return frac((dot(co.xy,float2(co.x+123.0,co.y+13.0))) * seed + _Progress);
+float _rand (float2 co, float seed)
+{
+   return frac ((dot (co.xy, float2 (co.x + 123.0, co.y + 13.0))) * seed + _Progress);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 Grain( float2 xy : TEXCOORD1 ) : COLOR
+float4 Grain (float2 uv : TEXCOORD0) : COLOR
 {
-   float2 loc;
-   loc.x = xy.x + 0.00013f;
-   loc.y = xy.y + 0.00123f;
-   if (loc.x > 1.0f) loc.x = 1.0f;
-   if (loc.y > 1.0f) loc.y = 1.0f;
-   float4 graintex = 0;
-   float x = sin(loc.x) + cos(loc.y) + _rand(loc,((xy.x+1.123)*(loc.x+loc.y))) * 1000.0;
-   float grain = frac(fmod(x, 13.0) * fmod(x, 123.0)); // - 0.5f;
+   float2 xy = saturate (uv + float2 (0.00013, 0.00123));
+
+   float x = sin (xy.x) + cos (xy.y) + _rand (xy, ((xy.x + 1.123) * (xy.x + xy.y))) * 1000.0;
+   float grain = frac (fmod(x, 13.0) * fmod (x, 123.0));
+
    if (grain > Shape || grain < (1.0 - Shape)) grain = 0.5;
-   grain = ((grain - 0.5) * (Strength * 5.0)) + 0.5;
-   
-   return grain.xxxx;
+
+   return (((grain - 0.5) * (Strength * 5.0)) + 0.5).xxxx;
 }
 
-float4 Blurry1( float2 Tex : TEXCOORD1 ) : COLOR
+float4 Blurry1 (float2 uv : TEXCOORD2) : COLOR
 {  
-    float xpix = 1.0f / _OutputWidth;
-    float ypix = xpix * _OutputAspectRatio;
+   float blurpix = blur / _OutputWidth;
 
-    float4 Color = 0;
+   float2 xy = ((uv - 0.5.xx) / Size) + 0.5.xx;
 
-    for (int i = 0; i < 13; i++)
-    {    
-        Color += tex2D( Samp1, (((Tex-0.5f) / Size) + 0.5f) + ((_TexelKernel[i].yx * blur) * xpix)) * _BlurWeights[i];
-    }
+   float4 Color = EMPTY;
 
-    return Color;
+   for (int i = 0; i < 13; i++) {    
+      Color += tex2D (Samp1, xy + (_TexelKernel [i].yx * blurpix)) * _BlurWeights [i];
+   }
+
+   return Color;
 }
 
-float4 Blurry2( float2 Tex : TEXCOORD1 ) : COLOR
+float4 Blurry2 (float2 uv : TEXCOORD2) : COLOR
 {  
-    float xpix = 1.0f / _OutputWidth;
-    float ypix = xpix * _OutputAspectRatio;
+   float blurpix = _OutputAspectRatio * blur / _OutputWidth;
 
-    float4 Color = 0.0.xxxx;
+   float2 xy = ((uv - 0.5.xx) / Size) + 0.5.xx;
 
-    for (int i = 0; i < 13; i++)
-    {
-        Color += tex2D( Samp2, (((Tex-0.5f) / Size) + 0.5f) + ((_TexelKernel[i].xy * blur) * ypix)) * _BlurWeights[i];
-    }
+   float4 Color = EMPTY;
 
-    return Color;
+   for (int i = 0; i < 13; i++) {    
+      Color += tex2D (Samp2, xy + (_TexelKernel [i] * blurpix)) * _BlurWeights [i];
+   }
+
+   return Color;
 }
 
-float4 Combine( float2 xy : TEXCOORD1 ) : COLOR
+float4 Combine (float2 uv1 : TEXCOORD1, float2 xy : TEXCOORD2) : COLOR
 {
-   float lum1, lum2, lum3;
-   float4 source = tex2D( Samp0, xy );
-   lum1 = (source.r + source.g + source.b) / 3.0;
-   lum3 = 1.0;
-	if (lum1 < Bias) {
-		lum2 = (lum1 / Bias) * 90.0;
-		lum3 = sin(radians(lum2));
-	}
-	if (lum1 > Bias) {
-		lum2 = ((1.0 - lum1) / (1.0 - Bias)) * 90.0;
-		lum3 = sin(radians(lum2));
-	}
-		
-   float4 grainblur = tex2D( Samp3, xy);
-   if (!agrain) source = source + ((grainblur - 0.5.xxxx) * lum3);
-   else source = float4 (source.rgb, ((grainblur.a - 0.5) * lum3 * 2.0) + aadjust);
-   if (show) source = ((grainblur - 0.5.xxxx) * lum3) + 0.5.xxxx;
-  
-   return source;
+   float4 source = GetPixel (s_Input, uv1);
+
+   float lum = (source.r + source.g + source.b) / 3.0;
+
+   lum = lum > Bias ? sin ((1.0 - lum) * HALF_PI / (1.0 - Bias))
+       : lum < Bias ? sin (lum * HALF_PI / Bias) : 1.0;
+
+   float4 grainblur = (tex2D (Samp3, xy) - 0.5.xxxx) * lum;
+
+   if (show) return grainblur + 0.5.xxxx;
+
+   return agrain ? float4 (source.rgb, (grainblur.a * 2.0) + aadjust) : source + grainblur;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -303,33 +240,9 @@ float4 Combine( float2 xy : TEXCOORD1 ) : COLOR
 
 technique VariGrain
 {
-   pass Pass1 // Get from Input
-   <
-      string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE Grain();
-   }
-   
-   pass Pass2 // Get from Tex1
-   <
-      string Script = "RenderColorTarget0 = Tex2;";
-   >
-   {
-      PixelShader = compile PROFILE Blurry1();
-   }
-   
-   pass Pass3 // Get from Tex2
-   <
-      string Script = "RenderColorTarget0 = Tex3;";
-   >
-   {
-      PixelShader = compile PROFILE Blurry2();
-   }
-   
-   pass Pass4 // Get from Tex4
-   {
-      PixelShader = compile PROFILE Combine();
-   }
-
+   pass P_1 < string Script = "RenderColorTarget0 = Tex1;"; > ExecuteShader (Grain)
+   pass P_2 < string Script = "RenderColorTarget0 = Tex2;"; > ExecuteShader (Blurry1)
+   pass P_3 < string Script = "RenderColorTarget0 = Tex3;"; > ExecuteShader (Blurry2)
+   pass P_4 ExecuteShader (Combine)
 }
+

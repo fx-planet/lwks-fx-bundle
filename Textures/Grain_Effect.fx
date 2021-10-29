@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-29
 // @Author khaver
 // @Created 2011-04-17
 // @see https://www.lwks.com/media/kunena/attachments/6375/Grain_640.png
@@ -13,26 +13,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 2 August 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
-// Fully defined float3 variable to fix the behavioural differences between the D3D and
-// Cg compilers in mathematical functions.
-//
-// Subcategory added by jwrl 10 Feb 2017
+// Update 2021-10-29 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,20 +28,37 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _Progress;
+
+//-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -67,47 +66,37 @@ sampler FgSampler = sampler_state
 
 float Strength
 <
-	string Description = "Strength";
-	string Group = "Master";
-	float MinVal = 0.00;
-	float MaxVal = 100.0;
+   string Description = "Strength";
+   string Group = "Master";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.0;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _Progress;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float _rand(float2 co, float seed){
-    float rand;
-	rand = frac((dot(co.xy,float2(co.x+123,co.y+13))) * seed + _Progress);
-	return rand;
+float _rand (float2 co, float seed)
+{
+   return frac ((dot (co.xy, float2 (co.x + 123.0, co.y + 13.0))) * seed + _Progress);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main ( float2 xy : TEXCOORD1 ) : COLOR
+float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 loc;
-   loc.x = xy.x + 0.00013f;
-   loc.y = xy.y + 0.00123f;
-   if (loc.x > 1.0f) loc.x = 1.0f;
-   if (loc.y > 1.0f) loc.y = 1.0f;
-   float4 source = tex2D( FgSampler, xy );
-   float x = sin(loc.x) + cos(loc.y) + _rand(loc,((source.g+1.0)*loc.x)) * 1000;
-   float grain = frac(fmod(x, 13) * fmod(x, 123)) - 0.5f;
+   float4 source = GetPixel (s_Input, uv);
 
-   source.rgb = saturate (source.rgb + (grain * (Strength / 100)).xxx);
+   float2 xy = saturate (uv + float2 (0.00013, 0.00123));
+
+   float x = sin (xy.x) + cos (xy.y) + _rand (xy, ((source.g + 1.0) * xy.x)) * 1000.0;
+   float grain = frac (fmod (x, 13.0) * fmod (x, 123.0)) - 0.5;
+
+   source.rgb = saturate (source.rgb + (grain * (Strength / 50.0)).xxx);
   
    return source;
-
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -116,8 +105,6 @@ float4 ps_main ( float2 xy : TEXCOORD1 ) : COLOR
 
 technique Grain
 {
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 ExecuteShader (ps_main)
 }
+

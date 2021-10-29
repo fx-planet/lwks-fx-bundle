@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-10-29
 // @Author khaver
 // @Created 2011-04-28
 // @see https://www.lwks.com/media/kunena/attachments/6375/Tiles_640.png
@@ -14,25 +14,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified by LW user jwrl 5 April 2018.
-// Metadata header block added to better support GitHub repository.
-//
-// Bug fix 21 July 2017 by jwrl:
-// This addresses a cross platform issue which could cause the effect to not behave as
-// expected on Linux and Mac systems.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
+// Update 2021-10-29 jwrl.
+// Updated the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -46,19 +29,53 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _OutputWidth;
+
+//-----------------------------------------------------------------------------------------//
 // Inputs and shaders
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_RawInp);
 
-sampler FgSampler = sampler_state {
-   Texture = <Input>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Point;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (FixInp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -85,20 +102,16 @@ float4 EdgeColor
 > = { 0.7, 0.7, 0.7, 1.0 };
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputWidth;
-
-//-----------------------------------------------------------------------------------------//
 // Shader
 //-----------------------------------------------------------------------------------------//
 
-float4 tilesPS (float2 xy : TEXCOORD1) : COLOR
-{
-   if (Size <= 0.0) return tex2D (FgSampler, xy);
+float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
 
-   float threshholdB =  1.0 - Threshhold;
+float4 tilesPS (float2 xy : TEXCOORD2) : COLOR
+{
+   if (Size <= 0.0) return tex2D (s_Input, xy);
+
+   float threshholdB = 1.0 - Threshhold;
 
    float2 Pbase = xy - fmod (xy, Size.xx);
    float2 PCenter = Pbase + (Size / 2.0).xx;
@@ -112,7 +125,7 @@ float4 tilesPS (float2 xy : TEXCOORD1) : COLOR
 
    if ((st.x > st.y) && any (st < Threshhold)) { cBottom = invOff; }
 
-   float4 tileColor = tex2D (FgSampler, PCenter);
+   float4 tileColor = tex2D (s_Input, PCenter);
 
    return float4 (max (0.0.xxx, (tileColor.rgb + cBottom - cTop)), tileColor.a);
 }
@@ -123,8 +136,7 @@ float4 tilesPS (float2 xy : TEXCOORD1) : COLOR
 
 technique SampleFxTechnique
 {
-   pass p0
-   {
-      PixelShader = compile PROFILE tilesPS ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
+   pass P_2 ExecuteShader (tilesPS)
 }
+

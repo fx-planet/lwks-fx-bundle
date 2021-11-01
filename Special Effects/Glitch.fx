@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-07-11
+// @Released 2021-11-01
 // @Author jwrl
 // @Created 2021-07-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Glitch_640.png
@@ -26,6 +26,9 @@
 // Lightworks user effect Glitch.fx
 //
 // Version history:
+//
+// Update 2021-11-01 jwrl.
+// Corrected foreground mislabel in ps_key_gen().
 //
 // Rewrite 2021-07-11 jwrl.
 // The original version did not handle the keys well with resolution independence.
@@ -241,7 +244,7 @@ float4 ps_key_gen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 {
    float4 Fgnd = GetPixel (s_Foreground, uv1);
 
-   if (Fgd.a == 0.0) return Fgnd.aaaa;
+   if (Fgnd.a == 0.0) return Fgnd.aaaa;
 
    if (ShowKey == 2) {
       Fgnd.a = pow (Fgnd.a, 0.5 + (KeyClip * 0.5));

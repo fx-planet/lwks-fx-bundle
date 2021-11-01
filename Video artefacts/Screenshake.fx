@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-11-01
 // @Author hugly
 // @Author flyingrub https://www.shadertoy.com/view/wsBXWW
 // @Created 2019-09-07
@@ -15,32 +15,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified jwrl 2020-05-19.
-// Changed frac (time) to frac (time / 13.0) and scaled the result by 13.  Since it was
-// already scaled by 8, it is now scaled by 104.  This was done because a simple frac()
-// gave a result that was too obviously cyclic.  Dividing by a prime number that is not
-// related to a standard frame rate helps that.
-//
-// Modified jwrl 2020-05-18.
-// In order of application, the changes are:
-//   Preserved Fg alpha channel throughout.
-//   Added frac() to the time calculation to prevent speed overflow causing the shake to
-//   stop prematurely.
-//   Rewrote function random3() to reduce the maths operations.
-//   Rewrote function simplex3d() to correct all implicit float3 conversions which wouldn't
-//   have worked in Linux and OS/X.  Also simplified it to reduce the maths operations.
-//   Added effects header block and a rudimentary description.
-//   Changed subcategory from "User Effects" to "Video artefacts" for consistency with
-//   other effects library subcategories.
-//   Changed the sampler addressing to ClampToEdge, since the behaviour of Border differs
-//   between Windows and Linux / OS/X.
-//   Added check for _LENGTH to check for version 14.5 or better.  The effect will now
-//   fail if earlier versions of Lightworks are used.
-//
-// Ported to HLSL/Cg and adapted for Lightworks by hugly 2019-09-07
+// Update 2021-11-01 jwrl.
+// Updated the original effect to better support LW v2021 and higher.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -54,24 +30,53 @@ int _LwksEffectInfo
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+uniform float _Progress;
+uniform float _Length;
+
+#define iTime (_Length * _Progress) 
+
+#define SIXTH_3 0.1666667.xxx
+#define THIRD_3 0.3333333.xxx
+#define HALF_3  0.5.xxx
+#define ONE_3   1.0.xxx
+
+//-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Fg;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Fg = sampler_state
-{
-   Texture   = <Fg>;
-   AddressU  = ClampToEdge;
-   AddressV  = ClampToEdge;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Fg, s_Fg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -87,27 +92,7 @@ float speed
 <  string Description = "Speed";
    float MinVal = 0.4;
    float MaxVal = 2.0;
-> = 1;
-
-//-----------------------------------------------------------------------------------------//
-// Global Declarations
-//-----------------------------------------------------------------------------------------//
-
-// This produces a compiler error if this is installed in version 14 or earlier.
-
-#ifndef _LENGTH
-Bad Lightworks version
-#endif
-
-uniform float _Progress;
-uniform float _Length;
-
-#define iTime (_Length * _Progress) 
-
-#define SIXTH_3 0.1666667.xxx
-#define THIRD_3 0.3333333.xxx
-#define HALF_3  0.5.xxx
-#define ONE_3   1.0.xxx
+> = 1.0;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -148,17 +133,18 @@ float simplex3d (float3 p)
 
 float4 ps_Screenshake (float2 uv : TEXCOORD1) : COLOR
 {    
-   float2 xy = (uv + 0.02.xx) / 1.04.xx;   //** zoom
+   float2 xy = ((uv - 0.5.xx) / 1.04) + 0.5.xx;   //** zoom
 
    float3 p3 = float3 (0.0.xx, frac (iTime / 13.0) * speed * 104.0) + 200.0.xxx;
 
    xy += float2 (simplex3d (p3), simplex3d (p3 + 10.0.xxx)) * strength / 30.0;
 
-   return tex2D (s_Fg, xy);
+   return Overflow (uv) ? EMPTY : tex2D (s_Fg, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique tech_Screenshake {pass one {PixelShader = compile PROFILE ps_Screenshake (); }}
+technique tech_Screenshake { pass one ExecuteShader (ps_Screenshake) }
+

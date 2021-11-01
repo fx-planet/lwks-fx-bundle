@@ -1,11 +1,15 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-11-01
 // @Author windsturm
 // @Created 2012-08-02
 // @see https://www.lwks.com/media/kunena/attachments/6375/FxNoise_640.png
 
 /**
  This does exactly what it says - generates both monochrome and colour video noise.
+ Because this effect needs to be able to precisely manage pixel weight no matter what
+ the original clip size or aspect ratio is it has not been possible to make it truly
+ resolution independent.  What it does is lock the clip resolution to sequence
+ resolution instead.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -30,22 +34,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14 update 18 Feb 2017 by jwrl.
-// Added subcategory to effect header.
+// Update 2021-11-01 jwrl.
+// Updated the original effect to better support LW v2021 and higher.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -55,24 +45,51 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Video artefacts";
    string Notes       = "Generates either monochrome or colour video noise";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+float _Progress;
+
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler s0 = sampler_state
-{
-   Texture = <Input>;
-   AddressU = Clamp;
-   AddressV = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Inp, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -101,27 +118,19 @@ float Opacity
 float Alpha
 <
    string Description = "Alpha";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 1.0;
 
 float Seed
 <
    string Description = "Random Seed";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.0;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
 //-----------------------------------------------------------------------------------------//
 
 float rand (float2 uv, float seed)
@@ -129,36 +138,52 @@ float rand (float2 uv, float seed)
    return frac (sin (dot (uv, float2 (12.9898,78.233)) + seed) * (43758.5453));
 }
 
-float4 FxNoiseMono (float2 xy : TEXCOORD1) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
+float4 FxNoiseMono (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 xy2;
+   float2 xy;
 
    if (Size != 0.0) {
       float xSize = Size;
       float ySize = xSize * _OutputAspectRatio;
-      xy2 = float2 (round ((xy.x - 0.5) / xSize) * xSize, round ((xy.y - 0.5) / ySize) * ySize);
-   }
-   else xy2 = xy;
 
-   float  c = rand (xy2, rand (xy2, Seed));
-   float4 ret = lerp (tex2D (s0, xy), float2 (c, 1.0).xxxy, Opacity);
+      xy = float2 (round ((uv.x - 0.5) / xSize) * xSize, round ((uv.y - 0.5) / ySize) * ySize);
+   }
+   else xy = uv;
+
+   float c = rand (xy, rand (xy, Seed + _Progress));
+
+   float4 ret = GetPixel (s_Input, uv);
+
+   ret = ret.a == 0.0 ? EMPTY : lerp (ret, float2 (c, 1.0).xxxy, Opacity);
 
    return float4 (ret.rgb, ret.a * Alpha);
 }
 
-float4 FxNoiseColor (float2 xy : TEXCOORD1) : COLOR
+float4 FxNoiseColor (float2 uv : TEXCOORD1) : COLOR
 {
-   float2 xy2;
+   float2 xy;
 
    if (Size != 0.0) {
       float xSize = Size;
       float ySize = xSize * _OutputAspectRatio;
-      xy2 = float2 (round ((xy.x - 0.5) / xSize) * xSize, round ((xy.y - 0.5) / ySize) * ySize);
-   }
-   else xy2 = xy;
 
-   float3 c = float3 (rand (xy2, rand (xy2, Seed)), rand (xy2, rand (xy2, Seed + 1)), rand (xy2, rand (xy2, Seed + 2)));
-   float4 ret = lerp (tex2D (s0, xy), float4 (c, 1.0), Opacity);
+      xy = float2 (round ((uv.x - 0.5) / xSize) * xSize, round ((uv.y - 0.5) / ySize) * ySize);
+   }
+   else xy = uv;
+
+   float s = Seed + _Progress;
+   float t = s + 1.0;
+   float u = s + 2.0;
+
+   float3 c = float3 (rand (xy, rand (xy, s)), rand (xy, rand (xy, t)), rand (xy, rand (xy, u)));
+
+   float4 ret = GetPixel (s_Input, uv);
+
+   ret = ret.a == 0.0 ? EMPTY : lerp (ret, float4 (c, 1.0), Opacity);
 
    return float4 (ret.rgb, ret.a * Alpha);
 }
@@ -167,18 +192,7 @@ float4 FxNoiseColor (float2 xy : TEXCOORD1) : COLOR
 // Technique
 //-----------------------------------------------------------------------------------------//
 
-technique Monochrome
-{
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE FxNoiseMono ();
-   }
-}
+technique Monochrome { pass SinglePass ExecuteShader (FxNoiseMono) }
 
-technique Color
-{
-   pass SinglePass
-   {
-      PixelShader = compile PROFILE FxNoiseColor ();
-   }
-}
+technique Color { pass SinglePass ExecuteShader (FxNoiseColor) }
+

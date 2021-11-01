@@ -1,11 +1,15 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-11-01
 // @Author juhartik
 // @Created 2011-08-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/jh_stylize_oldmonitor_640.png
 
 /**
  This old monitor effect is black and white with scan lines, which are fully adjustable.
+ NOTE:  Because this effect needs to be able to precisely set line widths no matter
+ what the original clip size or aspect ratio is it has not been possible to make it
+ truly resolution independent.  What it does is lock the clip resolution to sequence
+ resolution instead.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,25 +20,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-// 
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined FgSampler to fix cross platform default sampler state differences.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added "Simulation" subcategory to effect header.
+// Update 2021-11-01 jwrl.
+// Updated the original effect to better support LW 2021 and higher.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -44,24 +31,41 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Video artefacts";
    string Notes       = "This old monitor effect gives a black and white image with fully adjustable scan lines";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define _PI 3.14159265
 
 //-----------------------------------------------------------------------------------------//
 // Input and sampler
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
-
-sampler FgSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineInput (Input, s_Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -71,52 +75,32 @@ float4 LineColor
 <
    string Description = "Scanline Color";
    bool SupportsAlpha = false;
-> = { 1.0f, 1.0f, 1.0f, 1.0f };
+> = { 1.0, 1.0, 1.0, 1.0 };
 
 float LineCount
 <
    string Description = "Scanline Count";
-   float MinVal       = 100.0f;
-   float MaxVal       = 1080.0f;
-> = 300.0f;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define _PI 3.14159265
+   float MinVal       = 100.0;
+   float MaxVal       = 1080.0;
+> = 300.0;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 OldMonitorPS(float2 xy : TEXCOORD1) : COLOR {
-    float4 color;
-	float intensity;
-	float multiplier;
-	float oldalpha;
-	
-    color = tex2D(FgSampler, xy);
-	oldalpha = color.a;
-	
-	intensity = (color.r+color.g+color.b)/3;
-   
-    multiplier = (sin(_PI*xy.y*LineCount)+1.0f)/2.0f;
-   
-    color = LineColor*intensity*multiplier;
-	color.a = oldalpha;
-   
-    return color;
+float4 OldMonitorPS (float2 uv : TEXCOORD1) : COLOR
+{
+   float4 color = GetPixel (s_Input, uv);
+
+   float intensity = (color.r + color.g + color.b) / 3.0;
+   float multiplier = (sin (_PI * uv.y * LineCount) + 1.0) / 2.0;
+
+   return float4 (LineColor * intensity * multiplier.xxx, color.a);
 }
 
 //-----------------------------------------------------------------------------------------//
 //  Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique SampleFxTechnique
-{
-   pass p0
-   {
-      PixelShader = compile PROFILE OldMonitorPS();
-   }
-}
+technique SampleFxTechnique { pass p0 ExecuteShader (OldMonitorPS) }
+

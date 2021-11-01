@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-11-01
 // @Author jwrl
-// @Created 2018-09-07
+// @Created 2021-11-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR_640.png
 // @see https://www.lwks.com/media/kunena/attachments/6375/QuadVTR.mp4
 
@@ -11,66 +11,24 @@
  also simulated.  A range of Ampex VTR types and modes can be emulated, as well as a
  generic RCA videotape recorder.
 
- Note: the alpha channel is turned fully on with this effect.
+ NOTE: the alpha channel is turned fully on with this effect.  Also, because this
+ needs to be able to precisely set line widths no matter what the original clip size
+ or aspect ratio is it has not been possible to make it truly resolution independent.
+ What it does is lock the clip resolution to sequence resolution instead.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect QuadVTRsimulator.fx
 //
 // Possible future projects:
-// Add noise displacement when build up occurs.
+// Add noise-driven horizontal displacement when build up occurs.
 // Work out a convincing way to make the image lose lock as it would with severe build up.
 // Create tracking errors.  That might just be one for the "too hard" basket.
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Changed subcategory.
-//
-// Modified jwrl 2018-09-20:
-// Added RCA-style chroma displacement error.
-//
-// Modified jwrl 2018-09-14:
-// Corrected Hi-band/lo-band edge sharpening.
-// Improved brush noise sparkle generation.
-//
-// Modified jwrl 2018-09-13:
-// Added Hi-band/lo-band selection.  Two low band modes are provided, because the type
-// of modulator used differed between valve and solid state signal systems, resulting
-// in differing noise levels and edge artefacts.
-// Improved head switch simulation so that unmodified video follows switch pulse.  This
-// also improves the buildup simulation.
-// Some code cleanup performed.
-//
-// Modified jwrl 2018-09-12:
-// Added sparkle caused by the brushes in early Ampex heads.  It sort of works, but it's
-// not exactly great.
-// Added head switching dots visible in the Ampex VR-1000 series.
-// Added crop to 4:3 aspect ratio.  The alpha channel is set to one inside the crop zone
-// and zero outside it.  The crop is reasonably dumb and assumes that the image isn't in
-// portrait format.
-//
-// Modified jwrl 2018-09-11:
-// Added oxide build up effect.  That meant a further slight reworking of the maths.
-//
-// Modified jwrl 2018-09-10:
-// Corrected guide height adjustment to be closer to actual effect.
-//
-// Modified jwrl 2018-09-09:
-// Rearranged techniques to allow support for PAL-M and other rarer formats.
-//
-// Modified jwrl 2018-09-08:
-// Corrected some maths issues affecting the number of bands displayed.
-// Added desaturation to PAL chroma correction.
-// Added PAL Hanover bars setting.
-// Used SetTechnique to select modes, bypassing the conditionals previously used.
-// Added monochrome mode.
+// Rewrite 2021-11-01 jwrl.
+// Rewrite of the original effect to support LW 2021 resolution independence.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -80,34 +38,95 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Video artefacts";
    string Notes       = "Emulates the faults that could occur with Quadruplex videotape playback";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define WHITE     1.0.xxxx
+
+#define B_W       float3(0.2989, 0.5866, 0.1145)
+
+#define SQRT_2    0.7071067812
+
+#define TV_525    0
+
+#define PAL       14.6944
+#define PAL_OFFS  0.0063
+
+#define NTSC      14.72
+#define NTSC_OFFS 0.0060619048
+
+#define TIP       0.02
+#define GUIDE     0.02125
+
+#define HALF_PI   1.5707963268
+
+#define N_1       12.1053
+#define N_2       13.7838
+#define N_3       75.7143
+#define N_4       75.4545
+
+#define S_1       51538.462
+#define S_2       53846.153
+
+float _Progress;
+float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Inp;
+DefineInput (Inp, s_Input);
 
-texture Shp : RenderColorTarget;
-texture VTR : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input = sampler_state
-{
-   Texture   = <Inp>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler s_Sharpen = sampler_state { Texture = <Shp>; };
-sampler s_QuadVTR = sampler_state { Texture = <VTR>; };
+DefineTarget (Shp, s_Sharpen);
+DefineTarget (VTR, s_QuadVTR);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -202,48 +221,12 @@ bool HeadSwitch
 > = false;
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define BLACK     float4((0.0).xxx, 1.0)
-#define WHITE     (1.0).xxxx
-#define EMPTY     (0.0).xxxx
-
-#define B_W       float3(0.2989, 0.5866, 0.1145)
-
-#define SQRT_2    0.7071067812
-
-#define TV_525    0
-
-#define PAL       14.6944
-#define PAL_OFFS  0.0063
-
-#define NTSC      14.72
-#define NTSC_OFFS 0.0060619048
-
-#define TIP       0.02
-#define GUIDE     0.02125
-
-#define HALF_PI   1.5707963268
-
-#define N_1       12.1053
-#define N_2       13.7838
-#define N_3       75.7143
-#define N_4       75.4545
-
-#define S_1       51538.462
-#define S_2       53846.153
-
-float _Progress;
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_sharpen (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = GetPixel (s_Input, uv);
 
    float setband = (Mode == TV_525) ? 483.0 : 576.0;
 
@@ -268,10 +251,10 @@ float4 ps_sharpen (float2 uv : TEXCOORD1) : COLOR
    retval -= tex2D (s_Input, uv + xy2) * sharpen;
    retval -= tex2D (s_Input, uv + xy1) * sharpen;
 
-   return retval;
+   return Overflow (uv) ? EMPTY : retval;
 }
 
-float4 ps_mono (float2 uv : TEXCOORD1) : COLOR
+float4 ps_mono (float2 uv : TEXCOORD2) : COLOR
 {
    float tip = (Mode == TV_525) ? NTSC * (uv.y + NTSC_OFFS) : PAL * (uv.y + PAL_OFFS);
    float phase = (tip - floor (tip));
@@ -289,7 +272,7 @@ float4 ps_mono (float2 uv : TEXCOORD1) : COLOR
    return float4 (dot (tex2D (s_Sharpen, xy1).rgb, B_W).xxx, 0.0);
 }
 
-float4 ps_ntsc (float2 uv : TEXCOORD1) : COLOR
+float4 ps_ntsc (float2 uv : TEXCOORD2) : COLOR
 {
    float tip, ph1, ph2;
 
@@ -323,7 +306,7 @@ float4 ps_ntsc (float2 uv : TEXCOORD1) : COLOR
                         : lerp (retval, retval.brga, phase);
 }
 
-float4 ps_pal (float2 uv : TEXCOORD1) : COLOR
+float4 ps_pal (float2 uv : TEXCOORD2) : COLOR
 {
    float tip = (Mode == TV_525) ? NTSC * (uv.y + NTSC_OFFS) : PAL * (uv.y + PAL_OFFS);
    float phase = (tip - floor (tip));
@@ -345,7 +328,7 @@ float4 ps_pal (float2 uv : TEXCOORD1) : COLOR
    return float4 (lerp (retval, luma.xxx, abs (Phase * phase)).rgb, 1.0);
 }
 
-float4 ps_hanover_bars (float2 uv : TEXCOORD1) : COLOR
+float4 ps_hanover_bars (float2 uv : TEXCOORD2) : COLOR
 {
    float tip, ph1, ph2, hanover;
 
@@ -383,7 +366,7 @@ float4 ps_hanover_bars (float2 uv : TEXCOORD1) : COLOR
                         : lerp (retval, retval.brga, phase);
 }
 
-float4 ps_rca (float2 uv : TEXCOORD1) : COLOR
+float4 ps_rca (float2 uv : TEXCOORD2) : COLOR
 {
    float tip = (Mode == TV_525) ? NTSC * (uv.y + NTSC_OFFS) : PAL * (uv.y + PAL_OFFS);
    float phase = (tip - floor (tip));
@@ -472,70 +455,36 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique QuadVTR_Mono
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Shp;"; > 
-   { PixelShader = compile PROFILE ps_sharpen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = VTR;"; > 
-   { PixelShader = compile PROFILE ps_mono (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Shp;"; >  ExecuteShader (ps_sharpen)
+   pass P_2 < string Script = "RenderColorTarget0 = VTR;"; >  ExecuteShader (ps_mono)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique QuadVTR_NTSC
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Shp;"; > 
-   { PixelShader = compile PROFILE ps_sharpen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = VTR;"; > 
-   { PixelShader = compile PROFILE ps_ntsc (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Shp;"; >  ExecuteShader (ps_sharpen)
+   pass P_2 < string Script = "RenderColorTarget0 = VTR;"; >  ExecuteShader (ps_ntsc)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique QuadVTR_PAL
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Shp;"; > 
-   { PixelShader = compile PROFILE ps_sharpen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = VTR;"; > 
-   { PixelShader = compile PROFILE ps_pal (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Shp;"; >  ExecuteShader (ps_sharpen)
+   pass P_2 < string Script = "RenderColorTarget0 = VTR;"; >  ExecuteShader (ps_pal)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique QuadVTR_Hanover
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Shp;"; > 
-   { PixelShader = compile PROFILE ps_sharpen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = VTR;"; > 
-   { PixelShader = compile PROFILE ps_hanover_bars (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Shp;"; >  ExecuteShader (ps_sharpen)
+   pass P_2 < string Script = "RenderColorTarget0 = VTR;"; >  ExecuteShader (ps_hanover_bars)
+   pass P_3 ExecuteShader (ps_main)
 }
 
 technique QuadVTR_RCA
 {
-   pass P_1
-   < string Script = "RenderColorTarget0 = Shp;"; > 
-   { PixelShader = compile PROFILE ps_sharpen (); }
-
-   pass P_2
-   < string Script = "RenderColorTarget0 = VTR;"; > 
-   { PixelShader = compile PROFILE ps_rca (); }
-
-   pass P_3
-   { PixelShader = compile PROFILE ps_main (); }
+   pass P_1 < string Script = "RenderColorTarget0 = Shp;"; >  ExecuteShader (ps_sharpen)
+   pass P_2 < string Script = "RenderColorTarget0 = VTR;"; >  ExecuteShader (ps_rca)
+   pass P_3 ExecuteShader (ps_main)
 }
+

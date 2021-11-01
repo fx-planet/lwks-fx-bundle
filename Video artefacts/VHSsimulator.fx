@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-11-01
 // @Author khaver
 // @Created 2014-11-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/VHSv2_640.png
@@ -19,31 +19,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Code cleanup 25 February 2017 by jwrl:
-// Bug fix to correct for a bug in the way that Lightworks handles interlaced media.
-// All samplers explicitly declared to fix the differing Windows - Mac/Linux defaults.
-// Unused parameter to set the Y value in the distortion source group removed.
-// A new group "Distortion" was added because removing the Y parameter left an empty
-// line in the settings.
-// "Distortion Strength", "Distortion Threshold" and "Distortion Bias" are now grouped
-// in the new "Distortion" group and changed to "Strength", "Threshold" and "Bias".
-// For consistency two additional groups have been added, "Noise" and "Roll".
-//
-// LW 14+ version by jwrl 12 February 2017 - added subcategory.
+// Update 2021-11-01 jwrl.
+// Updated the original effect to better support LW v2021 and higher.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -53,134 +30,55 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Video artefacts";
    string Notes       = "Simulates a damaged VHS tape";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-texture Input;
-texture Tex1 : RenderColorTarget;
-texture Tex2 : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InputSampler = sampler_state { Texture = <Input>;
-	AddressU = Border;
-        AddressV = Wrap;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
- };
-sampler Samp1 = sampler_state { Texture = <Tex1>;
-	AddressU = Border;
-        AddressV = Wrap;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
-};
-sampler Samp2 = sampler_state { Texture = <Tex2>;
-	AddressU = Border;
-        AddressV = Wrap;
-        MinFilter = Linear;
-        MagFilter = Linear;
-        MipFilter = Linear;
-};
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Lines
-<
-	string Description = "Vertical Resolution";
-	float MinVal = 0.00;
-	float MaxVal = 1.00;
-> = 1.0;
-
-float ORGX
-<
-	string Group = "Distortion";
-	string Description = "Source X pos";
-	float MinVal = 0.00;
-	float MaxVal = 1.00;
-> = 0.02;
-
-bool Invert
-<
-	string Group = "Distortion";
-	string Description = "Negate Source";
-> = false;
-
-float Strength
-<
-	string Group = "Distortion";
-	string Description = "Strength";
-	float MinVal = 0.00;
-	float MaxVal = 1.00;
-> = 0.1;
-
-float Threshold
-<
-	string Group = "Distortion";
-	string Description = "Threshold";
-	float MinVal = 0.00;
-	float MaxVal = 1.00;
-> = 0.5;
-
-float Bias
-<
-	string Group = "Distortion";
-	string Description = "Bias";
-	float MinVal = -0.50;
-	float MaxVal = 0.50;
-> = 0.0;
-
-float WNoise
-<
-	string Group = "Noise";
-	string Description = "White Noise";
-	float MinVal = 0.00;
-	float MaxVal = 1.00;
-> = 0.1;
-
-float RNoise
-<
-	string Group = "Noise";
-	string Description = "Red Noise";
-	float MinVal = 0.00;
-	float MaxVal = 1.00;
-> = 0.1;
-
-float BNoise
-<
-	string Group = "Noise";
-	string Description = "Blue Noise";
-	float MinVal = 0.00;
-	float MaxVal = 1.00;
-> = 0.1;
-
-int RMult
-<
-	string Group = "Roll";
-	string Description = "Speed Multiplier";
-	string Enum = "x1,x10,x100";
-> = 0;
-
-float Roll
-<
-	string Group = "Roll";
-	string Description = "Speed";
-	float MinVal = -10.00;
-	float MaxVal = 10.00;
-> = 0.0;
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define SetTargetMode(TGT, SMP, MODE) \
+                                      \
+ texture TGT : RenderColorTarget;     \
+                                      \
+ sampler SMP = sampler_state          \
+ {                                    \
+   Texture   = <TGT>;                 \
+   AddressU  = MODE;                  \
+   AddressV  = MODE;                  \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 float _Progress;
 
@@ -188,78 +86,194 @@ float _OutputAspectRatio;
 float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DefineInput (Input, s_Input);
+
+SetTargetMode (Tex1, Samp1, Wrap);
+SetTargetMode (Tex2, Samp2, Wrap);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+float Lines
+<
+   string Description = "Vertical Resolution";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 1.0;
+
+float ORGX
+<
+   string Group = "Distortion";
+   string Description = "Source X pos";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.02;
+
+bool Invert
+<
+   string Group = "Distortion";
+   string Description = "Negate Source";
+> = false;
+
+float Strength
+<
+   string Group = "Distortion";
+   string Description = "Strength";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+float Threshold
+<
+   string Group = "Distortion";
+   string Description = "Threshold";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.5;
+
+float Bias
+<
+   string Group = "Distortion";
+   string Description = "Bias";
+   float MinVal = -0.5;
+   float MaxVal = 0.5;
+> = 0.0;
+
+float WNoise
+<
+   string Group = "Noise";
+   string Description = "White Noise";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+float RNoise
+<
+   string Group = "Noise";
+   string Description = "Red Noise";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+float BNoise
+<
+   string Group = "Noise";
+   string Description = "Blue Noise";
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
+> = 0.1;
+
+int RMult
+<
+   string Group = "Roll";
+   string Description = "Speed Multiplier";
+   string Enum = "x1,x10,x100";
+> = 0;
+
+float Roll
+<
+   string Group = "Roll";
+   string Description = "Speed";
+   float MinVal = -10.0;
+   float MaxVal = 10.0;
+> = 0.0;
+
+//-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float random( float2 p )
+float random (float2 p)
 {
-	const float2 r = float2(
-		23.1406926327792690,  // e^pi (Gelfond's constant)
-		2.6651441426902251); // 2^sqrt(2) (Gelfondâ€“Schneider constant)
-	return frac( cos( fmod( 123456789., 1e-7 + 256. * dot(p,r) ) ) );  
+   float2 r = float2 (23.140692632779269,  // e^pi (Gelfond's constant)
+                      2.6651441426902251); // 2^sqrt(2) (Gelfond/Schneider constant)
+
+   return frac (cos (fmod (123456789.0, 1e-7 + 256.0 * dot (p, r))));  
 }
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 main( float2 uv : TEXCOORD1 ) : COLOR
+float4 main (float2 uv : TEXCOORD1) : COLOR
 {
-	float4 source = float4(0,0,0,1);
-	float4 ret = source;
-	float4 strip = tex2D(InputSampler,float2(ORGX,uv.y));
-	float luma = (strip.r + strip.g + strip.b) / 3.0;
-	if (Invert) luma = 1.0-((abs(luma - (0.5 + Bias))) * 2.0);
-	else luma = abs(luma - (0.5 + Bias)) * 2.0;
-	if (luma >= Threshold)
-	{
-		if (random(float2((uv.x+0.5)*luma,(_Progress+0.5)*uv.y)) / Strength < (WNoise / 5.0)) ret = float4(1,1,1,1);
-		if (random(float2((uv.y+0.5)*luma,(_Progress+0.4)*uv.x)) / Strength < (RNoise / 10.0)) ret = float4(0.75,0,0,1) * (1.0-(luma - Threshold));
-		if (random(float2((uv.x+0.5)*luma,(_Progress+0.3)*uv.x)) / Strength < (BNoise / 10.0)) ret = float4(0,0,0.75,1) * (1.0-(luma - Threshold));
-	}
-	if (min(WNoise,Strength) == 0.0 && min(RNoise,Strength) == 0.0 && min(BNoise,Strength) == 0.0) return source;
-	else return ret;
+   float4 source = float4 (0.0.xxx, 1.0);
+   float4 ret = source;
+   float4 strip = GetPixel (s_Input, float2 (ORGX, uv.y));
+
+   float luma = (strip.r + strip.g + strip.b) / 3.0;
+
+   luma = Invert ? 1.0 - ((abs (luma - (0.5 + Bias))) * 2.0)
+                 : abs (luma - (0.5 + Bias)) * 2.0;
+
+   if (luma >= Threshold) {
+
+      float noiseW = WNoise / 5.0;
+      float noiseR = RNoise / 10.0;
+      float noiseB = BNoise / 10.0;
+
+      if (random (float2 ((uv.x + 0.5) * luma, (_Progress + 0.5) * uv.y)) / Strength < noiseW)
+         ret = 1.0.xxxx;
+
+      if (random (float2 ((uv.y + 0.5) * luma, (_Progress + 0.4) * uv.x)) / Strength < noiseR)
+         ret = float4 (0.75, 0.0.xx, 1.0) * (1.0 - luma - Threshold);
+
+      if (random (float2 ((uv.x + 0.5) * luma, (_Progress + 0.3) * uv.x)) / Strength < noiseB)
+         ret = float4 (0.0.xx, 0.75, 1.0) * (1.0 - luma - Threshold);
+   }
+
+   return (min (WNoise, Strength) == 0.0) && (min (RNoise, Strength) == 0.0) &&
+          (min (BNoise, Strength) == 0.0) ? source : ret;
 }
 
-float4 main0( float2 uv : TEXCOORD1 ) : COLOR
+float4 main0 (float2 uv : TEXCOORD1) : COLOR
 {
-	float4 ret;
-	float4 source = tex2D(InputSampler,uv);
-	float xSize = 5.0 / (Lines * _OutputWidth);                 // 1.0/((Lines/5.0) * _OutputWidth) rewritten to clean up code - jwrl
-	float ySize = _OutputAspectRatio / (Lines * _OutputWidth);  // 1.0/(Lines * _OutputHeight) changed to fix LW bug - jwrl
-	ret = tex2D( InputSampler, 
-		float2( uv.x - 0.5,
-			round(( uv.y - 0.5) / ySize ) * ySize) + 0.5);
-	return ret;
+   float4 source = GetPixel (s_Input,uv);
+
+   float xSize = 5.0 / (Lines * _OutputWidth);
+   float ySize = _OutputAspectRatio / (Lines * _OutputWidth);
+
+   float2 xy = float2 (uv.x - 0.5, round (( uv.y - 0.5) / ySize ) * ySize) + 0.5;
+
+   return GetPixel (s_Input, xy);
 }
 
-float4 main1( float2 uv : TEXCOORD1 ) : COLOR
+float4 main1 (float2 uv : TEXCOORD1) : COLOR
 {
-	float xSize = 5.0 / (Lines * _OutputWidth);                 // 1.0/((Lines/5.0) * _OutputWidth) rewritten to clean up code - jwrl
-	float ySize = _OutputAspectRatio / (Lines * _OutputWidth);  // 1.0/(Lines * _OutputHeight) changed to fix LW bug - jwrl
-	float rmult = ceil (pow (10.0, (float) RMult));             // Rewritten to resolve an ambiguous overload - jwrl
-	float flip = _Progress * Roll * rmult;                      // Rewritten to remove a redundant (float) cast - jwrl
-	uv = float2(uv.x, uv.y + flip);
-	float4 orig = tex2D(Samp2,uv);
-	float4 noise;
-	float4 strip = tex2D(Samp2,float2(ORGX,uv.y));
-	float luma = (strip.r + strip.g + strip.b) / 3.0;
-	if (Invert) luma = 1.0-((abs(luma - (0.5 + Bias))) * 2.0);
-	else luma = abs(luma - (0.5 + Bias)) * 2.0;
-	float2 newuv = uv;
-	float2 noiseuv = float2( round(( uv.x - 0.5) / xSize ) * xSize,
-				round(( uv.y - 0.5) / ySize ) * ySize) + 0.5;
- 	if (luma >= Threshold)
-	{
-		newuv.x = uv.x - ((luma - Threshold) * Strength);
-		noiseuv.x = noiseuv.x - ((luma - Threshold) * Strength);
-		orig.r = tex2D(Samp2,float2(newuv.x+(xSize * (luma - Threshold) * Strength * 33.0),newuv.y)).r;
-		orig.g = tex2D(Samp2,newuv).g;
-		orig.b = tex2D(Samp2,float2(newuv.x-(xSize * (luma - Threshold) * Strength * 33.0),newuv.y)).b;
-		noise = tex2D(Samp1,noiseuv);
-		orig = max(orig,noise);
-	}
-	return orig;
+   float xSize = 5.0 / (Lines * _OutputWidth);
+   float ySize = _OutputAspectRatio / (Lines * _OutputWidth);
+   float rmult = ceil (pow (10.0, (float) RMult));
+   float flip = _Progress * Roll * rmult;
+
+   float2 xy1 = float2 (uv.x, uv.y + flip);
+
+   float4 orig = tex2D (Samp2, xy1);
+   float4 strip = tex2D (Samp2, float2 (ORGX, xy1.y));
+
+   float luma = (strip.r + strip.g + strip.b) / 3.0;
+
+   luma = Invert ? 1.0 - ((abs (luma - (0.5 + Bias))) * 2.0) : abs (luma - (0.5 + Bias)) * 2.0;
+
+    if (luma >= Threshold) {
+      float2 xy2 = float2 (xy1.x - ((luma - Threshold) * Strength), xy1.y);
+      float2 xy3 = float2 (round ((xy1.x - 0.5) / xSize ) * xSize,
+                           round ((xy1.y - 0.5) / ySize) * ySize) + 0.5.xx;
+
+      xy3.x -= (luma - Threshold) * Strength;
+
+      orig.r = tex2D (Samp2, float2 (xy2.x + (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).r;
+      orig.g = tex2D (Samp2, xy2).g;
+      orig.b = tex2D (Samp2, float2 (xy2.x - (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).b;
+
+      float4 noise = tex2D (Samp1, xy3);
+
+      orig = max (orig, noise);
+   }
+
+   return orig;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -268,25 +282,8 @@ float4 main1( float2 uv : TEXCOORD1 ) : COLOR
 
 technique SampleFxTechnique
 {
-   pass Pass1
-   <
-   string Script = "RenderColorTarget0 = Tex1;";
-   >
-   {
-      PixelShader = compile PROFILE main();
-   }
-   
-   pass Pass2
-   <
-   string Script = "RenderColorTarget0 = Tex2;";
-   >
-   {
-      PixelShader = compile PROFILE main0();
-   }
-   
-   pass Pass3
-   {
-      PixelShader = compile PROFILE main1();
-   }
-   
+   pass Pass1 < string Script = "RenderColorTarget0 = Tex1;"; > ExecuteShader (main)
+   pass Pass2 < string Script = "RenderColorTarget0 = Tex2;"; > ExecuteShader (main0)
+   pass Pass3 ExecuteShader (main1)
 }
+

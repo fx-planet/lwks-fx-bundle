@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-15
+// @Released 2021-11-01
 // @Author jwrl
-// @Created 2017-02-22
+// @Created 2021-11-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/CRTscreen_640.png
 
 /**
@@ -17,6 +17,11 @@
 
  The glow/halation effect is just a simple box blur, slightly modified to give a
  reasonable simulation of the burnout that could be obtained by overdriving a CRT.
+
+ NOTE:  Because this effect needs to be able to precisely set pixel widths no matter
+ what the original clip size or aspect ratio is it has not been possible to make it
+ truly resolution independent.  What it does is lock the clip resolution to sequence
+ resolution instead.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,22 +29,8 @@
 //
 // Version history:
 //
-// Update 2020-11-15 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 27 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 December 2018 jwrl.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Cross platform compatibility check 3 August 2017 jwrl.
-// Explicitly defined InpSampler{} to reduce the risk of cross platform default
-// sampler state differences.
+// Rewrite 2021-11-01 jwrl.
+// Rewrite of the original effect to better support LW 2021 and higher.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -49,49 +40,79 @@ int _LwksEffectInfo
    string Category    = "Stylize";
    string SubCategory = "Video artefacts";
    string Notes       = "Simulates a close-up look at an analogue colour TV screen.  Three options are available.";
-   bool CanSize       = true;
+   bool CanSize       = false;
 > = 0;
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define DefineInput(TEXTURE, SAMPLER) \
+                                      \
+ texture TEXTURE;                     \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TEXTURE>;             \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define DefineTarget(TARGET, SAMPLER) \
+                                      \
+ texture TARGET : RenderColorTarget;  \
+                                      \
+ sampler SAMPLER = sampler_state      \
+ {                                    \
+   Texture   = <TARGET>;              \
+   AddressU  = ClampToEdge;           \
+   AddressV  = ClampToEdge;           \
+   MinFilter = Linear;                \
+   MagFilter = Linear;                \
+   MipFilter = Linear;                \
+ }
+
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+
+#define EMPTY 0.0.xxxx
+
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+
+#define R_ON   0.00
+#define R_OFF  0.25
+#define G_ON   0.33
+#define G_OFF  0.58
+#define B_ON   0.66
+#define B_OFF  0.91
+
+#define V_MAX  0.8
+
+#define SONY   0
+#define DMD    2
+
+float _OutputAspectRatio;
+float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture Input;
+DefineInput (Input, s_Input);
 
-texture Fgd    : RenderColorTarget;
-texture prelim : RenderColorTarget;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler InpSampler = sampler_state
-{
-   Texture   = <Input>;
-   AddressU  = Clamp;
-   AddressV  = Clamp;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler FgdSampler = sampler_state {
-   Texture   = <Fgd>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
-
-sampler preSampler = sampler_state {
-   Texture   = <prelim>;
-   AddressU  = Mirror;
-   AddressV  = Mirror;
-   MinFilter = Linear;
-   MagFilter = Linear;
-   MipFilter = Linear;
-};
+DefineTarget (Fgd, s_Foreground);
+DefineTarget (prelim, s_prelim);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -113,35 +134,16 @@ int Style
 float Radius
 <
    string Description = "Glow radius";
-   float MinVal       = 0.0;
-   float MaxVal       = 1.0;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
 
 float Opacity
 <
    string Description = "Glow amount";
-   float MinVal       = 0.0;
-   float MaxVal       = 1.0;
+   float MinVal = 0.0;
+   float MaxVal = 1.0;
 > = 0.5;
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define R_ON   0.00
-#define R_OFF  0.25
-#define G_ON   0.33
-#define G_OFF  0.58
-#define B_ON   0.66
-#define B_OFF  0.91
-
-#define V_MAX  0.8
-
-#define SONY   0
-#define DMD    2
-
-float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
@@ -149,7 +151,7 @@ float _OutputWidth;
 
 float4 ps_raster (float2 uv : TEXCOORD1) : COLOR
 {
-   float4 retval = tex2D (InpSampler, uv);
+   float4 retval = tex2D (s_Input, uv);
 
    int scale = 1.0 + (10.0 * max (Size, 0.0));
 
@@ -160,7 +162,8 @@ float4 ps_raster (float2 uv : TEXCOORD1) : COLOR
    H_pixels = modf (H_pixels, P_pixels);
    P_pixels = round (frac (P_pixels / 2.0) + 0.25);
 
-   if ((P_pixels == 1.0) && (Style == DMD)) V_pixels = (V_pixels >= 0.5) ? V_pixels - 0.5 : V_pixels + 0.5;
+   if ((P_pixels == 1.0) && (Style == DMD))
+      V_pixels = (V_pixels >= 0.5) ? V_pixels - 0.5 : V_pixels + 0.5;
 
    if ((H_pixels < R_ON) || (H_pixels > R_OFF)) retval.r = 0.0;
 
@@ -193,20 +196,20 @@ float4 ps_prelim (float2 uv : TEXCOORD1) : COLOR
    xy.x    += Pixel_1;
    Pixel_1 += Pixel_2;
 
-   float4 retval = tex2D (FgdSampler, xy);
+   float4 retval = tex2D (s_Foreground, xy);
 
-   xy.x += Pixel_1; retval += tex2D (FgdSampler, xy);
-   xy.x += Pixel_1; retval += tex2D (FgdSampler, xy);
-   xy.x += Pixel_1; retval += tex2D (FgdSampler, xy);
-   xy.x += Pixel_1; retval += tex2D (FgdSampler, xy);
+   xy.x += Pixel_1; retval += tex2D (s_Foreground, xy);
+   xy.x += Pixel_1; retval += tex2D (s_Foreground, xy);
+   xy.x += Pixel_1; retval += tex2D (s_Foreground, xy);
+   xy.x += Pixel_1; retval += tex2D (s_Foreground, xy);
 
    xy.x = uv.x - Pixel_2;
-   retval += tex2D (FgdSampler, xy);
+   retval += tex2D (s_Foreground, xy);
 
-   xy.x -= Pixel_1; retval += tex2D (FgdSampler, xy);
-   xy.x -= Pixel_1; retval += tex2D (FgdSampler, xy);
-   xy.x -= Pixel_1; retval += tex2D (FgdSampler, xy);
-   xy.x -= Pixel_1; retval += tex2D (FgdSampler, xy);
+   xy.x -= Pixel_1; retval += tex2D (s_Foreground, xy);
+   xy.x -= Pixel_1; retval += tex2D (s_Foreground, xy);
+   xy.x -= Pixel_1; retval += tex2D (s_Foreground, xy);
+   xy.x -= Pixel_1; retval += tex2D (s_Foreground, xy);
 
    return retval / 10.0;
 }
@@ -221,25 +224,25 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    xy.y    += Pixel_1;
    Pixel_1 += Pixel_2;
 
-   float4 retval = tex2D (preSampler, xy);
+   float4 retval = tex2D (s_prelim, xy);
 
-   xy.y += Pixel_1; retval += tex2D (preSampler, xy);
-   xy.y += Pixel_1; retval += tex2D (preSampler, xy);
-   xy.y += Pixel_1; retval += tex2D (preSampler, xy);
-   xy.y += Pixel_1; retval += tex2D (preSampler, xy);
+   xy.y += Pixel_1; retval += tex2D (s_prelim, xy);
+   xy.y += Pixel_1; retval += tex2D (s_prelim, xy);
+   xy.y += Pixel_1; retval += tex2D (s_prelim, xy);
+   xy.y += Pixel_1; retval += tex2D (s_prelim, xy);
 
    xy.y = uv.y - Pixel_2;
-   retval += tex2D (preSampler, xy);
+   retval += tex2D (s_prelim, xy);
 
-   xy.y -= Pixel_1; retval += tex2D (preSampler, xy);
-   xy.y -= Pixel_1; retval += tex2D (preSampler, xy);
-   xy.y -= Pixel_1; retval += tex2D (preSampler, xy);
-   xy.y -= Pixel_1; retval += tex2D (preSampler, xy);
+   xy.y -= Pixel_1; retval += tex2D (s_prelim, xy);
+   xy.y -= Pixel_1; retval += tex2D (s_prelim, xy);
+   xy.y -= Pixel_1; retval += tex2D (s_prelim, xy);
+   xy.y -= Pixel_1; retval += tex2D (s_prelim, xy);
 
    retval /= 10.0;
    retval = lerp (retval, 0.0.xxxx, 1.0 - Opacity);
 
-   float4 Inp = tex2D (FgdSampler, uv);
+   float4 Inp = tex2D (s_Foreground, uv);
 
    retval = min (max (retval, Inp), 1.0.xxxx);
    retval = pow (retval, 0.4);
@@ -252,7 +255,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    luma = sqrt (Radius * Opacity);
 
-   return lerp (retval, Inp, luma);
+   return Overflow (uv) ? EMPTY : lerp (retval, Inp, luma);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -261,24 +264,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
 technique colourscreen
 {
-   pass Pass_one
-   <
-      string Script = "RenderColorTarget0 = Fgd;";
-   >
-   {
-      PixelShader = compile PROFILE ps_raster ();
-   }
-
-   pass Pass_two
-   <
-      string Script = "RenderColorTarget0 = prelim;";
-   >
-   {
-      PixelShader = compile PROFILE ps_prelim ();
-   }
-
-   pass Pass_three
-   {
-      PixelShader = compile PROFILE ps_main ();
-   }
+   pass P_1 < string Script = "RenderColorTarget0 = Fgd;"; > ExecuteShader (ps_raster)
+   pass P_2 < string Script = "RenderColorTarget0 = prelim;"; > ExecuteShader (ps_prelim)
+   pass P_3 ExecuteShader (ps_main)
 }
+

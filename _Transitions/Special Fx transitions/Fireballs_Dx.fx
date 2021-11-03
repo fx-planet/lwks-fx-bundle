@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-07-25
+// @Released 2021-11-03
 // @Author jwrl
 // @Created 2021-07-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Fireball_Dx_640.png
@@ -26,6 +26,9 @@
 // adjustment.  The hue of the flames can be adjusted as can the flame intensity.
 //
 // Version history:
+//
+// Update 2021-11-03 jwrl.
+// Corrected the white level overflow that could arise in non-floating point workspaces.
 //
 // Rewrite 2021-07-25 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
@@ -316,9 +319,9 @@ float4 ps_main_2 (float2 uv : TEXCOORD3) : COLOR
 
    float4 Ball = float4 (fire, fire_grn * 0.4, fire_blu, fire_grn);
 
-   Ball = fn_hueShift (saturate (Ball * Intensity));
+   Ball = saturate (fn_hueShift (Ball * Intensity));
 
-   float4 Fgnd = lerp (tex2D (s_Background, uv), Ball, fire);
+   float4 Fgnd = lerp (tex2D (s_Background, uv), Ball, min (1.0, fire));
    float4 Bgnd = tex2D (s_Foreground, uv);
 
    fire = saturate ((1.0 - (fire_blu * fire_blu)) / amount);
@@ -338,9 +341,9 @@ float4 ps_main_2 (float2 uv : TEXCOORD3) : COLOR
 
 technique Fireballs_Dx_1
 {
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass P_1 ExecuteShader (ps_main_1)
+   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
+   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
+   pass P_3 ExecuteShader (ps_main_1)
 }
 
 technique Fireballs_Dx_2

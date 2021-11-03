@@ -141,7 +141,7 @@ float4 fn_select (sampler vidSample, float2 xy, int vidSelect)
    if (vidSelect == 3) return retval.gggg;
    if (vidSelect == 4) return retval.bbbb;
 
-   return (vidSelect == 5) : dot (retval.rgb, LUMA).xxxx ? retval.aaaa;
+   return (vidSelect == 5) ? dot (retval.rgb, LUMA).xxxx : retval.aaaa;
 }
 
 float4 fn_route (float4 video_src, float4 video_ref, int vidRoute)

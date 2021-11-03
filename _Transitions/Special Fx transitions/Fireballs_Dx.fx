@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-11-03
+// @Released 2021-11-04
 // @Author jwrl
 // @Created 2021-07-25
 // @see https://www.lwks.com/media/kunena/attachments/6375/Fireball_Dx_640.png
@@ -27,7 +27,7 @@
 //
 // Version history:
 //
-// Update 2021-11-03 jwrl.
+// Update 2021-11-04 jwrl.
 // Corrected the white level overflow that could arise in non-floating point workspaces.
 //
 // Rewrite 2021-07-25 jwrl.
@@ -262,21 +262,18 @@ float4 ps_main_1 (float2 uv : TEXCOORD3) : COLOR
 
    fire = max (fire, 0.0);
 
-   float fire_blu = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
    float fire_grn = fire * fire;
-
-   fire_blu = min (fire_blu, fire_grn * fire * 0.15);
+   float fire_blu = min (1.0 - (max (1.0 - Intensity, 0.0) * 0.025), fire_grn * fire * 0.15);
+   float key = saturate ((1.0 - (fire_blu * fire_blu)) / amount);
 
    float4 Ball = float4 (fire, fire_grn * 0.4, fire_blu, fire_grn);
 
-   Ball = fn_hueShift (saturate (Ball * Intensity));
+   Ball = saturate (fn_hueShift (Ball * Intensity));
 
-   float4 Fgnd = lerp (tex2D (s_Foreground, uv), Ball, fire);
+   float4 Fgnd = lerp (tex2D (s_Foreground, uv), Ball, key);
    float4 Bgnd = tex2D (s_Background, uv);
 
-   fire = saturate ((1.0 - (fire_blu * fire_blu)) / amount);
-
-   Fgnd = lerp (Bgnd, Fgnd, fire);
+   Fgnd = lerp (Bgnd, Fgnd, min (1.0, fire));
    xy = float2 ((uv.x - PosX) * _OutputAspectRatio, uv.y - PosY);
 
    float radius = pow (max (Amount - 0.5, 0.0) * 2.0, 4.0);
@@ -312,10 +309,9 @@ float4 ps_main_2 (float2 uv : TEXCOORD3) : COLOR
 
    fire = max (fire, 0.0);
 
-   float fire_blu = 1.0 - (max (1.0 - Intensity, 0.0) * 0.025);
    float fire_grn = fire * fire;
-
-   fire_blu = min (fire_blu, fire_grn * fire * 0.15);
+   float fire_blu = min (1.0 - (max (1.0 - Intensity, 0.0) * 0.025), fire_grn * fire * 0.15);
+   float key = saturate ((1.0 - (fire_blu * fire_blu)) / amount);
 
    float4 Ball = float4 (fire, fire_grn * 0.4, fire_blu, fire_grn);
 
@@ -324,9 +320,7 @@ float4 ps_main_2 (float2 uv : TEXCOORD3) : COLOR
    float4 Fgnd = lerp (tex2D (s_Background, uv), Ball, min (1.0, fire));
    float4 Bgnd = tex2D (s_Foreground, uv);
 
-   fire = saturate ((1.0 - (fire_blu * fire_blu)) / amount);
-
-   Fgnd = lerp (Bgnd, Fgnd, fire);
+   Fgnd = lerp (Bgnd, Fgnd, key);
    xy = float2 ((uv.x - PosX) * _OutputAspectRatio, uv.y - PosY);
 
    float radius = pow (max (0.5 - Amount, 0.0) * 2.0, 4.0);

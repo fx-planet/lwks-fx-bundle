@@ -1,4 +1,4 @@
-# Lightworks user Fx library, October 23, 2021.
+# Lightworks user Fx library, November 3, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
@@ -306,6 +306,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |String theory                 |stringTheory.fx         |
 |Transporter 1                 |Transporter1.fx         |
 |Transporter 2                 |Transporter2.fx         |
+|Video glitch                  |VideoGlitch.fx          |
 
 ## CATEGORY FOLDER: Switches
 |EFFECT                        |FILE NAME               |

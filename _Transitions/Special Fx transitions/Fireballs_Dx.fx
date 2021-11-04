@@ -29,6 +29,8 @@
 //
 // Update 2021-11-04 jwrl.
 // Corrected the white level overflow that could arise in non-floating point workspaces.
+// Subsequently corrected the uploaded zip file which for some reason still had the wrong
+// version.
 //
 // Rewrite 2021-07-25 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
@@ -270,10 +272,10 @@ float4 ps_main_1 (float2 uv : TEXCOORD3) : COLOR
 
    Ball = saturate (fn_hueShift (Ball * Intensity));
 
-   float4 Fgnd = lerp (tex2D (s_Foreground, uv), Ball, key);
+   float4 Fgnd = lerp (tex2D (s_Foreground, uv), Ball, min (1.0, fire));
    float4 Bgnd = tex2D (s_Background, uv);
 
-   Fgnd = lerp (Bgnd, Fgnd, min (1.0, fire));
+   Fgnd = lerp (Bgnd, Fgnd, key);
    xy = float2 ((uv.x - PosX) * _OutputAspectRatio, uv.y - PosY);
 
    float radius = pow (max (Amount - 0.5, 0.0) * 2.0, 4.0);

@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2021-10-24
+// @Released 2021-11-09
 // @Author baopao
 // @Author jwrl
-// @Created 2021-10-24
+// @Created 2014-02-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/OutputSelect_640.png
 
 /**
@@ -17,12 +17,22 @@
 // Lightworks user effect OutputSelector.fx
 //
 // This is a rewrite to support Lightworks v2021 and later of an original effect created
-// by baopao (http://www.alessandrodallafontana.com/).
+// by baopao (http://www.alessandrodallafontana.com/) and posted here in 2014-02-06.
 //
 // Version history:
 //
+// Update 2021-11-09 jwrl.
+// Restored baopao's original SetTechnique switching instead of my conditionals.
+// Also changed the output selection to read "Input 1" and so on for clarity.
+// Finally, restored baopao's original creation date in the header.  It should never
+// have been changed.
+//
 // Rewrite 2021-10-24 jwrl.
 // Rewrite of the original effect to better support LW v2021 and later.
+// Main visible change is inputs are now "In_1", "In_2" and so on instead of baopao's
+// original "Inp_Out_1", "Inp_Out_2" etc.  The longer names corrupt the routing display.
+// Correct TEXCOORD numbers have been used instead of TEXCOORD1 for all inputs.  This
+// is important because we cannot guarantee all inputs will have the same coordinates.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -81,27 +91,33 @@ DefineInput (In_4, s_Input_4);
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int GetInput
+int SetTechnique
 <
    string Description = "Output";
-   string Enum = "In_1,In_2,In_3,In_4";
+   string Enum = "Input 1,Input 2,Input 3,Input 4";
 > = 0;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2,
-                float2 uv3 : TEXCOORD3, float2 uv4 : TEXCOORD4) : COLOR
-{
-   return (GetInput == 0) ? GetPixel (s_Input_1, uv1) :
-          (GetInput == 1) ? GetPixel (s_Input_2, uv2) :
-          (GetInput == 2) ? GetPixel (s_Input_3, uv3) : GetPixel (s_Input_4, uv4);
-}
+float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Input_1, uv) }
+
+float4 ps_main_2 (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_Input_2, uv) }
+
+float4 ps_main_3 (float2 uv : TEXCOORD3) : COLOR { return GetPixel (s_Input_3, uv) }
+
+float4 ps_main_4 (float2 uv : TEXCOORD4) : COLOR { return GetPixel (s_Input_4, uv) }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique OutputSelector { Pass P_1 ExecuteShader (ps_main) }
+technique OutputSelector_1 { Pass P_1 ExecuteShader (ps_main_1) }
+
+technique OutputSelector_2 { Pass P_2 ExecuteShader (ps_main_2) }
+
+technique OutputSelector_3 { Pass P_3 ExecuteShader (ps_main_3) }
+
+technique OutputSelector_4 { Pass P_4 ExecuteShader (ps_main_4) }
 

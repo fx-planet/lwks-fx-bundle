@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-11-05
+// @Released 2021-11-09
 // @Author jwrl
 // @Created 2021-11-05
 // @see https://forum.lwks.com/attachments/highlightwidgets_640-png.39542/
@@ -13,6 +13,10 @@
 // Lightworks user effect HighlightWidgets.fx
 //
 // Version history:
+//
+// Update 2021-11-09 jwrl.
+// Removed aspect ratio adjustment from the circle widget.
+// Changed arrow generation to improve geometry and prevent border overflow.
 //
 // Built 2021-11-05 jwrl.
 // Not completely comfortable with arrow widget at the moment.
@@ -117,7 +121,7 @@ float Size
 
 float Aspect
 <
-   string Description = "Aspect ratio";
+   string Description = "Ratio (not circle)";
    float MinVal = 0.1;
    float MaxVal = 10.0;
 > = 1.0;
@@ -174,12 +178,7 @@ float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
    float4 Bgnd = GetPixel (s_Input, uv);
    float4 retval = Bgnd;
 
-   float2 xy = float2 (uv.x - 0.5, (uv.y - 0.5) / _OutputAspectRatio);
-
-   if (Aspect > 1.0) xy.x /= Aspect;
-   else xy.y *= Aspect;
-
-   xy += 0.5.xx;
+   float2 xy = float2 (uv.x - 0.5, (uv.y - 0.5) / _OutputAspectRatio) + 0.5.xx;
 
    float radius = distance (xy, float2 (CentreX, 1.0 - CentreY));
    float size_1 = 0.01 + (Size * 0.49);
@@ -232,45 +231,49 @@ float4 ps_arrow (float2 uv : TEXCOORD0) : COLOR
 {
    float4 retval = EMPTY;
 
-   float2 xy = float2 (uv.x, abs (uv.y - 0.5));
+   float scale = lerp (0.075, 0.2, Aspect / 10.0);       // max = 0.2,   min = 0.077
+   float range = lerp (0.375, 0.695, LineWeight - 0.1);  // max = 0.625, min = 0.375
+   float brdr  = Border * 0.05625;
+   float Lmin  = 0.1;
+   float Lrng  = 0.375;
+   float Lmax  = Lmin + Lrng;
+   float Hmin  = Lmax - brdr;
+   float Hmax  = 0.7;
+   float c, s;
 
-   float scale = sqrt (Aspect / 10.0) * 0.3745;
-   float range = sqrt (LineWeight) + 0.6838;
-   float l_min = 0.1;
-   float l_max = 0.6;
-   float a_tip = 0.9;
-   float lineY = scale * range / 3.0;
+   Lrng /= 2.0;
 
-   if (xy.x > l_min) {
-      if ((xy.x < l_max) && (xy.y < lineY)) {
-         retval.x = 1.0;
-      }
-      else if ((xy.x >= l_max) && (xy.x < a_tip)) {
-         float head = abs (xy.x - a_tip) * scale / (a_tip - l_max);
+   float2 asp = float2 (1.0, _OutputAspectRatio);
+   float2 ofs = float2 (0.5 - Lrng - Lmin, 0.0);
+   float2 xy0 = 0.5.xx;
+   float2 xy1 = abs (uv - xy0 + ofs);                 // This is the reference for the line
+   float2 xy2 = float2 (Lrng, range * scale) * asp;   // Coordinates for arrow stem
+   float2 xy3 = xy2 + (brdr * asp);                   // Coordinates for stem border
 
-         if (xy.y < head) retval.x = 1.0;
-      }
-   }
+   sincos (atan2 (scale, 0.3), s, c);
 
-   float b_Y = Border * 0.075;
-   float b_X = b_Y / _OutputAspectRatio;
+   c = brdr / c;
+   s = brdr / s;
+   Hmax += s;
 
-   l_min -= b_X;
-   l_max -= b_X;
-   a_tip += b_X * 4.0;
-   lineY += b_Y;
+   float2 xy4 = float2 (Hmin, scale + c) * asp;    // Arrow head border base
+   float2 xy5 = float2 (Hmax, 0.0);                // Arrow head border tip
 
-   b_Y *= 12.0;
-   b_Y += 1.0;
+   xy5 = lerp (xy4, xy5, saturate ((uv.x - Hmin) / (Hmax - Hmin)));
+   xy4 = uv - xy0;
+   xy4.x += 0.5;
+   xy4.y = abs (xy4.y);
 
-   if (xy.x > l_min) {
-      if ((xy.x < l_max) && (xy.y < lineY)) {
-         retval.y = 1.0;
-      }
-      else if ((xy.x >= l_max) && (xy.x < a_tip)) {
-         float head = abs (xy.x - a_tip) * scale / (a_tip - l_max);
+   if (LessThan (xy1, xy2)) retval.wx = 1.0.xx;
+   if (LessThan (xy1, xy3)) retval.wy = 1.0.xx;
 
-         if (xy.y < head * b_Y) retval.y = 1.0;
+   if ((xy4.x >= Hmin) && (xy4.x <= Hmax)) {
+      if (xy4.y < xy5.y) retval.wy = 1.0.xx;
+      if (xy4.x >= Lmax) {
+         xy5.y -= c * _OutputAspectRatio;
+         xy5.y  = max (0.0, xy5.y);
+
+         if (xy4.y < xy5.y) retval.wx = 1.0.xx;
       }
    }
 
@@ -281,7 +284,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 {
    float2 xy = uv - float2 (CentreX, 1.0 - CentreY);
 
-   float scale = (Size / 1.25) + 0.05;
+   float scale = (Size * 1.0667) + 0.0667;
    float c, s, angle = radians (Rotation);
 
    sincos (angle, s, c);
@@ -294,7 +297,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    float4 Bgnd = GetPixel (s_Input, uv);
    float4 Fgnd = GetPixel (s_Shape, xy);
 
-   float2 xy1, xy2 = 5.0 / float2 (_OutputWidth, _OutputHeight);
+   float2 xy1, xy2 = 2.0 / float2 (_OutputWidth, _OutputHeight);
 
    angle = 0.0;
 

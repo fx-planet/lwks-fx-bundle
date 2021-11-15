@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-11-01
+// @Released 2021-11-15
 // @Author khaver
 // @Created 2014-11-19
 // @see https://www.lwks.com/media/kunena/attachments/6375/VHSv2_640.png
@@ -18,6 +18,10 @@
 // VHS by khaver (cross-platform V2 mod by jwrl)
 //
 // Version history:
+//
+// Update 2021-11-15 jwrl.
+// Corrected video wrap around.  Because I was uncertain whether khaver intended this
+// or whether I had previously broken the effect I have added a switch to disable wrap.
 //
 // Update 2021-11-01 jwrl.
 // Updated the original effect to better support LW v2021 and higher.
@@ -182,6 +186,11 @@ float Roll
    float MaxVal = 10.0;
 > = 0.0;
 
+bool Wrap
+<
+   string Description = "Allow video wrap around";
+> = false;
+
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
@@ -250,25 +259,44 @@ float4 main1 (float2 uv : TEXCOORD1) : COLOR
 
    float2 xy1 = float2 (uv.x, uv.y + flip);
 
-   float4 orig = tex2D (Samp2, xy1);
-   float4 strip = tex2D (Samp2, float2 (ORGX, xy1.y));
+   float4 orig, strip;
+
+   if (Wrap) {
+      orig = tex2D (Samp2, xy1);
+      strip = tex2D (Samp2, float2 (ORGX, xy1.y));
+   }
+   else {
+      orig = GetPixel (Samp2, xy1);
+      strip = GetPixel (Samp2, float2 (ORGX, xy1.y));
+   }
 
    float luma = (strip.r + strip.g + strip.b) / 3.0;
 
    luma = Invert ? 1.0 - ((abs (luma - (0.5 + Bias))) * 2.0) : abs (luma - (0.5 + Bias)) * 2.0;
 
-    if (luma >= Threshold) {
+   if (luma >= Threshold) {
       float2 xy2 = float2 (xy1.x - ((luma - Threshold) * Strength), xy1.y);
       float2 xy3 = float2 (round ((xy1.x - 0.5) / xSize ) * xSize,
                            round ((xy1.y - 0.5) / ySize) * ySize) + 0.5.xx;
 
       xy3.x -= (luma - Threshold) * Strength;
 
-      orig.r = tex2D (Samp2, float2 (xy2.x + (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).r;
-      orig.g = tex2D (Samp2, xy2).g;
-      orig.b = tex2D (Samp2, float2 (xy2.x - (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).b;
+      float4 noise;
 
-      float4 noise = tex2D (Samp1, xy3);
+      if (Wrap) {
+         orig.r = tex2D (Samp2, float2 (xy2.x + (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).r;
+         orig.g = tex2D (Samp2, xy2).g;
+         orig.b = tex2D (Samp2, float2 (xy2.x - (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).b;
+
+         noise = tex2D (Samp1, xy3);
+      }
+      else {
+         orig.r = GetPixel (Samp2, float2 (xy2.x + (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).r;
+         orig.g = GetPixel (Samp2, xy2).g;
+         orig.b = GetPixel (Samp2, float2 (xy2.x - (xSize * (luma - Threshold) * Strength * 33.0), xy2.y)).b;
+
+         noise = GetPixel (Samp1, xy3);
+      }
 
       orig = max (orig, noise);
    }

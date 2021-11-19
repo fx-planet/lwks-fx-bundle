@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-10-06
+// @Released 2021-11-19
 // @Author jwrl
 // @Created 2021-10-06
 // @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyWithDVE_640.png
@@ -15,6 +15,10 @@
 // Lightworks user effect ChromakeyWithDVE.fx
 //
 // Version history:
+//
+// Update 2021-11-19 jwrl.
+// Removed Fg initialise pass.  With 2022.1 it's no longer necessary.
+// Also added KeyColour, Tolerance and ToleranceSoftness defaults to match LW chromakeyer.
 //
 // Rewrite 2021-10-06 jwrl.
 // Rewrite of the original effect to support LW 2021 resolution independence.
@@ -105,10 +109,9 @@ float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // See P
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_RawFg);
+DefineInput (Fg, s_Foreground);
 DefineInput (Bg, s_Background);
 
-DefineTarget (RawFg, s_Foreground);
 DefineTarget (DVEvid, s_DVEvideo);
 DefineTarget (RawKey, s_RawKey);
 DefineTarget (BlurKey, s_BlurKey);
@@ -123,7 +126,7 @@ float4 KeyColour
    string Group = "Chromakey";
    string Description = "Key Colour";
    string Flags = "SpecifiesColourRange";
->;
+> = { 150.0, 0.7, 0.75, 0.0 };
 
 float4 Tolerance
 <
@@ -131,7 +134,7 @@ float4 Tolerance
    string Description = "Tolerance";
    string Flags = "SpecifiesColourRange";
    bool Visible = false;
->;
+> = { 20.0, 0.3, 0.25, 0.0 };
 
 float4 ToleranceSoftness
 <
@@ -139,7 +142,7 @@ float4 ToleranceSoftness
    string Description = "Tolerance softness";
    string Flags = "SpecifiesColourRange";
    bool Visible = false;
->;
+> = { 15.0, 0.115, 0.11, 0.0 };
 
 float KeySoftAmount
 <
@@ -252,23 +255,28 @@ float Opacity
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
-
 //-----------------------------------------------------------------------------------------//
 // ps_DVE
 //
 // A much cutdown version of the standard 2D DVE effect, this version doesn't include
 // drop shadow generation which would be pointless in this configuration.
 //-----------------------------------------------------------------------------------------//
-float4 ps_DVE (float2 uv : TEXCOORD3) : COLOR
+float4 ps_DVE (float2 uv : TEXCOORD1) : COLOR
 {
    // The first section adjusts the position allowing for the foreground resolution.
    // A resolution corrected scale factor is also created and applied.
 
-   float Xpos = (0.5 - CentreX);
-   float Ypos = (CentreY - 0.5);
    float scaleX = max (0.00001, MasterScale * XScale);
    float scaleY = max (0.00001, MasterScale * YScale);
+
+   // Arrange for the foreground image to be centred on the same background pixel,
+   // regardless of output shape & wide/narrow settings
+
+   float Xpos = (CentreX - 0.5) * _BgXScale;
+   float Ypos = (CentreY - 0.5) * _BgYScale;
+
+   Xpos = -Xpos / _FgXScale;
+   Ypos =  Ypos / _FgYScale;
 
    float2 xy = uv + float2 (Xpos, Ypos);
 
@@ -443,10 +451,10 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 
 technique ChromakeyWithDVE
 {
-   pass P_0 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
    pass P_1 < string Script = "RenderColorTarget0 = DVEvid;"; > ExecuteShader (ps_DVE)
    pass P_2 < string Script = "RenderColorTarget0 = RawKey;"; > ExecuteShader (ps_keygen)
    pass P_3 < string Script = "RenderColorTarget0 = BlurKey;"; > ExecuteShader (ps_blur1)
    pass P_4 < string Script = "RenderColorTarget0 = FullKey;"; > ExecuteShader (ps_blur2)
    pass P_5 ExecuteShader (ps_main)
 }
+

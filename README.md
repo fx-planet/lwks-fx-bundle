@@ -1,7 +1,7 @@
 # Lightworks user Fx library, December 18, 2021.
 
 
-The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 14.5 on, and may also run on versions earlier than that.
+The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 2021.3 on, and may also run on versions earlier than that.
 
 Use of these effects is simple:
 
@@ -14,7 +14,7 @@ Use of these effects is simple:
 
 The effect will be copied and a further window will appear giving details.
 
-There is no checking in this library for effects with duplicate functionality. These are all included largely as supplied by the original creator. Some of the earlier effects may have been superseded by Editshare-supplied equivalents. It's up to you to check that any given effect does what you want, and does it better/faster/simpler than any alternative.
+There is no checking in this library for effects with duplicate functionality. These are all included largely as supplied by the original creator. Some of the earlier effects may have been superseded by LWKS Ltd-supplied equivalents. It's up to you to check that any given effect does what you want, and does it better/faster/simpler than any alternative.
 
 Lightworks does not overwrite existing effects but simply adds new ones to the list, even if they have the same name and category as a currently installed effect. If you want to replace an effect you need to destroy the existing version first. In the effects panel right-click on the effect you wish to change, and from the menu that appears, select "Destroy current effect". Then install your new version in the usual way. Note that you cannot delete effects supplied with Lightworks this way.
 

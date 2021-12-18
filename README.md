@@ -217,16 +217,16 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: Polymasks
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
-|PolyMask 03                   |PolyMask03.fx           |A 3 sided adjustable mask with feathered edges and optional background colour |
-|PolyMask 04                   |PolyMask04.fx           |A 4 sided adjustable mask with feathered edges and optional background colour |
-|PolyMask 05                   |PolyMask05.fx           |A 5 sided adjustable mask with feathered edges and optional background colour |
-|PolyMask 06                   |PolyMask06.fx           |A 6 sided adjustable mask with feathered edges and optional background colour |
-|PolyMask 07                   |PolyMask07.fx           |A 7 sided adjustable mask with feathered edges and optional background colour |
-|PolyMask 08                   |PolyMask08.fx           |A 8 sided adjustable mask with feathered edges and optional background colour |
-|PolyMask 10                   |PolyMask10.fx           |A 10 sided variable mask with feathered edges and optional background colour  |
-|PolyMask 12                   |PolyMask12.fx           |A 12 sided variable mask with feathered edges and optional background colour  |
-|PolyMask 14                   |PolyMask14.fx           |A 14 sided variable mask with feathered edges and optional background colour  |
-|PolyMask 16                   |PolyMask16.fx           |A 16 sided variable mask with feathered edges and optional background colour  |
+|PolyMask 03                   |PolyMask03.fx           |A 3 sided mask with feathered edges and optional background colour            |
+|PolyMask 04                   |PolyMask04.fx           |A 4 sided mask with feathered edges and optional background colour            |
+|PolyMask 05                   |PolyMask05.fx           |A 5 sided mask with feathered edges and optional background colour            |
+|PolyMask 06                   |PolyMask06.fx           |A 6 sided mask with feathered edges and optional background colour            |
+|PolyMask 07                   |PolyMask07.fx           |A 7 sided mask with feathered edges and optional background colour            |
+|PolyMask 08                   |PolyMask08.fx           |A 8 sided mask with feathered edges and optional background colour            |
+|PolyMask 10                   |PolyMask10.fx           |A 10 sided mask with feathered edges and optional background colour           |
+|PolyMask 12                   |PolyMask12.fx           |A 12 sided mask with feathered edges and optional background colour           |
+|PolyMask 14                   |PolyMask14.fx           |A 14 sided mask with feathered edges and optional background colour           |
+|PolyMask 16                   |PolyMask16.fx           |A 16 sided mask with feathered edges and optional background colour           |
 
 ## CATEGORY FOLDER: Print Effects
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |

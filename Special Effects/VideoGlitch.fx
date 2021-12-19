@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-11-03
+// @Released 2021-12-19
 // @Author jwrl
-// @Released 2021-07-11
+// @Released 2021-11-03
 // @see https://forum.lwks.com/attachments/videoglitch_640-png.39494/
 
 /**
@@ -16,7 +16,10 @@
 //
 // Version history:
 //
-// Created 2021-11-03 jwrl.
+// Update 2021-12-19 jwrl.
+// Improved default settings.  Now defaults to full colour mode.
+// Modulation is now completely independent of displacement.
+// Edge roughness now actually does something.
 //-----------------------------------------------------------------------------------------//
 
 int _LwksEffectInfo
@@ -76,10 +79,9 @@ Wrong_Lightworks_version
 #define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
 #define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
-#define SCALE  0.01
-#define MODLN  0.25
-#define MODN1  0.125
-#define EDGE   9.0
+#define SCALE 0.01
+#define MODLN 0.25
+#define EDGE  9.0
 
 float _Length;
 float _LengthFrames;
@@ -87,6 +89,7 @@ float _LengthFrames;
 float _Progress;
 
 float _OutputWidth;
+float _OutputHeight;
 float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
@@ -108,12 +111,12 @@ float Amount
    float MaxVal = 1.0;
 > = 1.0;
 
-int SetTechnique
+int Mode
 <
    string Group = "Glitch settings";
    string Description = "Glitch channels";
    string Enum = "Red - cyan,Green - magenta,Blue - yellow,Full colour";
-> = 0;
+> = 3;
 
 float GlitchRate
 <
@@ -183,124 +186,50 @@ float2 fn_noise (float y)
 
    return frac (float2 (abs (n1), n2) * 256.0);
 }
-
-float2 fn_glitch (float2 uv, out float m)
-{
-   float c, s, x = dot (uv, float2 (EdgeRoughen, Spread)) * SCALE;
-
-   sincos (radians (Rotation), s, c);
-
-   m = 1.0 - (abs (uv.x) * Modulation * MODLN);
-
-   return float2 (c, s * _OutputAspectRatio) * x;
-}
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
 float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
 
-float4 ps_main_0 (float2 uv : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 {
-   float modulation;
+   float roughness = lerp (1.0, 0.25, saturate (EdgeRoughen)) * _OutputHeight;
 
-   float2 xy = fn_noise (uv.y);
+   float2 xy = fn_noise (floor (uv.y * roughness) / _OutputHeight);
 
    xy.x *= xy.y;
 
-   xy = fn_glitch (xy, modulation);
+   float modulation = 1.0 - abs (dot (xy, 0.5.xx) * Modulation * MODLN);
+   float x = dot (xy, Spread.xx) * SCALE;
 
-   float4 retval = GetPixel (s_Input, uv + xy);
+   sincos (radians (Rotation), xy.y, xy.x);
 
-   retval.ra = GetPixel (s_Input, uv - xy).ra;
+   xy.y *= _OutputAspectRatio;
+   xy *= x;
 
-   retval *= modulation;
+   if (Mode != 3) xy /= 2.0;
 
-   return lerp (GetPixel (s_Input, uv), retval, retval.a * Amount);
-}
+   float4 video = GetPixel (s_Input, uv);
+   float4 ret_1 = GetPixel (s_Input, uv + xy) * modulation;
+   float4 ret_2 = GetPixel (s_Input, uv - xy) * modulation;
+   float4 glitch;
 
-float4 ps_main_1 (float2 uv : TEXCOORD2) : COLOR
-{
-   float modulation;
+   glitch.r = Mode == 0 ? ret_2.r : ret_1.r;
+   glitch.g = Mode == 1 ? ret_2.g : ret_1.g;
+   glitch.b = Mode == 2 ? ret_2.b : ret_1.b;
+   glitch.a = video.a;
 
-   float2 xy = fn_noise (uv.y);
-
-   xy.x *= xy.y;
-
-   xy = fn_glitch (xy, modulation);
-
-   float4 retval = GetPixel (s_Input, uv + xy);
-
-   retval.ga = GetPixel (s_Input, uv - xy).ga;
-
-   retval *= modulation;
-
-   return lerp (GetPixel (s_Input, uv), retval, retval.a * Amount);
-}
-
-float4 ps_main_2 (float2 uv : TEXCOORD2) : COLOR
-{
-   float modulation;
-
-   float2 xy = fn_noise (uv.y);
-
-   xy.x *= xy.y;
-
-   xy = fn_glitch (xy, modulation);
-
-   float4 retval = GetPixel (s_Input, uv + xy);
-
-   retval.ba = GetPixel (s_Input, uv - xy).ba;
-
-   retval *= modulation;
-
-   return lerp (GetPixel (s_Input, uv), retval, retval.a * Amount);
-}
-
-float4 ps_main_3 (float2 uv : TEXCOORD2) : COLOR
-{
-   float modulation;
-
-   float2 xy = fn_noise (uv.y);
-
-   xy.y *= xy.x;
-   xy.x *= xy.y;
-
-   xy = fn_glitch (xy, modulation);
-
-   float4 retval = (xy.x >= 0.0) ? GetPixel (s_Input, uv + xy) : GetPixel (s_Input, uv - xy);
-
-   retval *= modulation;
-
-   return lerp (GetPixel (s_Input, uv), retval, retval.a * Amount);
+   return lerp (video, glitch, Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Video_Glitch_0
+technique Video_Glitch
 {
    pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main_0)
-}
-
-technique Video_Glitch_1
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main_1)
-}
-
-technique Video_Glitch_2
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main_2)
-}
-
-technique Video_Glitch_3
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main_3)
+   pass P_2 ExecuteShader (ps_main)
 }
 

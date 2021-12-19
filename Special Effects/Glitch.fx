@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-11-01
+// @Released 2021-12-19
 // @Author jwrl
 // @Created 2021-07-11
 // @see https://www.lwks.com/media/kunena/attachments/6375/Glitch_640.png
@@ -26,6 +26,12 @@
 // Lightworks user effect Glitch.fx
 //
 // Version history:
+//
+// Update 2021-12-19 jwrl.
+// Improved default settings.  Now defaults to full colour mode.
+// Changed structure so that only two passes are needed and one function instead of two.
+// Modulation is now completely independent of displacement.
+// Edge roughness now actually does something.
 //
 // Update 2021-11-01 jwrl.
 // Corrected foreground mislabel in ps_key_gen().
@@ -86,16 +92,16 @@ Wrong_Lightworks_version
    MipFilter = Linear;                 \
  }
 
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
+#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
 
 #define EMPTY 0.0.xxxx
 
-#define GetPixel(SHADER,XY)  (any (XY < 0.0) || any (XY > 1.0) ? EMPTY : tex2D (SHADER, XY))
+#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
+#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
-#define SCALE  0.01
-#define MODLN  0.25
-#define MODN1  0.125
-#define EDGE   9.0
+#define SCALE 0.01
+#define MODLN 0.25
+#define EDGE  9.0
 
 float _Length;
 float _LengthFrames;
@@ -103,6 +109,7 @@ float _LengthFrames;
 float _Progress;
 
 float _OutputWidth;
+float _OutputHeight;
 float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
@@ -113,7 +120,6 @@ DefineInput (Fg, s_Foreground);
 DefineInput (Bg, s_Background);
 
 DefineTarget (Key, s_Key);
-DefineTarget (Glitch, s_Glitch);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -126,12 +132,12 @@ float Opacity
    float MaxVal = 1.0;
 > = 1.0;
 
-int SetTechnique
+int Mode
 <
    string Group = "Glitch settings";
    string Description = "Glitch channels";
    string Enum = "Red - cyan,Green - magenta,Blue - yellow,Full colour";
-> = 0;
+> = 3;
 
 float GlitchRate
 <
@@ -194,7 +200,7 @@ float KeyClip
    string Description = "Key clip";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.0;
+> = 0.25;
 
 float KeyGain
 <
@@ -202,7 +208,7 @@ float KeyGain
    string Description = "Key gain";
    float MinVal = 0.0;
    float MaxVal = 1.0;
-> = 0.95;
+> = 0.9;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -223,17 +229,6 @@ float2 fn_noise (float y)
    float n2 = 1024.0 * sin (((n1 / 1024.0) + edge) * 59.0);
 
    return frac (float2 (abs (n1), n2) * 256.0);
-}
-
-float2 fn_glitch (float2 uv, out float m)
-{
-   float c, s, x = dot (uv, float2 (EdgeRoughen, Spread)) * SCALE;
-
-   sincos (radians (Rotation), s, c);
-
-   m = 1.0 - (abs (uv.x) * Modulation * MODLN);
-
-   return float2 (c, s * _OutputAspectRatio) * x;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -263,111 +258,49 @@ float4 ps_key_gen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return Fgnd;
 }
 
-float4 ps_glitch_0 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 {
-   float modulation;
+   if (ShowKey == 1) return GetPixel (s_Key, uv3);
 
-   float2 xy = fn_noise (uv1.y);
+   float roughness = lerp (1.0, 0.25, saturate (EdgeRoughen)) * _OutputHeight;
+
+   float2 xy = fn_noise (floor (uv3.y * roughness) / _OutputHeight);
 
    xy.x *= xy.y;
 
-   xy = fn_glitch (xy, modulation);
+   float modulation = 1.0 - abs (dot (xy, 0.5.xx) * Modulation * MODLN);
+   float x = dot (xy, Spread.xx) * SCALE;
 
-   float4 retval = GetPixel (s_Key, uv1 + xy);
+   sincos (radians (Rotation), xy.y, xy.x);
 
-   retval.ra = GetPixel (s_Key, uv1 - xy).ra;
+   xy.y *= _OutputAspectRatio;
+   xy *= x;
 
-   return retval * modulation;
-}
+   if (Mode != 3) xy /= 2.0;
 
-float4 ps_glitch_1 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float modulation;
+   float4 video = GetPixel (s_Background, uv2);
+   float4 ret_1 = GetPixel (s_Key, uv3 + xy) * modulation;
+   float4 ret_2 = GetPixel (s_Key, uv3 - xy) * modulation;
+   float4 glitch;
 
-   float2 xy = fn_noise (uv1.y);
+   glitch.r = Mode == 0 ? lerp (video.r, ret_2.r, ret_2.a)
+                        : lerp (video.r, ret_1.r, ret_1.a);
+   glitch.g = Mode == 1 ? lerp (video.g, ret_2.g, ret_2.a)
+                        : lerp (video.g, ret_1.g, ret_1.a);
+   glitch.b = Mode == 2 ? lerp (video.b, ret_2.b, ret_2.a)
+                        : lerp (video.b, ret_1.b, ret_1.a);
+   glitch.a = video.a;
 
-   xy.x *= xy.y;
-
-   xy = fn_glitch (xy, modulation);
-
-   float4 retval = GetPixel (s_Key, uv1 + xy);
-
-   retval.ga = GetPixel (s_Key, uv1 - xy).ga;
-
-   return retval * modulation;
-}
-
-float4 ps_glitch_2 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float modulation;
-
-   float2 xy = fn_noise (uv1.y);
-
-   xy.x *= xy.y;
-
-   xy = fn_glitch (xy, modulation);
-
-   float4 retval = GetPixel (s_Key, uv1 + xy);
-
-   retval.ba = GetPixel (s_Key, uv1 - xy).ba;
-
-   return retval * modulation;
-}
-
-float4 ps_glitch_3 (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float modulation;
-
-   float2 xy = fn_noise (uv1.y);
-
-   xy.y *= xy.x;
-   xy.x *= xy.y;
-
-   xy = fn_glitch (xy, modulation);
-
-   float4 retval = (xy.x >= 0.0) ? GetPixel (s_Key, uv1 + xy) : GetPixel (s_Key, uv1 - xy);
-
-   return retval * modulation;
-}
-
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   if (ShowKey == 1) return GetPixel (s_Key, uv1);
-
-   float4 Fgnd = GetPixel (s_Glitch, uv1);
-
-   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a * Opacity);
+   return lerp (video, glitch, Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Glitch_0
+technique Glitch
 {
    pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
-   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_0)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Glitch_1
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
-   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_1)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Glitch_2
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
-   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_2)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Glitch_3
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
-   pass P_2 < string Script = "RenderColorTarget0 = Glitch;"; > ExecuteShader (ps_glitch_3)
-   pass P_3 ExecuteShader (ps_main)
+   pass P_2 ExecuteShader (ps_main)
 }
 

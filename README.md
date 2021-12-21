@@ -1,4 +1,4 @@
-# Lightworks user Fx library, December 18, 2021.
+# Lightworks user Fx library, December 21, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 2021.3 on, and may also run on versions earlier than that.
@@ -354,6 +354,7 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: Video artefacts
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
+|Analog TV disaster            |AnalogTVdisaster.fx     |Simulates just about anything that could go wrong with analog TV              |
 |Analog TV lock                |AnalogTVlock.fx         |Simulates loss of horizontal and/or vertical hold on analog TV sets           |
 |Camera distortion             |CameraDistortion.fx     |Simulates a range of digital camera distortion artefacts                      |
 |Camera shake                  |CameraShakes.fx         |Adds simulated camera motion horizontally, vertically and/or rotationally     |

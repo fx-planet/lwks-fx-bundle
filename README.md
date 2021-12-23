@@ -1,4 +1,4 @@
-# Lightworks user Fx library, December 21, 2021.
+# Lightworks user Fx library, December 22, 2021.
 
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 2021.3 on, and may also run on versions earlier than that.
@@ -366,6 +366,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Quadruplex VTR simulator      |QuadVTRsimulator.fx     |Emulates the faults that could occur with Quadruplex videotape playback       |
 |Scanlines                     |ScanLines.fx            |This creates an adjustable scan line overlay on the input video               |
 |Screen shake                  |Screenshake.fx          |Random screen shake, slightly zoomed in, no motion blur                       |
+|Screen shake with mask        |ScreenshakeMask.fx      |Psuedo random screen shake with masking but no motion blur                    |
 |VHS simulator                 |VHSsimulator.fx         |Simulates a damaged VHS tape                                                  |
 |Video noise                   |VideoNoise.fx           |Generates either monochrome or colour video noise                             |
 

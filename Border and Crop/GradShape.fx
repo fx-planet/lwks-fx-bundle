@@ -268,21 +268,19 @@ float4 ps_grad (float2 uv : TEXCOORD0) : COLOR
 
 float4 ps_rectangle_main (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 Bgnd, Fgnd, Rvid;
+   float4 Bgnd, Fgnd;
 
    // Recover and assign the colour and video layers appropriately
 
    if (Invert) {
       Bgnd = GetPixel (s_Colour, uv);
       Fgnd = GetPixel (s_Input, uv);
-      Bgnd = lerp (Fgnd, Bgnd, Bgnd.a);
-      Rvid = Fgnd;
+      Bgnd = lerp (Fgnd, Bgnd, Bgnd.a * Opacity);
    }
    else {
       Fgnd = GetPixel (s_Colour, uv);
       Bgnd = GetPixel (s_Input, uv);
-      Fgnd = lerp (Bgnd, Fgnd, Fgnd.a);
-      Rvid = Bgnd;
+      Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
    }
 
    // Calculate the inner rectangle boundaries
@@ -292,11 +290,10 @@ float4 ps_rectangle_main (float2 uv : TEXCOORD2) : COLOR
    float innerT = 1.0 - CentreY - (Height / 2.0);
    float innerB = innerT + Height;
 
-   // If the current position is entirely inside the rectangle return the foreground
-   // allowing for any opacity adjustment.  By forcing an early quit we avoid performing
-   // redundant conditional evaluations.
+   // If the current position is entirely inside the rectangle return the foreground.
+   // By forcing an early quit we avoid performing redundant conditional evaluations.
 
-   if (!Cropped (uv, innerL, innerR, innerT, innerB)) return lerp (Rvid, Fgnd, Opacity);
+   if (!Cropped (uv, innerL, innerR, innerT, innerB)) return Fgnd;
 
    // Now we get the softness setting, allowing for the aspect ratio
 
@@ -312,52 +309,46 @@ float4 ps_rectangle_main (float2 uv : TEXCOORD2) : COLOR
    // If the current position falls entirely outside the softness range skip any further
    // processing and just return the background.
 
-   if (!Cropped (uv, outerL, outerR, outerT, outerB)) {
-      float softness = 1.0;
+   if (Cropped (uv, outerL, outerR, outerT, outerB)) return Bgnd;
 
-      // Calculate the softness amount to mix the foreground and background
+   float softness = 1.0;
 
-      if (uv.x < innerL) {
-         if (uv.y < innerT) { softness -= length ((uv - float2 (innerL, innerT)) / softSetting); }
-         else if (uv.y > innerB) { softness -= length ((uv - float2 (innerL, innerB)) / softSetting); }
-         else softness = (uv.x - outerL) / softSetting.x;
-      }
-      else if (uv.x > innerR) {
-         if (uv.y < innerT) { softness -= length ((uv - float2 (innerR, innerT)) / softSetting); }
-         else if (uv.y > innerB) { softness -= length ((uv - float2 (innerR, innerB)) / softSetting); }
-         else softness = (outerR - uv.x) / softSetting.x;
-      }
-      else if (uv.y < innerT) { softness = (uv.y - outerT) / softSetting.y; }
-      else softness = (outerB - uv.y) / softSetting.y;
+   // Calculate the softness amount to mix the foreground and background
 
-      // Recover a mix of background and foreground depending on softness.  The softness can
-      // go negative on the corners so it must be limited to zero to prevent artefacts.
-
-      Bgnd = lerp (Bgnd, Fgnd, max (softness, 0.0));
+   if (uv.x < innerL) {
+      if (uv.y < innerT) { softness -= length ((uv - float2 (innerL, innerT)) / softSetting); }
+      else if (uv.y > innerB) { softness -= length ((uv - float2 (innerL, innerB)) / softSetting); }
+      else softness = (uv.x - outerL) / softSetting.x;
    }
+   else if (uv.x > innerR) {
+      if (uv.y < innerT) { softness -= length ((uv - float2 (innerR, innerT)) / softSetting); }
+      else if (uv.y > innerB) { softness -= length ((uv - float2 (innerR, innerB)) / softSetting); }
+      else softness = (outerR - uv.x) / softSetting.x;
+   }
+   else if (uv.y < innerT) { softness = (uv.y - outerT) / softSetting.y; }
+   else softness = (outerB - uv.y) / softSetting.y;
 
-   // Now adjust the opacity and return.
+   // Return a mix of background and foreground depending on softness.  The softness can
+   // go negative on the corners so it must be limited to zero to prevent artefacts.
 
-   return lerp (Rvid, Bgnd, Opacity);
+   return lerp (Bgnd, Fgnd, max (softness, 0.0));
 }
 
 float4 ps_ellipse_main (float2 uv : TEXCOORD2) : COLOR
 {
-   float4 Bgnd, Fgnd, Rvid;
+   float4 Bgnd, Fgnd;
 
    // Recover and assign the colour and video layers appropriately
 
    if (Invert) {
       Bgnd = GetPixel (s_Colour, uv);
       Fgnd = GetPixel (s_Input, uv);
-      Bgnd = lerp (Fgnd, Bgnd, Bgnd.a);
-      Rvid = Fgnd;
+      Bgnd = lerp (Fgnd, Bgnd, Bgnd.a * Opacity);
    }
    else {
       Fgnd = GetPixel (s_Colour, uv);
       Bgnd = GetPixel (s_Input, uv);
-      Fgnd = lerp (Bgnd, Fgnd, Fgnd.a);
-      Rvid = Bgnd;
+      Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
    }
 
    // From here on is largely the original Lightworks effect
@@ -382,10 +373,9 @@ float4 ps_ellipse_main (float2 uv : TEXCOORD2) : COLOR
 
    float range = (posSq.x / (a * a)) + (posSq.y / (b * b));
 
-   // If the current position is entirely within the ellipse we return the foreground
-   // allowing for the opacity.
+   // If the current position is entirely within the ellipse we return the foreground.
 
-   if (range < 1.0) return lerp (Rvid, Fgnd, Opacity);
+   if (range < 1.0) return Fgnd;
 
    // Now calculate whether the position is outside the legal ellipse range including softness
 
@@ -393,39 +383,33 @@ float4 ps_ellipse_main (float2 uv : TEXCOORD2) : COLOR
 
    // If it's entirely outside the soft edge of the ellipse we return the background.
 
-   if (range <= 1.0) {
+   if (range > 1.0) return Bgnd;
 /*
 http://www.slader.com/discussion/question/what-is-the-equation-of-an-ellipse-in-polar-coordinates/
 */
-      // I have replaced the original explicit sin() and cos() functions with sincos().
-      // The atan2() operation to produce theta has also been placed inside the sincos()
-      // function.  In the process I have removed the pow() expressions used to square
-      // the sine and cosine values at the expense of two new variables, ab and sab.
-      // This simplifies the following maths slightly - I think!
+   // I have replaced the original explicit sin() and cos() functions with sincos().  The atan2()
+   // operation to produce theta has also been placed inside the sincos() function.  In the process
+   // I have removed the pow() expressions used to square the sine and cosine values at the expense
+   // of two new variables, ab and sab.  This simplifies the following maths slightly - I think!
 
-      float ab  = a * b;
-      float sab = sa * sb;
-      float cosTheta, sinTheta;
+   float ab  = a * b;
+   float sab = sa * sb;
+   float cosTheta, sinTheta;
 
-      sincos (atan2 (pos.y, pos.x), sinTheta, cosTheta);
-      a  *= sinTheta;
-      b  *= cosTheta;
-      sa *= sinTheta;
-      sb *= cosTheta;
+   sincos (atan2 (pos.y, pos.x), sinTheta, cosTheta);
+   a  *= sinTheta;
+   b  *= cosTheta;
+   sa *= sinTheta;
+   sb *= cosTheta;
 
-      float dLower = ab / sqrt ((a * a) + (b * b));
-      float dUpper = sab / sqrt ((sa * sa) + (sb * sb));
-      float softness = (length (pos) - dLower) / (dUpper - dLower);
+   float dLower = ab / sqrt ((a * a) + (b * b));
+   float dUpper = sab / sqrt ((sa * sa) + (sb * sb));
+   float softness = (length (pos) - dLower) / (dUpper - dLower);
 
-      // Recover a mix of background and foreground depending on softness.  The softness
-      // shouldn't be able to go negative but we limit it just in case.
+   // Recover a mix of background and foreground depending on softness.  The softness shouldn't
+   // be able to go negative but we limit it just in case.
 
-      Bgnd = lerp (Fgnd, Bgnd, max (softness, 0.0));
-   }
-
-   // Now adjust the opacity and return.
-
-   return lerp (Rvid, Bgnd, Opacity);
+   return lerp (Fgnd, Bgnd, max (softness, 0.0));
 }
 
 //-----------------------------------------------------------------------------------------//

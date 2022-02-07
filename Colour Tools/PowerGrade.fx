@@ -3,7 +3,7 @@
 // @Author jwrl
 // @Author khaver
 // @Created 2022-02-07
-// @see https://forum.lwks.com/attachments/vignettegrade_640-png.40173/
+// @see https://forum.lwks.com/attachments/powergrade_640-png.40571/
 
 /**
  This is an attempt to duplicate some of the functionality of powertools colourgrading.

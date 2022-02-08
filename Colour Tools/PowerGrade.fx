@@ -1,27 +1,32 @@
 // @Maintainer jwrl
-// @Released 2022-02-07
+// @Released 2022-02-08
 // @Author jwrl
 // @Author khaver
 // @Created 2022-02-07
-// @see https://forum.lwks.com/attachments/powergrade_640-png.40571/
+// @see https://forum.lwks.com/attachments/powergrade_640-png.40574/
 
 /**
- This is an attempt to duplicate some of the functionality of powertools colourgrading.
- Gamma, contrast, gain, brightness and saturation can be adjusted as you would expect
- with any colourgrade tool.  In addition it's possible to independently adjust the
- saturation of midtones, blacks and whites.  The individual red, green and blue values
- of the grade can also be fine tuned.
+ This effect duplicates some of the functionality of powertools colourgrading.  Gamma,
+ contrast, gain, brightness and saturation can be adjusted as you would expect with
+ any colourgrade tool.  In addition it's possible to independently adjust the saturation
+ of midtones, blacks and whites.  The individual red, green and blue values of the grade
+ can also be fine tuned.
 
  The grade can be masked using a slightly simplified version of khaver's Polygrade 16
- effect.  The edges of the mask can be feathered, and a background colour can be turned
- on to assist in mask set up.  The mask can also be inverted.  The zoom, aspect ratio
- and position adjustments of the original polymask effect have been discarded.
+ effect.  The edges of the mask can be feathered, and  can also be inverted if needed.
+ The unmasked background can be changed to black to assist in mask set up.  The zoom,
+ aspect ratio and position settings of the original polymask effect have been discarded.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect PowerGrade.fx
 //
 // Version history:
+//
+// Updated 2022-02-08 jwrl.
+// Changed the ShowMask colour to transparent black from khaver's default green.
+// Changed the opacity to fade out the mask when ShowMask is true.
+// Added commenting and performed a general code cleanup.
 //
 // Created 2022-02-07 jwrl.
 // The masking is based on khaver's PolyMask_16, and the colour grade on my vignette grade.
@@ -85,8 +90,6 @@ Wrong_Lightworks_version
 #define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define PI 3.1415926536
-
-#define MASK_COLOUR float3(0.0, 0.5, 1.0).xyxz
 
 int _Index[16] = { 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
 
@@ -577,20 +580,15 @@ float fn_LineDistance (float2 xy, float2 l1, float2 l2)
 
 float fn_PolyDistance (float2 xy, float2 poly [16])
 {
-   float result = 100.0;
+   float retval = 100.0;
 
    for (int i = 0; i < 16; i++) {
       int j = _Index [i];
 
-      float2 currentPoint  = poly [i];
-      float2 previousPoint = poly [j];
-
-      float segmentDistance = fn_LineDistance (xy, previousPoint, currentPoint);
-
-      if (segmentDistance < result) result = segmentDistance;
+      retval = min (retval, fn_LineDistance (xy, poly [j], poly [i]));
    }
 
-   return result;
+   return retval;
 }
 
 float fn_makePoly (float2 xy, float2 poly [16])
@@ -647,7 +645,7 @@ float4 ps_grade (float2 uv : TEXCOORD2) : COLOR
    hsv.z = ((((pow (hsv.z, 1.0 / Gamma) * Gain) + Brightness) - 0.5) * Contrast) + 0.5;
 
    // The graded RGB version is now recovered into retval, and the amount red, green and
-   // blue adjustment is set.  Then we ensure that retval is legal and return.
+   // blue adjustment is set.  Then we clip retval to the legal video range and return.
 
    float4 retval = fn_hsv2rgb (hsv);
 
@@ -670,18 +668,33 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
                         { P13X, 1.0 - P13Y }, { P14X, 1.0 - P14Y }, { P15X, 1.0 - P15Y },
 	                { P16X, 1.0 - P16Y } };
 
+   // First we determine whether the current pixel is masked (1) or not (0).
+   // We then get the distance from the nearest mask boundary.
+
    float mask  = fn_makePoly (uv, poly);
    float range = fn_PolyDistance (uv, poly);
+
+   // Now calculate the feathering using the previously obtained distance from the mask.
 
    if (range < Feather) {
       range *= 0.5 / Feather;
       mask   = (mask > 0.5) ? 0.5 + range : 0.5 - range;
    }
 
-   float Mask = (Invert) ? 1.0 - mask : mask;
+   // The sense of the mask is currently inverted, so we fix that if necessary.
 
-   float4 Bgnd = (ShowMask) ? MASK_COLOUR : GetPixel (s_Input, uv);
-   float4 Fgnd = lerp (GetPixel (s_Grade, uv), Bgnd, Mask);
+   if (!Invert) mask = 1.0 - mask;
+
+   // Fgnd is now set up with the graded input, and Bgnd with the unmodified input.
+
+   float4 Fgnd = GetPixel (s_Grade, uv);
+   float4 Bgnd = GetPixel (s_Input, uv);
+
+   // The grade is now either masked to black for ShowMask or masked into the input.
+
+   Fgnd = (ShowMask) ? Fgnd * mask : lerp (Bgnd, Fgnd, mask);
+
+   // The graded, masked foreground is now mixed with the unmodifed input as required.
 
    return lerp (Bgnd, Fgnd, GradeAmount);
 }
@@ -696,4 +709,3 @@ technique PowerGrade
    pass P_2 < string Script = "RenderColorTarget0 = Grade;"; > ExecuteShader (ps_grade)
    pass P_3 ExecuteShader (ps_main)
 }
-

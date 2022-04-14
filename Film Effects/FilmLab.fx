@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-10-01
+// @Released 2022-04-14
 // @Author jwrl
 // @Created 2021-10-01
 // @see https://www.lwks.com/media/kunena/attachments/6375/FilmLab_640.png
@@ -44,6 +44,9 @@
 // Korhonen.  However this effect is new code from the ground up.
 //
 // Version history:
+//
+// Bug fix 2022-04-14 jwrl.
+// Addressed a bug in Nvidia cards on Linux which caused solid blacks to display as red.
 //
 // Rewrite 2021-10-01 jwrl.
 // Rebuild of the original effect to support LW 2021 resolution independence.
@@ -269,39 +272,7 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    lab = (adjust < 0.0) ? lab * (adjust * (1.0.xxxx - lab) + 1.0.xxxx)
                         : adjust * (sqrt (lab) - lab) + lab;
-
-   float Cmin = min (lab.r, min (lab.g, lab.b));
-   float Cmax = max (lab.r, max (lab.g, lab.b));
-
-   grade = float3 (0.0.xx, saturate (Cmax));
-
-   if (Cmax > 0.0) {
-      grade.x = (lab.r == Cmax) ? (lab.g - lab.b) / (Cmax - Cmin)
-            : (lab.g == Cmax) ? 2.0 + (lab.b - lab.r) / (Cmax - Cmin)
-                              : 4.0 + (lab.r - lab.g) / (Cmax - Cmin);
-      grade.x = frac ((grade.x / 6.0) + 1.0);
-      grade.y = saturate ((1.0 - (Cmin / Cmax)) * Saturation);
-   }
-
-   if (grade.y == 0.0) { print = grade.zzz; }
-   else {
-      grade.x *= 6.0;
-
-      int i = (int) floor (grade.x);
-
-      float f = grade.x - (float) i;
-      float p = grade.z * (1.0 - grade.y);
-      float q = grade.z * (1.0 - grade.y * f);
-      float r = grade.z * (1.0 - grade.y * (1.0 - f));
-
-      if (i == 0) { print = float3 (grade.z, r, p); }
-      else if (i == 1) { print = float3 (q, grade.z, p); }
-      else if (i == 2) { print = float3 (p, grade.z, r); }
-      else if (i == 3) { print = float3 (p, q, grade.z); }
-      else if (i == 4) { print = float3 (r, p, grade.z); }
-      else print = float3 (grade.z, p, q);
-   }
-
+   print = lerp ((lab.r + lab.g + lab.b).xxx / 3.0, lab.rgb, (Saturation - 0.5) * 2.0);
    lab = float4 (pow (print, 1.0 / lin), Inp.a);
 
    return lerp (Inp, lab, Amount);
@@ -315,4 +286,3 @@ technique FilmLab
 {
    pass P_1 ExecuteShader (ps_main)
 }
-

@@ -1,215 +1,86 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author rakusan
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Spin_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Spin.mp4
+// @Created 2022-06-01
 
 /**
- The effect applies a rotary blur to transition into or out of the foreground and is
- based on original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).  The
- direction, aspect ratio, centring and strength of the blur can all be adjusted.
+ The effect applies a rotary blur to transition into or out of a foreground effect
+ and is based on original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).
+ The direction, aspect ratio, centring and strength of the blur can all be adjusted.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Spin_Kx.fx
 //
-// This effect is a combination of two previous effects, Spin_Ax and Spin_Adx.
-//
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Updated 2023-01-16 jwrl
+// Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Spin dissolve (keyed)";
-   string Category    = "Mix";
-   string SubCategory = "Blur transitions";
-   string Notes       = "Dissolves the foreground through a blurred spin";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Bad_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = Mirror;                \
-   AddressV  = Mirror;                \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
-}
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-#define ExecuteParam(SHADER,P) { PixelShader = compile PROFILE SHADER (P); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY)  (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow (XY) ? EMPTY : tex2D (SHADER, XY))
-
-#define HALF_PI   1.5707963268
-
-#define REDUCE    0.009375
-
-#define CCW       0
-#define CW        1
-
-float _OutputAspectRatio;
-
-float blur_idx []  = { 0, 20, 40, 60, 80 , 80 };
-float redux_idx [] = { 1.0, 0.8125, 0.625, 0.4375, 0.25 , 0.25 };
+DeclareLightworksEffect ("Spin dissolve (keyed)", "Mix", "Blur transitions", "Dissolves the foreground through a blurred spin", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Title, s_Title);
-DefineTarget (Delta, s_Delta);
-DefineTarget (Spin, s_Spin);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-int Source
-<
-   string Description = "Source";
-   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
-> = 0;
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+DeclareIntParam (CW_CCW, "Rotation direction", kNoGroup, 1, "Anticlockwise|Clockwise");
 
-int SetTechnique
-<
-   string Description = "Transition position";
-   string Enum = "At start if delta key folded,At start of clip,At end of clip";
-> = 1;
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
-int CW_CCW
-<
-   string Description = "Rotation direction";
-   string Enum = "Anticlockwise,Clockwise";
-> = 1;
+DeclareFloatParam (blurAmount, "Arc (degrees)", "Spin", kNoFlags, 90.0, 0.0, 180.0);
+DeclareFloatParam (aspectRatio, "Aspect ratio 1:x", "Spin", kNoFlags, 1.0, 0.01, 10.0);
 
-bool CropEdges
-<
-   string Description = "Crop effect to background";
-> = false;
+DeclareFloatParam (centreX, "Centre", "Spin", "SpecifiesPointX", 0.5, -0.5, 1.5);
+DeclareFloatParam (centreY, "Centre", "Spin", "SpecifiesPointY", 0.5, -0.5, 1.5);
 
-float blurAmount
-<
-   string Group = "Spin";
-   string Description = "Arc (degrees)";
-   float MinVal = 0.0;
-   float MaxVal = 180.0;
-> = 90.0;
+DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 
-float aspectRatio
-<
-   string Group = "Spin";
-   string Description = "Aspect ratio 1:x";
-   float MinVal = 0.01;
-   float MaxVal = 10.00;
-> = 1.0;
-
-float centreX
-<
-   string Group = "Spin";
-   string Description = "Centre";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -0.50;
-   float MaxVal = 1.50;
-> = 0.5;
-
-float centreY
-<
-   string Group = "Spin";
-   string Description = "Centre";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -0.50;
-   float MaxVal = 1.50;
-> = 0.5;
-
-float KeyGain
-<
-   string Description = "Key trim";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define HALF_PI 1.5707963268
+
+#define REDUCE  0.009375
+
+#define CCW     0
+#define CW      1
+
+float blur_idx []  = { 0, 20, 40, 60, 80 };
+float redux_idx [] = { 1.0, 0.8125, 0.625, 0.4375, 0.25 };
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
+   float4 Fgnd = ReadPixel (F, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-
-   if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
+      float4 Bgnd = ReadPixel (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -222,26 +93,25 @@ float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2,
-                  float2 uv3 : TEXCOORD3, uniform int passNum) : COLOR
+float4 fn_spin (sampler T, sampler S, float2 uv, int passNum, int rotate)
 {
    float blurLen = (1.0 - sin (Amount * HALF_PI)) * blurAmount;
 
    float4 retval;
 
-   if (blurLen == 0.0) { retval = tex2D (s_Delta, uv3); }
+   if (blurLen == 0.0) { retval = tex2D (T, uv); }
    else {
       retval = (0.0).xxxx;
 
       float2 outputAspect = float2 (1.0, _OutputAspectRatio);
       float2 blurAspect = float2 (1.0, aspectRatio);
       float2 centre = float2 (centreX, 1.0 - centreY );
-      float2 xy1, xy2 = (uv3 - centre) / outputAspect / blurAspect;
+      float2 xy1, xy2 = (uv - centre) / outputAspect / blurAspect;
 
       float reduction = redux_idx [passNum];
       float amount = radians (blurLen) / 100.0;
 
-      if (CW_CCW == CCW) amount = -amount;
+      if (CW_CCW == rotate) amount = -amount;
 
       float Tcos, Tsin, ang = amount * blur_idx [passNum];
 
@@ -249,110 +119,114 @@ float4 ps_main_I (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2,
          sincos (ang, Tsin, Tcos);
          xy1 = centre + float2 ((xy2.x * Tcos - xy2.y * Tsin),
                                 (xy2.x * Tsin + xy2.y * Tcos) * outputAspect.y) * blurAspect;
-         retval = max (retval, (tex2D (s_Delta, xy1) * reduction));
+         retval = max (retval, (tex2D (T, xy1) * reduction));
          reduction -= REDUCE;
          ang += amount;
       }
 
-      if ((passNum == 1) || (passNum == 3)) { retval = max (retval, tex2D (s_Title, uv3)); }
-      else if (passNum != 0) retval = max (retval, tex2D (s_Spin, uv3));
-   }
-
-   if (passNum > 3) {
-      float4 Bgnd;
-
-      if (passNum == 4) {
-         Bgnd = GetPixel (s_Foreground, uv1);
-         if (CropEdges && Overflow (uv1)) retval = EMPTY;
-      }
-      else {
-         Bgnd = GetPixel (s_Background, uv2);
-         if (CropEdges && Overflow (uv2)) retval = EMPTY;
-      }
-
-      retval = lerp (Bgnd, retval, retval.a * Amount);
+      if (passNum != 0) retval = max (retval, tex2D (S, uv));
    }
 
    return retval;
 }
 
-float4 ps_main_O (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2,
-                  float2 uv3 : TEXCOORD3, uniform int passNum) : COLOR
+float4 fn_main ( sampler B, float2 uv, float4 T, float amt)
 {
-   float blurLen = (1.0 - cos (Amount * HALF_PI)) * blurAmount;
+   float4 Title = CropEdges && IsOutOfBounds (uv) ? kTransparentBlack : T;
 
-   float4 retval;
-
-   if (blurLen == 0.0) { retval = tex2D (s_Delta, uv3); }
-   else {
-      retval = (0.0).xxxx;
-
-      float2 outputAspect = float2 (1.0, _OutputAspectRatio);
-      float2 blurAspect = float2 (1.0, aspectRatio);
-      float2 centre = float2 (centreX, 1.0 - centreY );
-      float2 xy1, xy2 = (uv1 - centre) / outputAspect / blurAspect;
-
-      float reduction = redux_idx [passNum];
-      float amount = radians (blurLen) / 100.0;
-
-      if (CW_CCW == CW) amount = -amount;
-
-      float Tcos, Tsin, ang = amount * blur_idx [passNum];
-
-      for (int i = 0; i < 20; i++) {
-         sincos (ang, Tsin, Tcos);
-         xy1 = centre + float2 ((xy2.x * Tcos - xy2.y * Tsin),
-                                (xy2.x * Tsin + xy2.y * Tcos) * outputAspect.y) * blurAspect;
-         retval = max (retval, (tex2D (s_Delta, xy1) * reduction));
-         reduction -= REDUCE;
-         ang += amount;
-      }
-
-      if ((passNum == 1) || (passNum == 3)) { retval = max (retval, tex2D (s_Title, uv1)); }
-      else if (passNum != 0) retval = max (retval, tex2D (s_Spin, uv3));
-   }
-
-   if (passNum == 4) {
-
-      if (CropEdges && Overflow (uv2)) retval = EMPTY;
-
-      retval = lerp (GetPixel (s_Background, uv2), retval, retval.a * (1.0 - Amount));
-   }
-
-   return retval;
+   return lerp (ReadPixel (B, uv), Title, Title.a * amt);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Techniques
 //-----------------------------------------------------------------------------------------//
 
-technique Spin_Kx_F
+// technique Spin_Kx_F
+
+DeclarePass (Title_F)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Delta;"; > ExecuteShader (ps_keygen_F)
-   pass P_2 < string Script = "RenderColorTarget0 = Title;"; > ExecuteParam (ps_main_I, 0)
-   pass P_3 < string Script = "RenderColorTarget0 = Spin;"; > ExecuteParam (ps_main_I, 1)
-   pass P_4 < string Script = "RenderColorTarget0 = Title;"; > ExecuteParam (ps_main_I, 2)
-   pass P_5 < string Script = "RenderColorTarget0 = Spin;"; > ExecuteParam (ps_main_I, 3)
-   pass P_6 ExecuteParam (ps_main_I, 4)
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   if (Source == 0) {
+      float4 Bgnd = ReadPixel (Bg, uv2);
+
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+   }
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-technique Spin_Kx_I
+DeclarePass (Super_1_F)
+{ return fn_spin (Title_F, Title_F, uv3, 0, CCW); }
+
+DeclarePass (Spin_1_F)
+{ return fn_spin (Title_F, Super_1_F, uv3, 1, CCW); }
+
+DeclarePass (Super_2_F)
+{ return fn_spin (Title_F, Spin_1_F, uv3, 2, CCW); }
+
+DeclarePass (Spin_2_F)
+{ return fn_spin (Title_F, Super_2_F, uv3, 3, CCW); }
+
+DeclareEntryPoint (Spin_Kx_F)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Delta;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Title;"; > ExecuteParam (ps_main_I, 0)
-   pass P_3 < string Script = "RenderColorTarget0 = Spin;"; > ExecuteParam (ps_main_I, 1)
-   pass P_4 < string Script = "RenderColorTarget0 = Title;"; > ExecuteParam (ps_main_I, 2)
-   pass P_5 < string Script = "RenderColorTarget0 = Spin;"; > ExecuteParam (ps_main_I, 3)
-   pass P_6 ExecuteParam (ps_main_I, 5)
+   float4 Title = fn_spin (Title_F, Spin_2_F, uv3, 4, CCW);
+
+   return fn_main (Fg, uv1, Title, Amount);
 }
 
-technique Spin_Kx_O
+
+// technique Spin_Kx_I
+
+DeclarePass (Title_I)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Super_1_I)
+{ return fn_spin (Title_I, Title_I, uv3, 0, CCW); }
+
+DeclarePass (Spin_1_I)
+{ return fn_spin (Title_I, Super_1_I, uv3, 1, CCW); }
+
+DeclarePass (Super_2_I)
+{ return fn_spin (Title_I, Spin_1_I, uv3, 2, CCW); }
+
+DeclarePass (Spin_2_I)
+{ return fn_spin (Title_I, Super_2_I, uv3, 3, CCW); }
+
+DeclareEntryPoint (Spin_Kx_I)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Delta;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Title;"; > ExecuteParam (ps_main_O, 0)
-   pass P_3 < string Script = "RenderColorTarget0 = Spin;"; > ExecuteParam (ps_main_O, 1)
-   pass P_4 < string Script = "RenderColorTarget0 = Title;"; > ExecuteParam (ps_main_O, 2)
-   pass P_5 < string Script = "RenderColorTarget0 = Spin;"; > ExecuteParam (ps_main_O, 3)
-   pass P_6 ExecuteParam (ps_main_O, 4)
+   float4 Title = fn_spin (Title_I, Spin_2_I, uv3, 4, CCW);
+
+   return fn_main (Bg, uv2, Title, Amount);
+}
+
+
+// technique Spin_Kx_O
+
+DeclarePass (Title_O)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Super_1_O)
+{ return fn_spin (Title_O, Title_O, uv3, 0, CW); }
+
+DeclarePass (Spin_1_O)
+{ return fn_spin (Title_O, Super_1_O, uv3, 1, CW); }
+
+DeclarePass (Super_2_O)
+{ return fn_spin (Title_O, Spin_1_O, uv3, 2, CW); }
+
+DeclarePass (Spin_2_O)
+{ return fn_spin (Title_O, Super_2_O, uv3, 3, CW); }
+
+DeclareEntryPoint (Spin_Kx_O)
+{
+   float4 Title = fn_spin (Title_O, Spin_2_O, uv3, 4, CW);
+
+   return fn_main (Bg, uv2, Title, 1.0 - Amount);
 }
 

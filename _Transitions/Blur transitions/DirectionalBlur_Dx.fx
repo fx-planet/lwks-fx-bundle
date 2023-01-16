@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-06-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-06-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalBlur_Dx_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalBlur_Dx.mp4
+// @Created 2023-01-16
 
 /**
  This effect performs a transition between two sources.  During the process it also applies
@@ -11,6 +9,8 @@
  designed from the ground up to handle mixtures of varying frame sizes and aspect ratios.
  To this end, it has been tested with a range of rotated camera phone videos, as well as
  professional standard camera formats.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,67 +18,34 @@
 //
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Directional blur dissolve";
-   string Category    = "Mix";
-   string SubCategory = "Blur transitions";
-   string Notes       = "Uses a directional blur to transition between two sources";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Directional blur dissolve", "Mix", "Blur transitions", "Uses a directional blur to transition between two sources", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (Spread, "Spread", "Blur settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Angle, "Angle", "Blur settings", kNoFlags, 0.0, -180.0, 180.0);
+DeclareFloatParam (Strength, "Strength", "Blur settings", kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER)  \
-                                       \
-texture TEXTURE;                       \
-                                       \
-sampler SAMPLER = sampler_state        \
-{                                      \
-   Texture   = <TEXTURE>;              \
-   AddressU  = ClampToEdge;            \
-   AddressV  = ClampToEdge;            \
-   MinFilter = Linear;                 \
-   MagFilter = Linear;                 \
-   MipFilter = Linear;                 \
-}
-
-#define DefineTarget(TEXTURE, SAMPLER) \
-                                       \
-texture TEXTURE : RenderColorTarget;   \
-                                       \
-sampler SAMPLER = sampler_state        \
-{                                      \
-   Texture   = <TEXTURE>;              \
-   AddressU  = Mirror;                 \
-   AddressV  = Mirror;                 \
-   MinFilter = Linear;                 \
-   MagFilter = Linear;                 \
-   MipFilter = Linear;                 \
-}
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define PI        3.1415926536
 
@@ -87,62 +54,14 @@ sampler SAMPLER = sampler_state        \
 
 #define STRENGTH  0.005
 
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Mixed, s_Mixed);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
-
-float Spread
-<
-   string Group = "Blur settings";
-   string Description = "Spread";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Angle
-<
-   string Group = "Blur settings";
-   string Description = "Angle";
-   float MinVal = -180.00;
-   float MaxVal = 180.0;
-> = 0.0;
-
-float Strength
-<
-   string Group = "Blur settings";
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_mixer (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclarePass (Mixed)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-   float4 Bgnd = GetPixel (s_Background, uv2);
+   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Bgnd = ReadPixel (Bg, uv2);
 
    float amount = pow (1.0 - (abs (Amount - 0.5) * 2.0), 1.0 + (Strength * 8.0)) / 2.0;
 
@@ -151,9 +70,9 @@ float4 ps_mixer (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return lerp (Fgnd, Bgnd, amount);
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (DirectionalBlur_Dx)
 {
-   float4 retval = tex2D (s_Mixed, uv3);
+   float4 retval = tex2D (Mixed, uv3);
 
    if (Spread > 0.0) {
 
@@ -166,23 +85,13 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
       for (int i = 0; i < SAMPLES; i++) {
          xy1 += blur;
          xy2 -= blur;
-         retval += tex2D (s_Mixed, xy1);
-         retval += tex2D (s_Mixed, xy2);
+         retval += tex2D (Mixed, xy1);
+         retval += tex2D (Mixed, xy2);
       }
 
       retval /= SAMPSCALE;
    }
 
    return retval;
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique DirectionalBlur_Dx
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Mixed;"; > ExecuteShader (ps_mixer)
-   pass P_2 ExecuteShader (ps_main)
 }
 

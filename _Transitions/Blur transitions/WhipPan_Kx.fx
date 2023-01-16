@@ -1,84 +1,58 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/WhipPanAx_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/WhipPan_AxAdx.mp4
+// @Created 2023-01-16
 
 /**
  This effect performs a whip pan style transition to bring a foreground image onto or off
  the screen.  Unlike the blur dissolve effect, this effect also pans the foreground.  It
  is limited to producing vertical and horizontal whips only.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect WhipPan_Kx.fx
 //
-// This effect is a combination of two previous effects, WhipPan_Ax and WhipPan_Adx.
-//
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Whip pan (keyed)";
-   string Category    = "Mix";
-   string SubCategory = "Blur transitions";
-   string Notes       = "Uses a difference key and a directional blur to simulate a whip pan into or out of a title";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Whip pan (keyed)", "Mix", "Blur transitions", "Uses a difference key and a directional blur to simulate a whip pan into or out of a title", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+DeclareIntParam (Mode, "Whip direction", kNoGroup, 0, "Left to right|Right to left|Top to bottom|Bottom to top");
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+
+DeclareFloatParam (Strength, "Strength", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = Mirror;                \
-   AddressV  = Mirror;                \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
-}
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY)  (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow (XY) ? EMPTY : tex2D (SHADER, XY))
 
 #define L_R       0
 #define R_L       1
@@ -92,96 +66,16 @@ Wrong_Lightworks_version
 
 #define STRENGTH  0.00125
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Title, s_Title);
-DefineTarget (Blur, s_Blur);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
-
-int Source
-<
-   string Description = "Source";
-   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
-> = 0;
-
-int SetTechnique
-<
-   string Description = "Transition position";
-   string Enum = "At start if delta key folded,At start of clip,At end of clip";
-> = 1;
-
-int Mode
-<
-   string Description = "Whip direction";
-   string Enum = "Left to right,Right to left,Top to bottom,Bottom to top";
-> = 0;
-
-bool CropEdges
-<
-   string Description = "Crop effect to background";
-> = false;
-
-float Strength
-<
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float KeyGain
-<
-   string Description = "Key trim";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
+   float4 Fgnd = ReadPixel (F, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-
-   if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
+      float4 Bgnd = ReadPixel (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -194,9 +88,9 @@ float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 ps_blur_I (float2 uv : TEXCOORD3) : COLOR
+float4 fn_blur (sampler T, float2 uv)
 {
-   float4 retval = tex2D (s_Title, uv);
+   float4 retval = tex2D (T, uv);
 
    float amount = 1.0 - cos (saturate ((1.0 - Amount) * 2.0) * HALF_PI);
 
@@ -209,62 +103,104 @@ float4 ps_blur_I (float2 uv : TEXCOORD3) : COLOR
    xy2 *= Strength * STRENGTH;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += tex2D (s_Title, xy1);
+      retval += tex2D (T, xy1);
       xy1 -= xy2;
    }
 
    return retval / SAMPSCALE;
 }
 
-float4 ps_blur_O (float2 uv : TEXCOORD3) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+// technique WhipPan_Kx_F
+
+DeclarePass (Title_F)
 {
-   float4 retval = tex2D (s_Title, uv);
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   if (Source == 0) {
+      float4 Bgnd = ReadPixel (Bg, uv2);
+
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+   }
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+}
+
+DeclarePass (Blur_F)
+{ return fn_blur (Title_F, uv3); }
+
+DeclareEntryPoint (WhipPan_Kx_F)
+{
+   float amount = (1.0 - sin (Amount * HALF_PI)) * 1.5 * Strength;
+
+   float2 xy = (Mode == L_R) ? uv3 + float2 (amount, 0.0)
+             : (Mode == R_L) ? uv3 - float2 (amount, 0.0)
+             : (Mode == T_B) ? uv3 + float2 (0.0, amount) : uv3 - float2 (0.0, amount);
+
+   float4 Overlay = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Blur_F, xy);
+
+   return lerp (ReadPixel (Fg, uv1), Overlay, Overlay.a);
+}
+
+
+// technique WhipPan_Kx_I
+
+DeclarePass (Title_I)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Blur_I)
+{ return fn_blur (Title_I, uv3); }
+
+DeclareEntryPoint (Blur_Kx_I)
+{
+   float amount = (1.0 - sin (Amount * HALF_PI)) * 1.5 * Strength;
+
+   float2 xy = (Mode == L_R) ? uv3 + float2 (amount, 0.0)
+             : (Mode == R_L) ? uv3 - float2 (amount, 0.0)
+             : (Mode == T_B) ? uv3 + float2 (0.0, amount) : uv3 - float2 (0.0, amount);
+
+   float4 Overlay = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Blur_I, xy);
+
+   return lerp (ReadPixel (Bg, uv2), Overlay, Overlay.a);
+}
+
+
+// technique WhipPan_Kx_O
+
+DeclarePass (Title_O)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Blur_O)
+{
+   float4 retval = tex2D (Title_O, uv3);
 
    float amount = 1.0 - cos (saturate (Amount * 2.0) * HALF_PI);
 
    if ((amount == 0.0) || (Strength <= 0.0)) return retval;
 
-   float2 xy1 = uv;
+   float2 xy1 = uv3;
    float2 xy2 = (Mode < T_B) ? float2 (amount, 0.0)
                              : float2 (0.0, amount * _OutputAspectRatio);
 
    xy2 *= Strength * STRENGTH;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += tex2D (s_Title, xy1);
+      retval += tex2D (Title_O, xy1);
       xy1 -= xy2;
    }
 
    return retval / SAMPSCALE;
 }
 
-float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
-{
-   float amount = (1.0 - sin (Amount * HALF_PI)) * 1.5 * Strength;
-
-   float2 xy = (Mode == L_R) ? uv3 + float2 (amount, 0.0)
-             : (Mode == R_L) ? uv3 - float2 (amount, 0.0)
-             : (Mode == T_B) ? uv3 + float2 (0.0, amount) : uv3 - float2 (0.0, amount);
-
-   float4 Overlay = (CropEdges && Overflow (uv1)) ? EMPTY : GetPixel (s_Blur, xy);
-
-   return lerp (GetPixel (s_Foreground, uv1), Overlay, Overlay.a);
-}
-
-float4 ps_main_I (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   float amount = (1.0 - sin (Amount * HALF_PI)) * 1.5 * Strength;
-
-   float2 xy = (Mode == L_R) ? uv3 + float2 (amount, 0.0)
-             : (Mode == R_L) ? uv3 - float2 (amount, 0.0)
-             : (Mode == T_B) ? uv3 + float2 (0.0, amount) : uv3 - float2 (0.0, amount);
-
-   float4 Overlay = (CropEdges && Overflow (uv2)) ? EMPTY : GetPixel (s_Blur, xy);
-
-   return lerp (GetPixel (s_Background, uv2), Overlay, Overlay.a);
-}
-
-float4 ps_main_O (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (WhipPan_Kx_O)
 {
    float amount = (1.0 - cos (Amount * HALF_PI)) * 1.5 * Strength;
 
@@ -272,33 +208,8 @@ float4 ps_main_O (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
              : (Mode == R_L) ? uv3 + float2 (amount, 0.0)
              : (Mode == T_B) ? uv3 - float2 (0.0, amount) : uv3 + float2 (0.0, amount);
 
-   float4 Overlay = (CropEdges && Overflow (uv2)) ? EMPTY : GetPixel (s_Blur, xy);
+   float4 Overlay = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Blur_O, xy);
 
-   return lerp (GetPixel (s_Background, uv2), Overlay, Overlay.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique WhipPan_Kx_F
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_keygen_F)
-   pass P_2 < string Script = "RenderColorTarget0 = Blur;"; > ExecuteShader (ps_blur_I)
-   pass P_3 ExecuteShader (ps_main_F)
-}
-
-technique WhipPan_Kx_I
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Blur;"; > ExecuteShader (ps_blur_I)
-   pass P_3 ExecuteShader (ps_main_I)
-}
-
-technique WhipPan_Kx_O
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Title;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Blur;"; > ExecuteShader (ps_blur_O)
-   pass P_3 ExecuteShader (ps_main_O)
+   return lerp (ReadPixel (Bg, uv2), Overlay, Overlay.a);
 }
 

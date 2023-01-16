@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Blur_Dx_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Blur_Dx.mp4
+// @Created 2023-01-16
 
 /**
  This effect performs a blurred transition between two sources.  It has been designed from
  the ground up to handle mixtures of varying frame sizes and aspect ratios.  To this end,
  it has been tested with a range of rotated camera phone videos, as well as professional
  standard camera formats.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,67 +17,36 @@
 //
 // Version history:
 //
-// Rebuild 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Blur dissolve";
-   string Category    = "Mix";
-   string SubCategory = "Blur transitions";
-   string Notes       = "Uses a blur to transition between two video sources";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Blur dissolve", "Mix", "Blur transitions", "Uses a blur to transition between two video sources", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (Blurriness, "Blurriness", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
-texture TEXTURE;                      \
-                                      \
-sampler SAMPLER = sampler_state       \
-{                                     \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
-}
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = Mirror;                \
-   AddressV  = Mirror;                \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
-}
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define PI        3.1415926536
 
@@ -86,53 +55,21 @@ sampler SAMPLER = sampler_state       \
 #define SAMPLES   30
 #define SAMPSCALE 61
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Mixed, s_Mixed);
-DefineTarget (BlurX, s_BlurX);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
-
-float Blurriness
-<
-   string Description = "Blurriness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_mixer (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclarePass (Mixed)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-   float4 Bgnd = GetPixel (s_Background, uv2);
+   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Bgnd = ReadPixel (Bg, uv2);
 
    return lerp (Fgnd, Bgnd, saturate (Amount + Amount - 0.5));
 }
 
-float4 ps_blurX (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclarePass (BlurX)
 {
-   float4 retval = tex2D (s_Mixed, uv3);
+   float4 retval = tex2D (Mixed, uv3);
 
    if (Blurriness > 0.0) {
 
@@ -144,8 +81,8 @@ float4 ps_blurX (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TE
       for (int i = 0; i < SAMPLES; i++) {
          xy1 -= blur;
          xy2 += blur;
-         retval += tex2D (s_Mixed, xy1);
-         retval += tex2D (s_Mixed, xy2);
+         retval += tex2D (Mixed, xy1);
+         retval += tex2D (Mixed, xy2);
       }
 
       retval /= SAMPSCALE;
@@ -154,9 +91,9 @@ float4 ps_blurX (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TE
    return retval;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (Blur_Dx)
 {
-   float4 retval = tex2D (s_BlurX, uv3);
+   float4 retval = tex2D (BlurX, uv3);
 
    if (Blurriness > 0.0) {
 
@@ -166,8 +103,8 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
       for (int i = 0; i < SAMPLES; i++) {
          xy1 -= blur;
          xy2 += blur;
-         retval += tex2D (s_BlurX, xy1);
-         retval += tex2D (s_BlurX, xy2);
+         retval += tex2D (BlurX, xy1);
+         retval += tex2D (BlurX, xy2);
       }
     
       retval /= SAMPSCALE;
@@ -176,13 +113,3 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
    return retval;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Blur_Dx
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Mixed;"; > ExecuteShader (ps_mixer)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_blurX)
-   pass P_3 ExecuteShader (ps_main)
-}

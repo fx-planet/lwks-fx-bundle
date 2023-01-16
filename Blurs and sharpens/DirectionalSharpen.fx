@@ -1,14 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-08-31
+// @Released 2023-01-06
 // @Author jwrl
-// @Created 2021-08-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/DirectionalSharpen_640.png
+// @Released 2023-01-06
 
 /**
  A directional unsharp mask.  Useful where directional stretching and motion blur must be
  compensated for.  The angle can only be adjusted through 180 degrees, because it uses a
  bidirectional blur.  Using that technique, 90 degrees and 270 degrees would give identical
  results.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,145 +17,66 @@
 //
 // Version history:
 //
-// Rewrite 2021-08-31 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-06 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Directional sharpen";
-   string Category    = "Stylize";
-   string SubCategory = "Blurs and Sharpens";
-   string Notes       = "This is a directional unsharp mask useful where directional blurring must be compensated for";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Directional sharpen", "Stylize", "Blurs and Sharpens", "This is a directional unsharp mask useful where directional blurring must be compensated for", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define SetInputMode(TEX, SMPL, MODE) \
-                                      \
- texture TEX;                         \
-                                      \
- sampler SMPL = sampler_state         \
- {                                    \
-   Texture   = <TEX>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define SetTargetMode(TGT, SMP, MODE) \
-                                      \
- texture TGT : RenderColorTarget;     \
-                                      \
- sampler SMP = sampler_state          \
- {                                    \
-   Texture   = <TGT>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-
-#define LUMA_DOT  float3(1.1955,2.3464,0.4581)
-#define GAMMA_VAL 1.666666667
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-SetInputMode (Inp, s_RawInp, Mirror);
-
-SetTargetMode (FixInp, s_Input, Mirror);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float BlurAngle
-<
-   string Description = "Blur angle";
-   float MinVal = 0.0;
-   float MaxVal = 180.0;
-> = 0.0;
+DeclareFloatParam (BlurAngle, "Blur angle", kNoGroup, kNoFlags, 0.0, 0.0, 180.0);
+DeclareFloatParam (BlurWidth, "Sample width", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Threshold, "Threshold", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Tolerance, "Tolerance", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (EdgeGain, "Edge gain", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-float BlurWidth
-<
-   string Description = "Sample width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Threshold
-<
-   string Description = "Threshold";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Tolerance
-<
-   string Description = "Tolerance";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float EdgeGain
-<
-   string Description = "Edge gain";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Amount
-<
-   string Description = "Mix";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.15;
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shader
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-// This pass maps the foreground clip to TEXCOORD2, so that variations in clip
-// geometry and rotation are handled without too much effort.
+#define LUMA_DOT  float3(1.1955,2.3464,0.4581)
+#define GAMMA_VAL 1.666666667
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawInp, uv); }
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 mirror2D (sampler S, float2 xy)
 {
-   if (Overflow (uv1)) return EMPTY;
+   float2 uv = 1.0.xx - abs (abs (xy) - 1.0.xx);
 
-   float4 retval = tex2D (s_Input, uv2);
-   float4 unblur = EMPTY;
+   return tex2D (S, uv);
+}
 
-   float2 offset, xy = uv2;
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
 
-   if ((Amount <= 0.0) || (BlurWidth <= 0.0)) return retval;
+DeclareEntryPoint (DirectionalSharpen)
+{
+   float4 unblur = kTransparentBlack;
+
+   if (IsOutOfBounds (uv1)) return unblur;
+
+   float4 retval = tex2D (Inp, uv1);
+
+   float2 offset, xy = uv1;
+
+   if (BlurWidth <= 0.0) return retval;
 
    sincos (radians (BlurAngle), offset.y, offset.x);
    offset *= (BlurWidth * 0.0005);
@@ -163,7 +85,7 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    xy += offset * 30.0;
 
    for (int i = 0; i < 60; i++) {
-      unblur += tex2D (s_Input, xy);
+      unblur += mirror2D (Inp, xy);
       xy -= offset;
    }
     
@@ -183,16 +105,6 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
    unblur = float4 (retval.rgb + sharpness.xxx, retval.a);
 
-   return lerp (retval, unblur, Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-technique DirectionalSharpen
-{
-   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_1 ExecuteShader (ps_main)
+   return lerp (retval, unblur, tex2D (Mask, uv1));
 }
 

@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Tiles_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Tiles.mp4
+// @Created 2023-01-16
 
 /**
  This is a delta key and alpha transition that splits a keyed image into tiles then blows
  them apart or materialises the key from tiles.  It's a combination of two previous effects,
  TileSplit_Ax and TileSplit_Adx.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,165 +16,60 @@
 //
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Tiled split (keyed)";
-   string Category    = "Mix";
-   string SubCategory = "Geometric transitions";
-   string Notes       = "Splits a blended foreground into tiles and blows them apart";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define FACTOR 100
-#define OFFSET 1.2
-
-float _OutputAspectRatio;
-float _Progress;
+DeclareLightworksEffect ("Tiled split (keyed)", "Mix", "Geometric transitions", "Splits a blended foreground into tiles and blows them apart", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Super, s_Super);
-DefineTarget (Tiles, s_Tiles);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-int Source
-<
-   string Description = "Source";
-   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
-> = 0;
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
 
-int SetTechnique
-<
-   string Description = "Transition position";
-   string Enum = "At start if delta key folded,At start of clip,At end of clip";
-> = 1;
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
-bool CropEdges
-<
-   string Description = "Crop effect to background";
-> = false;
+DeclareFloatParam (Width, "Width", "Tile size", kNoFlags, 0.5, 0.0, 1.0;);
+DeclareFloatParam (Height, "Height", "Tile size", kNoFlags, 0.5, 0.0, 1.0;);
 
-float Width
-<
-   string Group = "Tile size";
-   string Description = "Width";
-   float MinVal       = 0.0;
-   float MaxVal       = 1.0;
-> = 0.5;
+DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 
-float Height
-<
-   string Group = "Tile size";
-   string Description = "Height";
-   float MinVal       = 0.0;
-   float MaxVal       = 1.0;
-> = 0.5;
+DeclareFloatParam (_OutputAspectRatio);
 
-float KeyGain
-<
-   string Description = "Key trim";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define FACTOR 100
+#define OFFSET 1.2
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
+   float4 Fgnd = ReadPixel (F, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-
-   if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
+      float4 Bgnd = ReadPixel (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -187,7 +82,7 @@ float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 ps_horiz_I (float2 uv : TEXCOORD3) : COLOR
+float4 fn_horiz_split (sampler S, float2 uv)
 {
    float dsplc  = (OFFSET - Height) * FACTOR / _OutputAspectRatio;
    float offset = floor (uv.y * dsplc);
@@ -195,84 +90,113 @@ float4 ps_horiz_I (float2 uv : TEXCOORD3) : COLOR
    offset = ceil (frac (offset / 2.0)) * 2.0;
    offset = (1.0 - offset) * (1.0 - Amount);
 
-   return GetPixel (s_Super, uv + float2 (offset, 0.0));
+   return tex2D (S, uv + float2 (offset, 0.0));
 }
 
-float4 ps_horiz_O (float2 uv : TEXCOORD3) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+// technique TiledSplit_F
+
+DeclarePass (Super_F)
 {
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   if (Source == 0) {
+      float4 Bgnd = ReadPixel (Bg, uv2);
+
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+   }
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+}
+
+DeclarePass (Tiles_F)
+{ return fn_horiz_split (Super_F, uv3); }
+
+DeclareEntryPoint (TiledSplit_F)
+{
+   float2 uv = uv3;
+
+   float dsplc  = (OFFSET - Width) * FACTOR;
+   float offset = floor (uv.x * dsplc);
+
+   offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
+   uv.y += offset / _OutputAspectRatio;
+
+   float4 Fgnd = ReadPixel (Tiles_F, uv);
+
+   if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
+
+   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
+}
+
+
+// technique TiledSplit_I
+
+DeclarePass (Super_I)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Tiles_I)
+{ return fn_horiz_split (Super_I, uv3); }
+
+DeclareEntryPoint (TiledSplit_I)
+{
+   float2 uv = uv3;
+
+   float dsplc  = (OFFSET - Width) * FACTOR;
+   float offset = floor (uv.x * dsplc);
+
+   offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
+   uv.y += offset / _OutputAspectRatio;
+
+   float4 Fgnd = ReadPixel (Tiles_I, uv);
+
+   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+
+   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+}
+
+
+// technique TiledSplit_O
+
+DeclarePass (Super_O)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Tiles_O)
+{
+   float2 uv = uv3;
+
    float dsplc  = (OFFSET - Height) * FACTOR / _OutputAspectRatio;
    float offset = floor (uv.y * dsplc);
 
    offset = ceil (frac (offset / 2.0)) * 2.0;
    offset = (offset - 1.0) * Amount;
+   uv.x += offset;
 
-   return GetPixel (s_Super, uv + float2 (offset, 0.0));
+   return ReadPixel (Super_O, uv);
 }
 
-float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (TiledSplit_O)
 {
+   float2 uv = uv3;
+
    float dsplc  = (OFFSET - Width) * FACTOR;
-   float offset = floor (uv3.x * dsplc);
+   float offset = floor (uv.x * dsplc);
 
-   offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
+   offset = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
+   uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = GetPixel (s_Tiles, uv3 + float2 (0.0, offset / _OutputAspectRatio));
+   float4 Fgnd = ReadPixel (Tiles_O, uv);
 
-   if (CropEdges && Overflow (uv1)) Fgnd = EMPTY;
+   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (GetPixel (s_Foreground, uv1), Fgnd, Fgnd.a);
-}
-
-float4 ps_main_I (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   float dsplc  = (OFFSET - Width) * FACTOR;
-   float offset = floor (uv3.x * dsplc);
-
-   offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
-
-   float4 Fgnd = GetPixel (s_Tiles, uv3 + float2 (0.0, offset / _OutputAspectRatio));
-
-   if (CropEdges && Overflow (uv2)) Fgnd = EMPTY;
-
-   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a);
-}
-
-float4 ps_main_O (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   float dsplc  = (OFFSET - Width) * FACTOR;
-   float offset = floor (uv3.x * dsplc);
-
-   offset  = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
-
-   float4 Fgnd = GetPixel (s_Tiles, uv3 + float2 (0.0, offset / _OutputAspectRatio));
-
-   if (CropEdges && Overflow (uv2)) Fgnd = EMPTY;
-
-   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique TiledSplit_Kx_F
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen_F)
-   pass P_2 < string Script = "RenderColorTarget0 = Tiles;"; > ExecuteShader (ps_horiz_I)
-   pass P_3 ExecuteShader (ps_main_F)
-}
-
-technique TiledSplit_Kx_I
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Tiles;"; > ExecuteShader (ps_horiz_I)
-   pass P_3 ExecuteShader (ps_main_I)
-}
-
-technique TiledSplit_Kx_O
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Tiles;"; > ExecuteShader (ps_horiz_O)
-   pass P_3 ExecuteShader (ps_main_O)
+   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
 }
 

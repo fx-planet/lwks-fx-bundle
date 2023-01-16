@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Mosaic.mp4
+// @Created 2023-01-16
 
 /**
  This obliterates the outgoing image with a mosaic pattern that progressively fills the
@@ -15,6 +13,8 @@
  The linearity of this effect is highly dependant on the black/white balance between the
  two images used.  If this is important to you, you can adjust it by adding intermediate
  keyframes within the transition.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,113 +22,42 @@
 //
 // Version history:
 //
-// Built 2021-07-17 jwrl.
-// Build date does not reflect upload date because of forum upload problems.
-// This rebuild addresses a problem with the original mosaic generation when applied to
-// sources of differing aspect ratios and/or sizes.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Mosaic transfer";
-   string Category    = "Mix";
-   string SubCategory = "Geometric transitions";
-   string Notes       = "Obliterates the outgoing image into expanding blocks as it fades to the incoming image";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _OutputAspectRatio;
+DeclareLightworksEffect ("Mosaic transfer", "Mix", "Geometric transitions", "Obliterates the outgoing image into expanding blocks as it fades to the incoming image", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Mixed, s_Mixed);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float TileSize
-<
-   string Description = "Tile size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (TileSize, "Tile size", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_mix (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclarePass (Mixed)
 {
-    float4 Fgnd = GetPixel (s_Foreground, uv1);
-    float4 Bgnd = GetPixel (s_Background, uv2);
+    float4 Fgnd = ReadPixel (Fg, uv1);
+    float4 Bgnd = ReadPixel (Bg, uv2);
 
    return (Fgnd + Bgnd) / (Fgnd.a + Bgnd.a);
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (Mosaic_Dx)
 {
    float Tscale  = TileSize * 0.2;                    // Prescale the tile size by 1/5
    float mosaic  = max (0.00000001, Tscale * 0.2);    // Scale mosaic and prevent zero values
@@ -155,19 +84,9 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
    // the mosaic for the first half of the transition, followed by a level dependant
    // mix from the mosaic to Bg for the second half of the transition.
 
-   float4 m_1 = GetPixel (s_Mixed, xy);               // GetPixel could really just be tex2D
-   float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= range_1 ? GetPixel (s_Foreground, uv1) : m_1;
+   float4 m_1 = ReadPixel (Mixed, xy);               // ReadPixel could really just be tex2D
+   float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= range_1 ? ReadPixel (Fg, uv1) : m_1;
 
-   return max (m_2.r, max (m_2.g, m_2.b)) >= range_2 ? m_2 : GetPixel (s_Background, uv2);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Mosaic_Dx
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Mixed;"; > ExecuteShader (ps_mix)
-   pass P_2 ExecuteShader (ps_main)
+   return max (m_2.r, max (m_2.g, m_2.b)) >= range_2 ? m_2 : ReadPixel (Bg, uv2);
 }
 

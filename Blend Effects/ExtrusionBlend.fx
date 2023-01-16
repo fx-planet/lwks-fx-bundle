@@ -1,17 +1,18 @@
 // @Maintainer jwrl
-// @Released 2021-08-11
+// @Released 2023-01-05
 // @Author jwrl
-// @Created 2021-08-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/ExtrusionMatte_640.png
+// @Created 2023-01-05
 
 /**
- "Extrusion blend", as the name suggests, extrudes a foreground image either linearly or
- radially towards a centre point.  The extruded section can be shaded by the foreground
- image, colour shaded, or flat colour filled.  The edge shading can be inverted if desired.
- It is also possible to export the alpha channel for use in downstream effects.
+ "Extrusion blend", as the name suggests, extrudes a foreground image either linearly
+ or radially towards a centre point.  The extruded section can be shaded by the
+ foreground image, colour shaded, or flat colour filled.  The edge shading can be
+ inverted if desired. It is also possible to export the alpha channel for use in
+ downstream effects.
 
- As part of the resolution independence support, it's also now possible to optionally
- crop the foreground to the boundaries of the background.  This is the default setting.
+ Masking is applied to the foreground before the extrusion process.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,69 +20,51 @@
 //
 // Version history:
 //
-// Rewrite 2021-08-11 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-05 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Extrusion blend";
-   string Category    = "Mix";
-   string SubCategory = "Blend Effects";
-   string Notes       = "Extrudes a foreground image either linearly or radially towards a centre point";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Extrusion blend", "Mix", "Blend Effects", "Extrudes a foreground image either linearly or radially towards a centre point", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (Mode, "Edge type", kNoGroup, 0, "Radial|Radial shaded|Radial coloured|Linear|Linear shaded|Linear coloured");
+
+DeclareFloatParam (Opacity, "Master opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Strength, "Strength", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (zoomAmount, "Length", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareFloatParam (Xcentre, "Effect centre", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (Ycentre, "Effect centre", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareColourParam (Colour, "Edge colour", "Colour setup", kNoFlags, 1.0, 0.3804, 1.0, 1.0));
+
+DeclareBoolParam (invShade, "Invert shading", kNoGroup, true);
+DeclareBoolParam (expAlpha, "Export alpha channel", kNoGroup, false);
+
+DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 1, "Crawl/Roll/Title/Image key|Video/External image|Extracted foreground");
+
+DeclareFloatParam (_OutputAspectRatio);
+DeclareFloatParam (_OutputWidth);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define ExecuteParam(SHD,PRM) { PixelShader = compile PROFILE SHD (PRM); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define SAMPLE   80
 #define HALFWAY  40
@@ -101,133 +84,13 @@ Wrong_Lightworks_version
 
 #define LIN_OFFS 0.667333
 
-float _OutputAspectRatio;
-float _OutputWidth;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs and targets
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (fg, s_RawFg);
-DefineInput (bg, s_RawBg);
-
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (RawBg, s_Background);
-
-DefineTarget (blurPre, s_Blur);
-DefineTarget (colorPre, s_Colour);
-DefineTarget (blurProc, s_Processed);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int SetTechnique
-<
-   string Description = "Edge type";
-   string Enum = "Radial,Radial shaded,Radial coloured,Linear,Linear shaded,Linear coloured";
-> = 0;
-
-float Opacity
-<
-   string Description = "Master opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Amount
-<
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float zoomAmount
-<
-   string Description = "Length";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Xcentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Ycentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float4 colour
-<
-   string Group = "Colour setup";
-   string Description = "Edge colour";
-   bool SupportsAlpha = true;
-> = { 1.0, 0.3804, 1.0, -1.0 };
-
-bool invShade
-<
-   string Description = "Invert shading";
-> = false;
-
-bool expAlpha
-<
-   string Description = "Export alpha channel";
-> = false;
-
-int Source
-<
-   string Group = "Disconnect title and image key inputs";
-   string Description = "Source selection";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
-> = 1;
-
-bool CropToBgd
-<
-   string Description = "Crop to background";
-> = true;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
-
-float4 ps_initFg (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+float4 Eradial (sampler K, float2 uv, int mode)
 {
-   float4 Fgd = GetPixel (s_RawFg, uv1);
-
-   if (Fgd.a == 0.0) return EMPTY;
-
-   if (Source == 0) {
-      Fgd.a    = pow (Fgd.a, 0.5);
-      Fgd.rgb /= Fgd.a;
-   }
-   else if (Source == 2) {
-      float4 Bgd = GetPixel (s_Background, uv3);
-
-      float kDiff = distance (Fgd.g, Bgd.g);
-
-      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
-      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
-
-      Fgd.a = smoothstep (0.0, 0.25, kDiff);
-      Fgd.rgb *= Fgd.a;
-   }
-
-   return Fgd;
-}
-
-float4 ps_radial (float2 uv : TEXCOORD3, uniform int mode) : COLOR
-{
-   float4 retval = GetPixel (s_Foreground, uv);
+   float4 retval = tex2D (K, uv);
 
    if (zoomAmount == 0.0) return retval;
 
@@ -241,12 +104,12 @@ float4 ps_radial (float2 uv : TEXCOORD3, uniform int mode) : COLOR
 
    for (int i = 0; i <= SAMPLE; i++) {
       xy1 = uv + (xy2 * i);
-      retval += GetPixel (s_Foreground, xy1);
+      retval += tex2D (K, xy1);
    }
 
    retval.a = saturate (retval.a);
 
-   if (mode == COLOUR) return float4 (colour.rgb, retval.a);
+   if (mode == COLOUR) return float4 (Colour.rgb, retval.a);
 
    retval.rgb = ((retval.rgb / SAMPLES) * 0.75) + 0.125;
 
@@ -256,9 +119,9 @@ float4 ps_radial (float2 uv : TEXCOORD3, uniform int mode) : COLOR
    return float4 (1.0.xxx - retval.rgb, retval.a);
 }
 
-float4 ps_linear (float2 uv : TEXCOORD3, uniform int mode) : COLOR
+float4 Elinear (sampler K, float2 uv, int mode)
 {
-   float4 retval = GetPixel (s_Foreground, uv);
+   float4 retval = tex2D (K, uv);
 
    float2 offset, xy = uv;
 
@@ -274,13 +137,13 @@ float4 ps_linear (float2 uv : TEXCOORD3, uniform int mode) : COLOR
    offset *= depth * B_SCALE;
 
    for (int i = 0; i < SAMPLES; i++) {
-      retval += GetPixel (s_Foreground, xy);
+      retval += tex2D (K, xy);
       xy += offset;
       }
 
    retval.a = saturate (retval.a);
 
-   if (mode == COLOUR) return float4 (colour.rgb, retval.a);
+   if (mode == COLOUR) return float4 (Colour.rgb, retval.a);
 
    retval.rgb = ((retval.rgb / SAMPLES) * 0.75) + 0.125;
 
@@ -290,10 +153,10 @@ float4 ps_linear (float2 uv : TEXCOORD3, uniform int mode) : COLOR
    return float4 (1.0.xxx - retval.rgb, retval.a);
 }
 
-float4 ps_shaded (float2 uv : TEXCOORD3) : COLOR
+float4 Eshaded (sampler B, sampler C, float2 uv)
 {
-   float4 blurImg = GetPixel (s_Blur, uv);
-   float4 colrImg = GetPixel (s_Colour, uv);
+   float4 blurImg = tex2D (B, uv);
+   float4 colrImg = tex2D (C, uv);
 
    float alpha   = blurImg.a;
    float minColr = min (colrImg.r, min (colrImg.g, colrImg.b));
@@ -335,10 +198,62 @@ float4 ps_shaded (float2 uv : TEXCOORD3) : COLOR
    return float4 (retval.xyz, alpha);
 }
 
-float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (KeyFg)
 {
-   float4 fgImage = GetPixel (s_Foreground, uv3);
-   float4 retval  = EMPTY;
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
+   float4 Fgd = tex2D (Fg, uv1);
+
+   if (Source == 0) {
+      Fgd.a    = pow (Fgd.a, 0.5);
+      Fgd.rgb /= Fgd.a;
+   }
+   else if (Source == 2) {
+      float4 Bgd = ReadPixel (Bg, uv2);
+
+      float kDiff = distance (Fgd.g, Bgd.g);
+
+      kDiff = max (kDiff, distance (Fgd.r, Bgd.r));
+      kDiff = max (kDiff, distance (Fgd.b, Bgd.b));
+
+      Fgd.a = smoothstep (0.0, 0.25, kDiff);
+      Fgd.rgb *= Fgd.a;
+   }
+
+   return lerp (0.0.xxxx, Fgd, tex2D (Mask, uv1));
+}
+
+DeclarePass (blurPre)
+{
+   return (Mode == 1) ? Eradial (KeyFg, uv3, MONO) :
+          (Mode == 4) ? Elinear (KeyFg, uv3, MONO) : kTransparentBlack;
+}
+
+DeclarePass (colourPre)
+{
+   return (Mode == 1) ? Eradial (KeyFg, uv3, COLOUR) :
+          (Mode == 4) ? Elinear (KeyFg, uv3, COLOUR) : kTransparentBlack;
+}
+
+DeclarePass (blurProc)
+{
+   if (Mode == 0) return Eradial (KeyFg, uv3, DEFAULT);
+   if (Mode == 1) return Eshaded (blurPre, colourPre, uv3);
+   if (Mode == 2) return Eradial (KeyFg, uv3, COLOUR);
+   if (Mode == 3) return Elinear (KeyFg, uv3, DEFAULT);
+   if (Mode == 4) return Eshaded (blurPre, colourPre, uv3);
+
+   return Elinear (KeyFg, uv1, COLOUR);
+}
+
+DeclareEntryPoint (ExtrusionBlend)
+{
+   float4 Fgnd   = tex2D (KeyFg, uv3);
+   float4 retval = kTransparentBlack;
 
    float2 pixsize = float2 (1.0, _OutputAspectRatio) / _OutputWidth;
    float2 offset, scale;
@@ -348,79 +263,22 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
    for (int i = 0; i < DELTANG; i++) {
       sincos (angle, scale.x, scale.y);
       offset = pixsize * scale;
-      retval += GetPixel (s_Processed, uv3 + offset);
-      retval += GetPixel (s_Processed, uv3 - offset);
+      retval += tex2D (blurProc, uv3 + offset);
+      retval += tex2D (blurProc, uv3 - offset);
       angle += ANGLE;
    }
 
    retval  /= ALIASFIX;
-   retval   = lerp (EMPTY, retval, retval.a);
-   retval   = lerp (retval, fgImage, fgImage.a);
-   retval.a = max (fgImage.a, retval.a * Amount);
+   retval   = lerp (kTransparentBlack, retval, retval.a);
+   retval   = lerp (retval, Fgnd, Fgnd.a);
+   retval.a = max (Fgnd.a, retval.a * Strength);
 
    if (expAlpha) return retval;
 
-   float4 bgImage = GetPixel (s_Background, uv3);
+   float4 Bgnd = ReadPixel (Bg, uv2);
 
-   retval = lerp (bgImage, retval, retval.a);
+   retval = lerp (Bgnd, retval, retval.a);
 
-   return CropToBgd && Overflow (uv2) ? EMPTY
-        : lerp (bgImage, float4 (retval.rgb, bgImage.a), Opacity);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Radial
-{
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteParam (ps_radial, DEFAULT)
-   pass P_2 ExecuteShader (ps_main)
-}
-
-technique RadialShaded
-{
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurPre;"; > ExecuteParam (ps_radial, MONO)
-   pass P_2 < string Script = "RenderColorTarget0 = colorPre;"; > ExecuteParam (ps_radial, COLOUR)
-   pass P_3 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteShader (ps_shaded)
-   pass P_4 ExecuteShader (ps_main)
-}
-
-technique RadialColour
-{
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteParam (ps_radial, COLOUR)
-   pass P_2 ExecuteShader (ps_main)
-}
-
-technique Linear
-{
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteParam (ps_linear, DEFAULT)
-   pass P_2 ExecuteShader (ps_main)
-}
-
-technique LinearShaded
-{
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurPre;"; > ExecuteParam (ps_linear, MONO)
-   pass P_2 < string Script = "RenderColorTarget0 = colorPre;"; > ExecuteParam (ps_linear, COLOUR)
-   pass P_3 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteShader (ps_shaded)
-   pass P_4 ExecuteShader (ps_main)
-}
-
-technique LinearColour
-{
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteParam (ps_linear, COLOUR)
-   pass P_2 ExecuteShader (ps_main)
+   return lerp (Bgnd, retval, Opacity);
 }
 

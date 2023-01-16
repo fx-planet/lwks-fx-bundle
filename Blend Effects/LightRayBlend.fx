@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-08-11
+// @Released 2023-01-05
 // @Author jwrl
-// @Created 2021-08-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/LightRayKeys_640.png
+// @Created 2023-01-05
 
 /**
  This effect adds directional blurs to a key or any image with an alpha channel.  The
@@ -17,7 +16,9 @@
  angular precision.
 
  If there is no alpha channel available this can be used to apply an overall blur to
- an image.
+ an image.  Masking is applied to the foreground before the rest of the effect.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -25,67 +26,49 @@
 //
 // Version history:
 //
-// Rewrite 2021-08-11 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-05 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Light ray blend";
-   string Category    = "Mix";
-   string SubCategory = "Blend Effects";
-   string Notes       = "Adds directional blurs to a key or any image with an alpha channel";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Light ray blend", "Mix", "Blend Effects", "Adds directional blurs to a key or any image with an alpha channel", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (SetTechnique, "Blur type", kNoGroup, 0, "Radial from centre|Radial to centre|Linear directional");
+DeclareIntParam (recoverFg, "Foreground blend", kNoGroup, 4, "Add|Screen|Darken|Subtract|Solid|None");
+DeclareIntParam (rayType, "Rays", kNoGroup, 0, "Add|Screen|Darken|Subtract");
+
+DeclareFloatParam (zoomAmount, "Length", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Opacity, "Master opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (Fgd_amt, "Foreground", "Opacity", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Amount, "Rays", "Opacity", kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (Xcentre, "Effect centre", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (Ycentre, "Effect centre", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 1, "Crawl/Roll/Title/Image key|Video/External image|Extracted foreground");
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define R_VAL    0.2989
 #define G_VAL    0.5866
@@ -108,117 +91,22 @@ Wrong_Lightworks_version
 #define SUBTRACT 3
 #define SOLID    4
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs and targets
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_RawFg);
-DefineInput (Bg, s_RawBg);
-
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (RawBg, s_Background);
-DefineTarget (blurProc, s_Processed);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int SetTechnique
-<
-   string Description = "Blur type";
-   string Enum = "Radial from centre,Radial to centre,Linear directional";
-> = 0;
-
-int recoverFg
-<
-   string Description = "Foreground blend";
-   string Enum = "Add,Screen,Darken,Subtract,Solid,None";
-> = 4;
-
-int rayType
-<
-   string Description = "Rays";
-   string Enum = "Add,Screen,Darken,Subtract";
-> = 0;
-
-float zoomAmount
-<
-   string Description = "Length";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Opacity
-<
-   string Description = "Master opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Fgd_amt
-<
-   string Group = "Opacity";
-   string Description = "Foreground";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Amount
-<
-   string Group = "Opacity";
-   string Description = "Rays";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Xcentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Ycentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-int Source
-<
-   string Group = "Disconnect title and image key inputs";
-   string Description = "Source selection";
-   string Enum = "Crawl/Roll/Title/Image key,Video/External image,Extracted foreground";
-> = 1;
-
-bool CropToBgd
-<
-   string Description = "Crop to background";
-> = true;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
-
-float4 ps_initFg (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgd = GetPixel (s_RawFg, uv1);
+   if (IsOutOfBounds (xy1)) return kTransparentBlack;
 
-   if (Fgd.a == 0.0) return EMPTY;
+   float4 Fgd = tex2D (F, xy1);
 
    if (Source == 0) {
       Fgd.a    = pow (Fgd.a, 0.5);
       Fgd.rgb /= Fgd.a;
    }
    else if (Source == 2) {
-      float4 Bgd = GetPixel (s_Background, uv3);
+      float4 Bgd = ReadPixel (B, xy2);
 
       float kDiff = distance (Fgd.g, Bgd.g);
 
@@ -229,101 +117,18 @@ float4 ps_initFg (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
       Fgd.rgb *= Fgd.a;
    }
 
-   return Fgd;
+   return lerp (0.0.xxxx, Fgd, tex2D (Mask, xy1));
 }
 
-float4 ps_out (float2 uv : TEXCOORD3) : COLOR
+float4 main (sampler F, float2 xy1, sampler B, float2 xy2, float4 blurred)
 {
-   float4 retval;
+   float4 bgImage = ReadPixel (B, xy2);
 
-   float scale;
-
-   if (zoomAmount == 0.0) { retval = GetPixel (s_Foreground, uv); }
-   else {
-      float z_Amount = zoomAmount / 2;
-
-      float2 zoomCentre = float2 ((Xcentre * 3) - 1.0, 2.0 - (Ycentre * 3));
-      float2 xy = uv - zoomCentre;
-
-      retval = EMPTY;
-
-      for (int i = SAMPLE; i >= 0; i--) {
-         scale = 1.0 - z_Amount * ((float)i / SAMPLE);
-
-         retval += GetPixel (s_Foreground, (xy * scale) + zoomCentre);
-      }
-
-      retval /= SAMPLES;
-   }
-
-   return retval;
-}
-
-float4 ps_in (float2 uv : TEXCOORD3) : COLOR
-{
-   float4 retval;
-
-   float scale;
-
-   if (zoomAmount == 0.0) { retval = GetPixel (s_Foreground, uv); }
-   else {
-      float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
-      float2 xy = uv - zoomCentre;
-
-      retval = EMPTY;
-
-      for (int i = 0; i <= SAMPLE; i++) {
-         scale = 1.0 + zoomAmount * ((float)i / SAMPLE);
-
-         retval += GetPixel (s_Foreground, (xy * scale) + zoomCentre);
-      }
-
-      retval /= SAMPLES;
-   }
-
-   return retval;
-}
-
-float4 ps_linear (float2 uv : TEXCOORD3) : COLOR
-{
-   float2 offset;
-   float4 retval;
-
-   offset.x = 0.5 - saturate (Xcentre * LIN_OFFS);
-   offset.y = saturate (Ycentre * LIN_OFFS) - 0.5;
-
-   if ((max (abs (offset.x), abs (offset.y)) == 0.0) || (zoomAmount == 0.0)) {
-      retval = GetPixel (s_Foreground, uv);
-   }
-   else {
-      offset *= 1.0 / sqrt ((offset.x * offset.x) + (offset.y * offset.y));
-      offset *= zoomAmount * L_SCALE;
-      retval  = 0.0.xxxx;
-
-      float2 xy = uv;
-
-      float luminosity = 1.0;
-
-      for (int i = 0; i < SAMPLES; i++) {
-         retval += GetPixel (s_Foreground, xy) * luminosity;
-         xy += offset;
-         luminosity -= LUMAOFFS;
-         }
-
-      retval /= ((1.5 - zoomAmount) * L_SAMPLE);
-   }
-
-   return retval;
-}
-
-float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   float4 fgImage = GetPixel (s_Foreground, uv3);
-   float4 bgImage = GetPixel (s_Background, uv3);
-   float4 blurred = GetPixel (s_Processed, uv3);
+   if (IsOutOfBounds (xy1)) return bgImage;
 
    float inv_luma = 1.0 - dot (blurred.rgb, float3 (R_VAL, G_VAL, B_VAL));
 
+   float4 fgImage = ReadPixel (F, xy1);
    float4 retval = (rayType == ADD)    ? saturate (bgImage + blurred)
                  : (rayType == SCREEN) ? 1.0 - ((1.0 - blurred) * (1.0 - bgImage))
                  : (rayType == DARKEN) ? bgImage * inv_luma
@@ -343,34 +148,103 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
    retval  = lerp (retval, FxImage, fgImage.a);
    retval  = lerp (bgImage, retval, Opacity);
 
-   return CropToBgd && Overflow (uv2) ? EMPTY : float4 (retval.rgb, bgImage.a);
+   return float4 (retval.rgb, bgImage.a);
 }
 
 //-----------------------------------------------------------------------------------------//
-// Techniques
+// Code
 //-----------------------------------------------------------------------------------------//
 
-technique FromCentre
+DeclarePass (KeyFgOut)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (LightRayBlendFromCentre)
 {
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteShader (ps_out)
-   pass P_2 ExecuteShader (ps_main)
+   float4 retval;
+
+   float scale;
+
+   if (zoomAmount == 0.0) { retval = ReadPixel (KeyFgOut, uv3); }
+   else {
+      float z_Amount = zoomAmount / 2;
+
+      float2 zoomCentre = float2 ((Xcentre * 3) - 1.0, 2.0 - (Ycentre * 3));
+      float2 xy = uv3 - zoomCentre;
+
+      retval = kTransparentBlack;
+
+      for (int i = SAMPLE; i >= 0; i--) {
+         scale = 1.0 - z_Amount * ((float)i / SAMPLE);
+
+         retval += tex2D (KeyFgOut, (xy * scale) + zoomCentre);
+      }
+
+      retval /= SAMPLES;
+   }
+
+   return main (Fg, uv1, Bg, uv2, retval);
 }
 
-technique ToCentre
+DeclarePass (KeyFgIn)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (LightRayBlendToCentre)
 {
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteShader (ps_in)
-   pass P_2 ExecuteShader (ps_main)
+   float4 retval;
+
+   float scale;
+
+   if (zoomAmount == 0.0) { retval = ReadPixel (KeyFgIn, uv3); }
+   else {
+      float2 zoomCentre = float2 (Xcentre, 1.0 - Ycentre);
+      float2 xy = uv3 - zoomCentre;
+
+      retval = kTransparentBlack;
+
+      for (int i = 0; i <= SAMPLE; i++) {
+         scale = 1.0 + zoomAmount * ((float)i / SAMPLE);
+
+         retval += tex2D (KeyFgIn, (xy * scale) + zoomCentre);
+      }
+
+      retval /= SAMPLES;
+   }
+
+   return main (Fg, uv1, Bg, uv2, retval);
 }
 
-technique Linear
+DeclarePass (KeyFgLin)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (LightRayBlendLinear)
 {
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = blurProc;"; > ExecuteShader (ps_linear)
-   pass P_2 ExecuteShader (ps_main)
+   float2 offset;
+   float4 retval;
+
+   offset.x = 0.5 - saturate (Xcentre * LIN_OFFS);
+   offset.y = saturate (Ycentre * LIN_OFFS) - 0.5;
+
+   if ((max (abs (offset.x), abs (offset.y)) == 0.0) || (zoomAmount == 0.0)) {
+      retval = ReadPixel (KeyFgLin, uv3);
+   }
+   else {
+      offset *= 1.0 / sqrt ((offset.x * offset.x) + (offset.y * offset.y));
+      offset *= zoomAmount * L_SCALE;
+      retval  = 0.0.xxxx;
+
+      float2 xy = uv3;
+
+      float luminosity = 1.0;
+
+      for (int i = 0; i < SAMPLES; i++) {
+         retval += tex2D (KeyFgLin, xy) * luminosity;
+         xy += offset;
+         luminosity -= LUMAOFFS;
+         }
+
+      retval /= ((1.5 - zoomAmount) * L_SAMPLE);
+   }
+
+   return main (Fg, uv1, Bg, uv2, retval);
 }
 

@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_NonAddUltra_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/NonAddUltraDx.mp4
+// @Created 2023-01-16
 
 /**
  This is an extreme non-additive mix.  The incoming video is faded in to full value at
@@ -11,6 +9,8 @@
  are mixed by giving the source with the maximum level priority.
 
  The result is extreme, but can be interesting.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,86 +18,32 @@
 //
 // Version history:
 //
-// Built 2021-07-24 jwrl.
-// Rewritten to support resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Non-add mix ultra";
-   string Category    = "Mix";
-   string SubCategory = "Blend transitions";
-   string Notes       = "Emulates the classic analog vision mixer non-add mix";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+DeclareLightworksEffect ("Non-add mix ultra", "Mix", "Blend transitions", "Emulates the classic analog vision mixer non-add mix", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Params
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float Linearity
-<
-   string Description = "Linearity";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (Linearity, "Linearity", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Pixel Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (NonAddUltra_Dx)
 {
    float outAmount = min (1.0, (1.0 - Amount) * 2.0);
    float in_Amount = min (1.0, Amount * 2.0);
@@ -107,18 +53,9 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    temp = in_Amount * in_Amount * in_Amount;
    in_Amount = lerp (in_Amount, temp, Linearity);
 
-   float4 Fgnd = GetPixel (s_Foreground, uv1) * outAmount;
-   float4 Bgnd = GetPixel (s_Background, uv2) * in_Amount;
+   float4 Fgnd = ReadPixel (Fg, uv1) * outAmount;
+   float4 Bgnd = ReadPixel (Bg, uv2) * in_Amount;
 
    return max (Fgnd, Bgnd);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-technique Dx_NonAddUltra
-{
-   pass P_1 ExecuteShader (ps_main)
 }
 

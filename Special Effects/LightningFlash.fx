@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-22
+// @Released 2023-01-11
 // @Author jwrl
-// @Created 2021-10-22
-// @see https://www.lwks.com/media/kunena/attachments/6375/LightningFlash_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/LightningFlash.mp4
+// @Created 2023-01-11
 
 /**
  As the name says, this is a lightning flash effect.  The number of flash cycles can be
@@ -20,7 +18,7 @@
  fully function.  Once the flash sequence fade ends it will not affect the image further
  and can be left in place.
 
- NOTE: THIS EFFECT WILL ONLY COMPILE ON VERSIONS OF LIGHTWORKS LATER THAN 14.5.
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -28,98 +26,40 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-22 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-11 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Lightning flash";
-   string Category    = "Stylize";
-   string SubCategory = "Special Effects";
-   string Notes       = "Simulates a high energy lightning flash at the cut point";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Lightning flash", "Stylize", "Special Effects", "Simulates a high energy lightning flash at the cut point", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH            // Only available in version 14.5 and up
-Wrong_LW_version           // Forces a compiler error if the Lightworks version is wrong.
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0     // Not really necessary, but a better profile for Windows.
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _LengthFrames;
-float _Progress;
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareInput (Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int FlashCycle
-<
-   string Description = "Number of flash cycles";
-   string Enum = "1 flash,2 flashes,3 flashes,4 flashes,5 flashes"; 
-> = 2;
+DeclareIntParam (FlashCycle, "Number of flash cycles", kNoGroup, 2, "1 flash|2 flashes|3 flashes|4 flashes|5 flashes");
+DeclareIntParam (FlashDuration, "Duration of flashes", kNoGroup, 0, "1 frame|2 frames|3 frames");
 
-int FlashDuration
-<
-   string Description = "Duration of flashes";
-   string Enum = "1 frame,2 frames,3 frames"; 
-> = 0;
+DeclareFloatParam (FadeAmount, "Fade (in frames)", kNoGroup, kNoFlags, 6.0, 2.0, 30.0);
 
-float FadeAmount
-<
-   string Description = "Fade (in frames)";
-   float MinVal = 2.0;
-   float MaxVal = 30.0;
-> = 6.0;
+DeclareColourParam (ColourCast, "Colour cast", kNoGroup, kNoFlags, 0.33, 0.67, 1.0, 1.0);
 
-float4 ColourCast
-<
-   string Description = "Colour cast";
-   bool SupportsAlpha = false;
-> = { 0.33, 0.67, 1.0, 1.0 };
+DeclareFloatParam (_LengthFrames);
+DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (LightningFlash)
 {
-   float4 video = GetPixel (s_Input, uv);
+   float4 video = ReadPixel (Inp, uv1);
    float4 flash = float4 ((ColourCast.rgb * 0.2) + 0.8.xxx, 1.0);
    float4 ngtve = float4 (flash.rgb - pow ((video.r + video.g + video.b) / 3.0, 1.5).xxx, 1.0);
 
@@ -137,10 +77,4 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    return lerp (ngtve, video, fade);
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Lightning { pass P_1 ExecuteShader (ps_main) }
 

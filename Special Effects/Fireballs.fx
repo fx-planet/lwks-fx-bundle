@@ -1,10 +1,8 @@
 // @Maintainer jwrl
-// @Released 2021-10-22
+// @Released 2023-01-11
 // @Author jwrl
 // @Author Unknown
-// @Created 2021-10-22
-// @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/FireballOverlay.mp4
+// @Created 2023-01-11
 
 /**
  This is a fireball effect that can be scaled and positioned to simulate explosions and
@@ -16,7 +14,8 @@
  has the ability to be disabled because with some display cards leaving it enabled when
  using the fireball alone can give unpredictable results.
 
- NOTE: THIS EFFECT WILL ONLY COMPILE ON VERSIONS OF LIGHTWORKS LATER THAN 14.0.
+ NOTE:  This effect breaks resolution independence.  It is only suitable for use with
+ Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -34,156 +33,55 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-22 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-11 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Fireballs";
-   string Category    = "Stylize";
-   string SubCategory = "Special Effects";
-   string Notes       = "Produces a hot fireball and optionally blends it with a background image";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH   // Only available in version 14.5 and up
-Bad_LW_version    // Forces a compiler error if the Lightworks version is bad.
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define MINIMUM 0.00001
-#define TWO_PI  6.2831853072
-
-float _Progress;
-float _Length;
-
-float _OutputAspectRatio;
+DeclareLightworksEffect ("Fireballs", "Stylize", "Special Effects", "Produces a hot fireball and optionally blends it with a background image", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Inp, s_RawInp);
-
-DefineTarget (FixInp, s_Input);
+DeclareInput (Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Group = "Overlay settings";
-   string Description = "Fireball mode";
-   string Enum = "Overlay over input,Standalone (ignores overlay settings)";
-> = 0;
+DeclareIntParam (SetTechnique, "Fireball mode", "Overlay settings", 0, "Overlay over input|Standalone (ignores overlay settings)");
 
-float Amount
-<
-   string Group = "Overlay settings";
-   string Description = "Fireball opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (Amount, "Fireball opacity", "Overlay settings", kNoFlags, 1.0, 0.0, 1.0);
 
-bool InvertAlpha
-<
-   string Group = "Overlay settings";
-   string Description = "Invert key";
-> = false;
+DeclareBoolParam (InvertAlpha, "Invert key", "Overlay settings", false);
 
-float Speed
-<
-   string Group = "Fireball settings";
-   string Description = "Flicker rate";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.0;
-   float MaxVal = 2.0;
-> = 0.5;
+DeclareFloatParam (Speed, "Flicker rate", "Fireball settings", "DisplayAsPercentage", 0.5, 0.0, 2.0);
+DeclareFloatParam (Hue, "Flame hue", "Fireball settings", kNoFlags, 0.0, -180.0, 180.0);
+DeclareFloatParam (Intensity, "Flame intensity", "Fireball settings", kNoFlags, 1.0, 0.5, 1.5);
+DeclareFloatParam (Size, "Fireball size", "Fireball settings", kNoFlags, 0.2, 0.0, 1.0);
 
-float Hue
-<
-   string Group = "Fireball settings";
-   string Description = "Flame hue";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 0.0;
+DeclareFloatParam (PosX, "Fireball position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (PosY, "Fireball position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float Intensity
-<
-   string Group = "Fireball settings";
-   string Description = "Flame intensity";
-   float MinVal = 0.5;
-   float MaxVal = 1.5;
-> = 1.0;
+DeclareFloatParam (_Progress);
+DeclareFloatParam (_Length);
 
-float Size
-<
-   string Group = "Fireball settings";
-   string Description = "Fireball size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
 
-float PosX
-<
-   string Description = "Fireball position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_OutputAspectRatio);
 
-float PosY
-<
-   string Description = "Fireball position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define MINIMUM 0.00001
+#define TWO_PI  6.2831853072
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -246,16 +144,14 @@ float4 fn_hueShift (float4 rgb)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
-float4 ps_main_0 (float2 uv : TEXCOORD2) : COLOR
+DeclareEntryPoint (Fireballs_0)
 {
-   float4 Bgnd = tex2D (s_Input, uv);
+   float4 Bgnd = ReadPixel (Inp, uv1);
 
-   float2 xy = float2 ((uv.x - PosX) * _OutputAspectRatio, 1.0 - uv.y - PosY);
+   float2 xy = float2 ((uv0.x - PosX) * _OutputAspectRatio, 1.0 - uv0.y - PosY);
 
    xy /= max (Size * 5.0, MINIMUM);
 
@@ -287,9 +183,9 @@ float4 ps_main_0 (float2 uv : TEXCOORD2) : COLOR
    return (InvertAlpha) ? lerp (Fgnd, Bgnd, Fgnd.a) : lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-float4 ps_main_1 (float2 uv : TEXCOORD0) : COLOR
+DeclareEntryPoint (Fireballs_1)
 {
-   float2 xy = float2 ((uv.x - PosX) * _OutputAspectRatio, 1.0 - uv.y - PosY);
+   float2 xy = float2 ((uv0.x - PosX) * _OutputAspectRatio, 1.0 - uv0.y - PosY);
 
    xy /= max (Size * 5.0, MINIMUM);
 
@@ -317,20 +213,5 @@ float4 ps_main_1 (float2 uv : TEXCOORD0) : COLOR
    Fgnd.g *= 0.4;
 
    return fn_hueShift (saturate (Fgnd * Intensity));
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Fireballs_0
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main_0)
-}
-
-technique Fireballs_1
-{
-   pass P_1 ExecuteShader (ps_main_1)
 }
 

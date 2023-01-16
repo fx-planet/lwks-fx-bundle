@@ -1,58 +1,52 @@
 // @Maintainer jwrl
-// @Released 2021-10-22
+// @Released 2023-01-11
 // @Author jwrl
-// @Created 2021-10-22
-// @see https://www.lwks.com/media/kunena/attachments/6375/RainbowConnectionA_640.png
+// @Created 2023-01-11
 
 /**
  This effect changes tones through a complex colour translation while performing what is
  essentially a non-additive mix.  It can be adjusted to operate over a limited range of the
  input video levels or the full range.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Rainbow_Connection.fx
+// Lightworks user effect RainbowConnect.fx
 //
 // Version history:
 //
-// Rewrite 2021-10-22 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-11 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Rainbow connection";
-   string Category    = "Stylize";
-   string SubCategory = "Special Effects";
-   string Notes       = "Changes colours through rainbow patterns according to levels";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Rainbow connection", "Stylize", "Special Effects", "Changes colours through rainbow patterns according to levels", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Inp);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParam (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (Saturation, "Saturation", "Colour settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (HueCycle, "Hue cycling", "Colour settings", kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareFloatParam (LowClip, "Low clip", "Range settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (HighClip, "High clip", "Range settings", kNoFlags, 0.75, 0.0, 1.0);
+DeclareFloatParam (Softness, "Key softness", "Range settings", kNoFlags, 0.5, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define SQRT_3 1.7320508076
 #define TWO_PI 6.2831853072
@@ -65,69 +59,14 @@ int _LwksEffectInfo
 #define B_LUMA 0.1145
 
 //-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Saturation
-<
-   string Group = "Colour settings";
-   string Description = "Saturation";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float HueCycle
-<
-   string Group = "Colour settings";
-   string Description = "Hue cycling";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float LowClip
-<
-   string Group = "Range settings";
-   string Description = "Low clip";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.25;
-
-float HighClip
-<
-   string Group = "Range settings";
-   string Description = "High clip";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.75;
-
-float Softness
-<
-   string Group = "Range settings";
-   string Description = "Key softness";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
-
-//-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (RainbowConnect)
 {
-   float4 Fgnd   = GetPixel (s_Input, uv);
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
+   float4 Fgnd   = tex2D (Inp, uv1);
    float4 premix = float4 (1.0.xxx - Fgnd.rgb, Fgnd.a);
    float4 nonAdd = max (Fgnd * min (1.0, 2.0 * (1.0 - Amount)), premix * min (1.0, 2.0 * Amount));
 
@@ -159,12 +98,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    clip  = (HighClip * 1.0002) - (edge * 0.5) - 0.0001;
    Alpha = min (Alpha, saturate ((clip - Luma) / edge));
 
-   return lerp (Fgnd, retval, Alpha);
+   return lerp (Fgnd, retval, tex2D (Mask, uv1) * Alpha);
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Rainbow_Connection { pass P_1 ExecuteShader (ps_main) }
 

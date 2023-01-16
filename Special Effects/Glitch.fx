@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-12-19
+// @Released 2023-01-11
 // @Author jwrl
-// @Created 2021-07-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/Glitch_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Glitch_720.mp4
+// @Created 2023-01-11
 
 /**
  To use this effect just add it on top of your existing effect, select the colours
@@ -20,6 +18,9 @@
  would wish even after adjustment, you can use the alpha channel of your foreground.
  If you do that you will need to open the routing panel and manually disconnect any
  input to the foreground.
+
+ NOTE:  This effect breaks resolution independence.  It is only suitable for use with
+ Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -27,195 +28,94 @@
 //
 // Version history:
 //
-// Update 2021-12-19 jwrl.
-// Improved default settings.  Now defaults to full colour mode.
-// Changed structure so that only two passes are needed and one function instead of two.
-// Modulation is now completely independent of displacement.
-// Edge roughness now actually does something.
-//
-// Update 2021-11-01 jwrl.
-// Corrected foreground mislabel in ps_key_gen().
-//
-// Rewrite 2021-07-11 jwrl.
-// The original version did not handle the keys well with resolution independence.
+// Built 2023-01-11 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Glitch";
-   string Category    = "Key";
-   string SubCategory = "Special Effects";
-   string Notes       = "Applies a glitch to titles or keys.  Just apply on top of your effect.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-// Standard header block (or near enough)
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TEXTURE, SAMPLER) \
-                                       \
- texture TEXTURE : RenderColorTarget;  \
-                                       \
- sampler SAMPLER = sampler_state       \
- {                                     \
-   Texture   = <TEXTURE>;              \
-   AddressU  = ClampToEdge;            \
-   AddressV  = ClampToEdge;            \
-   MinFilter = Linear;                 \
-   MagFilter = Linear;                 \
-   MipFilter = Linear;                 \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define SCALE 0.01
-#define MODLN 0.25
-#define EDGE  9.0
-
-float _Length;
-float _LengthFrames;
-
-float _Progress;
-
-float _OutputWidth;
-float _OutputHeight;
-float _OutputAspectRatio;
+DeclareLightworksEffect ("Glitch", "Key", "Special Effects", "Applies a glitch to titles or keys.  Just apply on top of your effect.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DeclareInputs (Fg, Bg);
 
-DefineTarget (Key, s_Key);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Opacity
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-int Mode
-<
-   string Group = "Glitch settings";
-   string Description = "Glitch channels";
-   string Enum = "Red - cyan,Green - magenta,Blue - yellow,Full colour";
-> = 3;
+DeclareIntParam (Mode, "Glitch channels", "Glitch settings", 3, "Red - cyan|Green - magenta|Blue - yellow|Full colour");
 
-float GlitchRate
-<
-   string Group = "Glitch settings";
-   string Description = "Glitch rate";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (GlitchRate, "Glitch rate", "Glitch settings", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Modulation, "Modulation", "Glitch settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Rotation, "Rotation", "Glitch settings", kNoFlags, 0.0, -180.0, 180.0);
+DeclareFloatParam (Spread, "Spread", "Glitch settings", kNoFlags, 0.5, -1.0, 1.0);
+DeclareFloatParam (EdgeRoughen, "Edge roughen", "Glitch settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (EdgeJitter, "Edge jitter", "Glitch settings", kNoFlags, 0.0, 0.0, 1.0);
 
-float Modulation
-<
-   string Group = "Glitch settings";
-   string Description = "Modulation";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareIntParam (ShowKey, "Operating mode", "Key settings", 0, "Delta key|Show delta key|Use foreground alpha");
 
-float Rotation
-<
-   string Group = "Glitch settings";
-   string Description = "Rotation";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 0.0;
+DeclareFloatParam (KeyClip, "Key clip", "Key settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (KeyGain, "Key gain", "Key settings", kNoFlags, 0.9, 0.0, 1.0);
 
-float Spread
-<
-   string Group = "Glitch settings";
-   string Description = "Spread";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
 
-float EdgeRoughen
-<
-   string Group = "Glitch settings";
-   string Description = "Edge roughen";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_OutputAspectRatio);
 
-float EdgeJitter
-<
-   string Group = "Glitch settings";
-   string Description = "Edge jitter";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (_Length);
+DeclareFloatParam (_LengthFrames);
 
-int ShowKey
-<
-   string Group = "Key settings";
-   string Description = "Operating mode";
-   string Enum = "Delta key,Show delta key,Use foreground alpha";
-> = 0;
-
-float KeyClip
-<
-   string Group = "Key settings";
-   string Description = "Key clip";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float KeyGain
-<
-   string Group = "Key settings";
-   string Description = "Key gain";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
+DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float2 fn_noise (float y)
+#ifndef _LENGTH
+Wrong_Lightworks_version
+#endif
+
+#define SCALE 0.01
+#define MODLN 0.25
+#define EDGE  9.0
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (Key)
 {
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   if (Fgnd.a == 0.0) return Fgnd.aaaa;
+
+   if (ShowKey == 2) {
+      Fgnd.a = pow (Fgnd.a, 0.5 + (KeyClip * 0.5));
+      Fgnd.rgb /= lerp (1.0, Fgnd.a, KeyGain);
+   }
+   else {
+      float3 Bgnd = ReadPixel (Bg, uv2).rgb;
+
+      float cDiff = distance (Bgnd, Fgnd.rgb);
+      float alpha = smoothstep (KeyClip, KeyClip - KeyGain + 1.0, cDiff);
+
+      Fgnd.rgb *= alpha;
+      Fgnd.a    = pow (alpha, 0.5);
+   }
+
+   return Fgnd;
+}
+
+DeclarePass (Noise)
+{
+   float ruff = lerp (1.0, 0.25, saturate (EdgeRoughen)) * _OutputHeight;
+   float y    = floor (uv3.y * ruff) / _OutputHeight;
    float edge = _OutputWidth * _OutputAspectRatio;
    float rate = floor (_LengthFrames / _Length);
 
@@ -228,43 +128,14 @@ float2 fn_noise (float y)
    float n1 = 8192.0 * sin (dot (seed, float3 (17.0, 53.0, 7.0)));
    float n2 = 1024.0 * sin (((n1 / 1024.0) + edge) * 59.0);
 
-   return frac (float2 (abs (n1), n2) * 256.0);
+   return frac (float2 (abs (n1), n2) * 256.0).xyxy;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_key_gen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (Glitch)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
+   if (ShowKey == 1) return tex2D (Key, uv3);
 
-   if (Fgnd.a == 0.0) return Fgnd.aaaa;
-
-   if (ShowKey == 2) {
-      Fgnd.a = pow (Fgnd.a, 0.5 + (KeyClip * 0.5));
-      Fgnd.rgb /= lerp (1.0, Fgnd.a, KeyGain);
-   }
-   else {
-      float3 Bgnd = GetPixel (s_Background, uv2).rgb;
-
-      float cDiff = distance (Bgnd, Fgnd.rgb);
-      float alpha = smoothstep (KeyClip, KeyClip - KeyGain + 1.0, cDiff);
-
-      Fgnd.rgb *= alpha;
-      Fgnd.a    = pow (alpha, 0.5);
-   }
-
-   return Fgnd;
-}
-
-float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   if (ShowKey == 1) return GetPixel (s_Key, uv3);
-
-   float roughness = lerp (1.0, 0.25, saturate (EdgeRoughen)) * _OutputHeight;
-
-   float2 xy = fn_noise (floor (uv3.y * roughness) / _OutputHeight);
+   float2 xy = tex2D (Noise, uv3).xy;
 
    xy.x *= xy.y;
 
@@ -278,9 +149,9 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 
    if (Mode != 3) xy /= 2.0;
 
-   float4 video = GetPixel (s_Background, uv2);
-   float4 ret_1 = GetPixel (s_Key, uv3 + xy) * modulation;
-   float4 ret_2 = GetPixel (s_Key, uv3 - xy) * modulation;
+   float4 video = ReadPixel (Bg, uv2);
+   float4 ret_1 = tex2D (Key, uv3 + xy) * modulation;
+   float4 ret_2 = tex2D (Key, uv3 - xy) * modulation;
    float4 glitch;
 
    glitch.r = Mode == 0 ? lerp (video.r, ret_2.r, ret_2.a)
@@ -291,16 +162,8 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
                         : lerp (video.b, ret_1.b, ret_1.a);
    glitch.a = video.a;
 
-   return lerp (video, glitch, Opacity);
-}
+   glitch = lerp (video, glitch, Opacity);
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Glitch
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Key;"; > ExecuteShader (ps_key_gen)
-   pass P_2 ExecuteShader (ps_main)
+   return lerp (video, glitch, tex2D (Mask, uv1));
 }
 

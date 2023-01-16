@@ -1,18 +1,19 @@
 // @Maintainer jwrl
-// @Released 2021-10-07
+// @Released 2023-01-10
 // @Author brdloush
 // @Created 2013-02-08
-// @see https://www.lwks.com/media/kunena/attachments/6375/CubicLensDistortion_640.png
 
 /**
- Nice effect that can be used for getting rid of heavy fish-eye distortion with GoPro HD
- Hero2 and similar cameras.
+ Nice effect that can be used for getting rid of heavy fish-eye distortion when shooting
+ with extreme wide angle lenses.  This effect will break resolution independence.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CubicLensDistortion.fx 
 //
-// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by FranÃ§ois Tarlier
+// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by François Tarlier
 //
 // Following settings worked nicely:
 // - Comp Size - X: 100%
@@ -24,7 +25,7 @@
 // Feel free to share/modify or implement all the functions of original
 // "ft-CubicLensDistortion".
 //
-// Pixel Bender shader written by FranÃ§ois Tarlier
+// Pixel Bender shader written by François Tarlier
 // http://www.francois-tarlier.com/blog/index.php/2010/03/update-cubic-lens-distortion-pixel-bender-shader-for-ae-with-scale-chroamtic-aberration/
 //     
 // Original Lens Distortion Algorithm from SSontech (Syntheyes)
@@ -34,7 +35,7 @@
 //     u' = f*u
 //     v' = f*v
 //
-// Copyright (c) 2010 FranÃ§ois Tarlier
+// Copyright (c) 2010 François Tarlier
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in the
 // Software without restriction, including without limitation the rights to use, copy,
@@ -56,124 +57,37 @@
 //
 // Version history:
 //
-// Update 2021-10-07 jwrl.
-// Updated the original effect to support LW 2021 resolution independence.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 2018-12-05 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect should now function correctly when used with
-// all current and previous Lightworks versions.  When doing that I have also substantially
-// restructured the code so that it is both more readable and will run more efficiently
-// in Lightworks.
-//
-// Cross platform compatibility check 29 July 2017 jwrl.
-// Explicitly defined samplers to fix cross platform default sampler state differences.
+// Updated 2023-01-10 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Cubic lens distortion";
-   string Category    = "Stylize";
-   string SubCategory = "Repair tools";
-   string Notes       = "Can be used for reducing fish-eye distortion with wide angle lenses";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Cubic lens distortion", "Stylize", "Repair tools", "Can be used for reducing fish-eye distortion with wide angle lenses", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, s_RawInp);
-
-DefineTarget (FixInp, FgSampler);
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float scale
-<
-   string Description = "Scale";
-   float MinVal = 0.25;
-   float MaxVal = 4.0;
-> = 1.0;
+DeclareFloatParam (scale, "Scale", kNoGroup, kNoFlags, 1.0,  0.25, 4.0);
+DeclareFloatParam (distortion, "Distortion", kNoGroup, kNoFlags, 0.0,  -1.0, 1.0);
+DeclareFloatParam (cubicDistortion, "Cubic Distortion", kNoGroup, kNoFlags, 0.0,  -1.0, 1.0);
 
-float distortion
-<
-   string Description = "Distortion";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float cubicDistortion
-<
-   string Description = "Cubic Distortion";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (CubicLensDistortion)
 {
-   float2 uv = (uv2 - 0.5.xx) * 2.0;
+   float2 uv = (uv1 - 0.5.xx) * 2.0;
 
    float scaleFactor = 1.0 / scale;
    float r2 = dot (uv, float2 (_OutputAspectRatio * _OutputAspectRatio * uv.x, uv.y));
@@ -182,16 +96,6 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
    uv = (uv * f * scaleFactor * 0.5) + (0.5).xx;
 
-   return Overflow (uv1) ? EMPTY : GetPixel (FgSampler, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique CubicLensDistortion
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main)
+   return IsOutOfBounds (uv1) ? kTransparentBlack : ReadPixel (Input, uv);
 }
 

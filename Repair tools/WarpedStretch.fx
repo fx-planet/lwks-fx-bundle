@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-07
+// @Released 2023-01-10
 // @Author khaver
 // @Created 2013-12-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/WarpedStretch_640.png
 
 /**
  This effect applies distortion to a region of the frame, and is intended for use as a means
@@ -14,6 +13,8 @@
  be used for other purposes as well.  Note that because of its intended purpose of correcting
  aspect ratios it destroys resolution independence.  What leaves the effect is the size and
  aspect ratio of the sequence that it's used in.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -21,228 +22,93 @@
 //
 // Version history:
 //
-// Update 2021-10-07 jwrl.
-// Updated the original effect to support LW 2021 resolution independence.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 2018-12-05 jwrl.
-// Corrected creation date.
-// Changed subcategory.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14.5 update 24 March 2018 by jwrl.
-// Legality checking has been added to correct for a bug in XY sampler addressing on
-// Linux and OS-X platforms.  This effect now functions correctly when used with all
-// current and previous Lightworks versions.
-//
-// Added subcategory for LW14 - jwrl Feb 18 2017.
-//
-// Cross platform conversion by jwrl May 1 2016.
+// Updated 2023-01-10 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Warped Stretch";
-   string Category    = "DVE";
-   string SubCategory = "Repair tools";
-   string Notes       = "This effect is intended for use as a means of helping handle mixed aspect ratio media";
-   bool CanSize       = false;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Warped Stretch", "Stylize", "Repair tools", "This effect is intended for use as a means of helping handle mixed aspect ratio media", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, s_RawInp);
-
-DefineTarget (FixInp, InputSampler);
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-bool Grid
-<
-   string Description = "Show grid";
-> = true;
+DeclareBoolParam (Grid, "Show grid", kNoGroup, true);
+DeclareBoolParam (Stretch, "Stretch", kNoGroup, false);
 
-bool Stretch
-<
-   string Description = "Stretch";
-> = false;
+DeclareFloatParam (Strength, "Strength", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-float Strength
-<
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (ILX, "Inner Left", kNoGroup, "SpecifiesPointX", 0.42, 0.0, 1.0);
+DeclareFloatParam (ILY, "Inner Left", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float ILX
-<
-   string Description = "Inner Left";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.42;
+DeclareFloatParam (IRX, "Inner Right", kNoGroup, "SpecifiesPointX", 0.58, 0.0, 1.0);
+DeclareFloatParam (IRY, "Inner Right", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float ILY
-<
-   string Description = "Inner Left";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (OLX, "Outer Left", kNoGroup, "SpecifiesPointX", 0.125, 0.0, 1.0);
+DeclareFloatParam (OLY, "Outer Left", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float IRX
-<
-   string Description = "Inner Right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.58;
+DeclareFloatParam (ORX, "Outer Right", kNoGroup, "SpecifiesPointX", 0.875, 0.0, 1.0);
+DeclareFloatParam (ORY, "Outer Right", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float IRY
-<
-   string Description = "Inner Right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float OLX
-<
-   string Description = "Outer Left";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.125;
-
-float OLY
-<
-   string Description = "Outer Left";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float ORX
-<
-   string Description = "Outer Right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.875;
-
-float ORY
-<
-   string Description = "Outer Right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+#define BLACK float2(0.0, 1.0).xxxy
 
-float4 main1 (float2 uv : TEXCOORD2) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (WarpedStretch)
 {
    float4 color;
 
-   if (!Stretch) color = tex2D (InputSampler, uv);
+   if (!Stretch) color = ReadPixel (Input, uv1);
    else {
       float delt, fact, stretchr = 1.0 - IRX;
       float sourcel = ILX - OLX;
       float sourcer = (ORX - IRX) / stretchr;
 
-      float2 xy = uv;
-      float2 norm = uv;
-      float2 outp = uv;
+      float2 xy = uv1;
+      float2 norm = uv1;
+      float2 outp = uv1;
 
-      if (uv.x >= IRX) {
-         norm.x =  IRX + ((uv.x - IRX) * sourcer);
-         delt = (uv.x - IRX) / stretchr;
+      if (uv1.x >= IRX) {
+         norm.x =  IRX + ((uv1.x - IRX) * sourcer);
+         delt = (uv1.x - IRX) / stretchr;
          fact = cos (radians (delt * 90.0));
-         xy.x = ORX - ((1.0 - uv.x) * fact * sourcer);
+         xy.x = ORX - ((1.0 - uv1.x) * fact * sourcer);
       }
 
-      if (uv.x <= ILX) {
-         norm.x = xy.x = ILX - ((ILX - uv.x) * sourcel / ILX);
-         delt = (ILX - uv.x) / ILX;
+      if (uv1.x <= ILX) {
+         norm.x = xy.x = ILX - ((ILX - uv1.x) * sourcel / ILX);
+         delt = (ILX - uv1.x) / ILX;
          fact = cos (radians (delt * 90.0));
-         xy.x = OLX + (uv.x * fact * sourcel / ILX);
+         xy.x = OLX + (uv1.x * fact * sourcel / ILX);
       }
    
       outp.x = lerp (norm.x, xy.x, Strength);
 
-      color = Overflow (outp) ? BLACK : tex2D (InputSampler, outp);
+      color = IsOutOfBounds (outp) ? BLACK : ReadPixel (Input, outp);
    }
 
    if (Grid
-   && ((uv.x >= ILX - 0.0008 && uv.x <= ILX + 0.0008)
-   ||  (uv.x >= IRX - 0.0008 && uv.x <= IRX + 0.0008)
-   ||  (uv.x >= OLX - 0.0008 && uv.x <= OLX + 0.0008)
-   ||  (uv.x >= ORX - 0.0008 && uv.x <= ORX + 0.0008))) color = float4 (1.0, 0.0, 0.0, color.a);
+   && ((uv1.x >= ILX - 0.0008 && uv1.x <= ILX + 0.0008)
+   ||  (uv1.x >= IRX - 0.0008 && uv1.x <= IRX + 0.0008)
+   ||  (uv1.x >= OLX - 0.0008 && uv1.x <= OLX + 0.0008)
+   ||  (uv1.x >= ORX - 0.0008 && uv1.x <= ORX + 0.0008))) color = float4 (1.0, 0.0, 0.0, color.a);
 
    return color;
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique NoStretchTechnique
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (main1)
 }
 

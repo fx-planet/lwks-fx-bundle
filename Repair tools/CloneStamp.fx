@@ -1,12 +1,13 @@
 // @Maintainer jwrl
-// @Released 2021-10-06
+// @Released 2023-01-10
 // @Author nouanda
 // @Created 2014-10-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/CloneStamp_640.png
 
 /**
  A means of cloning sections of the image into other sections, in a similar way to the art
- tool.
+ tool.  This effect breaks resolution independence.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -24,254 +25,95 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Update 2021-10-07 jwrl.
-// Updated the original effect to support LW 2021 resolution independence.
-//
-// Modified 2018-12-05 jwrl.
-// Added creation date.
-// Changed subcategory.
-//
-// Modified 6 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// MAJOR update 2017-07-29 jwrl.
-// Cross platform compatibility check and fix.
-// Explicitly defined samplers to correct for platform default sampler state differences.
-// Taking nouanda's "feel free" above at face value, I have rewritten the rectangle code
-// to correct a bug in the clone positioning.  In the process considerable code cleanup
-// and optimisation of both modules has been done.
-//
-// Rewrote the aspect ratio adjustment to take into account _OutputAspectRatio.  The code
-// is no longer the Lightworks version which has meant some changes to the aspect ratio
-// parameter.  The default setting of 1.78:1 is now 1:1 and the range now swings between
-// 1:3.33 to 3.33:1.
-//
-// Fixed an aspect ratio bug in the ellipse code.  This means that the ellipse now
-// defaults to a circle at an aspect ratio of 1:1.  This matches the behaviour of the
-// rectangle, which defaults to square.
-//
-// Scaled the Size parameter in the ellipse code so that it matches the area covered by
-// the rectangle at the same settings.
-//
-// Rewrote the rectangle softness so the corners of the linear and sinusoidal curves
-// are smooth and are no longer cut off.
-//
-// FINAL COMMENT: There are still too many conditionals for my liking and I know that
-// I can work out a technique without using them for the rectangular linear softness.
-// Unfortunately it doesn't translate for the square or sinusoidal softness, so at the
-// moment I don't want to use it.  There has to be a way.
+// Updated 2023-01-10 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Clone Stamp";
-   string Category    = "Stylize";
-   string SubCategory = "Repair tools";
-   string Notes       = "A means of cloning sections of the image into other sections similarly to art software";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Clone Stamp", "Stylize", "Repair tools", "A means of cloning sections of the image into other sections similar to art software", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define PI      3.14159265
-#define PI_AREA 1.27323954
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, s_RawInp);
-
-DefineTarget (FixInp, SourceSampler);
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Shape";
-   string Enum = "Ellipse, Rectangle";
-> = 0;
+DeclareIntParam (SetTechnique, "Shape", kNoGroup, 0, "Ellipse|Rectangle");
 
-float Size
-<
-   string Description = "Size";
-   string Group = "Parameters";
-   float  MinVal = 0.0;
-   float  MaxVal = 1.0;
-> = 0.33;
+DeclareFloatParam (Size, "Size", "Parameters", kNoFlags, 0.33, 0.0, 1.0);
+DeclareFloatParam (Softness, "Softness", "Parameters", kNoFlags, 0.5, 0.0, 1.0);
 
-float Softness
-<
-   string Description = "Softness";
-   string Group = "Parameters";
-   float  MinVal = 0.0;
-   float  MaxVal = 1.0;
-> = 0.5;
+DeclareIntParam (Interpolation, "Interpolation", "Parameters", 0, "Linear|Square|Sinusoidal");
 
-int Interpolation
-<
-   string Description = "Interpolation";
-   string Group = "Parameters";
-   string Enum = "Linear, Square, Sinusoidal";
-> = 0;
+DeclareFloatParam (SrcPosX, "Source Position", "Parameters", "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (SrcPosY, "Source Position", "Parameters", "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float SrcPosX
-<
-   string Description = "Source Position";
-   string Group = "Parameters";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (AspectRatio, "Aspect ratio x:1", "Parameters", kNoFlags, 1.0, 0.3, 3.3333333);
 
-float SrcPosY
-<
-   string Description = "Source Position";
-   string Group = "Parameters";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (DestPosX, "Destination Position", "Parameters", "SpecifiesPointX", 0.7, 0.0, 1.0);
+DeclareFloatParam (DestPosY, "Destination Position", "Parameters", "SpecifiesPointY", 0.7, 0.0, 1.0);
 
-float AspectRatio
-<
-   string Description = "Aspect ratio x:1";
-   string Group = "Parameters";
-   float MinVal = 0.3;
-   float MaxVal = 3.3333333;
-> = 1.0;
+DeclareFloatParam (BlendOpacity, "Blend Opacity", "Overlay", kNoFlags, 1.0, 0.0, 1.0);
 
-float DestPosX
-<
-   string Description = "Destination Position";
-   string Group = "Parameters";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.7;
+DeclareFloatParam (DestRed, "Red correction", "Color Correction", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (DestGreen, "Green correction", "Color Correction", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (DestBlue, "Blue correction", "Color Correction", kNoFlags, 0.0, -1.0, 1.0);
 
-float DestPosY
-<
-   string Description = "Destination Position";
-   string Group = "Parameters";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.7;
-
-float BlendOpacity
-<
-   string Description = "Blend Opacity";
-   string Group       = "Overlay";
-   float MinVal       = 0.0;
-   float MaxVal       = 1.0;
-> = 1.0;
-
-float DestRed
-<
-   string Description = "Red correction";
-   string Group = "Color Correction";
-   string Flags = "Red";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float DestGreen
-<
-   string Description = "Green correction";
-   string Group = "Color Correction";
-   string Flags = "Green";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float DestBlue
-<
-   string Description = "Blue correction";
-   string Group = "Color Correction";
-   string Flags = "Blue";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+#define PI      3.14159265
+#define PI_AREA 1.27323954
 
-float4 ps_ellipse (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2): COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (CloneStampEllipse)
 {
-   float4 Src = tex2D (SourceSampler, uv2);            // get background texture for edge softness
+   // Get background (source) texture
 
-   //Adjust size for circle
+   float4 Src = ReadPixel (Input, uv1);
+
+   // Adjust size for circle
+
    float CircleSize = Size * PI_AREA;
 
-   //Adjust aspect ratio
+   // Adjust aspect ratio
+
    float2 DestPos = float2 (DestPosX, 1.0 - DestPosY);
-   float2 DestAspectAdjustedPos = ((uv2 - DestPos) / (float2 (AspectRatio, _OutputAspectRatio) * CircleSize)) + DestPos;
+   float2 DestAspectAdjustedPos = ((uv1 - DestPos) / (float2 (AspectRatio, _OutputAspectRatio) * CircleSize)) + DestPos;
 
    float DestDelta = distance (DestAspectAdjustedPos, DestPos);
 
-   //apply effect only in the effect radius
+   // Apply effect only in the effect radius
+
    if (CircleSize <= DestDelta) return Src;
 
-   //correct Softness radius (cannot be greater than the Effect radius)
+   // Correct Softness radius (cannot be greater than the effect radius)
+
    float SoftRadius = CircleSize * (1.0 - Softness);
 
-   // distance between the softness radius and the pixel position
+   // Distance between the softness radius and the pixel position
+
    float SoftRing = DestDelta - SoftRadius;
 
-   // initiate Softness to set Transparency (0 - fully solid by default)
+   // Initiate Softness to set Transparency (0 - fully solid by default)
+
    float Soft = 0.0;
 
-   // if the pixel is in the soft area, interpolate softness as per Interpolation parameter
+   // If the pixel is in the soft area, interpolate softness as per Interpolation parameter
+
    if (SoftRing >= 0.0) {
       SoftRing /= (CircleSize - SoftRadius);
 
@@ -280,48 +122,59 @@ float4 ps_ellipse (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2): COLOR
                                   : 0.5 - (cos (SoftRing * PI) / 2.0);
    }
 
-   //Offset Source and Destination
-   float2 xy = uv2 + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
+   // Offset source and destination
 
-   // get texture for Destination replacement
-   float4 Dest = tex2D (SourceSampler, xy);
+   float2 xy = uv1 + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
 
-   //applies color correction
+   // Get texture for destination replacement
+
+   float4 Dest = ReadPixel (Input, xy);
+
+   // Apply color correction
+
    Dest.rgb += float3 (DestRed, DestGreen, DestBlue);
 
-   // apply softness by merging with the background
+   // Apply softness by merging with the background
+
    Dest = lerp (Dest, Src, Soft);
 
    // Apply opacity the same way
 
-   return Overflow (uv1) ? EMPTY : float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
+   return IsOutOfBounds (uv1) ? kTransparentBlack : float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
 }
 
-float4 ps_rectangle (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2): COLOR
+DeclareEntryPoint (CloneStampRectangle)
 {
-   float4 Src = tex2D (SourceSampler, uv2);            // get sampler of the backgroung for edge softness
+   // Get background (source) texture
 
-   //get Destination Position - so it can be modified (parameters are constant, not variables)
+   float4 Src = ReadPixel (Input, uv1);
+
+   // Get destination position so it can be modified.  Parameters are constant, not variables
+
    float2 DestPos  = float2 (DestPosX, 1.0 - DestPosY);
    float2 DestSize = float2 (AspectRatio, _OutputAspectRatio) * Size;
    float2 SoftSize = DestSize * (1.0 - Softness);
 
-   //define box effect limits
+   // Define box effect limits
+
    float2 BoxMin = DestPos - DestSize / 2.0;
    float2 BoxMax = BoxMin + DestSize;
 
-   //apply effect only in the effect radius
-   if (any ((uv2 - BoxMin) < 0.0.xx) || any ((uv2 - BoxMax) > 0.0.xx)) return Src;
+   // Apply effect only in the effect bounds
 
-   //define softness effect limits
+   if (any ((uv1 - BoxMin) < 0.0.xx) || any ((uv1 - BoxMax) > 0.0.xx)) return Src;
+
+   // Define softness effect limits
+
    float2 SoftMin = DestPos - SoftSize / 2.00;
    float2 SoftMax = SoftMin + SoftSize;
 
-   //define softness range
-   float2 RangeMin = (uv2 - SoftMin) / (BoxMin - SoftMin);
-   float2 RangeMax = (uv2 - SoftMax) / (BoxMax - SoftMax);
+   // Define softness range
 
-   // if the pixel is in the soft area, interpolate softness as per Interpolation parameter
+   float2 RangeMin = (uv1 - SoftMin) / (BoxMin - SoftMin);
+   float2 RangeMax = (uv1 - SoftMax) / (BoxMax - SoftMax);
+
+   // If the pixel is in the soft area, interpolate softness as per Interpolation parameter
 
    if (Interpolation == 1) {
       RangeMin = 1.0.xx - pow ((1.0.xx - pow (RangeMin, 2.0.xx)), 0.5.xx);
@@ -335,44 +188,32 @@ float4 ps_rectangle (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2): COLOR
    RangeMin = 1.0.xx - RangeMin;
    RangeMax = 1.0.xx - RangeMax;
 
-   float Soft_1 = ((uv2.x >= BoxMin.x) && (uv2.x <= SoftMin.x)) ? RangeMin.x : 1.0;
-   float Soft_2 = ((uv2.y >= BoxMin.y) && (uv2.y <= SoftMin.y)) ? RangeMin.y : 1.0;
+   float Soft_1 = ((uv1.x >= BoxMin.x) && (uv1.x <= SoftMin.x)) ? RangeMin.x : 1.0;
+   float Soft_2 = ((uv1.y >= BoxMin.y) && (uv1.y <= SoftMin.y)) ? RangeMin.y : 1.0;
 
-   if ((uv2.x <= BoxMax.x) && (uv2.x >= SoftMax.x)) Soft_1 = min (Soft_1, RangeMax.x);
-   if ((uv2.y <= BoxMax.y) && (uv2.y >= SoftMax.y)) Soft_2 = min (Soft_2, RangeMax.y);
+   if ((uv1.x <= BoxMax.x) && (uv1.x >= SoftMax.x)) Soft_1 = min (Soft_1, RangeMax.x);
+   if ((uv1.y <= BoxMax.y) && (uv1.y >= SoftMax.y)) Soft_2 = min (Soft_2, RangeMax.y);
 
    float Soft = saturate (min (Soft_1, Soft_2) * Soft_1 * Soft_2);
 
-   //Offset Source and Destination
-   float2 xy = uv2 + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
+   // Offset source and destination
 
-   // get texture for Destination replacement
-   float4 Dest = tex2D (SourceSampler, xy);
+   float2 xy = uv1 + float2 (SrcPosX, DestPosY) - float2 (DestPosX, SrcPosY);
 
-   //applies color correction
+   // Get texture for destination replacement
+
+   float4 Dest = ReadPixel (Input, xy);
+
+   // Apply color correction
+
    Dest.rgb += float3 (DestRed, DestGreen, DestBlue);
 
-   // apply softness by merging with the background
+   // Apply softness by merging with the background
+
    Dest = lerp (Src, Dest, Soft);
 
    // Apply opacity the same way
 
-   return Overflow (uv1) ? EMPTY : float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Ellipse
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_ellipse)
-}
-
-technique Rectangle
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_rectangle)
+   return IsOutOfBounds (uv1) ? kTransparentBlack : float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
 }
 

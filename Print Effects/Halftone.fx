@@ -1,12 +1,13 @@
 // @Maintainer jwrl
-// @Released 2021-10-07
+// @Released 2023-01-10
 // @Author windsturm
 // @Created 2012-12-11
-// @see https://www.lwks.com/media/kunena/attachments/6375/FxHalfTone2_640.png
 
 /**
  This effect simulates the dot pattern used in a black and white half-tone print image.
  The colours used for background and dots are user adjustable.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,148 +15,45 @@
 //
 // Version history:
 //
-// Update 2021-10-07 jwrl.
-// Updated the original effect to support LW 2021 resolution independence.
-//
-// Modified 26 Dec 2018 by user jwrl:
-// Reformatted the effect description for markup purposes.
-//
-// Modified 5 December 2018 jwrl.
-// Added creation date.
-// Renamed effect.
-// Changed subcategory.
-//
-// Modified 8 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14 update 18 Feb 2017 jwrl - added subcategory to effect header.
-//
-// Conversion for ps_2_b compliance by Lightworks user jwrl, 4 February 2016.
-//
-// Original effect "FxHalftone2" (FxHalftone2.fx) by windsturm 2012-12-11.
+// Updated 2023-01-10 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Halftone";
-   string Category    = "Stylize";
-   string SubCategory = "Print Effects";
-   string Notes       = "Simulates the dot pattern used in a black and white half-tone print image";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Halftone", "Stylize", "Print Effects", "Simulates the dot pattern used in a black and white half-tone print image", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
+DeclareInput (Input);
 
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define SQRT_2 1.414214
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, s_RawInp);
-
-DefineTarget (FixInp, s0);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int toneMode
-<
-    string Description = "Tone Mode";
-    string Enum = "Darkness,Brightness,SourceColor";
-> = 0;
+DeclareIntParam (toneMode, "Tone Mode", kNoGroup, 0, "Darkness|Brightness|SourceColor");
+DeclareIntParam (lumaMode, "Luma Mode", kNoGroup, 0, "BT709|BT470|BT601");
 
-int lumaMode
-<
-    string Description = "Luma Mode";
-    string Enum = "BT709,BT470,BT601";
-> = 0;
+DeclareFloatParam (centerX, "Center", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (centerY, "Center", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float centerX
-<
-    string Description = "Center";
-    string Flags = "SpecifiesPointX";
-    float MinVal = 0.0;
-    float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (dotSize, "Size", kNoGroup, kNoFlags, 0.01, 0.0, 1.0);
+DeclareFloatParam (Angle, "Angle", kNoGroup, kNoFlags, 0.0, 0.0, 360.0);
 
-float centerY
-<
-    string Description = "Center";
-    string Flags = "SpecifiesPointY";
-    float MinVal = 0.0;
-    float MaxVal = 1.0;
-> = 0.5;
+DeclareColourParam (colorFG, "Foreground", "Color", kNoFlags, 0.0, 0.0, 0.0, 1.0);
+DeclareColourParam (colorBG, "Background", "Color", kNoFlags, 1.0, 1.0, 1.0, 1.0);
 
-float dotSize
-<
-    string Description = "Size";
-    float MinVal = 0.0;
-    float MaxVal = 1.0;
-> = 0.01;
+DeclareFloatParam (_OutputAspectRatio);
 
-float Angle
-<
-    string Description = "Angle";
-    float MinVal = 0.0;
-    float MaxVal = 360.0;
-> = 0.0;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-float4 colorFG
-<
-    string Description = "Foreground";
-    string Group       = "Color";
-    bool SupportsAlpha = true;
-> = { 0.0, 0.0, 0.0, 1.0 };
-
-float4 colorBG
-<
-    string Description = "Background";
-    string Group       = "Color";
-    bool SupportsAlpha = true;
-> = { 1.0, 1.0, 1.0, 1.0 };
+#define SQRT_2 1.414214
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -183,7 +81,7 @@ float4 half_tone (float2 uv, float s, float angle, float a)
    pointXY = mul (pointXY, RotationMatrix (radians (-angle)));
    pointXY = pointXY * asp + centerXY;
 
-   float4 pointCol = tex2D (s0, pointXY);
+   float4 pointCol = tex2D (Input, pointXY);
 
    // xy slide
 
@@ -209,30 +107,22 @@ float4 half_tone (float2 uv, float s, float angle, float a)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (Halftone)
 {
-   if (dotSize <= 0.0) return tex2D (s0, uv2);
+   float4 source = ReadPixel (Input, uv1);
 
-   float4 ret1 = half_tone (uv2, 0.0, Angle, 0.0);
-   float4 ret2 = half_tone (uv2, dotSize, Angle, 45.0);
+   if (dotSize <= 0.0) return source;
 
-   float4 retval = (ret1.a > -1.0 || ret2.a > -1.0) ? max (ret1, ret2) : colorBG;
+   float4 ret1 = half_tone (uv1, 0.0, Angle, 0.0);
+   float4 ret2 = half_tone (uv1, dotSize, Angle, 45.0);
 
-   return Overflow (uv1) ? EMPTY : retval;
-}
+   float4 ret = (ret1.a > -1.0 || ret2.a > -1.0) ? max (ret1, ret2) : colorBG;
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
+   if (IsOutOfBounds (uv1)) ret = kTransparentBlack;
 
-technique Halftone
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main)
+   return (source, ret, tex2D (Mask, uv1));
 }
 

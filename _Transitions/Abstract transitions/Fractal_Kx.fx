@@ -1,19 +1,18 @@
 // @Maintainer jwrl
-// @Released 2021-08-29
-// @Author jwrl
+// @Released 2023-01-16
 // @Author Robert Schütze
-// @Created 2021-08-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/Fractal_Dx_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/FractalDissolve.mp4
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Fractal.mp4
+// @Author jwrl
+// @Created 2022-06-01
 
 /**
  This effect uses a fractal-like pattern to transition between two sources.  It supports
  titles and other blended effects.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Fractal_Kx.fx
+// Lightworks user effect Fractal_Kx_2022.fx
 //
 // The fractal component is a conversion of GLSL sandbox effect #308888 created by Robert
 // Schütze (trirop) 07.12.2015.  This effect is a combination of two earlier effects,
@@ -21,172 +20,49 @@
 //
 // Version history:
 //
-// Rewrite 2021-08-29 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Fractal dissolve (keyed)";
-   string Category    = "Mix";
-   string SubCategory = "Abstract transitions";
-   string Notes       = "Uses a fractal-like pattern to transition between sources and effects";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TEXTURE, SAMPLER) \
-                                       \
- texture TEXTURE : RenderColorTarget;  \
-                                       \
- sampler SAMPLER = sampler_state       \
- {                                     \
-   Texture   = <TEXTURE>;              \
-   AddressU  = ClampToEdge;            \
-   AddressV  = ClampToEdge;            \
-   MinFilter = Linear;                 \
-   MagFilter = Linear;                 \
-   MipFilter = Linear;                 \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _OutputAspectRatio;
+DeclareLightworksEffect ("Fractal dissolve (keyed) 2022+", "Mix", "Abstract transitions", "Uses a fractal-like pattern to transition between two sources", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Super, s_Super);
-DefineTarget (Fractal, s_Fractal);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-int Source
-<
-   string Description = "Source";
-   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
-> = 0;
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
 
-int SetTechnique
-<
-   string Description = "Transition position";
-   string Enum = "At start if delta key folded,At start of effect,At end of effect";
-> = 1;
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
-float fractalOffset
-<
-   string Group = "Fractal settings";
-   string Description = "Offset";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (fractalOffset, "Offset", "Fractal settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Rate, "Rate", "Fractal settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Border, "Edge size", "Fractal settings", kNoFlags, 0.1, 0.0, 1.0);
+DeclareFloatParam (Feather, "Feather", "Fractal settings", kNoFlags, 0.1, 0.0, 1.0);
 
-float Rate
-<
-   string Group = "Fractal settings";
-   string Description = "Rate";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 
-float Border
-<
-   string Group = "Fractal settings";
-   string Description = "Edge size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float Feather
-<
-   string Group = "Fractal settings";
-   string Description = "Feather";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float KeyGain
-<
-   string Description = "Key trim";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
+   float4 Fgnd = ReadPixel (F, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-
-   if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
+      float4 Bgnd = ReadPixel (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -199,7 +75,7 @@ float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 ps_fractal (float2 uv : TEXCOORD0) : COLOR
+float4 fn_fractal (float2 uv)
 {
    float3 offset  = float3 (1.0.xx, Amount * Rate * 0.5);
    float3 fractal = float3 (uv.x / _OutputAspectRatio, uv.y, fractalOffset);
@@ -211,11 +87,36 @@ float4 ps_fractal (float2 uv : TEXCOORD0) : COLOR
    return float4 (saturate (fractal), 1.0);
 }
 
-float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (Super_F)
 {
-   float4 Ovly = tex2D (s_Fractal, uv3);
-   float4 Fgnd = tex2D (s_Super, uv3);
-   float4 Bgnd = GetPixel (s_Foreground, uv1);
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   if (Source == 0) {
+      float4 Bgnd = ReadPixel (Bg, uv2);
+
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+   }
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+}
+
+DeclarePass (Fractal_F)
+{ return fn_fractal (uv0); }
+
+DeclareEntryPoint (Main_Folded)
+{
+   float4 Ovly = tex2D (Fractal_F, uv3);
+   float4 Fgnd = tex2D (Super_F, uv3);
+   float4 Bgnd = ReadPixel (Fg, uv1);
 
    float amount  = (Amount + 3.0) / 4.0;
    float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));
@@ -229,14 +130,22 @@ float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
 
    if (fractal > (Amount + bdWidth)) { retval = lerp (retval, Bgnd, fracAmt); }
 
+   if (CropEdges && IsOutOfBounds (uv1)) retval = kTransparentBlack;
+
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
-float4 ps_main_I (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclarePass (Super_I)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Fractal_I)
+{ return fn_fractal (uv0); }
+
+DeclareEntryPoint (Main_In)
 {
-   float4 Ovly = tex2D (s_Fractal, uv3);
-   float4 Fgnd = tex2D (s_Super, uv3);
-   float4 Bgnd = GetPixel (s_Background, uv2);
+   float4 Ovly = tex2D (Fractal_I, uv3);
+   float4 Fgnd = tex2D (Super_I, uv3);
+   float4 Bgnd = ReadPixel (Bg, uv2);
 
    float amount  = (Amount + 3.0) / 4.0;
    float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));
@@ -250,19 +159,27 @@ float4 ps_main_I (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 
    if (fractal > (Amount + bdWidth)) { retval = lerp (retval, Bgnd, fracAmt); }
 
+   if (CropEdges && IsOutOfBounds (uv2)) retval = kTransparentBlack;
+
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
-float4 ps_main_O (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclarePass (Super_O)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Fractal_O)
+{ return fn_fractal (uv0); }
+
+DeclareEntryPoint (Main_Out)
 {
-   float4 Ovly = tex2D (s_Fractal, uv3);
-   float4 Fgnd = tex2D (s_Super, uv3);
-   float4 Bgnd = GetPixel (s_Background, uv2);
+   float4 Ovly = tex2D (Fractal_O, uv3);
+   float4 Fgnd = tex2D (Super_O, uv3);
+   float4 Bgnd = ReadPixel (Bg, uv2);
 
    float amount = (Amount + 3.0) / 4.0;
    float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));
 
-   if (fractal > (amount + Feather)) return GetPixel (s_Foreground, uv1);
+   if (fractal > (amount + Feather)) return ReadPixel (Fg, uv1);
 
    float bdWidth = Border * 0.1;
    float fracAmt = (fractal - amount) / Feather;
@@ -271,31 +188,8 @@ float4 ps_main_O (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : T
 
    if (fractal > (Amount + bdWidth)) { retval = lerp (retval, Fgnd, fracAmt); }
 
+   if (CropEdges && IsOutOfBounds (uv2)) retval = kTransparentBlack;
+
    return lerp (Bgnd, retval, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Fractal_Kx_F
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen_F)
-   pass P_2 < string Script = "RenderColorTarget0 = Fractal;"; > ExecuteShader (ps_fractal)
-   pass P_3 ExecuteShader (ps_main_F)
-}
-
-technique Fractal_Kx_I
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Fractal;"; > ExecuteShader (ps_fractal)
-   pass P_3 ExecuteShader (ps_main_I)
-}
-
-technique Fractal_Kx_O
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = Fractal;"; > ExecuteShader (ps_fractal)
-   pass P_3 ExecuteShader (ps_main_O)
 }
 

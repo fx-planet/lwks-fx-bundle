@@ -20,7 +20,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Warp transition (keyed) 2022+", "Mix", "Abstract transitions", "Warps into or out of titles, keys and other effects", "CanSize");
+DeclareLightworksEffect ("Warp transition (keyed)", "Mix", "Abstract transitions", "Warps into or out of titles, keys and other effects", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

@@ -21,7 +21,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Warp transition 2022+", "Mix", "Abstract transitions", "Warps between two shots or into or out of effects", "CanSize");
+DeclareLightworksEffect ("Warp transition", "Mix", "Abstract transitions", "Warps between two shots or into or out of effects", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

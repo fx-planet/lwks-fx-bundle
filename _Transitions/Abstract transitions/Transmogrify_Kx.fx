@@ -20,7 +20,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Transmogrify burst (keyed) 2022+", "Mix", "Abstract transitions", "Breaks the outgoing effect into a cloud of particles which blow apart.", "CanSize");
+DeclareLightworksEffect ("Transmogrify burst (keyed)", "Mix", "Abstract transitions", "Breaks the outgoing effect into a cloud of particles which blow apart.", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

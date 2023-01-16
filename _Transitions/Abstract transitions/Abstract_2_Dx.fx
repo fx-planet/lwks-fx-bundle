@@ -20,7 +20,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Abstraction #2 2022+", "Mix", "Abstract transitions", "An abstract geometric transition between two opaque sources", "CanSize");
+DeclareLightworksEffect ("Abstraction #2", "Mix", "Abstract transitions", "An abstract geometric transition between two opaque sources", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

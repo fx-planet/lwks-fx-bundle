@@ -20,7 +20,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Erosion 2022+", "Mix", "Abstract transitions", "Transitions between two video sources using a mixed key based on both", "CanSize");
+DeclareLightworksEffect ("Erosion", "Mix", "Abstract transitions", "Transitions between two video sources using a mixed key based on both", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

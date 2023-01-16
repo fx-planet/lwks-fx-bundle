@@ -24,7 +24,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Fractal dissolve 2022+", "Mix", "Abstract transitions", "Uses a fractal-like pattern to transition between two sources", "CanSize");
+DeclareLightworksEffect ("Fractal dissolve", "Mix", "Abstract transitions", "Uses a fractal-like pattern to transition between two sources", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

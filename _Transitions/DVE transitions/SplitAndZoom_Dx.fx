@@ -1,10 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-07-07
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-06-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_SplitAndZoom_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/SplitAndZoom.mp4
-// @see https://www.lwks.com/media/kunena/attachments/6375/SplitAndZoom_2.mp4
+// @Created 2023-01-16
 
 /**
  This effect splits the outgoing video horizontally or vertically to reveal the incoming
@@ -12,6 +9,8 @@
  effect, H split with zoom, which has been withdrawn.  Instead of the colour background
  provided with the earlier effect transparent black has been used.  This gives maximum
  flexibility when using aspect ratios that don't match the sequence.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,133 +18,90 @@
 //
 // Version history:
 //
-// Built 2021-06-04 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Split and zoom";
-   string Category    = "Mix";
-   string SubCategory = "DVE transitions";
-   string Notes       = "Splits the outgoing video to reveal the incoming shot zooming out of black";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx                // Transparent black
-
-#define Illegal(XY) any(saturate (XY) - XY)
-#define GetPixel(SHADER, XY) (Illegal (XY) ? EMPTY : tex2D (SHADER, XY))
-
-#define HALF_PI 1.5707963268
-
-float _FgXScale = 1.0;
-float _FgYScale = 1.0;
+DeclareLightworksEffect ("Split and zoom", "Mix", "DVE transitions", "Splits the outgoing video to reveal the incoming shot zooming out of black", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Split horizontally|Split vertically");
 
-int SetTechnique
-<
-   string Description = "Split direction";
-   string Enum = "Horizontal,Vertical"; 
-> = 0;
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_H (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+#define BLACK float2(0.0, 1.0).xxxy
+
+#define HALF_PI 1.5707963268
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (Outgoing_H)
+{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
+
+DeclarePass (Incoming_H)
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+
+DeclareEntryPoint (SplitAndZoom_Dx_H)
 {
-   float pos = Amount / (_FgXScale * 2.0);
+   float pos = Amount / 2.0;
 
-   float2 xy1 = uv1;
-   float2 xy2 = ((uv2 - 0.5.xx) * (2.0 - sin (Amount * HALF_PI))) + 0.5.xx;
+   float2 xy1 = uv3;
+   float2 xy2 = ((uv3 - 0.5.xx) * (2.0 - sin (Amount * HALF_PI))) + 0.5.xx;
 
    float4 retval;
 
-   if ((uv1.x < pos + 0.5) && (uv1.x > 0.5 - pos))
-      retval = GetPixel (s_Background, xy2);
+   if ((uv3.x < pos + 0.5) && (uv3.x > 0.5 - pos))
+      retval = ReadPixel (Outgoing_H, xy2);
    else {
-      if (uv1.x > 0.5) xy1.x -= pos;
+      if (uv3.x > 0.5) xy1.x -= pos;
       else xy1.x += pos;
 
-      retval = GetPixel (s_Foreground, xy1);
+      retval = ReadPixel (Incoming_H, xy1);
    }
 
    return retval;
 }
 
-float4 ps_main_V (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float pos = Amount / (_FgYScale * 2.0);
+DeclarePass (Outgoing_V)
+{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
 
-   float2 xy1 = uv1;
-   float2 xy2 = ((uv2 - 0.5.xx) * (2.0 - sin (Amount * HALF_PI))) + 0.5.xx;
+DeclarePass (Incoming_V)
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+
+DeclareEntryPoint (SplitAndZoom_Dx_V)
+{
+   float pos = Amount / 2.0;
+
+   float2 xy1 = uv3;
+   float2 xy2 = ((uv3 - 0.5.xx) * (2.0 - sin (Amount * HALF_PI))) + 0.5.xx;
 
    float4 retval;
 
-   if ((uv1.y < pos + 0.5) && (uv1.y > 0.5 - pos))
-      retval = GetPixel (s_Background, xy2);
+   if ((uv3.y < pos + 0.5) && (uv3.y > 0.5 - pos))
+      retval = ReadPixel (Outgoing_V, xy2);
    else {
-      if (uv1.y > 0.5) xy1.y -= pos;
+      if (uv3.y > 0.5) xy1.y -= pos;
       else xy1.y += pos;
 
-      retval = GetPixel (s_Foreground, xy1);
+      retval = ReadPixel (Incoming_V, xy1);
    }
 
    return retval;
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique SplitAndZoom_Dx_H { pass P_1 ExecuteShader (ps_main_H) }
-technique SplitAndZoom_Dx_V { pass P_1 ExecuteShader (ps_main_V) }
 

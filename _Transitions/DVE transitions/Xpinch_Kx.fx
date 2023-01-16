@@ -4,14 +4,20 @@
 // @Created 2023-01-16
 
 /**
- This is similar to the alpha corner squeeze effect, except that it expands the blended
- foreground from the corners or compresses it to the corners of the screen.
+ This effect pinches the blended foreground to a point to clear the background shot,
+ while zooming out of the pinch.  It reverses the process to bring in the incoming
+ foreground.  Trig functions have been used during the progress of the effect to make
+ the acceleration smoother.
+
+ While based on Xpinch_Dx.fx, the direction swap has been made symmetrical, unlike that
+ in Xpinch_Dx.fx.  When used with titles and similar effects which by their nature don't
+ occupy the full screen, subjectively this approach looked better.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// User effect CornerSqueeze_Fx.fx
+// Lightworks user effect Xpinch_Fx.fx
 //
 // Version history:
 //
@@ -20,7 +26,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Corner squeeze (keyed)", "Mix", "DVE transitions", "Squeezes or expands the foreground to or from the corners of the screen", CanSize);
+DeclareLightworksEffect ("X-pinch (keyed)", "Mix", "DVE transitions", "Pinches the foreground to a point while zooming to either hide or reveal it", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -40,6 +46,17 @@ DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define MID_PT     (0.5).xx
+#define QUARTER_PI 0.7853981634
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -63,25 +80,22 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 fn_horiz (sampler Super, float2 uv)
+float4 fn_pinch (sampler S, float2 uv)
 {
-   float negAmt = Amount * 0.5;
-   float posAmt = 1.0 - negAmt;
+   float progress = sin ((1.0 - Amount) * QUARTER_PI);
+   float dist  = (distance (uv, MID_PT) * 32.0) + 1.0;
+   float scale = lerp (1.0, pow (dist, -1.0) * 24.0, progress);
 
-   float2 xy1 = float2 ((uv.x + Amount - 1.0) / Amount, uv.y);
-   float2 xy2 = float2 (uv.x / Amount, uv.y);
+   float2 xy = ((uv - MID_PT) * scale) + MID_PT;
 
-   float4 retval = (uv.x > posAmt) ? tex2D (Super, xy1)
-                 : (uv.x < negAmt) ? tex2D (Super, xy2) : kTransparentBlack;
-
-   return retval;
+   return tex2D (S, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique CornerSqueeze_Fx_F
+// technique xPinch_Fx_F
 
 DeclarePass (Super_F)
 {
@@ -101,86 +115,67 @@ DeclarePass (Super_F)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-DeclarePass (Horiz_F)
-{ return fn_horiz (Super_F, uv3); }
+DeclarePass (Pinch_F)
+{ return fn_pinch (Super_F, uv3); }
 
-DeclareEntryPoint (CornerSqueeze_F)
+DeclareEntryPoint (xPinch_Fx_F)
 {
-   float negAmt = Amount * 0.5;
-   float posAmt = 1.0 - negAmt;
+   float progress = 1.0 - cos (sin ((1.0 - Amount) * QUARTER_PI));
+   float scale    = 1.0 + (progress * (32.0 + progress * 32.0));
 
-   float2 xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
-   float2 xy2 = float2 (uv3.x, uv3.y / Amount);
+   float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   float4 Fgnd = (uv3.y > posAmt) ? ReadPixel (Horiz_F, xy1)
-               : (uv3.y < negAmt) ? ReadPixel (Horiz_F, xy2) : kTransparentBlack;
-
-   if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Pinch_F, xy);
 
    return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
 }
 
 
-// technique CornerSqueeze_Fx_I
+// technique xPinch_Fx_I
 
 DeclarePass (Super_I)
 { return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Horiz_I)
-{ return fn_horiz (Super_I, uv3); }
+DeclarePass (Pinch_I)
+{ return fn_pinch (Super_I, uv3); }
 
-DeclareEntryPoint (CornerSqueeze_I)
+DeclareEntryPoint (xPinch_Fx_I)
 {
-   float negAmt = Amount * 0.5;
-   float posAmt = 1.0 - negAmt;
+   float progress = 1.0 - cos (sin ((1.0 - Amount) * QUARTER_PI));
+   float scale    = 1.0 + (progress * (32.0 + progress * 32.0));
 
-   float2 xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
-   float2 xy2 = float2 (uv3.x, uv3.y / Amount);
+   float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   float4 Fgnd = (uv3.y > posAmt) ? ReadPixel (Horiz_I, xy1)
-               : (uv3.y < negAmt) ? ReadPixel (Horiz_I, xy2) : kTransparentBlack;
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Pinch_I, xy);
 
    return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
 }
 
 
-// technique CornerSqueeze_Fx_O
+// technique xPinch_Fx_O
 
 DeclarePass (Super_O)
 { return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Horiz_O)
+DeclarePass (Pinch_O)
 {
-   float negAmt = 1.0 - Amount;
-   float posAmt = (1.0 + Amount) * 0.5;
+   float progress = sin (Amount * QUARTER_PI);
+   float dist  = (distance (uv3, MID_PT) * 32.0) + 1.0;
+   float scale = lerp (1.0, pow (dist, -1.0) * 24.0, progress);
 
-   float2 xy1 = float2 ((uv3.x - Amount) / negAmt, uv3.y);
-   float2 xy2 = float2 (uv3.x / negAmt, uv3.y);
+   float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   negAmt *= 0.5;
-
-   float4 retval = (uv3.x > posAmt) ? tex2D (Super_O, xy1)
-                 : (uv3.x < negAmt) ? tex2D (Super_O, xy2) : kTransparentBlack;
-
-   return retval;
+   return tex2D (Super_O, xy);
 }
 
-DeclareEntryPoint (CornerSqueeze_O)
+DeclareEntryPoint (xPinch_Fx_O)
 {
-   float negAmt = 1.0 - Amount;
-   float posAmt = (1.0 + Amount) * 0.5;
+   float progress = 1.0 - cos (sin (Amount * QUARTER_PI));
+   float scale    = 1.0 + (progress * (32.0 + progress * 32.0));
 
-   float2 xy1 = float2 (uv3.x, (uv3.y - Amount) / negAmt);
-   float2 xy2 = float2 (uv3.x, uv3.y / negAmt);
+   float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   negAmt *= 0.5;
-
-   float4 Fgnd = (uv3.y > posAmt) ? ReadPixel (Horiz_O, xy1)
-               : (uv3.y < negAmt) ? ReadPixel (Horiz_O, xy2) : kTransparentBlack;
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Pinch_O, xy);
 
    return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
 }

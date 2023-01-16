@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2021-07-25
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_CnrSqueeze_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Wx_CnrSqueeze.mp4
+// @Created 2023-01-16
 
 /**
  This is based on the corner wipe effect, modified to squeeze or expand the divided
  section of the frame.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,121 +15,61 @@
 //
 // Version history:
 //
-// Rewrite 2021-07-25 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Corner squeeze";
-   string Category    = "Mix";
-   string SubCategory = "DVE transitions";
-   string Notes       = "A corner wipe effect that squeezes or expands the divided section of the frame";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+DeclareLightworksEffect ("Corner squeeze", "Mix", "DVE transitions", "A corner wipe effect that squeezes or expands the divided section of the frame", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Vid1, s_Video_1);
-DefineTarget (Vid2, s_Video_2);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Transition";
-   string Enum = "Squeeze to corners,Expand from corners";
-> = 0;
+DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Squeeze to corners|Expand from corners");
 
-float Amount
-<
-   string Description = "Progress";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.0;
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_in (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_Background, uv); }
-float4 ps_out (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_Foreground, uv); }
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
-float4 ps_sqz_horiz (float2 uv : TEXCOORD3) : COLOR
+#define BLACK float2(0.0, 1.0).xxxy
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+// technique CornerSqueeze_Dx_0
+
+DeclarePass (SqzOut)
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+
+DeclarePass (Video_0)
 {
    float negAmt = 1.0 - Amount;
    float posAmt = (1.0 + Amount) / 2.0;
 
-   float2 xy1 = float2 ((uv.x - Amount) / negAmt, uv.y);
-   float2 xy2 = float2 (uv.x / negAmt, uv.y);
+   float2 xy1 = float2 ((uv3.x - Amount) / negAmt, uv3.y);
+   float2 xy2 = float2 (uv3.x / negAmt, uv3.y);
 
    negAmt /= 2.0;
 
-   return (uv.x > posAmt) ? tex2D (s_Video_1, xy1) : (uv.x < negAmt)
-                          ? tex2D (s_Video_1, xy2) : EMPTY;
+   return (uv3.x > posAmt) ? tex2D (SqzOut, xy1) : (uv3.x < negAmt)
+                           ? tex2D (SqzOut, xy2) : kTransparentBlack;
 }
 
-float4 ps_sqz_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (CornerSqueeze_Dx_0)
 {
    float negAmt = 1.0 - Amount;
    float posAmt = (1.0 + Amount) / 2.0;
@@ -139,25 +79,31 @@ float4 ps_sqz_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
 
    negAmt /= 2.0;
 
-   float4 retval = (uv3.y > posAmt) ? tex2D (s_Video_2, xy1) : (uv3.y < negAmt)
-                                    ? tex2D (s_Video_2, xy2) : EMPTY;
+   float4 retval = (uv3.y > posAmt) ? tex2D (Video_0, xy1) : (uv3.y < negAmt)
+                                    ? tex2D (Video_0, xy2) : kTransparentBlack;
 
-   return lerp (GetPixel (s_Background, uv2), retval, retval.a);
+   return lerp (ReadPixel (Bg, uv2), retval, retval.a);
 }
 
-float4 ps_exp_horiz (float2 uv : TEXCOORD3) : COLOR
+
+// technique CornerSqueeze_Dx_1
+
+DeclarePass (SqzIn)
+{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
+
+DeclarePass (Video_1)
 {
    float negAmt = Amount / 2.0;
    float posAmt = 1.0 - negAmt;
 
-   float2 xy1 = float2 ((uv.x + Amount - 1.0) / Amount, uv.y);
-   float2 xy2 = float2 (uv.x / Amount, uv.y);
+   float2 xy1 = float2 ((uv3.x + Amount - 1.0) / Amount, uv3.y);
+   float2 xy2 = float2 (uv3.x / Amount, uv3.y);
 
-   return (uv.x > posAmt) ? tex2D (s_Video_1, xy1) : (uv.x < negAmt)
-                          ? tex2D (s_Video_1, xy2) : EMPTY;
+   return (uv3.x > posAmt) ? tex2D (SqzIn, xy1) : (uv3.x < negAmt)
+                           ? tex2D (SqzIn, xy2) : kTransparentBlack;
 }
 
-float4 ps_exp_main (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (CornerSqueeze_Dx_1)
 {
    float negAmt = Amount / 2.0;
    float posAmt = 1.0 - negAmt;
@@ -165,26 +111,9 @@ float4 ps_exp_main (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
    float2 xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
    float2 xy2 = float2 (uv3.x, uv3.y / Amount);
 
-   float4 retval = (uv3.y > posAmt) ? tex2D (s_Video_2, xy1) : (uv3.y < negAmt)
-                                    ? tex2D (s_Video_2, xy2) : EMPTY;
+   float4 retval = (uv3.y > posAmt) ? tex2D (Video_1, xy1) : (uv3.y < negAmt)
+                                    ? tex2D (Video_1, xy2) : kTransparentBlack;
 
-   return lerp (GetPixel (s_Foreground, uv1), retval, retval.a);
+   return lerp (ReadPixel (Fg, uv1), retval, retval.a);
 }
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique CornerSqueeze_Dx_0
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Vid1;"; > ExecuteShader (ps_out)
-   pass P_2 < string Script = "RenderColorTarget0 = Vid2;"; > ExecuteShader (ps_sqz_horiz)
-   pass P_3 ExecuteShader (ps_sqz_main)
-}
-
-technique CornerSqueeze_Dx_1
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Vid1;"; > ExecuteShader (ps_in)
-   pass P_2 < string Script = "RenderColorTarget0 = Vid2;"; > ExecuteShader (ps_exp_horiz)
-   pass P_3 ExecuteShader (ps_exp_main)
-}

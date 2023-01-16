@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author khaver
-// @Released 2015-12-08
+// @Created 2015-12-08
 
 /**
  This effect is a 3 pass 13 tap circular kernel blur.  The blur can be varied using the
@@ -16,13 +16,13 @@
 //
 // Version history:
 //
-// Update 2023-01-06 jwrl.
+// Update 2023-01-16 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Focal blur", "Stylize", "Blurs and Sharpens", "This effect uses a depth map to create a faux depth of field", kNoFlags);
+DeclareLightworksEffect ("Focal blur", "Stylize", "Blurs and sharpens", "This effect uses a depth map to create a faux depth of field", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

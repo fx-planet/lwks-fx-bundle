@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  First, there is no such thing as the perfect edge sharpening effect.  They all have
@@ -17,12 +17,12 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect YAsharpen.fx
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Yet another sharpen", "Stylize", "Blurs and Sharpens", "A sharpen utility that can give extremely clean results", kNoFlags);
+DeclareLightworksEffect ("Yet another sharpen", "Stylize", "Blurs and sharpens", "A sharpen utility that can give extremely clean results", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

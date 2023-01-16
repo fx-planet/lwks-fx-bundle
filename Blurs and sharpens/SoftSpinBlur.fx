@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  During the development of this effect particular attention has been given to the blur
@@ -30,12 +30,12 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Soft spin blur", "Stylize", "Blurs and Sharpens", "This effect uses a bidirectional blur to give an extremely smooth spin blur", kNoFlags);
+DeclareLightworksEffect ("Soft spin blur", "Stylize", "Blurs and sharpens", "This effect uses a bidirectional blur to give an extremely smooth spin blur", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

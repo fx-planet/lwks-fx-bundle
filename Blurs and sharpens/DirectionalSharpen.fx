@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  A directional unsharp mask.  Useful where directional stretching and motion blur must be
@@ -17,12 +17,12 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Directional sharpen", "Stylize", "Blurs and Sharpens", "This is a directional unsharp mask useful where directional blurring must be compensated for", kNoFlags);
+DeclareLightworksEffect ("Directional sharpen", "Stylize", "Blurs and sharpens", "This is a directional unsharp mask useful where directional blurring must be compensated for", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

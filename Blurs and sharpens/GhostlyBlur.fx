@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  Originally created as YAblur.fx, this was an accident that looked interesting, so it was
@@ -17,12 +17,12 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Ghostly blur", "Stylize", "Blurs and Sharpens", "The sort of effect that you get when looking through a fogged window", kNoFlags);
+DeclareLightworksEffect ("Ghostly blur", "Stylize", "Blurs and sharpens", "The sort of effect that you get when looking through a fogged window", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

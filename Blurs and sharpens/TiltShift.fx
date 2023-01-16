@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)
 // @Created 2012-07-30
 
@@ -43,13 +43,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-06 jwrl.
+// Updated 2023-01-16 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Tilt shift", "Stylize", "Blurs and Sharpens", "Simulates the shallow depth of field normally encountered in close-up photography", kNoFlags);
+DeclareLightworksEffect ("Tilt shift", "Stylize", "Blurs and sharpens", "Simulates the shallow depth of field normally encountered in close-up photography", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

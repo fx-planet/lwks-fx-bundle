@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  This blur effect is similar to the Lightworks radial blur effect, but is very much
@@ -16,12 +16,12 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Soft zoom blur", "Stylize", "Blurs and Sharpens", "Similar to the Lightworks radial blur effect but very much softer", kNoFlags);
+DeclareLightworksEffect ("Soft zoom blur", "Stylize", "Blurs and sharpens", "Similar to the Lightworks radial blur effect but very much softer", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

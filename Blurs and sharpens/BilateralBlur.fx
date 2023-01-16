@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author baopao
 // @Created 2013-10-23
 
@@ -15,13 +15,13 @@
 //
 // Version history:
 //
-// Update 2023-01-06 jwrl.
+// Update 2023-01-16 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Bilateral blur", "Stylize", "Blurs and Sharpens", "A strong bilateral blur created by baopao with a little help from his friends", kNoFlags);
+DeclareLightworksEffect ("Bilateral blur", "Stylize", "Blurs and sharpens", "A strong bilateral blur created by baopao with a little help from his friends", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

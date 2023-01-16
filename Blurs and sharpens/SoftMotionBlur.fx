@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  This blur is actually a simple directional blur.  It is extremely soft because it uses a
@@ -15,12 +15,12 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Soft motion blur", "Stylize", "Blurs and Sharpens", "This effect gives a very smooth, soft directional blur", kNoFlags);
+DeclareLightworksEffect ("Soft motion blur", "Stylize", "Blurs and sharpens", "This effect gives a very smooth, soft directional blur", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

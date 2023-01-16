@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author khaver
 // @Created 2012-04-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
@@ -30,13 +30,13 @@
 //
 // Version history:
 //
-// Update 2023-01-06 jwrl.
+// Update 2023-01-16 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Iris bokeh", "Stylize", "Blurs and Sharpens", "A bokeh effect with control of the iris (5 to 8 segments or round)", kNoFlags);
+DeclareLightworksEffect ("Iris bokeh", "Stylize", "Blurs and sharpens", "A bokeh effect with control of the iris (5 to 8 segments or round)", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

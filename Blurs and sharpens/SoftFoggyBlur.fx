@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  This blur effect mimics the classic "petroleum jelly on the lens" look.  It does this by
@@ -16,12 +16,12 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Soft foggy blur", "Stylize", "Blurs and Sharpens", "This blur effect mimics the classic 'petroleum jelly on the lens' look", kNoFlags);
+DeclareLightworksEffect ("Soft foggy blur", "Stylize", "Blurs and sharpens", "This blur effect mimics the classic 'petroleum jelly on the lens' look", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

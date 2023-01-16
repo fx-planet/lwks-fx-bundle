@@ -11,7 +11,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Transmogrify_Kx_2022.fx
+// Lightworks user effect Transmogrify_Kx.fx
 //
 // Version history:
 //

@@ -12,7 +12,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Warp_Dx_2022.fx
+// Lightworks user effect Warp_Dx.fx
 //
 // Version history:
 //

@@ -13,7 +13,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Abstract_1_Dx_2022.fx
+// Lightworks user effect Abstract_1_Dx.fx
 //
 // Version history:
 //

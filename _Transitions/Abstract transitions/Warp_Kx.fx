@@ -11,7 +11,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Warp_Kx_2022.fx
+// Lightworks user effect Warp_Kx.fx
 //
 // Version history:
 //

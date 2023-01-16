@@ -10,7 +10,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Transmogrify_Dx_2022.fx
+// Lightworks user effect Transmogrify_Dx.fx
 //
 // Version history:
 //

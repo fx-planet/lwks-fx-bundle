@@ -11,7 +11,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Erode_Dx_2022.fx
+// Lightworks user effect Erode_Dx.fx
 //
 // Version history:
 //

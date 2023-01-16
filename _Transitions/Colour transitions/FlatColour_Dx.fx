@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourFlat_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_ColourFlat.mp4
+// @Created 2023-01-16
 
 /**
  This is a modified version of my "Dissolve through colour" but is very much simpler to
@@ -11,6 +9,8 @@
  want to be colour and set the colour to what you want.  It defaults to a black colour
  with a colour duration of 10% of the total effect duration, for a quick dissolve through
  black.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,94 +18,34 @@
 //
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Dissolve thru flat colour";
-   string Category    = "Mix";
-   string SubCategory = "Colour transitions";
-   string Notes       = "Dissolves to a flat user defined colour then from that to the incoming image";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+DeclareLightworksEffect ("Dissolve thru flat colour", "Mix", "Colour transitions", "Dissolves to a flat user defined colour then from that to the incoming image", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float cDuration
-<
-   string Group = "Colour setup";
-   string Description = "Duration";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
+DeclareFloatParam (cDuration, "Duration", "Colour setup", kNoFlags, 0.1, 0.0, 1.0);
 
-float4 Colour
-<
-   string Group = "Colour setup";
-   string Description = "Colour";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, 1.0 };
+DeclareColourParam (Colour, "Colour", "Colour setup", kNoFlags, 0.0, 0.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Pixel Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (FlatColour_Dx)
 {
    float mix_bgd = min (1.0, (1.0 - Amount) * 2.0);
    float mix_fgd = min (1.0, Amount * 2.0);
@@ -121,17 +61,8 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
       mix_fgd = 1.0;
    }
 
-   float4 retval = lerp (GetPixel (s_Foreground, uv1), Colour, mix_fgd);
+   float4 retval = lerp (ReadPixel (Fg, uv1), Colour, mix_fgd);
 
-   return lerp (GetPixel (s_Background, uv2), retval, mix_bgd);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-technique FlatColour_Dx
-{
-   pass P_1 ExecuteShader (ps_main)
+   return lerp (ReadPixel (Bg, uv2), retval, mix_bgd);
 }
 

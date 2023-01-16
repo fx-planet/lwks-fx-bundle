@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Colour_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/DissolveThruColour.mp4
+// @Created 2023-01-16
 
 /**
  This effect dissolves through a user-selected colour field from one clip to another.
@@ -16,6 +14,8 @@
  In the gradients that blend to the centre, the centre point is also fully adjustable.
  Asymmetrical colour transitions can be created by changing keyframing of the effect
  centre, opacity, transition curve, gradient centre and colour values.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,174 +23,56 @@
 //
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Dissolve thru colour";
-   string Category    = "Mix";
-   string SubCategory = "Colour transitions";
-   string Notes       = "Dissolves through a user-selected colour field from one clip to another";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define PI      3.1415926536
-#define HALF_PI 1.5707963268
+DeclareLightworksEffect ("Dissolve thru colour", "Mix", "Colour transitions", "Dissolves through a user-selected colour field from one clip to another", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Gradient, s_Gradient);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float FxCentre
-<
-   string Description = "Transition centre";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (FxCentre, "Transition centre", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 
-float cAmount
-<
-   string Group = "Colour setup";
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (cAmount, "Opacity", "Colour setup", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (cCurve, "Trans. curve", "Colour setup", kNoFlags, 0.0, 0.0, 1.0);
 
-float cCurve
-<
-   string Group = "Colour setup";
-   string Description = "Trans. curve";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareIntParam (cGradient, "Gradient", "Colour setup", 5, "Flat (uses only the top left colour)|Horizontal blend (top left > top right)|Horizontal blend to centre (TL > TR > TL)|Vertical blend (top left > bottom left)|Vertical blend to centre (TL > BL > TL)|Four way gradient|Four way gradient to centre|Four way gradient to centre (horizontal)|Four way gradient to centre (vertical)|Radial (TL outer > TR centre)");
 
-int cGradient
-<
-   string Group = "Colour setup";
-   string Description = "Gradient";
-   string Enum = "Flat (uses only the top left colour),Horizontal blend (top left > top right),Horizontal blend to centre (TL > TR > TL),Vertical blend (top left > bottom left),Vertical blend to centre (TL > BL > TL),Four way gradient,Four way gradient to centre,Four way gradient to centre (horizontal),Four way gradient to centre (vertical),Radial (TL outer > TR centre)";
-> = 5;
+DeclareFloatParam (OffsX, "Grad. midpoint", "Colour setup", "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (OffsY, "Grad. midpoint", "Colour setup", "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float OffsX
-<
-   string Group = "Colour setup";
-   string Description = "Colour gradient midpoint";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.00;
-> = 0.5;
-
-float OffsY
-<
-   string Group = "Colour setup";
-   string Description = "Colour gradient midpoint";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.00;
-> = 0.5;
-
-float4 topLeft
-<
-   string Group = "Colour setup";
-   string Description = "Top left";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, 1.0 };
-
-float4 topRight
-<
-   string Group = "Colour setup";
-   string Description = "Top right";
-   bool SupportsAlpha = false;
-> = { 0.5, 0.0, 1.0, 0.8 };
-
-float4 botLeft
-<
-   string Group = "Colour setup";
-   string Description = "Bottom left";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.0, 1.0, 1.0 };
-
-float4 botRight
-<
-   string Group = "Colour setup";
-   string Description = "Bottom right";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.8, 1.0, 0.5 };
+DeclareColourParam (topLeft, "Top left", "Colour setup", kNoFlags, 0.0, 0.0, 0.0, 1.0);
+DeclareColourParam (topRight, "Top right", "Colour setup", kNoFlags, 0.5, 0.0, 0.8, 1.0);
+DeclareColourParam (botLeft, "Bottom left", "Colour setup", kNoFlags, 0.0, 0.0, 1.0, 1.0);
+DeclareColourParam (botRight, "Bottom right", "Colour setup", kNoFlags, 0.0, 0.8, 0.5, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Pixel Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_colour (float2 uv0 : TEXCOORD0) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (Gradient)
 {
    if (cGradient == 0) return topLeft;
 
@@ -233,7 +115,7 @@ float4 ps_colour (float2 uv0 : TEXCOORD0) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (Colour_Dx)
 {
    float Mix = (FxCentre + 1.0) / 2;
 
@@ -241,9 +123,9 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
          (Mix >= 1.0) ? Amount / 2.0 :
          (Mix > Amount) ? Amount / (2.0 * Mix) : ((Amount - Mix) / (2.0 * (1.0 - Mix))) + 0.5;
 
-   float4 Fgnd   = GetPixel (s_Foreground, uv1);
-   float4 Bgnd   = GetPixel (s_Background, uv2);
-   float4 colour = GetPixel (s_Gradient, uv3);
+   float4 Fgnd   = ReadPixel (Fg, uv1);
+   float4 Bgnd   = ReadPixel (Bg, uv2);
+   float4 colour = ReadPixel (Gradient, uv0);
    float4 rawDx  = lerp (Fgnd, Bgnd, Mix);
    float4 colDx;
 
@@ -261,15 +143,5 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
    }
 
    return lerp (rawDx, colDx, cAmount);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-technique Colour_Dx
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Gradient;"; > ExecuteShader (ps_colour)
-   pass P_2 ExecuteShader (ps_main)
 }
 

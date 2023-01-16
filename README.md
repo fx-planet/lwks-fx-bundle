@@ -314,13 +314,10 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
 |:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
 |DissolveX                 |DissolveX_Dx.fx         |DissolveX_Kx.fx         |Allows blend modes to be used in a dissolve          |
-|Folded neg dissolve       |FoldNeg_Dx.fx           |FoldNeg_Kx.fx           |Dissolves through a negative mix between images      |
-|Folded pos dissolve       |FoldPos_Dx.fx           |FoldPos_Kx.fx           |Dissolves through a positive mix between images      |
 |Non-additive mix          |NonAdd_Dx.fx            |NonAdd_Kx.fx            |Emulates the classic analog vision mixer non-add mix |
 |Non-add mix ultra         |NonAddUltra_Dx.fx       |NonAddUltra_Kx.fx       |A more extreme version of a non-add mix              |
 |Optical dissolve          |Optical_Dx.fx           |Optical_Kx.fx           |Simulates the burn effect of a film optical dissolve |
 |S dissolve                |Sdissolve_Dx.fx         |Sdissolve_Kx.fx         |Dissolve using a trigonometric or a quadratic curve  |
-|Subtractive dissolve      |Subtract_Dx.fx          |Subtract_Kx.fx          |An inverted non-additive mix                         |
 
 ## CATEGORY FOLDER: Blur transitions
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
@@ -344,13 +341,14 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
 |:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
 |Barn door squeeze         |BarndoorSqueeze_Dx.fx   |BarndoorSqueeze_Kx.fx   |A barn door squeeze to/from the edge of frame        |
+|Bounce transition         |Bounce_Dx.fx            |Bounce_Kx.fx            |Bounces the foreground up then falls back            |
 |Corner squeeze            |CornerSqueeze_Dx.fx     |CornerSqueeze_Kx.fx     |Corner wipe effect that squeezes or expands images   |
 |Pinch transition          |Pinch_Dx.fx             |Pinch_Kx.fx             |Pinches the outgoing video to a user-defined point   |
-|Radial pinch              |rPinch_Dx.fx            |rPinch_Kx.fx            |Radially pinches the outgoing video                  |
+|Radial pinch              |Rpinch_Dx.fx            |Rpinch_Kx.fx            |Radially pinches the outgoing video                  |
 |Split and zoom            |SplitAndZoom_Dx.fx      |                        |Splits outgoing video to reveal incoming zoom shot   |
 |Squeeze transition        |                        |Squeeze_Kx.fx           |A squeeze effect for blended images                  |
 |Stretch transition        |Stretch_Dx.fx           |Stretch_Kx.fx           |Stretches the image horizontally through dissolve    |
-|X-pinch                   |xPinch_Dx.fx            |xPinch_Kx.fx            |Pinches outgoing video to an X-shape then a point    |
+|X-pinch                   |Xpinch_Dx.fx            |Xpinch_Kx.fx            |Pinches outgoing video to an X-shape then a point    |
 
 ## CATEGORY FOLDER: Fades and non mixes
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
@@ -364,7 +362,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
 |Block dissolve            |Block_Dx.fx             |Block_Kx.fx             |Builds the outgoing image into growing blocks        |
 |Coloured tiles            |ColourTile_Dx.fx        |                        |Transition using a highly coloured mosaic pattern    |
-|Kaleido turbine mix       |KaleidoTurbineMix_Dx.fx |KaleidoTurbineMix_Kx.fx |A kaleidoscope transitions between two clips         |
+|Kaleido turbine mix       |KaleidoTurbine_Dx.fx    |KaleidoTurbine_Kx.fx    |A kaleidoscope transitions between two clips         |
 |Mosaic transfer           |Mosaic_Dx.fx            |                        |Obliterates the outgoing image into expanding blocks |
 |Rotating transition       |Rotating_Dx.fx          |Rotating_Kx.fx          |X or Y axis rotating transition                      |
 |Tiled split               |TiledSplit_Dx.fx        |TiledSplit_Kx.fx        |Splits the video into tiles and blows them apart     |
@@ -375,8 +373,8 @@ If you need to use two effects that have the same name, simply open one of them 
 |Dream sequence            |Dream_Dx.fx             |Dream_Kx.fx             |Ripples the images as it dissolves between them      |
 |Fireball transition       |Fireballs_Dx.fx         |                        |Uses a hot fireball to transition between sources    |
 |Fireball transition B     |Fireballs_B_Dx.fx       |                        |A varaiant of the previous fireball effect           |
-|Fly away                  |Fly_Away_Dx.fx          |                        |Flies the outgoing image out to reveal the incoming  |
-|Page Roll                 |Page_Roll_Dx.fx         |                        |The classic page turn transition                     |
+|Fly away                  |FlyAway_Dx.fx           |                        |Flies the outgoing image out to reveal the incoming  |
+|Page Roll                 |PageRoll_Dx.fx          |                        |The classic page turn transition                     |
 |Sinusoidal mix            |Sine_Dx.fx              |Sine_Kx.fx              |Uses a sine distortion to transition between inputs  |
 |The twister               |Twister_Dx.fx           |Twister_Kx.fx           |Performs a rippling twist transition between images  |
 |Twist it                  |TwistIt_Dx.fx           |                        |Twists one image to another vertically/horizontally  |
@@ -391,4 +389,5 @@ If you need to use two effects that have the same name, simply open one of them 
 |Push transition           |                        |Push_Kx.fx              |Pushes the foreground on or off screen               |
 |Slice transition          |Slice_Dx.fx             |Slice_Kx.fx             |Separates and splits the image into strips           |
 |Strips                    |                        |Strips_Kx.fx            |Splits the foreground into compressed strips         |
+|Sunder                    |Sunder_Dx.fx            |                        |Pushes inner and outer image sections separately     |
 

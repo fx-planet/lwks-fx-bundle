@@ -1,11 +1,12 @@
 // @Maintainer jwrl
-// @Released 2021-10-01
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-10-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmNeg_640.png
+// @Created 2023-01-09
 
 /**
- This simulates the look of 35 mm masked film negative.
+ This simulates the look of 35 mm colour masked negative film.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -13,79 +14,34 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-01 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Colour negative";
-   string Category    = "Colour";
-   string SubCategory = "Film Effects";
-   string Notes       = "Simulates the look of 35 mm colour film dye-masked negative";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Colour negative", "Colour", "Film Effects", "Simulates the look of 35 mm colour film dye-masked negative", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Input);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Input, FgSampler);
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (ColourNegative)
 {
-   float4 retval = GetPixel (FgSampler, uv);
+   float4 source = ReadPixel (Input, uv1);
+   float4 retval = source;
 
-   retval.rgb  = (float3 (2.0, 1.33, 1.0) - retval.rgb) / 2.0;
+   retval.rgb = (float3 (2.0, 1.33, 1.0) - retval.rgb) / 2.0;
 
-   return retval;
-}
+   retval = lerp (kTransparentBlack, retval, retval.a);
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique ColourNegative
-{
-   pass P_1 ExecuteShader (ps_main)
+   return lerp (source, retval, tex2D (Mask, uv1));
 }
 

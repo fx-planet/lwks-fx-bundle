@@ -1,14 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-09-17
+// @Released 2023-01-09
 // @Author jwrl
 // @Author abelmilanes
 // @Created 2017-03-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmExp_640.png
 
 /**
  This is an effect that simulates exposure adjustment using a Cineon profile.  It is
  fairly accurate at the expense of requiring some reasonably complex maths.  With current
  GPU types this shouldn't be an issue.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,113 +17,40 @@
 //
 // Version history:
 //
-// Update 2021-09-17 jwrl.
-// Update of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
-//
-// Prior to 2020-04-16:
-// Various cross-platform upgrades.
+// Updated 2023-01-09 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Film exposure";
-   string Category    = "Colour";
-   string SubCategory = "Film Effects";
-   string Notes       = "Simulates exposure adjustment using a Cineon profile";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Film exposure", "Colour", "Film Effects", "Simulates exposure adjustment using a Cineon profile", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Input);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) any(saturate(XY) - XY)
-#define GetPixel(S,XY) (Overflow(XY) ? EMPTY : tex2D (S, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, InpSampler);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Exposure
-<
-   string Group = "Exposure";
-   string Description = "Master";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (Exposure, "Master", "Exposure", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (CyanRed, "Cyan/red", "Exposure", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (MagGreen, "Magenta/green", "Exposure", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (YelBlue, "Yellow/blue", "Exposure", kNoFlags, 0.0, -1.0, 1.0);
 
-float CyanRed
-<
-   string Group = "Exposure";
-   string Description = "Cyan/red";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float MagGreen
-<
-   string Group = "Exposure";
-   string Description = "Magenta/green";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float YelBlue
-<
-   string Group = "Exposure";
-   string Description = "Yellow/blue";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Amount
-<
-   string Description = "Original";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (Amount, "Original", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (FilmExposure)
 {
-   float4 retval, Src = GetPixel (InpSampler, uv);
+   float4 retval, Src = ReadPixel (Input, uv1);
 
    // Convert RGB to linear
 
@@ -147,14 +75,8 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    test = max (lin.r, max (lin.g, lin.b));
 
    retval.rgb = (test < 0.0031308) ? lin * 12.92 : (1.055 * pow (lin, 0.4166667)) - 0.055;
-   retval = float4 (saturate (retval.rgb), Src.a);
+   retval = lerp (kTransparentBlack, float4 (saturate (retval.rgb), 1.0), Src.a);
 
-   return lerp (retval, Src, Amount);
+   return lerp (retval, Src, Amount * tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique FilmExposure { pass pass_one ExecuteShader (ps_main) }
 

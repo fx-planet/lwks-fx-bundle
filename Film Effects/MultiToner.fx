@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-01
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-10-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/MultiToner_640.png
+// @Created 2023-01-09
 
 /**
  Multiple toner aims to produce the effect of a range of chemical processes that
@@ -25,6 +24,8 @@
  about the right look.  I've based the blue in the iron toner on the blue you
  see in blueprints, because the chemistry that produces that colour is identical
  to the chemistry in a treated photographic print.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -32,53 +33,35 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-01 jwrl.
-// Rebuild of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Multiple toner";
-   string Category    = "Colour";
-   string SubCategory = "Film Effects";
-   string Notes       = "Select from sepia, selenium, gold, copper and ferro toners to simulate darkroom processes";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Multiple toner", "Colour", "Film Effects", "Select from sepia, selenium, gold, copper and ferro toners to simulate darkroom processes", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Inp);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (SetTechnique, "Toner type", kNoGroup, 0, "Sepia|Selenium 1|Selenium 2|Gold|Copper|Iron");
+
+DeclareFloatParam (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (Tone, "Strength", "Toner settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Exposure, "Exposure", "Toner settings", "DisplayAsLiteral", 0.0, -1.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define LUMA       float3(0.217, 0.265, 0.518)  // A rough panchromatic profile
 
@@ -90,53 +73,15 @@ Wrong_Lightworks_version
 #define FERRO      float3(1.0, 0.776, 0.486)
 
 //-----------------------------------------------------------------------------------------//
-// Inputs and shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Inp, s_Input);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int SetTechnique
-<
-   string Description = "Toner type";
-   string Enum = "Sepia,Selenium 1,Selenium 2,Gold,Copper,Iron";
-> = 0;
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Tone
-<
-   string Group = "Toner settings";
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Exposure
-<
-   string Group = "Toner settings";
-   string Description = "Exposure";
-   string Flags = "DisplayAsLiteral";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (MultiTonerSepia)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 source = ReadPixel (Inp, uv1);
+   float4 retval = source;
 
+   float alpha = retval.a;
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
    float3 toner = pow (retval.rgb, gamma * 1.375);
@@ -148,13 +93,17 @@ float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
    gamma = 1.0 - (1.2 * max (0.0, Tone - 0.5));
    toner = lerp (toner.bbb, pow (toner, gamma), toner_mix);
 
-   return float4 (lerp (retval.rgb, toner, Amount), retval.a);
+   retval.rgb = lerp (retval.rgb, toner, Amount);
+
+   return lerp (source, lerp (kTransparentBlack, retval, alpha), tex2D (Mask, uv1));
 }
 
-float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (MultiTonerSelenium_1)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 source = ReadPixel (Inp, uv1);
+   float4 retval = source;
 
+   float alpha = retval.a;
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
    float3 toner = pow (retval.rgb, gamma * 1.375);
@@ -166,13 +115,17 @@ float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
    gamma = 1.0 - (1.2 * max (0.0, Tone - 0.5));
    toner = lerp (toner.bbb, pow (toner, gamma * 1.116), toner_mix);
 
-   return float4 (lerp (retval.rgb, toner, Amount), retval.a);
+   retval.rgb = lerp (retval.rgb, toner, Amount);
+
+   return lerp (source, lerp (kTransparentBlack, retval, alpha), tex2D (Mask, uv1));
 }
 
-float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (MultiTonerSelenium_2)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 source = ReadPixel (Inp, uv1);
+   float4 retval = source;
 
+   float alpha = retval.a;
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
    float3 toner = pow (retval.rgb, gamma * 1.375);
@@ -184,13 +137,17 @@ float4 ps_main_2 (float2 uv : TEXCOORD1) : COLOR
    gamma = 1.0 - (1.2 * max (0.0, Tone - 0.5));
    toner = lerp (toner.bbb, pow (toner, gamma * 1.187), toner_mix);
 
-   return float4 (lerp (retval.rgb, toner, Amount), retval.a);
+   retval.rgb = lerp (retval.rgb, toner, Amount);
+
+   return lerp (source, lerp (kTransparentBlack, retval, alpha), tex2D (Mask, uv1));
 }
 
-float4 ps_main_3 (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (MultiTonerGold)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 source = ReadPixel (Inp, uv1);
+   float4 retval = source;
 
+   float alpha = retval.a;
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
    float3 toner = pow (retval.rgb, gamma * 1.375);
@@ -202,13 +159,17 @@ float4 ps_main_3 (float2 uv : TEXCOORD1) : COLOR
    gamma = 1.0 - (1.2 * max (0.0, Tone - 0.5));
    toner = lerp (toner.bbb, pow (toner, gamma * 1.463), toner_mix);
 
-   return float4 (lerp (retval.rgb, toner, Amount), retval.a);
+   retval.rgb = lerp (retval.rgb, toner, Amount);
+
+   return lerp (source, lerp (kTransparentBlack, retval, alpha), tex2D (Mask, uv1));
 }
 
-float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (MultiTonerCopper)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 source = ReadPixel (Inp, uv1);
+   float4 retval = source;
 
+   float alpha = retval.a;
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
    float3 toner = pow (retval.rgb, gamma * 1.375);
@@ -220,13 +181,17 @@ float4 ps_main_4 (float2 uv : TEXCOORD1) : COLOR
    gamma = 1.0 - (1.2 * max (0.0, Tone - 0.5));
    toner = lerp (toner.bbb, pow (toner, gamma * 1.559), toner_mix);
 
-   return float4 (lerp (retval.rgb, toner, Amount), retval.a);
+   retval.rgb = lerp (retval.rgb, toner, Amount);
+
+   return lerp (source, lerp (kTransparentBlack, retval, alpha), tex2D (Mask, uv1));
 }
 
-float4 ps_main_5 (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (MultiTonerIron)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 source = ReadPixel (Inp, uv1);
+   float4 retval = source;
 
+   float alpha = retval.a;
    float gamma = (pow (clamp ((1.0 - Exposure) / 2.0, 1e-6, 1.0), 1.585) * 1.5) + 0.5;
 
    float3 toner = pow (retval.rgb, gamma * 1.375);
@@ -238,22 +203,8 @@ float4 ps_main_5 (float2 uv : TEXCOORD1) : COLOR
    gamma = 1.0 - (1.2 * max (0.0, Tone - 0.5));
    toner = lerp (toner.bbb, pow (toner, gamma * 1.408), toner_mix);
 
-   return float4 (lerp (retval.rgb, toner, Amount), retval.a);
+   retval.rgb = lerp (retval.rgb, toner, Amount);
+
+   return lerp (source, lerp (kTransparentBlack, retval, alpha), tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique MultiToner_0 { pass P_1 ExecuteShader (ps_main_0) }
-
-technique MultiToner_1 { pass P_1 ExecuteShader (ps_main_1) }
-
-technique MultiToner_2 { pass P_1 ExecuteShader (ps_main_2) }
-
-technique MultiToner_3 { pass P_1 ExecuteShader (ps_main_3) }
-
-technique MultiToner_4 { pass P_1 ExecuteShader (ps_main_4) }
-
-technique MultiToner_5 { pass P_1 ExecuteShader (ps_main_5) }
 

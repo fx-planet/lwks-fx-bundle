@@ -1,11 +1,12 @@
 // @Maintainer jwrl
-// @Released 2021-10-01
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-10-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/Duotone_640.png
+// @Created 2023-01-09
 
 /**
  This simulates the effect of the old Duotone film colour process.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -13,53 +14,32 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-01 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Duotone print";
-   string Category    = "Colour";
-   string SubCategory = "Film Effects";
-   string Notes       = "This simulates the look of the old Duotone colour film process";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Duotone print", "Colour", "Film Effects", "This simulates the look of the old Duotone colour film process", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Input);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParam (Saturation, "Saturation", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Profile, "Colour profile", kNoGroup, kNoFlags, 1.0, -1.0, 1.0);
+DeclareFloatParam (Curve, "Dye curve", kNoGroup, kNoFlags, 0.4, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define R_LUMA 0.2989
 #define G_LUMA 0.5866
@@ -72,46 +52,17 @@ Wrong_Lightworks_version
 #define B_BGN  0.2528
 
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Input, s_Input);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Saturation
-<
-   string Description = "Saturation";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Profile
-<
-   string Description = "Colour profile";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Curve
-<
-   string Description = "Dye curve";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.4;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (DuotonePrint)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 source = ReadPixel (Input, uv1);
+   float4 retval = source;
 
    float gamma = (Curve > 0.0) ? 1.0 - Curve * 0.2 : 1.0;
    float luma  = dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
+   float alpha = retval.a;
 
    float4 altret = float2 (luma, retval.a).xxxy;
    float4 desat  = altret;
@@ -130,15 +81,10 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    retval = saturate (lerp (altret, retval, Profile));
    retval = pow (retval, gamma);
 
-   return lerp (desat, retval, Saturation * 4.0);
-}
+   retval = lerp (desat, retval, Saturation * 4.0);
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
+   retval = lerp (kTransparentBlack, retval, alpha);
 
-technique DuotonePrint
-{
-   pass P_1 ExecuteShader (ps_main)
+   return lerp (source, retval, tex2D (Mask, uv1));
 }
 

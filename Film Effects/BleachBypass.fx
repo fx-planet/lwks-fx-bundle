@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2021-09-17
+// @Released 2023-01-09
 // @Author msi
 // @Created 2011-05-27
 // @License "CC BY-NC-SA"
-// @see https://www.lwks.com/media/kunena/attachments/6375/bleachbypass_640.png
 
 /**
  This effect emulates the altered contrast and saturation obtained by skipping the bleach
  step in classical colour film processing.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,106 +18,39 @@
 //
 // Version history:
 //
-// Update 2021-09-17 jwrl.
-// Update of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
-//
-// prior to 2018-12-23:
-// Various cross-platform fixes and updates.
+// Updated 2023-01-09 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Bleach bypass";
-   string Category    = "Colour";
-   string SubCategory = "Film Effects";
-   string Notes       = "Emulates the altered contrast and saturation obtained by skipping the bleach step in classical colour film processing";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Bleach bypass", "Colour", "Film Effects", "Emulates the altered contrast and saturation obtained by skipping the bleach step in classical colour film processing", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Input);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, MsiBleachSampler);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Red
-<
-	string Description = "Red Channel";
-	string Group = "Luminosity";
-	float MinVal = 0.0;
-	float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (Red, "Red Channel", "Luminosity", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (Green, "Green Channel", "Luminosity", kNoFlags, 0.65, 0.0, 1.0);
+DeclareFloatParam (Blue, "Blue Channel", "Luminosity", kNoFlags, 0.11, 0.0, 1.0);
 
-float Green
-<
-	string Description = "Green Channel";
-	string Group = "Luminosity";
-	float MinVal = 0.0;
-	float MaxVal = 1.0;
-> = 0.65;
-
-float Blue
-<
-	string Description = "Blue Channel";
-	string Group = "Luminosity";
-	float MinVal = 0.0;
-	float MaxVal = 1.0;
-> = 0.11;
-
-float BlendOpacity
-<
-	string Description = "Blend Opacity";
-	string Group       = "Overlay";
-	float MinVal       = 0.0;
-	float MaxVal       = 1.0;
-> = 1.0;
+DeclareFloatParam (BlendOpacity, "Blend Opacity", "Overlay", kNoFlags, 1.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shader
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 Bleach_v2_FX( float2 uv: TEXCOORD1 ) : COLOR
+DeclareEntryPoint (BleachBypass)
 {
-   float4 source = GetPixel (MsiBleachSampler, uv);
+   float4 source = ReadPixel (Input, uv1);
 
    // BEGIN Bleach bypass routine by NVidia
    // (http://developer.download.nvidia.com/shaderlibrary/webpages/hlsl_shaders.html#post_bleach_bypass)
@@ -132,15 +66,8 @@ float4 Bleach_v2_FX( float2 uv: TEXCOORD1 ) : COLOR
 
    // END Bleach bypass routine by NVidia
 
-   return float4 (mixRGB, source.a);
-}
+   float4 retval = float4 (lerp (kTransparentBlack, mixRGB, source.a), source.a);
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique BleachBypassFXTechnique
-{
-   pass SinglePass ExecuteShader (Bleach_v2_FX)
+   return lerp (source, retval, tex2D (Mask, uv1));
 }
 

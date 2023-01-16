@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2022-04-14
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-10-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmLab_640.png
+// @Created 2023-01-09
 
 /**
  This applies a range of tweaks to simulate the look of various colour film laboratory
@@ -35,6 +34,8 @@
    Gamma presets:Red > Gamma:Red - no range difference.
    Gamma presets:Green > Gamma:Green - no range difference.
    Gamma presets:Blue > Gamma:Blue - no range difference.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -45,198 +46,69 @@
 //
 // Version history:
 //
-// Bug fix 2022-04-14 jwrl.
-// Addressed a bug in Nvidia cards on Linux which caused solid blacks to display as red.
-//
-// Rewrite 2021-10-01 jwrl.
-// Rebuild of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Film lab";
-   string Category    = "Colour";
-   string SubCategory = "Film Effects";
-   string Notes       = "This is a colour film processing lab for video";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Film lab", "Colour", "Film Effects", "This is a colour film processing lab for video", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float Saturation
-<
-   string Group = "Video settiings";
-   string Description = "Saturation";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.5;
-   float MaxVal = 1.5;
-> = 1.0;
+DeclareFloatParam (Saturation, "Saturation", "Video settings", "DisplayAsPercentage", 1.0, 0.5, 1.5);
+DeclareFloatParam (Gamma, "Gamma", "Video settings", kNoFlags, 1.0, 0.1, 2.5);
+DeclareFloatParam (Contrast, "Contrast", "Video settings", "DisplayAsPercentage", 1.0, 0.5, 1.5);
 
-float Gamma
-<
-   string Group = "Video settiings";
-   string Description = "Gamma";
-   float MinVal = 0.1;
-   float MaxVal = 2.5;
-> = 2.5;
+DeclareFloatParam (Linearity, "Linearity", "Lab operations", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Bypass, "Bleach bypass", "Lab operations", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Ageing, "Film ageing", "Lab operations", kNoFlags, 0.3, 0.0, 1.0);
 
-float Contrast
-<
-   string Group = "Video settiings";
-   string Description = "Contrast";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.5;
-   float MaxVal = 1.5;
-> = 1.0;
+DeclareFloatParam (LumaCurve, "RGB", "Preprocessing curves", kNoFlags, 1.0, 1.0, 10.0);
+DeclareFloatParam (RedCurve, "Red", "Preprocessing curves", kNoFlags, 10.0, 1.0, 10.0);
+DeclareFloatParam (GreenCurve, "Green", "Preprocessing curves", kNoFlags, 5.5, 1.0, 10.0);
+DeclareFloatParam (BlueCurve, "Blue", "Preprocessing curves", kNoFlags, 1.0, 1.0, 10.0);
 
-float Linearity
-<
-   string Group = "Lab operations";
-   string Description = "Linearity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Bypass
-<
-   string Group = "Lab operations";
-   string Description = "Bleach bypass";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Ageing
-<
-   string Group = "Lab operations";
-   string Description = "Film ageing";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.3;
-
-float LumaCurve
-<
-   string Group = "Preprocessing curves";
-   string Description = "RGB";
-   float MinVal = 1.0;
-   float MaxVal = 10.0;
-> = 1.0;
-
-float RedCurve
-<
-   string Group = "Preprocessing curves";
-   string Description = "Red";
-   float MinVal = 1.0;
-   float MaxVal = 10.0;
-> = 10.0;
-
-float GreenCurve
-<
-   string Group = "Preprocessing curves";
-   string Description = "Green";
-   float MinVal = 1.0;
-   float MaxVal = 10.0;
-> = 5.5;
-
-float BlueCurve
-<
-   string Group = "Preprocessing curves";
-   string Description = "Blue";
-   float MinVal = 1.0;
-   float MaxVal = 10.0;
-> = 1.0;
-
-float LumaGamma
-<
-   string Group = "Gamma presets";
-   string Description = "RGB";
-   float MinVal = 0.1;
-   float MaxVal = 2.5;
-> = 2.2;
-
-float RedGamma
-<
-   string Group = "Gamma presets";
-   string Description = "Red";
-   float MinVal = 0.1;
-   float MaxVal = 2.5;
-> = 1.0;
-
-float GreenGamma
-<
-   string Group = "Gamma presets";
-   string Description = "Green";
-   float MinVal = 0.1;
-   float MaxVal = 2.5;
-> = 1.0;
-
-float BlueGamma
-<
-   string Group = "Gamma presets";
-   string Description = "Blue";
-   float MinVal = 0.1;
-   float MaxVal = 2.5;
-> = 1.0;
+DeclareFloatParam (LumaGamma, "RGB", "Gamma presets", kNoFlags, 1.4, 0.1, 2.5);
+DeclareFloatParam (RedGamma, "Red", "Gamma presets", kNoFlags, 1.0, 0.1, 2.5);
+DeclareFloatParam (GreenGamma, "Green", "Gamma presets", kNoFlags, 1.0, 0.1, 2.5);
+DeclareFloatParam (BlueGamma, "Blue", "Gamma presets", kNoFlags, 1.0, 0.1, 2.5);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (FilmLab)
 {
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
    float lin = (Linearity * 1.5) + 1.0;
 
-   float4 Inp = saturate (GetPixel (s_Input, uv)); // Clamp RGB to prevent superwhites
-   float4 lab = lerp (0.01.xxxx, pow (Inp, lin), Contrast);
+   float4 src = tex2D (Inp, uv1);
+   float4 vid = pow (src, 1.0 / Gamma);
+
+   vid.a = src.a;
+
+   float4 lab = lerp (0.01.xxxx, pow (vid, lin), Contrast);
 
    float3 print = pow (lab.rgb, 1.0 / LumaGamma);
    float3 grade = dot ((1.0 / 3.0).xxx, lab.rgb).xxx;
@@ -245,7 +117,6 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    grade = 0.5.xxx - grade;
    grade = (1.0.xxx / (1.0.xxx + exp (flash * grade)) - light) / (1.0.xxx - (2.0 * light));
-   grade = pow (grade, 1.0 / Gamma);
    grade = lerp (grade, 1.0.xxx - grade, Bypass);
 
    grade.x = pow (grade.x, 1.0 / RedGamma);
@@ -273,16 +144,10 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    lab = (adjust < 0.0) ? lab * (adjust * (1.0.xxxx - lab) + 1.0.xxxx)
                         : adjust * (sqrt (lab) - lab) + lab;
    print = lerp ((lab.r + lab.g + lab.b).xxx / 3.0, lab.rgb, (Saturation - 0.5) * 2.0);
-   lab = float4 (pow (print, 1.0 / lin), Inp.a);
+   lab = float4 (pow (print, 1.0 / lin), vid.a);
 
-   return lerp (Inp, lab, Amount);
+   vid = lerp (kTransparentBlack, lerp (vid, lab, Amount), src.a);
+
+   return lerp (src, vid, tex2D (Mask, uv1));
 }
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique FilmLab
-{
-   pass P_1 ExecuteShader (ps_main)
-}

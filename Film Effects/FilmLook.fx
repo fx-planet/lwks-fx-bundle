@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-01
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-10-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/FilmicLook2018_640.png
+// @Created 2023-01-09
 
 /**
  This effect simulates a filmic curve with exposure adjustment and controllable halation
@@ -32,6 +31,8 @@
  altered from that used in the earlier effect for a result that more closely resembles
  the look of film.  Vibrance is very similar to the sort of effect you get with
  the Photoshop vibrance filter - thanks gr00by for the algorithm.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -39,67 +40,45 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-01 jwrl.
-// Rebuild of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Filmic look";
-   string Category    = "Colour";
-   string SubCategory = "Film Effects";
-   string Notes       = "Simulates a filmic curve with exposure adjustment, halation and vibrance.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Filmic look", "Colour", "Film Effects", "Simulates a filmic curve with exposure adjustment, halation and vibrance.", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Input);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (SetRange, "Video range", kNoGroup, 0, "Legal BT.709|Full gamut (sRGB)");
+
+DeclareFloatParam (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (Exposure, "Exposure", "Linearity", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Curve, "S curve", "Linearity", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (Halation, "Halation", "Linearity", kNoFlags, 0.0, 0.0, 1.0);
+
+DeclareFloatParam (ColTemp, "Colour temp", "Colour", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Saturation, "Saturation", "Colour", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Vibrance, "Vibrance", "Colour", kNoFlags, 0.25, -1.0, 1.0);
+
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define E_SCALE  0.25
 #define W_RANGE  0.07058825
@@ -111,90 +90,13 @@ Wrong_Lightworks_version
 
 #define PIXEL    0.0005
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs and targets
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Input, s_Input);
-
-DefineTarget (Cgrade, s_Grade);
-DefineTarget (Clipped, s_Clip);
-DefineTarget (Halo, s_Halo);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int SetRange
-<
-   string Description = "Video range";
-   string Enum = "Legal BT.709,Full gamut (sRGB)";
-> = 0;
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Exposure
-<
-   string Group = "Linearity";
-   string Description = "Exposure";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Curve
-<
-   string Group = "Linearity";
-   string Description = "S curve";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float Halation
-<
-   string Group = "Linearity";
-   string Description = "Halation";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float ColTemp
-<
-   string Group = "Colour";
-   string Description = "Colour temp";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Saturation
-<
-   string Group = "Colour";
-   string Description = "Saturation";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Vibrance
-<
-   string Group = "Colour";
-   string Description = "Vibrance";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_colourgrade (float2 uv : TEXCOORD1) : COLOR
+DeclarePass (Grade)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   float4 retval = ReadPixel (Input, uv1);
 
    // Set up the exposure for a plus or minus one stop adjustment if needed.
 
@@ -244,12 +146,14 @@ float4 ps_colourgrade (float2 uv : TEXCOORD1) : COLOR
    return float4 (lerp (retRGB, maxval.xxx, vibval), retval.a);
 }
 
-float4 ps_clip_it (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (Clipped)
 {
    // This section creates a clipped version of the colourgraded video for use later in
    // creating the halation effect.
 
-   float4 retval = tex2D (s_Grade, uv);
+   float2 uv = uv0 + (0.5 / float2 (_OutputWidth, _OutputHeight));
+
+   float4 retval = tex2D (Grade, uv);
 
    float luma = dot (retval.rgb, LUMACONV);
 
@@ -258,9 +162,11 @@ float4 ps_clip_it (float2 uv : TEXCOORD2) : COLOR
                         float4 ((retval.rgb *= (luma - 0.7) * 5.0), retval.a);
 }
 
-float4 ps_part_blur (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (Halo)
 {
-   float4 retval = tex2D (s_Clip, uv);
+   float2 uv = uv0 + (0.5 / float2 (_OutputWidth, _OutputHeight));
+
+   float4 retval = tex2D (Clipped, uv);
 
    if (Halation <= 0.0) return retval;    // No halation, quit
 
@@ -271,82 +177,75 @@ float4 ps_part_blur (float2 uv : TEXCOORD2) : COLOR
    float2 xy = uv;
    float2 offset = float2 (PIXEL, 0.0);
 
-   xy += offset; retval += tex2D (s_Clip, xy);
-   xy += offset; retval += tex2D (s_Clip, xy);
-   xy += offset; retval += tex2D (s_Clip, xy);
-   xy += offset; retval += tex2D (s_Clip, xy);
-   xy += offset; retval += tex2D (s_Clip, xy);
-   xy += offset; retval += tex2D (s_Clip, xy);
-   xy += offset; retval += tex2D (s_Clip, xy);
+   xy += offset; retval += tex2D (Clipped, xy);
+   xy += offset; retval += tex2D (Clipped, xy);
+   xy += offset; retval += tex2D (Clipped, xy);
+   xy += offset; retval += tex2D (Clipped, xy);
+   xy += offset; retval += tex2D (Clipped, xy);
+   xy += offset; retval += tex2D (Clipped, xy);
+   xy += offset; retval += tex2D (Clipped, xy);
 
    xy = uv - offset;
-   retval += tex2D (s_Clip, xy);
+   retval += tex2D (Clipped, xy);
 
-   xy -= offset; retval += tex2D (s_Clip, xy);
-   xy -= offset; retval += tex2D (s_Clip, xy);
-   xy -= offset; retval += tex2D (s_Clip, xy);
-   xy -= offset; retval += tex2D (s_Clip, xy);
-   xy -= offset; retval += tex2D (s_Clip, xy);
-   xy -= offset; retval += tex2D (s_Clip, xy);
+   xy -= offset; retval += tex2D (Clipped, xy);
+   xy -= offset; retval += tex2D (Clipped, xy);
+   xy -= offset; retval += tex2D (Clipped, xy);
+   xy -= offset; retval += tex2D (Clipped, xy);
+   xy -= offset; retval += tex2D (Clipped, xy);
+   xy -= offset; retval += tex2D (Clipped, xy);
 
    return retval / 15.0;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (FilmLook)
 {
-   float4 retval = tex2D (s_Grade, uv2);
+   float2 uv = uv0 + (0.5 / float2 (_OutputWidth, _OutputHeight));
+
+   float4 source = ReadPixel (Input, uv1);
+   float4 retval = tex2D (Grade, uv);
 
    float alpha  = retval.a;
    float amount = max (Amount, 0.0);
 
-   retval = lerp (GetPixel (s_Input, uv1), retval, amount);
+   retval = lerp (source, retval, amount);
 
-   if (amount == 0.0) return retval;      // No changes, quit
+   if (amount <= 0.0) {
+      // This section produces the vertical component of the box blur.
 
-   // This section produces the vertical component of the box blur.
+      amount *= log10 ((Halation * 4.0) + 1.0);
 
-   amount *= log10 ((Halation * 4.0) + 1.0);
+      float2 xy = uv;
+      float2 offset = float2 (0.0, _OutputAspectRatio * PIXEL);
 
-   float2 xy = uv2;
-   float2 offset = float2 (0.0, _OutputAspectRatio * PIXEL);
+      float4 gloVal = tex2D (Halo, xy);
 
-   float4 gloVal = tex2D (s_Halo, xy);
+      xy += offset; gloVal += tex2D (Halo, xy);
+      xy += offset; gloVal += tex2D (Halo, xy);
+      xy += offset; gloVal += tex2D (Halo, xy);
+      xy += offset; gloVal += tex2D (Halo, xy);
+      xy += offset; gloVal += tex2D (Halo, xy);
+      xy += offset; gloVal += tex2D (Halo, xy);
+      xy += offset; gloVal += tex2D (Halo, xy);
 
-   xy += offset; gloVal += tex2D (s_Halo, xy);
-   xy += offset; gloVal += tex2D (s_Halo, xy);
-   xy += offset; gloVal += tex2D (s_Halo, xy);
-   xy += offset; gloVal += tex2D (s_Halo, xy);
-   xy += offset; gloVal += tex2D (s_Halo, xy);
-   xy += offset; gloVal += tex2D (s_Halo, xy);
-   xy += offset; gloVal += tex2D (s_Halo, xy);
+      xy = uv - offset;
+      gloVal += tex2D (Halo, xy);
 
-   xy = uv2 - offset;
-   gloVal += tex2D (s_Halo, xy);
+      xy -= offset; gloVal += tex2D (Halo, xy);
+      xy -= offset; gloVal += tex2D (Halo, xy);
+      xy -= offset; gloVal += tex2D (Halo, xy);
+      xy -= offset; gloVal += tex2D (Halo, xy);
+      xy -= offset; gloVal += tex2D (Halo, xy);
+      xy -= offset; gloVal += tex2D (Halo, xy);
 
-   xy -= offset; gloVal += tex2D (s_Halo, xy);
-   xy -= offset; gloVal += tex2D (s_Halo, xy);
-   xy -= offset; gloVal += tex2D (s_Halo, xy);
-   xy -= offset; gloVal += tex2D (s_Halo, xy);
-   xy -= offset; gloVal += tex2D (s_Halo, xy);
-   xy -= offset; gloVal += tex2D (s_Halo, xy);
+      // Apply the blur to the graded image to simulate halation.
 
-   // Apply the blur to the graded image to simulate halation.
+      gloVal = saturate (retval + (gloVal / 15.0));
+      gloVal.a = alpha;
 
-   gloVal = saturate (retval + (gloVal / 15.0));
-   gloVal.a = alpha;
+      retval = lerp (retval, gloVal, amount);
+   }
 
-   return lerp (retval, gloVal, amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique FilmLook
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Cgrade;"; > ExecuteShader (ps_colourgrade)
-   pass P_2 < string Script = "RenderColorTarget0 = Clipped;"; > ExecuteShader (ps_clip_it)
-   pass P_3 < string Script = "RenderColorTarget0 = Halo;"; > ExecuteShader (ps_part_blur)
-   pass P_4 ExecuteShader (ps_main)
+   return lerp (source, retval, tex2D (Mask, uv1));
 }
 

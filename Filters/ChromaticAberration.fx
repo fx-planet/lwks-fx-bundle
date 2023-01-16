@@ -1,11 +1,12 @@
 // @Maintainer jwrl
-// @Released 2021-10-05
+// @Released 2023-01-10
 // @Author josely
 // @Created 2012-06-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/ChromAb_640.png
 
 /**
  Generates or removes chromatic aberration.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,83 +16,37 @@
 //
 // Version history:
 //
-// Update 2021-10-05 jwrl.
-// Updated the original effect to support LW 2021 resolution independence.
-//
-// Update 2020-11-12 jwrl.
-// Added CanSize switch for LW 2021 support.
-//
-// Modified 23 December 2018 jwrl.
-// Added creation date.
-// Changed subcategory.
-// Reformatted the effect description for markup purposes.
-//
-// Modified 7 April 2018 jwrl.
-// Added authorship and description information for GitHub, and reformatted the original
-// code to be consistent with other Lightworks user effects.
-//
-// Version 14 update 18 Feb 2017 jwrl.
-// Added subcategory to effect header.
-//
-// This cross-platform conversion by jwrl April 28, 2016
+// Updated 2023-01-10 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Chromatic aberration";
-   string Category    = "Stylize";
-   string SubCategory = "Filters";
-   string Notes       = "Generates or removes chromatic aberration";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Chromatic aberration", "Stylize", "Filters", "Generates or removes chromatic aberration", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Input);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (Mode, "Chromatic Band", kNoGroup, 0, "Half|Full");
+
+DeclareFloatParam (Amount, "Amount", kNoGroup, kNoFlags, 0.1, -1.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define STEPS   12
 #define STEPS_2 24               // STEPS * 2
@@ -99,122 +54,51 @@ Wrong_Lightworks_version
 #define STEP_RB 1.846            // STEPS / (1 - 0.5 * (STEPS + 1) + STEPS)
 
 //-----------------------------------------------------------------------------------------//
-// Input and sampler
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Input, s_RawInp);
+DeclarePass (Inp)
+{ return ReadPixel (Input, uv1); }
 
-DefineTarget (FixInp, s_Input);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int SetTechnique
-<
-   string Description = "Chromatic Band";
-   string Enum = "Half,Full";
-> = 0;
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
-float4 ps_main_half (float2 uv : TEXCOORD2) : COLOR
+DeclareEntryPoint (ChromaticAberration)
 {
-   float4 fragColor = float4 (0.0, 0.0, 0.0, 1.0);
+   float4 source    = tex2D (Input, uv1);
+   float4 fragColor = float4 (0.0.xxx, 1.0);
 
-   float2 xy, color, coord = uv - 0.5.xx;
+   float2 xy, color, coord = uv2 - 0.5.xx;
 
-   float Scale, multiplier = length (coord) * (Amount / 100.0);
+   float multiplier = length (coord) * Amount * float (1 + Mode) / 100.0;
+   float Scale;
 
    coord *= multiplier;
 
-   for (int i = 0; i < STEPS; i ++) {
-      xy = uv - (i * coord);
+   for (int i = 0; i < STEPS; i++) {
+      xy = uv2 - (i * coord);
       Scale = (float) i / STEPS;
-      color = tex2D (s_Input, xy).rg / STEPS;
-      color.x *= (1.0 - Scale);
-      color.y *= Scale;
-      fragColor.rg += color.xy;
+      color = tex2D (Inp, xy).rg / STEPS;
+      color *= float2 (1.0 - Scale, Scale);
+      fragColor.rg += color;
    }
 
-   for (int i = STEPS; i <= STEPS_2; i ++) {
-      xy = uv - (i * coord);
+   for (int i = STEPS; i <= STEPS_2; i++) {
+      xy = uv2 - (i * coord);
       Scale = (float) (i - STEPS) / STEPS;
-      color = tex2D (s_Input, xy).gb / STEPS;
-      color.x *= (1.0 - Scale);
-      color.y *= Scale;
-      fragColor.gb += color.xy;
+      color = tex2D (Inp, xy).gb / STEPS;
+      color *= float2 (1.0 - Scale, Scale);
+      fragColor.gb += color;
    }
 
-   fragColor.rb *= STEP_RB;   // Half cycle correction
-
-   return fragColor;
-}
-
-float4 ps_main_full (float2 uv : TEXCOORD2) : COLOR
-{
-   float4 fragColor = float4 (0.0, 0.0, 0.0, 1.0);
-
-   float2 xy, color, coord = uv - 0.5.xx;
-
-   float Scale, multiplier = length (coord) * (Amount / 50.0);
-
-   coord *= multiplier;
-
-   for (int i = 0; i < STEPS; i ++) {
-      xy = uv - (i * coord);
-      Scale = (float) i / STEPS;
-      color = tex2D (s_Input, xy).rg / STEPS;
-      color.x *= (1.0 - Scale);
-      color.y *= Scale;
-      fragColor.rg += color.xy;
+   if (Mode) {
+      for (int i = STEPS_2; i < STEPS_3; i++) {
+         xy = uv2 - (i * coord);
+         Scale = (float) (i - STEPS_2) / STEPS;
+         color = tex2D (Inp, xy).br / STEPS;
+         color *= float2 (1.0 - Scale, Scale);
+         fragColor.br += color;
+      }
    }
+   else { fragColor.rb *= STEP_RB; }   // Half cycle correction
 
-   for (int i = STEPS; i <= STEPS_2; i ++) {
-      xy = uv - (i * coord);
-      Scale = (float) (i - STEPS) / STEPS;
-      color = tex2D (s_Input, xy).gb / STEPS;
-      color.x *= (1.0 - Scale);
-      color.y *= Scale;
-      fragColor.gb += color.xy;
-   }
-
-   for (int i = STEPS_2; i < STEPS_3; i ++) {
-      xy = uv - (i * coord);
-      Scale = (float) (i - STEPS_2) / STEPS;
-      color = tex2D (s_Input, xy).br / STEPS;
-      color.x *= (1.0 - Scale);
-      color.y *= Scale;
-      fragColor.br += color.xy;
-   }
-
-   return fragColor;
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Half
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main_half)
-}
-
-technique Full
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 ExecuteShader (ps_main_full)
+   return lerp (source, lerp (kTransparentBlack, fragColor, ReadPixel (Input, uv1).a), tex2D (Mask, uv1));
 }
 

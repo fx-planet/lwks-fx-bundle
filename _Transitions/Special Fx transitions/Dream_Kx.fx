@@ -1,82 +1,63 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Ripples_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Ripples.mp4
+// @Created 2023-01-16
 
 /**
  This effect ripples the outgoing or incoming blended foreground as it dissolves.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dreams_Fx.fx
 //
-// This effect is a combination of two previous effects, Dreams_Ax and Dreams_Adx.
-//
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Dream sequence (keyed)";
-   string Category    = "Mix";
-   string SubCategory = "Special Fx transitions";
-   string Notes       = "Ripples the outgoing or incoming blended foreground as it dissolves";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Dream sequence (keyed)", "Mix", "Special Fx transitions", "Ripples the outgoing or incoming blended foreground as it dissolves", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+
+DeclareIntParam (WaveType, "Wave type", kNoGroup, 0, "Waves|Ripples");
+
+DeclareFloatParam (Frequency, "Frequency", "Pattern", kNoFlags, 0.2, 0.0, 1.0);
+DeclareFloatParam (Speed, "Speed", "Pattern", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (BlurAmt, "Blur", "Pattern", kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareFloatParam (StrengthX, "Strength", "Pattern", "SpecifiesPointX", 0.0, 0.0, 1.0);
+DeclareFloatParam (StrengthY, "Strength", "Pattern", "SpecifiesPointY", 0.2, 0.0, 1.0);
+
+DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+
+DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define SAMPLE  30
 #define SAMPLES 60
@@ -85,104 +66,6 @@ Wrong_Lightworks_version
 #define CENTRE  (0.5).xx
 
 #define HALF_PI 1.5707963268
-
-float _Progress;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Super, s_Super);
-DefineTarget (BlurX, s_Blur_X);
-DefineTarget (BlurY, s_Blur_Y);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
-
-int Source
-<
-   string Description = "Source";
-   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
-> = 0;
-
-int SetTechnique
-<
-   string Description = "Transition position";
-   string Enum = "At start if delta key folded,At start of clip,At end of clip";
-> = 1;
-
-bool CropEdges
-<
-   string Description = "Crop effect to background";
-> = false;
-
-int WaveType
-<
-   string Description = "Wave type";
-   string Enum = "Waves,Ripples";
-> = 0;
-
-float Frequency
-<
-   string Group = "Pattern";
-   string Flags = "Frequency";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
-
-float Speed
-<
-   string Group = "Pattern";
-   string Description = "Speed";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float BlurAmt
-<
-   string Group = "Pattern";
-   string Description = "Blur";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float StrengthX
-<
-   string Group = "Pattern";
-   string Description = "Strength";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
-
-float StrengthY
-<
-   string Group = "Pattern";
-   string Description = "Strength";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float KeyGain
-<
-   string Description = "Key trim";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -200,34 +83,12 @@ float2 fn_wave (float2 uv, float2 waves, float levels)
    return uv + (retXY * strength);
 }
 
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_keygen_F (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
+   float4 Fgnd = ReadPixel (F, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-
-   if (Source == 0) {
-      float4 Bgnd = GetPixel (s_Background, uv2);
+      float4 Bgnd = ReadPixel (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -240,39 +101,30 @@ float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 ps_dissolve_I (float2 uv : TEXCOORD3) : COLOR
+float4 fn_dissolve (sampler S, float2 uv)
 {
    float waves = float (Frequency * 200.0);
 
    float2 xy = fn_wave (uv, waves.xx, cos (Amount * HALF_PI));
 
-   return GetPixel (s_Super, xy) * Amount;
+   return ReadPixel (S, xy) * Amount;
 }
 
-float4 ps_dissolve_O (float2 uv : TEXCOORD3) : COLOR
+float4 fn_blur (sampler B, float2 uv)
 {
-   float waves = float (Frequency * 200.0);
+   float4 Inp = tex2D (B, uv);
+   float4 retval = kTransparentBlack;
 
-   float2 xy = fn_wave (uv, waves.xx, sin (Amount * HALF_PI));
+   float blur = (StrengthY > StrengthX) ? WaveType ? BlurAmt : (BlurAmt / 2.0)
+                                        : WaveType ? (BlurAmt / 2.0) : BlurAmt;
+   if (blur <= 0.0) return Inp;
 
-   return GetPixel (s_Super, xy) * (1.0 - Amount);
-}
-
-float4 ps_blur_I (float2 uv : TEXCOORD3) : COLOR
-{
-   float4 Inp = tex2D (s_Blur_X, uv);
-   float4 retval = EMPTY;
-
-   float BlurX = (StrengthY > StrengthX) ? WaveType ? BlurAmt : (BlurAmt / 2)
-                                         : WaveType ? (BlurAmt / 2) : BlurAmt;
-   if (BlurX <= 0.0) return Inp;
-
-   float2 offset = float2 (BlurX, 0.0) * OFFSET;
+   float2 offset = float2 (blur, 0.0) * OFFSET;
    float2 blurriness = 0.0.xx;
 
    for (int i = 0; i < SAMPLE; i++) {
-      retval += tex2D (s_Blur_X, uv + blurriness);
-      retval += tex2D (s_Blur_X, uv - blurriness);
+      retval += tex2D (B, uv + blurriness);
+      retval += tex2D (B, uv - blurriness);
       blurriness += offset;
    }
     
@@ -281,21 +133,132 @@ float4 ps_blur_I (float2 uv : TEXCOORD3) : COLOR
    return lerp (Inp, retval, 1.0 - Amount);
 }
 
-float4 ps_blur_O (float2 uv : TEXCOORD3) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Shaders
+//-----------------------------------------------------------------------------------------//
+
+// technique Dreams_F
+
+DeclarePass (Super_F)
 {
-   float4 Inp = tex2D (s_Blur_X, uv);
-   float4 retval = EMPTY;
+   float4 Fgnd = ReadPixel (Fg, uv1);
 
-   float BlurY = (StrengthY > StrengthX) ? WaveType ? BlurAmt : (BlurAmt / 2)
+   if (Source == 0) {
+      float4 Bgnd = ReadPixel (Bg, uv2);
+
+      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+   }
+   else if (Source == 1) {
+      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+}
+
+DeclarePass (BlurX_F)
+{ return fn_dissolve (Super_F, uv3); }
+
+DeclarePass (BlurY_F)
+{ return fn_blur (BlurX_F, uv3); }
+
+DeclareEntryPoint (Dreams_F)
+{
+   float4 Fgnd   = tex2D (BlurY_F, uv3);
+   float4 retval = kTransparentBlack;
+
+   float blur = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
+                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
+   if (blur > 0.0) {
+      float2 offset = float2 (0.0, blur) * OFFSET;
+      float2 blurriness = 0.0.xx;
+
+      for (int i = 0; i < SAMPLE; i++) {
+         retval += tex2D (BlurY_F, uv3 + blurriness);
+         retval += tex2D (BlurY_F, uv3 - blurriness);
+         blurriness += offset;
+      }
+
+      retval /= SAMPLES;
+
+      Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
+   }
+
+   if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
+
+   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
+}
+
+
+// technique Dreams_I
+
+DeclarePass (Super_I)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (BlurX_I)
+{ return fn_dissolve (Super_I, uv3); }
+
+DeclarePass (BlurY_I)
+{ return fn_blur (BlurX_I, uv3); }
+
+DeclareEntryPoint (Dreams_I)
+{
+   float4 Fgnd   = tex2D (BlurY_I, uv3);
+   float4 retval = kTransparentBlack;
+
+   float blur = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
+                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
+   if (blur > 0.0) {
+      float2 offset = float2 (0.0, blur) * OFFSET;
+      float2 blurriness = 0.0.xx;
+
+      for (int i = 0; i < SAMPLE; i++) {
+         retval += tex2D (BlurY_I, uv3 + blurriness);
+         retval += tex2D (BlurY_I, uv3 - blurriness);
+         blurriness += offset;
+      }
+
+      retval /= SAMPLES;
+
+      Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
+   }
+
+   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+
+   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+}
+
+
+// technique Dreams_O
+
+DeclarePass (Super_O)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (BlurX_O)
+{
+   float waves = float (Frequency * 200.0);
+
+   float2 xy = fn_wave (uv3, waves.xx, sin (Amount * HALF_PI));
+
+   return ReadPixel (Super_O, xy) * (1.0 - Amount);
+}
+
+DeclarePass (BlurY_O)
+{
+   float4 Inp = tex2D (BlurX_O, uv3);
+   float4 retval = kTransparentBlack;
+
+   float blur = (StrengthY > StrengthX) ? WaveType ? BlurAmt : (BlurAmt / 2)
                                          : WaveType ? (BlurAmt / 2) : BlurAmt;
-   if (BlurY <= 0.0) return Inp;
+   if (blur <= 0.0) return Inp;
 
-   float2 offset = float2 (BlurY, 0.0) * OFFSET;
+   float2 offset = float2 (blur, 0.0) * OFFSET;
    float2 blurriness = 0.0.xx;
 
    for (int i = 0; i < SAMPLE; i++) {
-      retval += tex2D (s_Blur_X, uv + blurriness);
-      retval += tex2D (s_Blur_X, uv - blurriness);
+      retval += tex2D (BlurX_O, uv3 + blurriness);
+      retval += tex2D (BlurX_O, uv3 - blurriness);
       blurriness += offset;
    }
     
@@ -304,74 +267,20 @@ float4 ps_blur_O (float2 uv : TEXCOORD3) : COLOR
    return lerp (Inp, retval, Amount);
 }
 
-float4 ps_main_F (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (Dreams_O)
 {
-   float4 Fgnd   = tex2D (s_Blur_Y, uv3);
-   float4 retval = EMPTY;
+   float4 Fgnd   = tex2D (BlurY_O, uv3);
+   float4 retval = kTransparentBlack;
 
-   float BlurY = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
+   float blur = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
                                          : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
-   if (BlurY > 0.0) {
-      float2 offset = float2 (0.0, BlurY) * OFFSET;
+   if (blur > 0.0) {
+      float2 offset = float2 (0.0, blur) * OFFSET;
       float2 blurriness = 0.0.xx;
 
       for (int i = 0; i < SAMPLE; i++) {
-         retval += tex2D (s_Blur_Y, uv3 + blurriness);
-         retval += tex2D (s_Blur_Y, uv3 - blurriness);
-         blurriness += offset;
-      }
-
-      retval /= SAMPLES;
-
-      Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
-   }
-
-   if (CropEdges && Overflow (uv1)) Fgnd = EMPTY;
-
-   return lerp (GetPixel (s_Foreground, uv1), Fgnd, Fgnd.a);
-}
-
-float4 ps_main_I (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   float4 Fgnd   = tex2D (s_Blur_Y, uv3);
-   float4 retval = EMPTY;
-
-   float BlurY = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
-                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
-   if (BlurY > 0.0) {
-      float2 offset = float2 (0.0, BlurY) * OFFSET;
-      float2 blurriness = 0.0.xx;
-
-      for (int i = 0; i < SAMPLE; i++) {
-         retval += tex2D (s_Blur_Y, uv3 + blurriness);
-         retval += tex2D (s_Blur_Y, uv3 - blurriness);
-         blurriness += offset;
-      }
-
-      retval /= SAMPLES;
-
-      Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
-   }
-
-   if (CropEdges && Overflow (uv2)) Fgnd = EMPTY;
-
-   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a);
-}
-
-float4 ps_main_O (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
-{
-   float4 Fgnd   = tex2D (s_Blur_Y, uv3);
-   float4 retval = EMPTY;
-
-   float BlurY = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
-                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
-   if (BlurY > 0.0) {
-      float2 offset = float2 (0.0, BlurY) * OFFSET;
-      float2 blurriness = 0.0.xx;
-
-      for (int i = 0; i < SAMPLE; i++) {
-         retval += tex2D (s_Blur_Y, uv3 + blurriness);
-         retval += tex2D (s_Blur_Y, uv3 - blurriness);
+         retval += tex2D (BlurY_O, uv3 + blurriness);
+         retval += tex2D (BlurY_O, uv3 - blurriness);
          blurriness += offset;
       }
 
@@ -380,36 +289,8 @@ float4 ps_main_O (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
       Fgnd = lerp (Fgnd, retval, Amount);
    }
 
-   if (CropEdges && Overflow (uv2)) Fgnd = EMPTY;
+   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (GetPixel (s_Background, uv2), Fgnd, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Dreams_Fx_F
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen_F)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_dissolve_I)
-   pass P_3 < string Script = "RenderColorTarget0 = BlurY;"; > ExecuteShader (ps_blur_I)
-   pass P_4 ExecuteShader (ps_main_F)
-}
-
-technique Dreams_Fx_I
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_dissolve_I)
-   pass P_3 < string Script = "RenderColorTarget0 = BlurY;"; > ExecuteShader (ps_blur_I)
-   pass P_4 ExecuteShader (ps_main_I)
-}
-
-technique Dreams_Fx_O
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurX;"; > ExecuteShader (ps_dissolve_O)
-   pass P_3 < string Script = "RenderColorTarget0 = BlurY;"; > ExecuteShader (ps_blur_O)
-   pass P_4 ExecuteShader (ps_main_O)
+   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
 }
 

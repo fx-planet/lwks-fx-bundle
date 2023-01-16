@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-07-25
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/Dx_Dreams_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/DreamSequence.mp4
+// @Created 2023-01-16
 
 /**
  This effect starts off by rippling the outgoing image for the first third of the effect,
@@ -15,157 +13,46 @@
  mimic the original film effect.  Two directional blurs have also been added, one very
  much weaker than the other.  Their comparative strengths depend on the predominant
  direction of the wave effect.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Dream_Dx.fx
 //
-// This is a rebuild of an earlier effect, Dreams_Dx.fx, to meet the needs of Lightworks
-// version 2021.1 and higher.
-//
 // Version history:
 //
-// Rewrite 2021-07-25 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Dream sequence";
-   string Category    = "Mix";
-   string SubCategory = "Special Fx transitions";
-   string Notes       = "Ripples the images as it dissolves between them";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = Mirror;                \
-   AddressV  = Mirror;                \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
-
-float _Progress;
+DeclareLightworksEffect ("Dream sequence", "Mix", "Special Fx transitions", "Ripples the images as it dissolves between them", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_RawFg);
-DefineInput (Bg, s_RawBg);
-
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (RawBg, s_Background);
-DefineTarget (BlurXinput, s_BlurX);
-DefineTarget (BlurYinput, s_BlurY);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float Speed
-<
-   string Description = "Speed";
-   float MinVal = 0.0;
-   float MaxVal = 125.0;
-> = 25.0;
+DeclareFloatParam (Speed, "Speed", kNoGroup, kNoFlags, 25.0, 0.0, 125.0);
+DeclareFloatParam (BlurAmt, "Blur", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-float BlurAmt
-<
-   string Description = "Blur";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareBoolParam (Wavy, "Wavy", kNoGroup, true);
 
-bool Wavy
-<
-   string Description = "Wavy";
-> = true;
+DeclareFloatParam (WavesX, "Frequency", kNoGroup, "SpecifiesPointX", 0.0, 0.0, 1.0);
+DeclareFloatParam (WavesY, "Frequency", kNoGroup, "SpecifiesPointY", 1.0, 0.0, 1.0);
 
-float WavesX
-<
-   string Description = "Frequency";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (StrengthX, "Strength", kNoGroup, "SpecifiesPointX", 0.0, 0.0, 1.0);
+DeclareFloatParam (StrengthY, "Strength", kNoGroup, "SpecifiesPointY", 0.2, 0.0, 1.0);
 
-float WavesY
-<
-   string Description = "Frequency";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float StrengthX
-<
-   string Description = "Strength";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float StrengthY
-<
-   string Description = "Strength";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
+DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -182,16 +69,16 @@ float2 fn_XYwave (float2 xy1, float2 xy2, float amt)
                : xy1 + (float2 (sin (xy.x), cos (xy.y)) * strength);
 }
 
-float4 fn_blur_sub (sampler blurSampler, float2 blurXY, float2 blurOffs)
+float4 fn_blur_sub (sampler S, float2 xy, float2 offs)
 {
    float Samples = 60.0;
    float Mix = min (1.0, abs (2.5 - abs ((Amount * 5.0) - 2.5)));
 
    float4 result  = 0.0.xxxx;
-   float4 blurInp = tex2D (blurSampler, blurXY);
+   float4 blurInp = tex2D (S, xy);
 
    for (int i = 0; i < Samples; i++) {
-      result += tex2D (blurSampler, blurXY - blurOffs * i);
+      result += tex2D (S, xy - offs * i);
       }
     
    result /= Samples;
@@ -203,58 +90,48 @@ float4 fn_blur_sub (sampler blurSampler, float2 blurXY, float2 blurOffs)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+DeclarePass (Fgd)
+{ return ReadPixel (Fg, uv1); }
 
-float4 ps_dreams (float2 uv : TEXCOORD3) : COLOR
+DeclarePass (Bgd)
+{ return ReadPixel (Bg, uv2); }
+
+DeclarePass (BlurX)
 {
    float wAmount = min (1.0, abs (1.5 - abs ((Amount * 3.0) - 1.5))) / 10.0;
 
    float mixAmount = saturate ((Amount * 2.0) - 0.5);
 
    float2 waves = float2 (WavesX, WavesY) * 20.0;
-   float2 xy = fn_XYwave (uv, waves, wAmount);
+   float2 xy = fn_XYwave (uv3, waves, wAmount);
 
-   float4 fgProc = tex2D (s_Foreground, xy);
-   float4 bgProc = tex2D (s_Background, xy);
+   float4 fgProc = tex2D (Fgd, xy);
+   float4 bgProc = tex2D (Bgd, xy);
 
    return lerp (fgProc, bgProc, mixAmount);
 }
 
-float4 ps_blur (float2 uv : TEXCOORD3) : COLOR
+DeclarePass (BlurY)
 {
-   float BlurX;
+   float blur;
 
-   if (StrengthX > StrengthY) { BlurX = Wavy ? BlurAmt : (BlurAmt / 2.0); }
-   else BlurX = Wavy ? (BlurAmt / 2.0) : BlurAmt;
+   if (StrengthX > StrengthY) { blur = Wavy ? BlurAmt : (BlurAmt / 2.0); }
+   else blur = Wavy ? (BlurAmt / 2.0) : BlurAmt;
 
-   float2 offset = float2 (BlurX, 0.0) * 0.0005;
+   float2 offset = float2 (blur, 0.0) * 0.0005;
 
-   return (BlurX > 0.0) ? fn_blur_sub (s_BlurX, uv, offset) : tex2D (s_BlurX, uv);
+   return (blur > 0.0) ? fn_blur_sub (BlurX, uv3, offset) : tex2D (BlurX, uv3);
 }
 
-float4 ps_main (float2 uv : TEXCOORD3) : COLOR
+DeclareEntryPoint (Dream_Dx)
 {
-   float BlurY;
+   float blur;
 
-   if (StrengthX > StrengthY) { BlurY = Wavy ? (BlurAmt / 2) : (BlurAmt * 2.0); }
-      else BlurY = Wavy ? (BlurAmt * 2) : (BlurAmt / 2);
+   if (StrengthX > StrengthY) { blur = Wavy ? (BlurAmt / 2) : (BlurAmt * 2.0); }
+      else blur = Wavy ? (BlurAmt * 2) : (BlurAmt / 2);
 
-   float2 offset = float2 (0.0, BlurY) * 0.0005;
+   float2 offset = float2 (0.0, blur) * 0.0005;
 
-   return (BlurY > 0.0) ? fn_blur_sub (s_BlurY, uv, offset) : tex2D (s_BlurY, uv);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Dream_Dx
-{
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass P_1 < string Script = "RenderColorTarget0 = BlurXinput;"; > ExecuteShader (ps_dreams)
-   pass P_2 < string Script = "RenderColorTarget0 = BlurYinput;"; > ExecuteShader (ps_blur)
-   pass P_3 ExecuteShader (ps_main)
+   return (blur > 0.0) ? fn_blur_sub (BlurY, uv3, offset) : tex2D (BlurY, uv3);
 }
 

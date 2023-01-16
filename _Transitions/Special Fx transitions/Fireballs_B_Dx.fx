@@ -1,9 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-11-03
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/Fireball_B_Dx_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Fireball_B_Dx.mp4
+// @Created 2023-01-16
 
 /**
  This is a fireball effect that can be used to transition between two video sources.
@@ -14,7 +12,7 @@
  Unlike "Fireball transition" this first fills the frame with the hot centre colour
  then dissolves from that to the second video source.
 
- NOTE: THIS EFFECT WILL ONLY COMPILE ON VERSIONS OF LIGHTWORKS LATER THAN 14.0.
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -31,142 +29,49 @@
 //
 // Version history:
 //
-// Update 2021-11-03 jwrl.
-// Corrected the white level overflow that could arise in non-floating point workspaces.
-//
-// Rewrite 2021-07-25 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Fireball transition B";
-   string Category    = "Mix";
-   string SubCategory = "Special Fx transitions";
-   string Notes       = "Produces a hot fireball and uses it to transition between video sources";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define MaskedIp(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
-
-#define MINIMUM 0.00001
-#define TWO_PI  6.2831853072
-
-#define WHITE   1.0.xxxx
-
-float _Progress;
-float _Length;
-
-float _OutputAspectRatio;
+DeclareLightworksEffect ("Fireball transition B", "Mix", "Special Fx transitions", "Produces a hot fireball and uses it to transition between video sources", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_RawFg);
-DefineInput (Bg, s_RawBg);
-
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (RawBg, s_Background);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Fireball progress";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float Speed
-<
-   string Description = "Flicker rate";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.0;
-   float MaxVal = 2.0;
-> = 0.5;
+DeclareFloatParam (Speed, "Speed", kNoGroup, kNoFlags, 25.0, 0.0, 125.0);
+DeclareFloatParam (Hue, "Flame hue", kNoGroup, kNoFlags, 0.0, -180.0, 180.0);
+DeclareFloatParam (Intensity, "Flame intensity", kNoGroup, "DisplayAsPercentage", 1.0, 0.5, 1.5);
 
-float Hue
-<
-   string Description = "Flame hue";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 0.0;
+DeclareFloatParam (PosX, "Fireball position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (PosY, "Fireball position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float Intensity
-<
-   string Description = "Flame intensity";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.5;
-   float MaxVal = 1.5;
-> = 1.0;
+DeclareFloatParam (_Progress);
+DeclareFloatParam (_Length);
 
-float PosX
-<
-   string Description = "Fireball position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_OutputAspectRatio);
 
-float PosY
-<
-   string Description = "Fireball position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define MINIMUM 0.00001
+#define TWO_PI  6.2831853072
+
+#define WHITE   1.0.xxxx
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -229,15 +134,18 @@ float4 fn_hueShift (float4 rgb)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return MaskedIp (s_RawFg, uv); }
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return MaskedIp (s_RawBg, uv); }
+DeclarePass (Fgd)
+{ return ReadPixel (Fg, uv1); }
 
-float4 ps_main (float2 uv : TEXCOORD3) : COLOR
+DeclarePass (Bgd)
+{ return ReadPixel (Bg, uv2); }
+
+DeclareEntryPoint (Fireballs_B_Dx)
 {
-   float2 xy = float2 ((uv.x - PosX) * _OutputAspectRatio, 1.0 - uv.y - PosY);
+   float2 xy = float2 ((uv3.x - PosX) * _OutputAspectRatio, 1.0 - uv3.y - PosY);
 
    float amount = pow (Amount + Amount, 2.0);
 
@@ -271,21 +179,10 @@ float4 ps_main (float2 uv : TEXCOORD3) : COLOR
 
    Ball = saturate (fn_hueShift (Ball * Intensity));
 
-   float4 Fgnd = lerp (tex2D (s_Foreground, uv), Ball, min (1.0, fire));
+   float4 Fgnd = lerp (tex2D (Fgd, uv3), Ball, min (1.0, fire));
 
    amount = saturate ((Amount * 3.0) - 2.0);
 
-   return lerp (Fgnd, tex2D (s_Background, uv), amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Fireballs_B_Dx
-{
-   pass P_1 < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_2 < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass P_3 ExecuteShader (ps_main)
+   return lerp (Fgnd, tex2D (Bgd, uv3), amount);
 }
 

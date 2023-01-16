@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-11-15
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-11-15
-// @see https://forum.lwks.com/attachments/highlightwidgets_640-png.39542/
+// @Created 2023-01-10
 
 /**
  This is an effect that is used to highlight sections of the input video, using circles,
@@ -11,8 +10,10 @@
  but there have also been slight improvements made to the circle and square generation.
 
  This effect will break resolution independence.  It was a choice between doing that and
- breaking on-screen position tracking.  I think that it's much more important to preserve
- the latter than the former.
+ breaking on-screen position tracking.  I think that from a user's point of view it's
+ much more important to preserve the latter than the former.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,150 +21,63 @@
 //
 // Version history:
 //
-// Rewrite 2021-11-15 jwrl.
-// This is a rewrite of an effect published on November 5 2021.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Highlight widgets";
-   string Category    = "Key";
-   string SubCategory = "Simple tools";
-   string Notes       = "Used to highlight sections of video that you want to emphasize";
-   bool CanSize       = false;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Highlight widgets", "Key", "Simple tools", "Used to highlight sections of video that you want to emphasize", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define LessThan(XY,REF) (all (XY <= REF))
-
-float _OutputWidth;
-float _OutputHeight;
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and Samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareInput (Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Choose widget";
-   string Enum = "Circle,Square,Arrow"; 
-> = 0;
+DeclareIntParam (SetTechnique, "Choose widget", kNoGroup, 0, "Circle|Square|Arrow");
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Size, "Size", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (Aspect, "Ratio (not for circles)", kNoGroup, kNoFlags, 1.0, 0.1, 10.0);
+DeclareFloatParam (LineWeight, "Line weight", kNoGroup, kNoFlags, 0.1, 0.0, 1.0);
+DeclareFloatParam (Border, "Border", kNoGroup, kNoFlags, 0.1, 0.0, 1.0);
+DeclareFloatParam (Rotation, "Rotate arrow", kNoGroup, kNoFlags, 0.0, -180.0, 180.0);
 
-float Size
-<
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (CentreX, "Position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (CentreY, "Position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float Aspect
-<
-   string Description = "Ratio (not for circles)";
-   float MinVal = 0.1;
-   float MaxVal = 10.0;
-> = 1.0;
+DeclareColourParam (Colour, "Colour", kNoGroup, kNoFlags, 1.0, 0.0, 0.0, 1.0);
 
-float LineWeight
-<
-   string Description = "Line weight";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
 
-float Border
-<
-   string Description = "Border";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
+DeclareFloatParam (_OutputAspectRatio);
 
-float Rotation
-<
-   string Description = "Rotate arrow";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 0.0;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-float CentreX
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
-float CentreY
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+#define BLACK float2(0.0, 1.0).xxxy
 
-float4 Colour
-<
-   string Description = "Colour";
-   bool SupportsAlpha = true;
-> = { 1.0, 0.0, 0.0, 1.0 };
+#define LessThan(XY,REF) (all (XY <= REF))
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-// This function is used to turn on the arrow shapes.  Returns 1 when the shape is turned on,
-// and 0 when it's not.  To provide a degree of antialias, where the selected pixel is within
-// edge limits a value between 0.0 and 1.0 is returned, allowing the edge to be softened.
+// This function is used to create the arrow shape.  Returns 1 when the shape is turned
+// on, and 0 when it's not.  To provide a degree of antialias, where the selected pixel
+// is within edge limits a value between 0 and 1 is returned to soften the edges.
 
-float fn_shape (float2 xy0, float2 xy1, float2 xy2, float s, float h1, float h2)
+float fn_arrow (float2 xy0, float2 xy1, float2 xy2, float s, float h1, float h2)
 {
    float alias  = lerp (16.0, 2.0, sqrt (Size));               // Antialiasing scale by size
    float aliasX = alias / _OutputWidth;                        // Horizontal pixel range
@@ -196,25 +110,25 @@ float fn_shape (float2 xy0, float2 xy1, float2 xy2, float s, float h1, float h2)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (HighlightWidgets_Circle)
 {
-   float4 Bgnd = GetPixel (s_Input, uv);                       // Background video
+   float4 Bgnd = ReadPixel (Inp, uv1);                         // Background video
    float4 Fgnd = Bgnd;                                         // Composite overlay for mix
 
    // This next section is a simple way of creating a circle by using a radius around a
-   // centre point.  Aspect ratio correction is applied to uv to ensure symmetry.
+   // centre point.  Aspect ratio correction is applied to uv1 to ensure symmetry.
 
    float2 xy = _OutputHeight > _OutputWidth
-             ? float2 ((uv.x - CentreX) * _OutputAspectRatio, uv.y + CentreY - 1.0)
-             : float2 (uv.x - CentreX, (uv.y + CentreY - 1.0) / _OutputAspectRatio);
+             ? float2 ((uv1.x - CentreX) * _OutputAspectRatio, uv1.y + CentreY - 1.0)
+             : float2 (uv1.x - CentreX, (uv1.y + CentreY - 1.0) / _OutputAspectRatio);
 
-   float radius = distance (xy, 0.0.xx);                       // Distance of uv from centre
+   float radius = distance (xy, 0.0.xx);                       // Distance of uv1 from centre
    float line_1 = 0.01 + (Size * 0.49);                        // Inner circle size
    float line_2 = line_1 + (LineWeight * 0.1);                 // Outer circle size
-   float brdr_1 = Border * 0.05;                               // Border thickness
+   float brdr_1 = Border * 0.03;                               // Border thickness
    float brdr_2 = line_2 + brdr_1;                             // Outer border size
 
    brdr_1 = max (0.0, line_1 - brdr_1);                        // Inner border size
@@ -238,9 +152,9 @@ float4 ps_circle (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Amount);                           // Mix over the background
 }
 
-float4 ps_square (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (HighlightWidgets_Square)
 {
-   float4 Bgnd = GetPixel (s_Input, uv);                       // Background video
+   float4 Bgnd = ReadPixel (Inp, uv1);                         // Background video
    float4 Fgnd = Bgnd;                                         // Overlay composite
 
    // This next section is on the face of it, confusing.  It relies on the fact that a square
@@ -250,13 +164,13 @@ float4 ps_square (float2 uv : TEXCOORD1) : COLOR
    float2 asp = _OutputHeight > _OutputWidth
               ? float2 (1.0, _OutputAspectRatio)               // Aspect correction portrait
               : float2 (1.0 / _OutputAspectRatio, 1.0);        // Aspect correction landscape
-   float2 xy1 = abs (uv - float2 (CentreX, 1.0 - CentreY));    // Centre the coordinates
+   float2 xy1 = abs (uv1 - float2 (CentreX, 1.0 - CentreY));   // Centre the coordinates
    float2 xy2 = (0.01 + (Size * 0.74)) * asp;                  // Set up the square size
 
    if (Aspect > 1.0) xy2.x *= Aspect;                          // Scale horizontal / vertical
    else xy2.y /= Aspect;                                       // size to create rectangle
 
-   float2 xy3 = xy2 + (asp * LineWeight * 0.15);               // Add line weight to shape
+   float2 xy3 = xy2 + (asp * LineWeight * 0.1875);             // Add line weight to shape
    float2 xy4 = asp * Border * 0.075;                          // Aspect ratio correct border
    float2 xy5 = xy3 + xy4;                                     // Add it to the outer edge
 
@@ -271,13 +185,13 @@ float4 ps_square (float2 uv : TEXCOORD1) : COLOR
    return lerp (Bgnd, Fgnd, Amount);                           // Mix over background, quit
 }
 
-float4 ps_arrow (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (HighlightWidgets_Arrow)
 {
-   float4 Bgnd = GetPixel (s_Input, uv);                       // Background video
+   float4 Bgnd = ReadPixel (Inp, uv1);                         // Background video
    float4 Fgnd = Bgnd;                                         // Overlay composite
 
-   float brdr  = Border * 0.05625;                             // Border scaled
-   float scale = lerp (0.075, 0.2, Aspect / 10.0);             // max = 0.2,   min = 0.077
+   float brdr  = Border * 0.1125;                              // Border scaled
+   float scale = lerp (0.04, 0.2, sqrt (Aspect - 0.1) / 3.15); // Default = 0.14
    float range = lerp (0.375, 0.695, LineWeight - 0.1);        // max = 0.625, min = 0.375
    float Lmin  = 0.1;                                          // Left edge of arrow shaft
    float Lmax  = 0.475;                                        // Left edge of arrow head
@@ -300,9 +214,9 @@ float4 ps_arrow (float2 uv : TEXCOORD1) : COLOR
    float2 xy02 = float2 (Htip, scale);                         // Arrow head tip coordinate
    float2 xy11 = float2 (Lmax, xy01.y + brdr);                 // Right edge of shaft border
    float2 xy12 = float2 (Hmax, scale + s);                     // Arrow head border tip
-   float2 xy   = _OutputHeight > _OutputWidth                  // Square and set position uv
-               ? float2 ((uv.x - CentreX) * _OutputAspectRatio, uv.y + CentreY - 1.0)
-               : float2 (uv.x - CentreX, (uv.y + CentreY - 1.0) / _OutputAspectRatio);
+   float2 xy   = _OutputHeight > _OutputWidth                  // Square and set position uv1
+               ? float2 ((uv1.x - CentreX) * _OutputAspectRatio, uv1.y + CentreY - 1.0)
+               : float2 (uv1.x - CentreX, (uv1.y + CentreY - 1.0) / _OutputAspectRatio);
 
    sincos (radians (Rotation), s, c);                          // Arrow rotation vectors
 
@@ -315,32 +229,13 @@ float4 ps_arrow (float2 uv : TEXCOORD1) : COLOR
    // colourded arrow body so it's handled in a function.
 
    Fgnd = lerp (Fgnd, BLACK,
-                fn_shape (xy, xy11, xy12, Bmin, Hmin, Hmax));  // Antialiased arrow border
+                fn_arrow (xy, xy11, xy12, Bmin, Hmin, Hmax));  // Antialiased arrow border
 
    // Repeat the function call for the coloured body of the arrow.
 
    Fgnd = lerp (Fgnd, Colour,
-                fn_shape (xy, xy01, xy02, Lmin, Lmax, Htip));  // Antialiased arrow body
+                fn_arrow (xy, xy01, xy02, Lmin, Lmax, Htip));  // Antialiased arrow body
 
    return lerp (Bgnd, Fgnd, Amount);                           // Mix over background, quit
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique HighlightWidgets_1
-{
-   pass P_1 ExecuteShader (ps_circle)
-}
-
-technique HighlightWidgets_2
-{
-   pass P_1 ExecuteShader (ps_square)
-}
-
-technique HighlightWidgets_3
-{
-   pass P_1 ExecuteShader (ps_arrow)
 }
 

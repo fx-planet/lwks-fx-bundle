@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-19
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-19
-// @see https://www.lwks.com/media/kunena/attachments/6375/Simple_star_640.png
+// @Created 2023-01-10
 
 /**
  Simple star is a glint effect which creates star filter-like highlights, with 4, 5,
@@ -14,6 +13,12 @@
  the look produced by those filters reasonably closely.  The five and seven pointed
  stars are absolutely impossible to produce with any real world filter, and have just
  been included for fun.
+
+ This effect will break resolution independence.  It was a choice between doing that and
+ breaking on-screen position tracking and star geometry.  I think that from the user's
+ point of view it's much more important to preserve geometry and tracking.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -33,64 +38,46 @@
 // coloured and mixed as required.  Smaller star points around the centre hotspot are
 // added, and an anular halo is finally overlaid.
 //
-// This looks considerably more complex than it in fact is.  Although between four and
-// five passes are used the simplicity of each one should keep the overall GPU load low.
+// This looks considerably more complex than it in fact is.  Although between three and
+// four passes are used the simplicity of each one should keep the overall GPU load low.
 //
 // Version history:
 //
-// Rewrite 2021-10-19 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Simple star";
-   string Category    = "Stylize";
-   string SubCategory = "Simple tools";
-   string Notes       = "Creates a single rotatable star glint, with 4, 5, 6, 7 or 8 arms";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Simple star", "Stylize", "Simple tools", "Creates a single rotatable star glint, with 4, 5, 6, 7 or 8 arms", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Inp);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParam (Rainbow, "Rainbow mix", "Star colour", "DisplayAsPercentage", 0.5, 0.0, 2.0);
+
+DeclareColourParam (Colour, "Base colour", "Star colour", kNoFlags, 0.7, 0.9, 1.0, 1.0);
+
+DeclareIntParam (SetTechnique, "Number of points", "Star points", 0, "4|5|6|7|8");
+
+DeclareFloatParam (Strength, "Strength", "Star points", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Size, "Size", "Star points", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (Rotation, "Rotation", "Star points", kNoFlags, 0.0, -180.0, 180.0);
+
+DeclareFloatParam (CentreX, "Star position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (CentreY, "Star position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-#define GetAlpha(SHADER,XY) (Overflow(XY) ? 0.0 : tex2D(SHADER, XY).a)
 
 #define CENTRE      0.5.xx
 
@@ -129,97 +116,13 @@ int _LwksEffectInfo
 #define ONE_THIRD   0.3333333333
 #define SCALE_45    1.2374368671   // 1.75 * sine 45
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Inp, s_RawInp);
-
-DefineTarget (FixInp, s_Input);
-
-DefineTarget (Points_1, s_Points_1);
-DefineTarget (Points_2, s_Points_2);
-
-DefineTarget (Glint, s_Glint);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Rainbow
-<
-   string Group = "Star colour";
-   string Description = "Rainbow mix";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.0;
-   float MaxVal = 2.0;
-> = 0.5;
-
-float4 Colour
-<
-   string Group = "Star colour";
-   string Description = "Base colour";
-   bool SupportsAlpha = false;
-> = { 0.7, 0.9, 1.0, 1.0 };
-
-int SetTechnique
-<
-   string Group = "Star points";
-   string Description = "Number of points";
-   string Enum = "4,5,6,7,8";
-> = 0;
-
-float Strength
-<
-   string Group = "Star points";
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Size
-<
-   string Group = "Star points";
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float Rotation
-<
-   string Group = "Star points";
-   string Description = "Rotation";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 0.0;
-
-float CentreX
-<
-   string Description = "Star position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float CentreY
-<
-   string Description = "Star position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
-float4 ps_line (float2 uv : TEXCOORD0) : COLOR
+float4 firstLine (float2 uv)
 {
-   // This shader producers a horizontal line with a centre bulge.  It's the basic
+   // This function produces a horizontal line with a centre bulge.  It's the basic
    // building block we use to build the stars.  A rainbow pattern is returned in
    // the RGB channels while the alpha channel holds a luminance only version.
 
@@ -269,7 +172,7 @@ float4 ps_line (float2 uv : TEXCOORD0) : COLOR
    return saturate (retval + max (0.0, 0.5 - d).xxxx);
 }
 
-float4 ps_halve_line (float2 uv : TEXCOORD2) : COLOR
+float4 halveLine (sampler baseLine, float2 uv)
 {
    // This shader takes the horizontal line created in ps_line() and rotates
    // it through 90 degrees.  It then bisects it, discarding the lower half.
@@ -286,12 +189,12 @@ float4 ps_halve_line (float2 uv : TEXCOORD2) : COLOR
 
    xy += CENTRE;
 
-   // Using GetPixel() returns the shader contents only if xy is legal
+   // Using ReadPixel() returns the shader contents only if xy is legal
 
-   return GetPixel (s_Points_1, xy);
+   return ReadPixel (baseLine, xy);
 }
 
-float4 ps_star_4 (float2 uv : TEXCOORD2) : COLOR
+float4 star_4 (sampler baseLine, float2 uv)
 {
    // This takes the horizontal line created in ps_line() and rotates it through
    // 90 degrees.  It then adds it to the original to create a four pointed star.
@@ -302,142 +205,15 @@ float4 ps_star_4 (float2 uv : TEXCOORD2) : COLOR
 
    // Recover the original horizontal line and a copy rotated through 90 degrees
 
-   float4 retval = tex2D (s_Points_1, uv);
-   float4 overlay = GetPixel (s_Points_1, xy);
+   float4 retval = ReadPixel (baseLine, uv);
+   float4 overlay = ReadPixel (baseLine, xy);
 
    // Return the overlaid pair of lines to give a four armed star
 
    return max (retval, overlay);
 }
 
-float4 ps_star_5 (float2 uv : TEXCOORD2) : COLOR
-{
-   // This takes the vertical half line created in ps_halve_line() and rotates it
-   // through plus and minus 72 degrees, then plus and minus 144 degrees.  These
-   // including the original are the elements used to create the five pointed star.
-
-   // Set up rotation vectors scaling through 72 and 144 degrees
-
-   float2 xy1 = uv - CENTRE;
-   float2 xy  = xy1 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
-   float2 xy2 = xy * SINE_72;
-   float2 xy3 = (xy1 * COSINE_144) + CENTRE;
-   float2 xy4 = xy * SINE_144;
-
-   xy1 = (xy1 * COSINE_72) + CENTRE;
-   xy  = xy1 + xy2.yx;
-   xy1 = xy1 - xy2.yx;
-
-   // Recover the vertical half line and two copies rotated through plus and minus 72 degrees
-
-   float4 retval = tex2D (s_Points_2, uv);
-   float4 ovrly1 = GetPixel (s_Points_2, xy);
-   float4 ovrly2 = GetPixel (s_Points_2, xy1);
-
-   // Combine them to create three points of a five armed star.
-
-   retval = max (max (retval, ovrly1), ovrly2);
-
-   // Recover two more copies of the half line rotated through plus and minus 144 degrees
-
-   xy  = xy3 + xy4.yx;
-   xy1 = xy3 - xy4.yx;
-
-   ovrly1 = GetPixel (s_Points_2, xy);
-   ovrly2 = GetPixel (s_Points_2, xy1);
-
-   // Combine the two to create the final five armed star.
-
-   return max (max (retval, ovrly1), ovrly2);
-}
-
-float4 ps_star_6 (float2 uv : TEXCOORD2) : COLOR
-{
-   // This takes the horizontal line created in ps_line() and rotates it through
-   // plus and minus 60 degrees.  It then uses them to create a six pointed star.
-   // Since the only difference between this and ps_star_5() is that the full
-   // length line is used, it isn't commented.
-
-   float2 xy1 = uv - CENTRE;
-   float2 xy2 = (xy1 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio)) * SINE_60;
-
-   xy1 = (xy1 * COSINE_60) + CENTRE;
-
-   float2 xy = xy1 + xy2.yx;
-
-   xy1 -= xy2.yx;
-
-   float4 retval = tex2D (s_Points_1, uv);
-   float4 ovrly1 = GetPixel (s_Points_1, xy);
-   float4 ovrly2 = GetPixel (s_Points_1, xy1);
-
-   return max (max (retval, ovrly1), ovrly2);
-}
-
-float4 ps_star_7 (float2 uv : TEXCOORD2) : COLOR
-{
-   // This takes the vertical half line created in ps_halve_line() and rotates it
-   // through plus and minus 51 and 103 degrees, then plus and minus 154 degrees.
-   // These, including the original half line, are the elements used to create the
-   // seven pointed star.  It hasn't been commented because it's like ps_star_5().
-
-   float2 xy1 = uv - CENTRE;
-   float2 xy  = xy1 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
-   float2 xy2 = xy * SINE_51;
-   float2 xy3 = (xy1 * COSINE_103) + CENTRE;
-   float2 xy4 = xy * SINE_103;
-   float2 xy5 = (xy1 * COSINE_154) + CENTRE;
-   float2 xy6 = xy * SINE_154;
-
-   xy1 = (xy1 * COSINE_51) + CENTRE;
-   xy  = xy1 + xy2.yx;
-   xy1 = xy1 - xy2.yx;
-
-   float4 retval = tex2D (s_Points_2, uv);
-   float4 ovrly1 = GetPixel (s_Points_2, xy);
-   float4 ovrly2 = GetPixel (s_Points_2, xy1);
-
-   retval = max (max (retval, ovrly1), ovrly2);
-
-   xy  = xy3 + xy4.yx;
-   xy1 = xy3 - xy4.yx;
-
-   ovrly1 = GetPixel (s_Points_2, xy);
-   ovrly2 = GetPixel (s_Points_2, xy1);
-   retval = max (max (retval, ovrly1), ovrly2);
-
-   xy  = xy5 + xy6.yx;
-   xy1 = xy5 - xy6.yx;
-
-   ovrly1 = GetPixel (s_Points_2, xy);
-   ovrly2 = GetPixel (s_Points_2, xy1);
-
-   return max (max (retval, ovrly1), ovrly2);
-}
-
-float4 ps_star_8 (float2 uv : TEXCOORD2) : COLOR
-{
-   // This takes the four point star created in ps_star_4() and rotates it through
-   // 45 degrees.  It then adds it to the original to create an eight pointed star.
-
-   // Rotate uv through 45 degrees and put it in xy
-
-   float2 xy  = (uv - CENTRE) * SINE_45;
-   float2 xy1 = xy * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
-
-   xy += xy1.yx + CENTRE;
-
-   // Recover the four point star and a copy rotated through 45 degrees
-
-   float4 retval = tex2D (s_Points_2, uv);
-   float4 overlay = GetPixel (s_Points_2, xy);
-
-   // Return the eight pointed star
-
-   return max (retval, overlay);
-}
-
-float4 ps_main (float2 uv : TEXCOORD2) : COLOR
+float4 main (sampler finalStar, float2 xy, float2 uv)
 {
    // Calculate the coordinates for the rotated and/or repositioned star
 
@@ -447,15 +223,15 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 
    float2 aspect = float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
    float2 psn = float2 (CentreX, 1.0 - CentreY);
-   float2 xy  = uv - psn;
-   float2 xy1 = xy * sine * aspect;
+   float2 xy0 = xy - psn;
+   float2 xy1 = xy0 * sine * aspect;
 
-   xy = (xy * cosine) - xy1.yx;
+   xy0 = (xy0 * cosine) - xy1.yx;
 
    // Now set up the coordinates to rotate and scale the star so that we have small
    // stars at the centre.  Angles of 45 and plus and minus 22.5 degrees are used.
 
-   xy1 = xy * 2.0;         // Scale xy1 for the mini stars
+   xy1 = xy0 * 2.0;         // Scale xy1 for the mini stars
 
    float2 xy2 = xy1 * SINE_22_5;
    float2 xy3 = xy1 * COSINE_22_5 * aspect;
@@ -464,8 +240,8 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 
    xy1 = xy2 + xy3.yx;     // Mini star #1
    xy2 = xy2 - xy3.yx;     // Mini star #2
-   xy3 = xy * SCALE_45;    // This incorporates both the scale and cos/sin 45 degrees
-   xy += CENTRE;           // Reset xy to the global coordinates to get the main star
+   xy3 = xy0 * SCALE_45;   // This incorporates both the scale and cos/sin 45 degrees
+   xy0 += CENTRE;          // Reset xy0 to the global coordinates to get the main star
 
    // We add the aspect ratio corrected and rotated xy3 to give the 45 degree version
 
@@ -473,17 +249,17 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 
    // Recover the input video and the star, using our blanking function for the star
 
-   float4 Star = GetPixel (s_Glint, xy);
-   float4 Bgnd = tex2D (s_Input, uv);
+   float4 Star = ReadPixel (finalStar, xy0);
+   float4 Bgnd = ReadPixel (Inp, uv);
 
-   // Now get the first mini star from the star alpha using GetAlpha()
+   // Now get the first mini star from the star alpha using ReadPixel()
 
-   float xtra = GetAlpha (s_Glint, xy1);
+   float xtra = ReadPixel (finalStar, xy1).a;
 
    // Get the other two and combine them with the main star as a luminance value
 
-   xtra = max (xtra, GetAlpha (s_Glint, xy2));
-   xtra = max (xtra, GetAlpha (s_Glint, xy3));
+   xtra = max (xtra, ReadPixel (finalStar, xy2).a);
+   xtra = max (xtra, ReadPixel (finalStar, xy3).a);
    xtra = max ((xtra * 4.0) - 2.0, 0.0) * 0.4;
    Star = max (Star, xtra.xxxx);
 
@@ -492,13 +268,13 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
    Star = lerp (Colour * Star.a, Star, Rainbow);
 
    // The next step is to create the halo/ring.  Put the current position into
-   // xy and centre it around Star position with aspect ratio correction
+   // xy0 and centre it around Star position with aspect ratio correction
 
-   xy = (uv - psn) * float2 (1.0, 1.0 / _OutputAspectRatio);
+   xy0 = (xy - psn) * float2 (1.0, 1.0 / _OutputAspectRatio);
 
    // Scale the Size parameter to the ring radius and calculate the radius
 
-   float ring = length (xy) / (Size * RING_RAD);
+   float ring = length (xy0) / (Size * RING_RAD);
 
    // The ring is now overlaid as a desaturated yellow over the star.  This
    // is as close as possible to the colour of the star arms at this point
@@ -514,49 +290,185 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
 }
 
 //-----------------------------------------------------------------------------------------//
-// Techniques
+// Code
 //-----------------------------------------------------------------------------------------//
 
-technique SimpleStar_4
+// 4 point star
+
+DeclarePass (Line_4pt)
+{ return firstLine (uv0); }
+
+DeclarePass (Star_4pt)
+{ return star_4 (Line_4pt, uv2); }
+
+DeclareEntryPoint (SimpleStar_4point)
+{ return main (Star_4pt, uv2, uv1); }
+
+// 5 point star
+
+DeclarePass (Line_5pt)
+{ return firstLine (uv0); }
+
+DeclarePass (HalfLine_5pt)
+{ return halveLine (Line_5pt, uv2); }
+
+DeclarePass (Star_5pt)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
-   pass P_3 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_4)
-   pass P_4 ExecuteShader (ps_main)
-}
- 		 	   		  
-technique SimpleStar_5
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
-   pass P_3 < string Script = "RenderColorTarget0 = Points_2;"; > ExecuteShader (ps_halve_line)
-   pass P_4 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_5)
-   pass P_5 ExecuteShader (ps_main)
+   // This takes the vertical half line created in ps_halve_line() and rotates it
+   // through plus and minus 72 degrees, then plus and minus 144 degrees.  These
+   // including the original are the elements used to create the five pointed star.
+
+   // Set up rotation vectors scaling through 72 and 144 degrees
+
+   float2 xy1 = uv2 - CENTRE;
+   float2 xy  = xy1 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
+   float2 xy2 = xy * SINE_72;
+   float2 xy3 = (xy1 * COSINE_144) + CENTRE;
+   float2 xy4 = xy * SINE_144;
+
+   xy1 = (xy1 * COSINE_72) + CENTRE;
+   xy  = xy1 + xy2.yx;
+   xy1 = xy1 - xy2.yx;
+
+   // Recover the vertical half line and two copies rotated through plus and minus 72 degrees
+
+   float4 retval = tex2D (HalfLine_5pt, uv2);
+   float4 ovrly1 = ReadPixel (HalfLine_5pt, xy);
+   float4 ovrly2 = ReadPixel (HalfLine_5pt, xy1);
+
+   // Combine them to create three points of a five armed star.
+
+   retval = max (max (retval, ovrly1), ovrly2);
+
+   // Recover two more copies of the half line rotated through plus and minus 144 degrees
+
+   xy  = xy3 + xy4.yx;
+   xy1 = xy3 - xy4.yx;
+
+   ovrly1 = ReadPixel (HalfLine_5pt, xy);
+   ovrly2 = ReadPixel (HalfLine_5pt, xy1);
+
+   // Combine the two to create the final five armed star.
+
+   return max (max (retval, ovrly1), ovrly2);
 }
 
-technique SimpleStar_6
+DeclareEntryPoint (SimpleStar_5point)
+{ return main (Star_5pt, uv0, uv1); }
+
+// 6 point star
+
+DeclarePass (Line_6pt)
+{ return firstLine (uv2); }
+
+DeclarePass (Star_6pt)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
-   pass P_3 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_6)
-   pass P_4 ExecuteShader (ps_main)
+   // This takes the horizontal line created in ps_line() and rotates it through
+   // plus and minus 60 degrees.  It then uses them to create a six pointed star.
+   // Since the only difference between this and the 5 point star is that the full
+   // length line is used, it isn't commented.
+
+   float2 xy1 = uv2 - CENTRE;
+   float2 xy2 = (xy1 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio)) * SINE_60;
+
+   xy1 = (xy1 * COSINE_60) + CENTRE;
+
+   float2 xy = xy1 + xy2.yx;
+
+   xy1 -= xy2.yx;
+
+   float4 retval = tex2D (Line_6pt, uv2);
+   float4 ovrly1 = ReadPixel (Line_6pt, xy);
+   float4 ovrly2 = ReadPixel (Line_6pt, xy1);
+
+   return max (max (retval, ovrly1), ovrly2);
 }
 
-technique SimpleStar_7
+DeclareEntryPoint (SimpleStar_6Point)
+{ return main (Star_6pt, uv2, uv1); }
+
+// 7 point star
+
+DeclarePass (Line_7pt)
+{ return firstLine (uv0); }
+
+DeclarePass (HalfLine_7pt)
+{ return halveLine (Line_7pt, uv2); }
+
+DeclarePass (Star_7pt)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
-   pass P_3 < string Script = "RenderColorTarget0 = Points_2;"; > ExecuteShader (ps_halve_line)
-   pass P_4 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_7)
-   pass P_5 ExecuteShader (ps_main)
+   // This takes the vertical half line created in ps_halve_line() and rotates it
+   // through plus and minus 51 and 103 degrees, then plus and minus 154 degrees.
+   // These, including the original half line, are the elements used to create the
+   // seven pointed star.
+
+   float2 xy1 = uv2 - CENTRE;
+   float2 xy  = xy1 * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
+   float2 xy2 = xy * SINE_51;
+   float2 xy3 = (xy1 * COSINE_103) + CENTRE;
+   float2 xy4 = xy * SINE_103;
+   float2 xy5 = (xy1 * COSINE_154) + CENTRE;
+   float2 xy6 = xy * SINE_154;
+
+   xy1 = (xy1 * COSINE_51) + CENTRE;
+   xy  = xy1 + xy2.yx;
+   xy1 = xy1 - xy2.yx;
+
+   float4 retval = tex2D (HalfLine_7pt, uv2);
+   float4 ovrly1 = ReadPixel (HalfLine_7pt, xy);
+   float4 ovrly2 = ReadPixel (HalfLine_7pt, xy1);
+
+   retval = max (max (retval, ovrly1), ovrly2);
+
+   xy  = xy3 + xy4.yx;
+   xy1 = xy3 - xy4.yx;
+
+   ovrly1 = ReadPixel (HalfLine_7pt, xy);
+   ovrly2 = ReadPixel (HalfLine_7pt, xy1);
+   retval = max (max (retval, ovrly1), ovrly2);
+
+   xy  = xy5 + xy6.yx;
+   xy1 = xy5 - xy6.yx;
+
+   ovrly1 = ReadPixel (HalfLine_7pt, xy);
+   ovrly2 = ReadPixel (HalfLine_7pt, xy1);
+
+   return max (max (retval, ovrly1), ovrly2);
 }
 
-technique SimpleStar_8
+DeclareEntryPoint (SimpleStar_7point)
+{ return main (Star_7pt, uv2, uv1); }
+
+// 8 point star
+
+DeclarePass (Line_8pt)
+{ return firstLine (uv0); }
+
+DeclarePass (HalfStar_8pt)
+{ return star_4 (Line_8pt, uv2); }
+
+DeclarePass (Star_8pt)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Points_1;"; > ExecuteShader (ps_line)
-   pass P_3 < string Script = "RenderColorTarget0 = Points_2;"; > ExecuteShader (ps_star_4)
-   pass P_4 < string Script = "RenderColorTarget0 = Glint;"; > ExecuteShader (ps_star_8)
-   pass P_5 ExecuteShader (ps_main)
+   // This takes the four point star created in ps_star_4() and rotates it through
+   // 45 degrees.  It then adds it to the original to create an eight pointed star.
+
+   // Rotate uv2 through 45 degrees and put it in xy
+
+   float2 xy  = (uv2 - CENTRE) * SINE_45;
+   float2 xy1 = xy * float2 (_OutputAspectRatio, -1.0 / _OutputAspectRatio);
+
+   xy += xy1.yx + CENTRE;
+
+   // Recover the four point star and a copy rotated through 45 degrees
+
+   float4 retval = tex2D (HalfStar_8pt, uv2);
+   float4 overlay = ReadPixel (HalfStar_8pt, xy);
+
+   // Return the eight pointed star
+
+   return max (retval, overlay);
 }
+
+DeclareEntryPoint (SimpleStar_8point)
+{ return main (Star_8pt, uv2, uv1); }
 

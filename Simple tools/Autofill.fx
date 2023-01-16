@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-09-01
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-09-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/Autofill_640.png
+// @Created 2023-01-10
 
 /**
  This effect provides an automatic fill to clips which don't have the same aspect ratio
@@ -12,189 +11,82 @@
 
  What do the various controls do?
 
-   Fill amount  - allows the fill outside the clip bounds to be faded in and out.
-   Fill blur    - varies the fill blurriness.  0% passes the fill through unchanged.
-   Fill/Fgd mix - mixes the foreground with the fill colour and the fill background
-                  mix prior to the blur being applied.
-   Background   - mixes between the fill colour and the Bg (background) input if
-                  it's connected, or fades the fill colour to black if it's not.
+   Fill amount      - allows the fill outside the clip bounds to be faded in and out.
+   Fill blur        - varies the fill blurriness.  0% passes the fill through unchanged.
+   Fill/Fgd mix     - mixes the foreground with the fill colour and the fill background
+                      mix prior to the blur being applied.
+   Edge duplication - fill area can be a duplicate or a mirror of the foreground.
+   Offset direction - allows either horizontal or vertical areas to be filled.
+   Fill offset      - duplicated foreground video fill displacement.
+   Fill scale       - horizontal and/or vertical fill scaling of foreground video.
+   Fill colour      - self explanatory.
+   Background       - mixes between the fill colour and the Bg (background) input if
+                      it's connected, or fades the fill colour to black if it's not.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Autofill.fx
 //
-// Built 2021-09-01 jwrl.
-// The build date is the date that I restructured the big blur effect created by khaver
-// as modified by schrauber.  Once I had done that the rest was simple.  Unfortunately
-// there is a downside - we perform a few needless blur operations on areas of the frame
-// that we will never use.  I can't think of a way to get round this while still getting
-// the visual result that I want.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Auto fill";
-   string Category    = "Stylize";
-   string SubCategory = "Simple tools";
-   string Notes       = "Provides an automatic fill to clips which don't have the same aspect ratio as the sequence";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Auto fill", "Stylize", "Simple tools", "Provides a fill for clips which don't have the same aspect ratio as the sequence", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define SetInputMode(TEX, SMPL, MODE) \
-                                      \
- texture TEX;                         \
-                                      \
- sampler SMPL = sampler_state         \
- {                                    \
-   Texture   = <TEX>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define SetTargetMode(TGT, SMP, MODE) \
-                                      \
- texture TGT : RenderColorTarget;     \
-                                      \
- sampler SMP = sampler_state          \
- {                                    \
-   Texture   = <TGT>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-#define Execute2param(SHD,P1,P2) { PixelShader = compile PROFILE SHD (P1, P2); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs & Samplers
-//-----------------------------------------------------------------------------------------//
-
-SetInputMode (Fg, s_Foreground, Mirror);
-DefineInput (Bg, s_Background);
-
-SetTargetMode (Fill, s_Fill, Mirror);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Fill amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.75;
+DeclareFloatParam (Amount, "Fill amount", kNoGroup, kNoFlags, 0.75, 0.0, 1.0);
+DeclareFloatParam (FillBlur, "Fill blur", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 
-float FillBlur
-<
-   string Description = "Fill blur";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (FillMix, "Fill/Fgd mix", "Fgd fill mode", kNoFlags, 0.75, 0.0, 1.0);
 
-float FillMix
-<
-   string Description = "Fill/Fgd mix";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.75;
+DeclareIntParam (FgdFillMode, "Edge duplication type", "Fgd fill mode", 0, "Mirror|Copy");
+DeclareIntParam (FgdOffsDirection, "Offset direction", "Fgd fill mode", 0, "Horizontal|Vertical");
 
-int FgdFillMode
-<
-   string Description = "Fgd fill mode";
-   string Enum = "Mirror Fg at edges,Copy Fg to edges";
-> = 0;
+DeclareFloatParam (FgdDisplace, "Fill offset", "Fgd fill mode", kNoFlags, 0.32, 0.0, 1.0);
 
-float4 FillColour
-<
-   string Group = "Mix between fill colour and background";
-   string Description = "Fill colour";
-   bool SupportsAlpha = true;
-> = { 0.24, 0.49, 1.0, 1.0 };
+DeclareFloatParam (FgdScaleX, "Fill scale", "Fgd fill mode", "SpecifiesPointX|DisplayAsPercentage", 1.0, 0.25, 4.0);
+DeclareFloatParam (FgdScaleY, "Fill scale", "Fgd fill mode", "SpecifiesPointY|DisplayAsPercentage", 1.0, 0.25, 4.0);
 
-float BgndMix
-<
-   string Group = "Mix between fill colour and background";
-   string Description = "Background";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareColourParam (FillColour, "Fill colour", "Mix between fill colour and background", kNoFlags, 0.24, 0.49, 1.0, 1.0);
+
+DeclareFloatParam (BgndMix, "Background", "Mix between fill colour and background", kNoFlags, 0.0, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_init (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_blur (sampler s, float2 uv, int run)
 {
-   // This shader combines the background, foreground and colour components to create
-   // the master fill shader.  It will be returned mapped to TEXCOORD3 for later use.
+   // First we check to see if we need to do the blur at all.  If not we get out.
 
-   float4 Bgnd = lerp (FillColour, GetPixel (s_Background, uv2), BgndMix);
+   if (FillBlur <= 0.0) return tex2D (s, uv);
 
-   // For wrap mode we don't have an explicit wrap declaration.  We use the fractional
-   // part of the Fg address and duplicate frac to fix any negative fractional values.
+   float4 retval = kTransparentBlack;  // Set to all zeros at the start of the blur.
 
-   float2 xy = FgdFillMode ? frac (frac (uv1) + 1.0.xx) : uv1;
-
-   return lerp (EMPTY, lerp (Bgnd, tex2D (s_Foreground, xy), FillMix), Amount);
-}
-
-float4 ps_blur (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3, uniform sampler s_blur, uniform int run) : COLOR
-{
-   // This shader blurs the fill and combines it with the unmodified foreground.
-   // If the foreground address is within legal bounds and we're on the last run
-   // we can simply return the unmodified foreground video.
-
-   if ((run == 3) && !Overflow (uv1)) return tex2D (s_Foreground, uv1);
-
-   // Now we check to see if we need to do the blur at all.  If not we get out.
-
-   if (FillBlur <= 0.0) return tex2D (s_blur, uv3);
-
-   float4 retval = EMPTY;  // This must be set to all zeros at the start of the blur.
-
-   // xy1 will be used to receive the rotation vectors, xy2 has the scaled blur amount
+   // xy1 will be used to address the rotation vectors, xy2 to address the scaled
+   // blur amount
 
    float2 xy1, xy2 = float2 (1.0, _OutputAspectRatio) * FillBlur * 0.05;
 
@@ -207,11 +99,11 @@ float4 ps_blur (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3, uniform sampler 
    // of 360 degrees.
 
    for (int i = 0; i < 12; i++) {
-      sincos (Ar, xy1.y, xy1.x);       // Calculate the rotation vectors from the angle
-      xy1 *= xy2;                      // Apply the scaled blur to them
-      xy1 += uv3;                      // Add the address of the pixel that we need
-      retval += tex2D (s_blur, xy1);   // Add the offset pixel to retval to give the blur
-      Ar += 0.5236;                    // Add 30 degrees in radians to the angle of rotation
+      sincos (Ar, xy1.y, xy1.x); // Calculate the rotation vectors from the angle
+      xy1 *= xy2;                // Apply the scaled blur to them
+      xy1 += uv;                 // Add the address of the pixel that we need
+      retval += tex2D (s, xy1);  // Add the offset pixel to retval to give the blur
+      Ar += 0.5236;              // Add 30 degrees in radians to the angle of rotation
    }
 
    // Divide the blurred result by 12 to bring the video back to legal levels and quit.
@@ -220,15 +112,55 @@ float4 ps_blur (float2 uv1 : TEXCOORD1, float2 uv3 : TEXCOORD3, uniform sampler 
 }
 
 //-----------------------------------------------------------------------------------------//
-// Techniques
+// Code
 //-----------------------------------------------------------------------------------------//
 
-technique Autofill
+DeclarePass (Fgd)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (FgdScl)
 {
-   pass P_1 < string Script = "RenderColorTarget0 = Fill;"; > ExecuteShader (ps_init)
-   pass P_2 < string Script = "RenderColorTarget0 = Fill;"; > Execute2param (ps_blur, s_Fill, 0)
-   pass P_3 < string Script = "RenderColorTarget0 = Fill;"; > Execute2param (ps_blur, s_Fill, 1)
-   pass P_4 < string Script = "RenderColorTarget0 = Fill;"; > Execute2param (ps_blur, s_Fill, 2)
-   pass P_5 Execute2param (ps_blur, s_Fill, 3)
+   float2 scale = float2 (FgdScaleX, FgdScaleY);
+
+   if (FgdOffsDirection) { if (FgdFillMode == 0) scale.y = -scale.y; }
+   else { if (FgdFillMode == 0) scale.x = -scale.x; }
+
+   float2 xy = ((uv3 - 0.5.xx) / scale) + 0.5.xx;
+
+   return ReadPixel (Fgd, xy);
+}
+
+DeclarePass (Fill_0)
+{
+   float2 pos = FgdOffsDirection ? float2 (0.0, FgdDisplace)
+                                 : float2 (FgdDisplace, 0.0);
+   float2 xy1 = uv3 - pos;
+   float2 xy2 = uv3 + pos;
+
+   float4 Fgnd = ReadPixel (FgdScl, xy1);
+   float4 Bgnd = lerp (FillColour, ReadPixel (Bg, uv2), BgndMix);
+
+   Fgnd = lerp (ReadPixel (FgdScl, xy2), Fgnd, Fgnd.a);
+
+   return lerp (kTransparentBlack, lerp (Bgnd, Fgnd, FillMix), Amount);
+}
+
+DeclarePass (Fill_1)
+{ return fn_blur (Fill_0, uv3, 0); }
+
+DeclarePass (Fill_2)
+{ return fn_blur (Fill_1, uv3, 1); }
+
+DeclarePass (Fill_3)
+{ return fn_blur (Fill_2, uv3, 2); }
+
+DeclareEntryPoint (Autofill)
+{
+   // We're on the last run so if we're inside legal foreground boundaries we
+   // return the unmodified foreground video.
+
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   return lerp (fn_blur (Fill_3, uv3, 3), Fgnd, Fgnd.a);
 }
 

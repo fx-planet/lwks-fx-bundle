@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2021-10-19
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-19
-// @see https://www.lwks.com/media/kunena/attachments/6375/Vibrance_640.png
+// @Created 2023-01-10
 
 /**
  This simple effect just adjusts the colour vibrance.  It does this by selectively  altering
  the saturation levels of the mid tones in the video.  You can probably think of it as a sort
  of gamma adjustment that only works on saturation.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,81 +16,43 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-19 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Vibrance";
-   string Category    = "Colour";
-   string SubCategory = "Simple tools";
-   string Notes       = "Adjusts the video vibrance.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Vibrance", "Colour", "Simple tools", "Makes your video POP!!!", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
+DeclareInput (Inp);
 
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Vibrance
-<
-   string Description = "Vibrance";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (Vibrance, "Vibrance", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (Vibrance_2023)
 {
-   if (Overflow (uv)) return EMPTY;
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   float4 retval = tex2D (s_Input, uv);
+   float4 source = tex2D (Inp, uv1);
 
    float amount = pow (1.0 + Vibrance, 2.0) - 1.0;
-   float maxval = max (retval.r, max (retval.g, retval.b));
-   float vibval = amount * (((retval.r + retval.g + retval.b) / 3.0) - maxval);
+   float maxval = max (source.r, max (source.g, source.b));
+   float vibval = amount * (((source.r + source.g + source.b) / 3.0) - maxval);
 
-   return float4 (saturate (lerp (retval.rgb, maxval.xxx, vibval)), retval.a);
+   float4 retval = float4 (saturate (lerp (source.rgb, maxval.xxx, vibval)), source.a);
+
+   return lerp (source, retval, tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Vibrance_fx { pass P_1 ExecuteShader (ps_main) }
 

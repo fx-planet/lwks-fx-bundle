@@ -1,15 +1,16 @@
 // @Maintainer jwrl
-// @Released 2021-10-19
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-19
-// @see https://www.lwks.com/media/kunena/attachments/6375/Flip_Flop_640.png
+// @Created 2023-01-10
 
 /**
  This emulates a similar effect in other NLEs.  The resemblance to Lightworks' flip and
  flop routines is obvious.  However because the maths operations to achieve the result
- have been halved it uses roughly the same GPU resources needed by either a flip or flop
- effect alone.  That means that using this instead of those two effects requires about
- half the processing.
+ have been more than halved it uses less than the GPU resources needed by either a flip
+ or flop effect.  That means that using this instead of those two effects together
+ requires less than half the processing.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,71 +18,32 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-19 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Flip flop";
-   string Category    = "DVE";
-   string SubCategory = "Simple tools";
-   string Notes       = "Rotates video by 180 degrees.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Flip flop", "DVE", "Simple tools", "Rotates video by 180 degrees.", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Input);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, s_Input);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (FlipFlop)
 {
-   return GetPixel (s_Input, 1.0.xx - uv);
+   float2 xy = 1.0.xx - uv1;
+
+   float4 source = ReadPixel (Input, uv1);
+   float4 retval = ReadPixel (Input, xy);
+
+   return lerp (source, retval, tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique FlipFlop { pass P_1 ExecuteShader (ps_main) }
 

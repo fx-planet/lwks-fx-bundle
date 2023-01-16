@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-09-16
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-09-16
-// @see https://www.lwks.com/media/kunena/attachments/6375/Framed_DVE_640.png
+// @Released 2023-01-09
 
 /**
  This is a combination of two 2D DVEs designed to provide a drop shadow and vignette
@@ -14,7 +13,10 @@
  of the foreground inside the frame.
 
  There is actually a third DVE of sorts that adjusts the size and offset of the border
- texture.  This is extremely rudimentary though.
+ texture.  This is extremely rudimentary though.  Also LW masking hasn't been included
+ because it was impossible to do that and still control the edges of the frame.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,74 +24,78 @@
 //
 // Version history:
 //
-// Rebuilt 2021-09-16 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Framed DVE";
-   string Category    = "DVE";
-   string SubCategory = "DVE Extras";
-   string Notes       = "Creates a textured frame around the foreground image and resizes and positions the result.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Framed DVE", "DVE", "DVE Extras", "Creates a textured frame around the foreground image and resizes and positions the result.", "ScaleAware|HasMinOutputSize");
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg, Tx);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (DVE_Scale, "Scale", "DVE", kNoFlags, 1.0, 0.0, 10.0);
+DeclareFloatParam (DVE_Z_angle, "Z angle", "DVE", kNoFlags, 0.0, -360.0, 360.0);
+DeclareFloatParam (DVE_PosX, "X position", "DVE", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (DVE_PosY, "Y position", "DVE", kNoFlags, 0.0, -1.0, 1.0);
+
+DeclareFloatParam (TLcropX, "Top left crop", kNoGroup, "SpecifiesPointX", 0.1, 0.0, 1.0);
+DeclareFloatParam (TLcropY, "Top left crop", kNoGroup, "SpecifiesPointY", 0.9, 0.0, 1.0);
+DeclareFloatParam (BRcropX, "Bottom right crop", kNoGroup, "SpecifiesPointX", 0.9, 0.0, 1.0);
+DeclareFloatParam (BRcropY, "Bottom right crop", kNoGroup, "SpecifiesPointY", 0.1, 0.0, 1.0);
+
+DeclareFloatParam (VideoScale, "Scale", "Video insert", kNoFlags, 1.0, 0.0, 10.0);
+DeclareFloatParam (VideoPosX, "X position", "Video insert", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (VideoPosY, "Y position", "Video insert", kNoFlags, 0.0, -1.0, 1.0);
+
+DeclareFloatParam (BorderWidth, "Width", "Border", kNoFlags, 0.4, 0.0, 1.0);
+DeclareFloatParam (BorderBevel, "Bevel", "Border", kNoFlags, 0.4, 0.0, 1.0);
+DeclareFloatParam (BorderSharpness, "Bevel sharpness", "Border", kNoFlags, 0.2, 0.0, 1.0);
+DeclareFloatParam (BorderOuter, "Outer edge", "Border", kNoFlags, 0.6, -1.0, 1.0);
+DeclareFloatParam (BorderInner, "Inner edge", "Border", kNoFlags, -0.4, -1.0, 1.0);
+DeclareFloatParam (TexScale, "Texture scale", "Border", kNoFlags, 1.0, 0.5, 2.0);
+DeclareFloatParam (TexPosX, "Texture X", "Border", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (TexPosY, "Texture Y", "Border", kNoFlags, 0.0, -1.0, 1.0);
+
+DeclareFloatParam (ShadowOpacity, "Opacity", "Shadow", kNoFlags, 0.75, 0.0, 1.0);
+DeclareFloatParam (ShadowSoft, "Softness", "Shadow", kNoFlags, 0.2, 0.0, 1.0);
+DeclareFloatParam (ShadowAngle, "Angle", "Shadow", kNoFlags, 45.0, -180.0, 180.0);
+DeclareFloatParam (ShadowOffset, "Offset", "Shadow", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (ShadowDistance, "Distance", "Shadow", kNoFlags, 0.0, 0.0, 1.0);
+
+DeclareBoolParam (CropToBgd, "Crop to background", kNoGroup, false);
+
+DeclareFloatParam (_OutputAspectRatio);
+
+DeclareFloatParam (_OutputWidth);
+
+DeclareIntParam (_FgOrientation);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
 #define BadPos(P, p1, p2) (P < max (0.0, p1)) || (P > min (1.0, 1.0 - p2))
 #define CropXY(XY, L, R, T, B)  (BadPos (XY.x, L, -R) || BadPos (XY.y, -T, B))
 
-#define EMPTY 0.0.xxxx
 #define BLACK float2(0.0, 1.0).xxxy
 
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-#define BdrPixel(SHADER,XY) (Overflow(XY) ? BLACK : tex2D(SHADER, XY))
+#define BdrPixel(SHADER,XY) (IsOutOfBounds(XY) ? BLACK : tex2D(SHADER, XY))
 #define GetMirror(SHD,UV,XY) (any (abs (XY - 0.5.xx) > 0.5) \
-                             ? EMPTY \
+                             ? kTransparentBlack \
                              : tex2D (SHD, saturate (1.0.xx - abs (1.0.xx - abs (UV)))))
 
 // Definitions used by this shader
@@ -106,241 +112,18 @@ Wrong_Lightworks_version
 #define CENTRE       0.5.xx
 
 #define WHITE        1.0.xxxx
-#define EMPTY        0.0.xxxx
-
-float _OutputAspectRatio;
-float _OutputWidth;
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_RawFg);
-DefineInput (Bg, s_RawBg);
-DefineInput (Tx, s_RawTx);
+DeclarePass (Fgd)
+{ return ReadPixel (Fg, uv1); }
 
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (RawBg, s_Background);
-DefineTarget (RawTx, s_Texture);
-DefineTarget (Mask, s_CropMask);
+DeclarePass (Texture)
+{ return GetMirror (Tx, uv3, uv3); }
 
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float Opacity
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float DVE_Scale
-<
-   string Group = "DVE";
-   string Description = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 10.0;
-> = 1.0;
-
-float DVE_Z_angle
-<
-   string Group = "DVE";
-   string Description = "Z angle";
-   float MinVal = -360.0;
-   float MaxVal = 360.0;
-> = 0.0;
-
-float DVE_PosX
-<
-   string Group = "DVE";
-   string Description = "X position";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float DVE_PosY
-<
-   string Group = "DVE";
-   string Description = "Y position";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float TLcropX
-<
-   string Description = "Top left crop";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float TLcropY
-<
-   string Description = "Top left crop";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
-
-float BRcropX
-<
-   string Description = "Bottom right crop";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
-
-float BRcropY
-<
-   string Description = "Bottom right crop";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float VideoScale
-<
-   string Group = "Video insert";
-   string Description = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 10.0;
-> = 1.0;
-
-float VideoPosX
-<
-   string Group = "Video insert";
-   string Description = "X position";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float VideoPosY
-<
-   string Group = "Video insert";
-   string Description = "Y position";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float BorderWidth
-<
-   string Group = "Border";
-   string Description = "Width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.4;
-
-float BorderBevel
-<
-   string Group = "Border";
-   string Description = "Bevel";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.4;
-
-float BorderSharpness
-<
-   string Group = "Border";
-   string Description = "Bevel sharpness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
-
-float BorderOuter
-<
-   string Group = "Border";
-   string Description = "Outer edge";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.6;
-
-float BorderInner
-<
-   string Group = "Border";
-   string Description = "Inner edge";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = -0.4;
-
-float TexScale
-<
-   string Group = "Border";
-   string Description = "Texture scale";
-   float MinVal = 0.5;
-   float MaxVal = 2.0;
-> = 1.0;
-
-float TexPosX
-<
-   string Group = "Border";
-   string Description = "Texture X";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float TexPosY
-<
-   string Group = "Border";
-   string Description = "Texture Y";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float ShadowOpacity
-<
-   string Group = "Shadow";
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.75;
-
-float ShadowSoft
-<
-   string Group = "Shadow";
-   string Description = "Softness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
-
-float ShadowAngle
-<
-   string Group = "Shadow";
-   string Description = "Angle";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 45.0;
-
-float ShadowOffset
-<
-   string Group = "Shadow";
-   string Description = "Offset";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float ShadowDistance
-<
-   string Group = "Shadow";
-   string Description = "Distance";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-bool CropToBgd
-<
-   string Description = "Crop to background";
-> = false;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return BdrPixel (s_RawFg, uv); }
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
-float4 ps_initTx (float2 uv : TEXCOORD3, float2 xy : TEXCOORD4) : COLOR { return GetMirror (s_RawTx, uv, xy); }
-
-float4 ps_crop (float2 uv : TEXCOORD4) : COLOR
+DeclarePass (CropMask)
 {
 /* Returned values: crop.w - master crop 
                     crop.x - master border (inside crop) 
@@ -354,7 +137,7 @@ float4 ps_crop (float2 uv : TEXCOORD4) : COLOR
    float2 offset = aspect / _OutputWidth;
    float2 xyCrop = float2 (cropX, 1.0 - cropY);
    float2 ccCrop = (xyCrop + float2 (BRcropX, 1.0 - BRcropY)) * 0.5;
-   float2 uvCrop = abs (uv - ccCrop);
+   float2 uvCrop = abs (uv4 - ccCrop);
 
    xyCrop = abs (xyCrop - ccCrop);
 
@@ -379,7 +162,7 @@ float4 ps_crop (float2 uv : TEXCOORD4) : COLOR
    return crop;
 }
 
-float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv4 : TEXCOORD4) : COLOR
+DeclareEntryPoint (FramedDVE)
 {
    float temp, ShadowX, ShadowY, scale = DVE_Scale < 0.0001 ? 10000.0 : 1.0 / DVE_Scale;
 
@@ -403,18 +186,18 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv4 : TEXCOORD4) : COLOR
    xy2  = float2 ((xy0.x * xy2.y / _OutputAspectRatio) + (xy0.y * xy2.x), temp);
    xy2  = ((xy1 - xy2 - CENTRE) * (shadow + 1.0) / ((ShadowSoft * 0.05) + 1.0)) + CENTRE;
 
-   float4 Mask = GetPixel (s_CropMask, xy3);
+   float4 Mask = ReadPixel (CropMask, xy3);
 
-   Mask.z = Overflow (xy2) ? 0.0 : tex2D (s_CropMask, xy2).z;
+   Mask.z = IsOutOfBounds (xy2) ? 0.0 : tex2D (CropMask, xy2).z;
 
    scale = VideoScale < 0.0001 ? 10000.0 : 1.0 / VideoScale;
    xy1   = (CENTRE + ((xy1 - CENTRE) * scale)) - (float2 (VideoPosX, -VideoPosY) * 2.0);
    scale = TexScale < 0.0001 ? 10000.0 : 1.0 / TexScale;
    xy3   = (CENTRE + ((xy3 - CENTRE) * scale)) - (float2 (TexPosX, -TexPosY) * 2.0);
 
-   float4 Fgnd = BdrPixel (s_Foreground, xy1);
-   float4 Bgnd = GetPixel (s_Background, uv4);
-   float4 frame = GetMirror (s_Texture, xy3, uv4);
+   float4 Fgnd = BdrPixel (Fgd, xy1);
+   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 frame = GetMirror (Texture, xy3, uv4);
    float4 retval = lerp (Bgnd, BLACK, Mask.z * ShadowOpacity);
 
    float alpha_O = ((2.0 * Mask.y) - 1.0);
@@ -426,19 +209,6 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv4 : TEXCOORD4) : COLOR
    retval = lerp (retval, frame, Mask.w);
    retval = lerp (retval, Fgnd, Mask.x);
 
-   return CropToBgd && Overflow (uv2) ? EMPTY : lerp (Bgnd, retval, Opacity);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Framed_DVE
-{
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass Ptx < string Script = "RenderColorTarget0 = RawTx;"; > ExecuteShader (ps_initTx)
-   pass P_1 < string Script = "RenderColorTarget0 = Mask;"; > ExecuteShader (ps_crop)
-   pass P_2 ExecuteShader (ps_main)
+   return CropToBgd && IsOutOfBounds (uv2) ? kTransparentBlack : lerp (Bgnd, retval, Opacity);
 }
 

@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-09-16
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-09-16
-// @see https://www.lwks.com/media/kunena/attachments/6375/Rosehaven_640.png
+// @Released 2023-01-09
 
 /**
  Rosehaven creates mirrored halves of the frame for title sequences and similar uses.
@@ -17,6 +16,8 @@
  The name of this effect comes from an Australian television series about a small town
  called Rosehaven.  An effect similar to this was used in its opening title sequence.
  Well, I had to call it something!
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -27,258 +28,91 @@
 //
 // Version history:
 //
-// Rewrite 2021-09-16 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Rosehaven";
-   string Category    = "DVE";
-   string SubCategory = "DVE Extras";
-   string Notes       = "Creates mirrored top/bottom or left/right images.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define SetInputMode(TEX, SMPL, MODE) \
-                                      \
- texture TEX;                         \
-                                      \
- sampler SMPL = sampler_state         \
- {                                    \
-   Texture   = <TEX>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define SetTargetMode(TGT, SMP, MODE) \
-                                      \
- texture TGT : RenderColorTarget;     \
-                                      \
- sampler SMP = sampler_state          \
- {                                    \
-   Texture   = <TGT>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _OutputAspectRatio;
+DeclareLightworksEffect ("Rosehaven", "DVE", "DVE Extras", "Creates mirrored top/bottom or left/right images.", "ScaleAware|HasMinOutputSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-SetInputMode (Inp, s_Input, Mirror);
-
-SetTargetMode (Img, s_Image, Mirror);
+DeclareInput (Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int Mode
-<
-   string Group = "Mirror settings";
-   string Description = "Orientation";
-   string Enum = "Horizontal,Vertical";
-> = 1;
+DeclareIntParam (Mode, "Orientation", "Mirror settings", 1, "Horizontal|Vertical");
+DeclareFloatParam (Centre, "Axis position", "Mirror settings", kNoFlags, 0.5, 0.0, 1.0);
 
-float Centre
-<
-   string Group = "Mirror settings";
-   string Description = "Axis position";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareIntParam (Orientation, "Orientation", "Input image", 0, "Normal|Flipped|Flopped|Flip-flopped|Rotated|Flip / rotate|Flop / rotate|Flip-flop / rotate");
 
-int SetTechnique
-<
-   string Group = "Input image";
-   string Description = "Orientation";
-   string Enum = "Normal,Flipped,Flopped,Flipped / flopped,Rotated,Flip / rotate,Flop / rotate,Flip-flop / rotate";
-> = 0;
+DeclareFloatParam (Scale, "Scale", "Input image", "DisplayAsPercentage", 1.0, 0.25, 4.0);
+DeclareFloatParam (PosX, "Position", "Input image", "SpecifiesPointX", 0.0, -1.0, 1.0);
+DeclareFloatParam (PosY, "Position", "Input image", "SpecifiesPointY", 0.0, -1.0, 1.0);
 
-float Scale
-<
-   string Group = "Input image";
-   string Description = "Scale";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.25;
-   float MaxVal = 4.0;
-> = 1.0;
+DeclareIntParam (_FgOrientation);
 
-float PosX
-<
-   string Group = "Input image";
-   string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float PosY
-<
-   string Group = "Input image";
-   string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_input_0 (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Input, uv); }
-
-float4 ps_input_1 (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (Fg)
 {
-   return tex2D (s_Image, float2 (uv.x, 1.0 - uv.y));
+   float Rotate = Orientation > 3 ? Orientation - 4 : Orientation;
+
+   float2 xy = Rotate == 0 ? uv1
+             : Rotate == 1 ? float2 (uv1.x, 1.0 - uv1.y)
+             : Rotate == 2 ? float2 (1.0 - uv1.x, uv1.y) : 1.0.xx - uv1;
+
+   return ReadPixel (Inp, xy);
 }
 
-float4 ps_input_2 (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (Mirrored)
 {
-   return tex2D (s_Image, float2 (1.0 - uv.x, uv.y));
-}
+   float4 retval;
 
-float4 ps_input_3 (float2 uv : TEXCOORD2) : COLOR
-{
-   return tex2D (s_Image, 1.0.xx - uv);
-}
-
-float4 ps_scale_N (float2 uv : TEXCOORD2) : COLOR
-{
-   float2 xy = float2 (uv.x - PosX, uv.y + PosY);
-
-   if (Mode == 0) {
-      xy = float2 (xy.x, xy.y - 0.5) / max (0.25, Scale);
-      xy.y += 0.5;
-   }
-   else {
-      xy = float2 (xy.x - 0.5, xy.y) / max (0.25, Scale);
-      xy.x += 0.5;
-   }
-
-   return tex2D (s_Image, xy);
-}
-
-float4 ps_scale_R (float2 uv : TEXCOORD2) : COLOR
-{
    float2 xy;
 
-   if (Mode == 0) {
-      xy = float2 (uv.x + PosX, 1.0 - uv.y - PosY);
-      xy = float2 (xy.x * _OutputAspectRatio, (xy.y - 0.5) / _OutputAspectRatio);
-      xy = xy / max (0.25, Scale);
-      xy = float2 (xy.y + 0.5, xy.x);
+   if (Orientation < 4) {
+      xy = float2 (uv2.x - PosX, uv2.y + PosY);
+
+      if (Mode) {
+         xy = float2 (xy.x - 0.5, xy.y) / max (0.25, Scale);
+         xy.x += 0.5;
+      }
+      else {
+         xy = float2 (xy.x, xy.y - 0.5) / max (0.25, Scale);
+         xy.y += 0.5;
+      }
    }
    else {
-      xy = float2 (1.0 - uv.x + PosX, uv.y - PosY);
-      xy = float2 ((xy.x - 0.5) * _OutputAspectRatio, xy.y / _OutputAspectRatio);
-      xy = xy / max (0.25, Scale);
-      xy = float2 (xy.y, xy.x + 0.5);
+      if (Mode) {
+         xy = float2 (1.0 - uv2.x + PosX, uv2.y - PosY);
+         xy = float2 ((xy.x - 0.5) * _OutputAspectRatio, xy.y / _OutputAspectRatio);
+         xy = xy / max (0.25, Scale);
+         xy = float2 (xy.y, xy.x + 0.5);
+      }
+      else {
+         xy = float2 (uv2.x + PosX, 1.0 - uv2.y - PosY);
+         xy = float2 (xy.x * _OutputAspectRatio, (xy.y - 0.5) / _OutputAspectRatio);
+         xy = xy / max (0.25, Scale);
+         xy = float2 (xy.y + 0.5, xy.x);
+      }
    }
 
-   return tex2D (s_Image, xy);
+   return ReadPixel (Fg, xy);
 }
 
-float4 ps_main (float2 uv : TEXCOORD2) : COLOR
+DeclareEntryPoint (Rosehaven)
 {
-   float2 xy = (Mode == 0) ? uv - float2 (Centre, 0.0) : uv + float2 (0.0, Centre - 1.0);
+   float2 xy = Mode ? float2 (0.0, 1.0 - Centre) : float2 (Centre, 0.0);
 
-   return tex2D (s_Image, xy);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Rosehaven_0
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Rosehaven_1
-{
-   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_1)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Rosehaven_2
-{
-   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_2)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Rosehaven_3
-{
-   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_3)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_N)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Rosehaven_4
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Rosehaven_5
-{
-   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_1)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Rosehaven_6
-{
-   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_2)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique Rosehaven_7
-{
-   pass P_0 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_0)
-   pass P_1 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_input_3)
-   pass P_2 < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_scale_R)
-   pass P_3 ExecuteShader (ps_main)
+   return ReadPixel (Mirrored, abs (uv2 - xy));
 }
 

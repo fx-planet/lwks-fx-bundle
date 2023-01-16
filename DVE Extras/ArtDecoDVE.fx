@@ -1,21 +1,26 @@
 // @Maintainer jwrl
-// @Released 2021-09-09
+// @Released 2023-01-09
 // @Author jwrl
-// @Created 2021-09-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/Deco_DVE_640.png
+// @Released 2023-01-09
 
 /**
  This is an Art Deco take on the classic DVE effect.  It produces two independently
  adjustable borders around the foreground image.  It also produces corner flash lines
- inside the crop which are independently adjustable.  This version is a complete
- rebuild of DecoDVE to support the effects resolution independence available with
- Lightworks v2021 and higher.
+ inside the crop which are independently adjustable.
 
- A consequence of that is that it is in no way directly interchangeable with that
- effect.  This version crops, scales and positions in the same way as a standard DVE,
- rather than using the unusual double scale and position technique of the earlier
- version.  Scaling uses a square law function to make size reduction more easily
- controlled.  The range covered is the same as the standard 2D DVE.
+ This version is a complete rebuild of DecoDVE to support the effects resolution
+ independence available with Lightworks v2021 and higher.  A consequence of that is
+ that it is in no way directly interchangeable with that effect.  This version crops,
+ scales and positions in the same way as a standard DVE, rather than using the
+ unusual double scale and position technique of the earlier version.  Scaling also
+ is the same as the standard 2D DVE.
+
+ Dropped from this version is the ability to display multiple images, which wasn't
+ really consistent with the look that we were trying to achieve.  Replacing it is a
+ command to crop the image to the background when that doesn't match the sequence
+ size or aspect ratio.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,389 +28,211 @@
 //
 // Version history:
 //
-// Updated jwrl 2021-09-09.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-09 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Art Deco DVE";
-   string Category    = "DVE";
-   string SubCategory = "DVE Extras";
-   string Notes       = "Art Deco flash lines are included in the 2D DVE borders";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Art Deco DVE", "DVE", "DVE Extras", "Art Deco flash lines are included in the 2D DVE borders", "ScaleAware|HasMinOutputSize");
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define InRange(XY,TL,BR) (all (XY >= TL) && all (BR >= XY))
-
-#define CENTRE 0.5.xx
-
-float _OutputAspectRatio;
-float _OutputWidth;
-float _OutputHeight;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and targets
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Fg, s_RawFg);
-DefineInput (Bg, s_Background);
-
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (Crop, s_Cropped);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float PosX
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.0;
-   float MaxVal = 2.0;
-> = 0.5;
+DeclareFloatParam (PosX, "Position", kNoGroup, "SpecifiesPointX", 0.5, -1.0, 2.0);
+DeclareFloatParam (PosY, "Position", kNoGroup, "SpecifiesPointY", 0.5, -1.0, 2.0);
 
-float PosY
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.0;
-   float MaxVal = 2.0;
-> = 0.5;
+DeclareFloatParam (MasterScale, "Master", "Scale", kNoFlags, 1.0, 0.0, 3.16227766);
+DeclareFloatParam (XScale, "X", "Scale", kNoFlags, 1.0, 0.0, 3.16227766);
+DeclareFloatParam (YScale, "Y", "Scale", kNoFlags, 1.0, 0.0, 3.16227766);
 
-float MasterScale
-<
-   string Description = "Master";
-   string Group = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 3.16227766;
-> = 1.0;
+DeclareFloatParam (Left, "Left", "Crop", kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (Top, "Top", "Crop", kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (Right, "Right", "Crop", kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (Bottom, "Bottom", "Crop", kNoFlags, 0.0, 0.0, 1.0);
 
-float XScale
-<
-   string Description = "X";
-   string Group = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 3.16227766;
-> = 1.0;
+DeclareFloatParam (Border_1, "Border width", "Border settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (BorderGap, "Outer gap", "Border settings", kNoFlags, 0.2, 0.0, 1.0);
+DeclareIntParam (GapFill, "Outer gap fill", "Border settings", 0, "Background|Foreground|Black");
+DeclareFloatParam (Border_2, "Outer bdr width", "Border settings", kNoFlags, 0.1, 0.0, 1.0);
 
-float YScale
-<
-   string Description = "Y";
-   string Group = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 3.16227766;
-> = 1.0;
+DeclareFloatParam (InnerSpace, "Gap", "Flash line settings", kNoFlags, 0.2, 0.0, 1.0);
+DeclareFloatParam (InnerWidth, "Line width", "Flash line settings", kNoFlags, 0.1, 0.0, 1.0);
+DeclareIntParam (InnerPos, "Line position", "Flash line settings", 0, "Top left / bottom right|Top right / bottom left");
+DeclareFloatParam (Flash_L, "Upper flash A", "Flash line settings", kNoFlags, 0.75, 0.0, 1.0);
+DeclareFloatParam (Flash_T, "Upper flash B", "Flash line settings", kNoFlags, 0.75, 0.0, 1.0);
+DeclareFloatParam (Flash_R, "Lower flash A", "Flash line settings", kNoFlags, 0.125, 0.0, 1.0);
+DeclareFloatParam (Flash_B, "Lower flash B", "Flash line settings", kNoFlags, 0.125, 0.0, 1.0);
 
-float CropL
-<
-   string Description = "Left";
-   string Group = "Crop";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareColourParam (Colour, "Border colour", kNoGroup, kNoFlags, 1.0, 1.0, 1.0);
 
-float CropT
-<
-   string Description = "Top";
-   string Group = "Crop";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Background, "Background", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float CropR
-<
-   string Description = "Right";
-   string Group = "Crop";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareIntParam (Blanking, "Crop foreground to background", kNoGroup, 0, "No|Yes");
 
-float CropB
-<
-   string Description = "Bottom";
-   string Group = "Crop";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareIntParam (_FgOrientation);
 
-float Border_1
-<
-   string Group = "Border settings";
-   string Description = "Border width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloat4Param (_FgExtents);
 
-float BorderGap
-<
-   string Group = "Border settings";
-   string Description = "Outer gap";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
-
-int GapFill
-<
-   string Group = "Border settings";
-   string Description = "Outer gap fill";
-   string Enum = "Background,Foreground,Black";
-> = 0;
-
-float Border_2
-<
-   string Group = "Border settings";
-   string Description = "Outer bdr width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float InnerSpace
-<
-   string Group = "Flash line settings";
-   string Description = "Gap";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
-
-float InnerWidth
-<
-   string Group = "Flash line settings";
-   string Description = "Line width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-int InnerPos
-<
-   string Group = "Flash line settings";
-   string Description = "Line position";
-   string Enum = "Top left / bottom right,Top right / bottom left";
-> = 0;
-
-float Inner_L
-<
-   string Group = "Flash line settings";
-   string Description = "Upper flash A";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.75;
-
-float Inner_T
-<
-   string Group = "Flash line settings";
-   string Description = "Upper flash B";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.75;
-
-float Inner_R
-<
-   string Group = "Flash line settings";
-   string Description = "Lower flash A";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.125;
-
-float Inner_B
-<
-   string Group = "Flash line settings";
-   string Description = "Lower flash B";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.125;
-
-float4 Colour
-<
-   string Description = "Border colour";
-   bool SupportsAlpha = false;
-> = { 1.0, 1.0, 1.0, -1.0 };
-
-int Repeats
-<
-   string Description = "Foreground images shown";
-   string Enum = "Display one image when zoomed out,Display multiple images when zoomed out";
-> = 0;
-
-float Opacity
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float Background
-<
-   string Description = "Background";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-int Blanking
-<
-   string Description = "Crop foreground to background";
-   string Enum = "No,Yes";
-> = 1;
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shader
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return Overflow (uv) ? BLACK : tex2D (s_RawFg, uv); }
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
-float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
+#define InRange(XY,TL,BR) (all (XY >= TL) && all (BR >= XY))
+
+#define CENTRE 0.5
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_crop (inout float2 P, out float2 LT, out float2 RB)
 {
-   float border  = max (Border_1, 1.0e-6);
-   float BorderH = border * 0.0125;
-   float BorderV = BorderH * _OutputAspectRatio;
+   float4 crop = float4 (Left, Top, 1.0 - Right, 1.0 - Bottom);
 
-   float gapFctr = BorderGap / border;
-   float linFctr = Border_2 * 1.5 / border;
-   float insFctr = InnerSpace / border;
-   float inwFctr = InnerWidth / border;
+   LT = float2 (Flash_L, Flash_T);
+   RB = float2 (Flash_R, Flash_B);
 
-   float spaceH = BorderH * gapFctr;
-   float spaceV = BorderV * gapFctr;
-   float H_fix  = 0.5 / _OutputWidth;
-   float V_fix  = 0.5 / _OutputHeight;
-
-   float Rcrop = 1.0 - saturate (CropR) + H_fix;
-   float Lcrop = saturate (CropL) - H_fix;
-   float Tcrop = saturate (CropT) - V_fix;
-   float Bcrop = 1.0 - saturate (CropB) + V_fix;
-   float cropR, cropL, cropT, cropB;
-
-   float4 retval;
-
-   if (InRange (uv, float2 (Lcrop, Tcrop), float2 (Rcrop, Bcrop))) {
-
-      cropR = Rcrop - BorderH; cropL = Lcrop + BorderH;
-      cropT = Tcrop + BorderV; cropB = Bcrop - BorderV;
-
-      retval = InRange (uv, float2 (cropL, cropT), float2 (cropR, cropB))
-             ? GetPixel (s_Foreground, uv) : float4 (Colour.rgb, 1.0);
+   if (_FgOrientation == 90) {
+      crop = crop.wxyz;
+      crop.xz = 1.0 - crop.xz;
+      P = float2 (P.y, 1.0 - P.x);
    }
-   else {
-      cropR = Rcrop + spaceH; cropL = Lcrop - spaceH;
-      cropT = Tcrop - spaceV; cropB = Bcrop + spaceV;
-
-      if (InRange (uv, float2 (cropL, cropT), float2 (cropR, cropB))) {
-         retval = (GapFill == 2) ? BLACK
-                : (GapFill == 0) ? EMPTY : GetPixel (s_Foreground, uv);
-      }
-      else {
-         spaceH = BorderH * linFctr; spaceV = BorderV * linFctr;
-         cropR += spaceH; cropL -= spaceH; cropT -= spaceV; cropB += spaceV;
-
-         retval = InRange (uv, float2 (cropL, cropT), float2 (cropR, cropB))
-                ? float4 (Colour.rgb, 1.0) : EMPTY;
-      }
+   else if (_FgOrientation == 180) {
+      crop = 1.0 - crop.zwxy;
+      P = 1.0 - P;
+   }
+   else if (_FgOrientation == 270) {
+      crop = crop.yzwx;
+      crop.wy = 1.0 - crop.wy;
+      P = float2 (1.0 - P.y, P.x);
    }
 
-   spaceH = BorderH * insFctr; spaceV = BorderV * insFctr;
-   cropR = Rcrop - BorderH - spaceH; cropL = Lcrop + BorderH + spaceH;
-   cropT = Tcrop + BorderV + spaceV; cropB = Bcrop - BorderV - spaceV;
+   if (InnerPos) P = float2 (1.0 - P.x, P.y);
 
-   spaceH = BorderH * inwFctr; spaceV = BorderV * inwFctr;
-   Rcrop = cropR - spaceH; Lcrop = cropL + spaceH;
-   Tcrop = cropT + spaceV; Bcrop = cropB - spaceV;
-
-   if (!InRange (uv, float2 (Lcrop, Tcrop), float2 (Rcrop, Bcrop))) {
-
-      if (InRange (uv, float2 (cropL, cropT), float2 (cropR, cropB))) {
-
-         float2 xy = float2 ((InnerPos) ? 1.0 - uv.x : uv.x, uv.y);
-
-         Lcrop = (cropR - cropL); Tcrop = (cropB - cropT);
-         Rcrop = Lcrop * Inner_R; Bcrop = Tcrop * Inner_B;
-         Lcrop *= Inner_L; Tcrop *= Inner_T;
-         Lcrop += cropL; Tcrop += cropT;
-         Rcrop = cropR - Rcrop; Bcrop = cropB - Bcrop;
-
-         if (InRange (xy, 0.0.xx, float2 (Lcrop, Tcrop)) ||
-             InRange (xy, float2 (Rcrop, Bcrop), 1.0.xx)) retval = float4 (Colour.rgb, 1.0);
-      }
-   }
-
-   return retval;
+   return crop;
 }
 
-float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+float2 fn_position (inout float2 S)
+{
+   float2 pos = S;
+
+   if (_FgOrientation == 90) {
+      pos *= CENTRE - float2 (PosY, PosX);
+      S.y /= _OutputAspectRatio;
+   }
+   else if (_FgOrientation == 180) {
+      pos *= float2 (PosX - CENTRE, CENTRE - PosY);
+      S.x /= _OutputAspectRatio;
+   }
+   else if (_FgOrientation == 270) {
+      pos *= float2 (PosY, PosX) - CENTRE;
+      S.y /= _OutputAspectRatio;
+   }
+   else {
+      pos *= float2 (CENTRE - PosX, PosY - CENTRE);
+      S.x /= _OutputAspectRatio;
+   }
+
+   return pos - CENTRE;
+}
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (ArtDecoDVE)
 {
    float scaleX = MasterScale * MasterScale;
    float scaleY = max (1.0e-6, scaleX * YScale * YScale);
 
    scaleX = max (1.0e-6, scaleX * XScale * XScale);
 
-   float2 xy1 = ((uv3 - float2 (PosX, 1.0 - PosY)) / float2 (scaleX, scaleY)) + 0.5.xx;
+   float2 B_scale = abs (_FgExtents.xy - _FgExtents.zw);
+   float2 Inner_LT, Inner_RB, xy = uv1 + fn_position (B_scale);
 
-   if (Repeats) xy1 = frac (xy1);
+   xy /= float2 (scaleX, scaleY);
+   xy += CENTRE;
 
-   float4 Fgnd = Blanking && Overflow (uv2) ? EMPTY : GetPixel (s_Cropped, xy1);
-   float4 Bgnd = lerp (BLACK, GetPixel (s_Background, uv2), Background);
+   float2 uv = xy;
+
+   float4 Fgnd, Crop = fn_crop (xy, Inner_LT, Inner_RB);
+
+   float border  = max (Border_1, 1.0e-6);
+
+   float gapFctr = BorderGap / border;
+   float linFctr = Border_2 * 1.5 / border;
+   float insFctr = InnerSpace / border;
+   float inwFctr = InnerWidth / border;
+
+   float2 BorderHV = B_scale * border * 0.025;
+   float2 spaceHV  = BorderHV * gapFctr;
+   float2 cropLT, cropRB;
+
+   if (InRange (uv, Crop.xy, Crop.zw)) {
+      cropLT = Crop.xy + BorderHV;
+      cropRB = Crop.zw - BorderHV;
+
+      Fgnd = InRange (uv, cropLT, cropRB) ? ReadPixel (Fg, uv) : float4 (Colour.rgb, 1.0);
+   }
+   else {
+      cropLT = Crop.xy - spaceHV;
+      cropRB = Crop.zw + spaceHV;
+
+      if (InRange (uv, cropLT, cropRB)) {
+         Fgnd = (GapFill == 2) ? float2 (0.0, 1.0).xxxy
+              : (GapFill == 0) ? kTransparentBlack : ReadPixel (Fg, uv);
+      }
+      else {
+         spaceHV = BorderHV * linFctr;
+         cropLT -= spaceHV;
+         cropRB += spaceHV;
+
+         Fgnd = InRange (uv, cropLT, cropRB) ? float4 (Colour.rgb, 1.0) : kTransparentBlack;
+      }
+   }
+
+   spaceHV = BorderHV * insFctr;
+   cropLT  = Crop.xy + BorderHV + spaceHV;
+   cropRB  = Crop.zw - BorderHV - spaceHV;
+
+   spaceHV = BorderHV * inwFctr;
+
+   Crop.xy = cropLT + spaceHV;
+   Crop.zw = cropRB - spaceHV;
+
+   if (!InRange (uv, Crop.xy, Crop.zw)) {
+
+      if (InRange (uv, cropLT, cropRB)) {
+
+         Crop.xy = cropRB - cropLT;
+         Crop.zw = Crop.xy * Inner_RB;
+         Crop.xy *= Inner_LT;
+         Crop.xy += cropLT;
+         Crop.zw = cropRB - Crop.zw;
+
+         if (InRange (xy, 0.0.xx, Crop.xy) || InRange (xy, Crop.zw, 1.0.xx))
+            Fgnd = float4 (Colour.rgb, 1.0);
+      }
+   }
+
+   if (Blanking && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+
+   float4 Bgnd = lerp (kTransparentBlack, ReadPixel (Bg, uv2), Background);
 
    return lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique ArtDecoDVE
-{
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass P_1 < string Script = "RenderColorTarget0 = Crop;"; > ExecuteShader (ps_crop)
-   pass P_2 ExecuteShader (ps_main)
 }
 

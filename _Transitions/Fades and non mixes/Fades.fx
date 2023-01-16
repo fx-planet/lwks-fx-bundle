@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/FadeUpDown_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/FadeUpDown.mp4
+// @Created 2023-01-16
 
 /**
  This simple effect fades any video to which it's applied to or from from black.  It
  isn't a standard dissolve, since it requires one input only.  It must be applied in
  the same way as a title effect, i.e., by marking the region that the fade in or out
  is to occupy.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,97 +17,45 @@
 //
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Fades";
-   string Category    = "Mix";
-   string SubCategory = "Fades and non mixes";
-   string Notes       = "Fades video to or from black";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Fades", "Mix", "Fades and non mixes", "Fades video to or from black", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0,1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareInput (Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-int Type
-<
-   string Description = "Fade type";
-   string Enum = "Fade up,Fade down";
-> = 0;
+DeclareIntParam (Type, "Fade type", kNoGroup, 0, "Fade up|Fade down");
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define BLACK float2(0.0,1.0).xxxy
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (Fades)
 {
    float level = Type ? Amount : 1.0 - Amount;
 
-   return lerp (GetPixel (s_Input, uv), BLACK, level);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Fades
-{
-   pass P_1 ExecuteShader (ps_main)
+   return lerp (ReadPixel (Inp, uv1), BLACK, level);
 }
 

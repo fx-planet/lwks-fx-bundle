@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-16
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-16
 
 /**
  A directional blur that can be used to simulate fast motion, whip pans and the like.  This
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

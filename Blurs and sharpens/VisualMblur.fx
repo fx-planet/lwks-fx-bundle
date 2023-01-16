@@ -22,7 +22,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Visual motion blur", "Stylize", "Blurs and sharpenss", "A directional blur that can be quickly set up by visually dragging a central pin point.", kNoFlags);
+DeclareLightworksEffect ("Visual motion blur", "Stylize", "Blurs and sharpens", "A directional blur that can be quickly set up by visually dragging a central pin point.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

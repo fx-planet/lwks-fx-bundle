@@ -1,260 +1,124 @@
 // @Maintainer jwrl
-// @Released 2021-09-04
+// @Released 2023-01-01
 // @Author baopao
-// @Created 2020-11-28
-// @see https://www.lwks.com/media/kunena/attachments/6375/SineLights_640.png
+// @Author jwrl
+// @Created 2023-01-01
 
 /**
- Sinusoidal lights is a semi-abstract pattern generator created for Mac and Linux systems
- by Lightworks user baopao.  This version has been converted for cross-platform use by
- Lightworks user jwrl.  Because this backgrounds is newly created media it is be produced
- at the sequence resolution. This means that any background video will also be locked to
- that resolution.
+ This is an enhanced version of Sinusoidal lights, a semi-abstract pattern generator
+ created by Lightworks user baopao.  This modified version adds colour to the lights
+ and also provides a background colour gradient.  In the conversion the range and
+ type of some parameters have been altered from baopao's originals, and now provide
+ the ability to interactively adjust parameters by dragging in the sequence viewer.
 
- NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
- They are then cropped to the background resolution.
+ This effect is based on the Lissajou code at http://glslsandbox.com/e#9996.0.  The
+ conversion was originally done by baopao with subsequent work by jwrl.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect SinusoidalLights.fx
 //
-// Based on: http://glslsandbox.com/e#9996.0, conversion for Lightworks Linux/Mac by
-// baopao.  Windows conversion of baopao's code by jwrl.
-//
 // Version history:
 //
-// Update 2021-09-04 jwrl.
-// Update of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Sinusoidal lights";
-   string Category    = "Matte";
-   string SubCategory = "Backgrounds";
-   string Notes       = "A pattern generator that creates stars in Lissajou curves";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Sinusoidal lights", "Mattes", "Backgrounds", "A pattern generator that creates coloured stars in Lissajou curves over a coloured background", "CanSize|HasMinOutputSize");
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _Progress;
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
-
-DefineTarget (Img,  Image);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (StarNumber, "Star number", "Pattern", kNoFlags, 200.0, 0.0, 400.0);
+DeclareFloatParam (Speed, "Speed", "Pattern", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Scale, "Scale", "Pattern", kNoFlags, 0.33, 0.0, 1.0);
+DeclareFloatParam (Level, "Glow intensity", "Pattern", kNoFlags, 0.5, 0.0, 1.0);
 
-float Num
-<
-   string Description = "Num";
-   float MinVal = 0.0;
-   float MaxVal = 400;
-> = 200;
+DeclareFloatParam (CentreX, "Position", "Pattern", "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (CentreY, "Position", "Pattern", "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float Speed
-<
-   string Description = "Speed";
-   float MinVal = 0.0;
-   float MaxVal = 10.0;
-> = 5.0;
+DeclareFloatParam (ResX, "Size", "Pattern", "SpecifiesPointX", 0.4, 0.01, 2.0);
+DeclareFloatParam (ResY, "Size", "Pattern", "SpecifiesPointY", 0.4, 0.01, 2.0);
 
-float Scale
-<
-   string Description = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 3.0;
-> = 1;
+DeclareFloatParam (SineX, "Frequency", "Pattern", "SpecifiesPointX", 4.0, 0.0, 12.0);
+DeclareFloatParam (SineY, "Frequency", "Pattern", "SpecifiesPointY", 8.0, 0.0, 12.0);
 
-float Size
-<
-   string Description = "Size";
-   float MinVal = 1;
-   float MaxVal = 20;
-> = 8;
+DeclareColourParam (fgdColour, "Colour", "Pattern", kNoFlags, 0.85, 0.75, 0.0);
 
-float CentreX
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (extBgd, "External Video", "Background", kNoFlags, 0.0, 0.0, 1.0);
 
-float CentreY
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareColourParam (topLeft, "Top Left", "Background", kNoFlags, 0.375, 0.5, 0.75);
+DeclareColourParam (topRight, "Top Right", "Background", kNoFlags, 0.375, 0.375, 0.75);
+DeclareColourParam (botLeft, "Bottom Left", "Background", kNoFlags, 0.375, 0.625, 0.75);
+DeclareColourParam (botRight, "Bottom Right", "Background", kNoFlags, 0.375, 0.5625, 0.75);
 
-float ResX
-<
-   string Description = "ResX";
-   float MinVal = 0.01;
-   float MaxVal = 2.0;
-> = 0.2;
+DeclareFloatParam (_Progress);
+DeclareFloatParam (_Length);
 
-float ResY
-<
-   string Description = "ResY";
-   float MinVal = 0.01;
-   float MaxVal = 2.0;
-> = 0.48;
-
-float Sine
-<
-   string Description = "Sine";
-   float MinVal = 0.01;
-   float MaxVal = 12.0;
-> = 8.00;
-
-float Curve
-<
-   string Description = "Curve";
-   float MinVal = 0.0;
-   float MaxVal = 150.0;
-> = 4.00;
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float2 range_adjust (float2 uv)
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (SinusoidalLights)
 {
-   float2 xy = uv;
+   float4 fgdPat = float4 (fgdColour.rgb, 1.0);
 
-   if (_OutputAspectRatio <= 1.0) {
-      xy.x = (xy.x - CentreX - 0.5) * _OutputAspectRatio;
-      xy.y +=  CentreY;
+   float scale_X    = Scale * 3.0;
+   float scale_Y    = scale_X * ResY / _OutputAspectRatio;
+   float sum        = 0.0;
+   float time       = _Progress * (1.0 - Speed) * _Length;
+   float Curve      = SineX * 12.5;
+   float keyClip    = scale_X / ((19.0 - (Level * 14.0)) * 100.0);
+   float curve_step = 0.0;
+   float time_step;
 
-      if (_OutputAspectRatio < 1.0) {
-         xy.y -= 0.5;
-         xy   *= _OutputAspectRatio;
-         xy.y += 0.5;
-      }
-
-      xy.x += 0.5;
-   }
-   else {
-      xy.x -= CentreX;
-      xy.y = (xy.y + CentreY - 0.5) / _OutputAspectRatio;
-
-      if (_OutputAspectRatio < 1.0) {
-         xy.x -= 0.5;
-         xy   /= _OutputAspectRatio;
-         xy.x += 0.5;
-      }
-
-      xy.y += 0.5;
-   }
-
-   return xy;
-}
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-// This preamble pass means that we handle rotated video correctly.
-
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_Input, uv); }
-
-float4 ps_main (float2 uv0 : TEXCOORD, float2 uv2 : TEXCOORD2) : COLOR
-{
-   float4 retval = tex2D (Image, uv2);
+   scale_X *= ResX;
 
    float2 position;
-   float2 vidPoint = range_adjust (uv0);
 
-   float crv  = 0.0;
-   float size = Scale / ((20.0 - Size) * 100.0);
-   float sum  = 0.0;
-   float time = _Progress * Speed;
+   for (int i = 0; i < StarNumber; ++i) {
+      time_step = (float (i) + time) / 5.0;
 
-   for (int i = 0; i < Num; ++i) {
-      position.x = (sin ((Sine * time) + crv) * ResX * Scale) + 0.5;
-      position.y = (sin (time) * ResY * Scale) + 0.5;
+      position.x = sin (SineY * time_step + curve_step) * scale_X;
+      position.y = sin (time_step) * scale_Y;
 
-      sum  += size / length (vidPoint - position);
-      crv  += Curve;
-      time += 0.2;
-    }
+      sum += keyClip / length (uv0 - position - 0.5.xx);
+      curve_step += Curve;
+      }
 
-   return lerp (retval, min (sum, 1.0).xxxx, Amount);
-}
+   fgdPat.rgb *= sum;
+   sum = saturate ((sum * 1.5) - 0.25);
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
+   float4 retval = lerp (topLeft, topRight, uv0.x);
+   float4 Bgnd   = ReadPixel (Inp, uv1);
 
-technique SinglePass
-{
-   pass Pin < string Script = "RenderColorTarget0 = Img;"; > ExecuteShader (ps_initInp)
-   pass Single_Pass ExecuteShader (ps_main)
+   retval = lerp (retval, lerp (botLeft, botRight, uv0.x), uv0.y);
+   retval = lerp (retval, Bgnd, extBgd);
+   retval = lerp (retval, fgdPat, sum);
+   retval.a = 1.0;
+
+   return lerp (Bgnd, retval, tex2D (Mask, uv1));
 }
 

@@ -1,17 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-09-04
+// @Released 2023-01-01
 // @Author jwrl
 // @Author trirop
-// @Created 2021-09-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/Fractal3_640.png
+// @Created 2023-01-01
 
 /**
- Fractal matte 3 produces backgrounds generated from fractal patterns.  Because those
- backgrounds are newly created  media they will be produced at the sequence resolution.
- This means that any background video will also be locked to that resolution.
+ Fractal matte 3 produces backgrounds generated from fractal patterns.  The rate of
+ development is adjustable, and a flat colour can be mixed with the fractal to give a
+ wide range of unique appearances.
 
- NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
- They are then cropped to the background resolution.
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,186 +21,66 @@
 //
 // Version history:
 //
-// Rewrite 2021-09-04 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Fractal matte 3";
-   string Category    = "Matte";
-   string SubCategory = "Backgrounds";
-   string Notes       = "Produces fractal patterns for background generation";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Fractal matte 3", "Mattes", "Backgrounds", "Produces fractal patterns for background generation", "CanSize|HasMinOutputSize" );
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define TWO_PI     6.28318530718
-
-#define INVSQRT3   0.57735026919
-
-#define RGB_WEIGHT float3(0.2989, 0.5866, 0.1145)
-
-float _Progress;
-float _Length;
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Input and target
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
-
-DefineTarget (Matte, s_Matte);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Opacity
-<
-   string Description = "Opacity";   
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (FracOffs, "Fractal offset", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (FracRate, "Fractal rate", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-float FracOffs
-<
-   string Description = "Fractal offset";   
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareColourParam (Colour, "Mix colour", "Colour", kNoFlags, 1.0, 0.77, 0.19);
 
-float FracRate
-<
-   string Description = "Fractal rate";   
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (ColourMix, "Mix level", "Colour", kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (HueParam, "Hue", "Colour", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (SatParam, "Saturation", "Colour", kNoFlags, 0.0, -1.0, 1.0);
 
-float4 Colour
-<
-   string Description = "Mix colour";
-   string Group = "Colour";
-   bool SupportsAlpha = true;
-> = { 1.0, 0.77, 0.19, 1.0 };
+DeclareFloatParam (Gain, "Gain", "Luminance", kNoFlags, 1.0, 0.0, 4.0);
+DeclareFloatParam (Gamma, "Gamma", "Luminance", kNoFlags, 1.0, 0.0, 4.0);
+DeclareFloatParam (Brightness, "Brightness", "Luminance", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Contrast, "Contrast", "Luminance", kNoFlags, 1.0, 0.0, 4.0);
 
-float ColourMix
-<
-   string Description = "Mix level";
-   string Group = "Colour";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float HueParam
-<
-   string Description = "Hue";
-   string Group = "Colour";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float SatParam
-<
-   string Description = "Saturation";
-   string Group = "Colour";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Gain
-<
-   string Description = "Gain";
-   string Group = "Luminance";
-   float MinVal = 0.0;
-   float MaxVal = 4.0;
-> = 1.0;
-
-float Gamma
-<
-   string Description = "Gamma";
-   string Group = "Luminance";
-   float MinVal = 0.0;
-   float MaxVal = 4.0;
-> = 1.00;
-
-float Brightness
-<
-   string Description = "Brightness";
-   string Group = "Luminance";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Contrast
-<
-   string Description = "Contrast";
-   string Group = "Luminance";
-   float MinVal = 0.0;
-   float MaxVal = 4.0;
-> = 1.0;
+DeclareFloatParam (_Progress);
+DeclareFloatParam (_Length);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_fractals (float2 xy : TEXCOORD) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define TWO_PI   6.28318530718
+#define INVSQRT3 0.57735026919
+
+#define RGB_WEIGHT float3(0.2989, 0.5866, 0.1145)
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (Matte)
 {
    float speed = _Progress * FracRate * _Length / 5.0;
 
    float4 retval = 1.0.xxxx;
 
-   float3 f = float3 (xy, FracOffs);
+   float3 f = float3 (uv0, FracOffs);
 
    for (int i = 0; i < 75; i++) {
       f.xzy = float3 (1.3, 0.999, 0.7) * (abs ((abs (f) / dot (f, f) - float3 (1.0, 1.0, speed * 0.5))));
@@ -213,36 +91,10 @@ float4 ps_fractals (float2 xy : TEXCOORD) : COLOR
    return retval;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (FractalMatte3)
 {
-   float4 Fgd = GetPixel (s_Input, uv1);
-
-   float2 xy = uv2;
-
-   if (_OutputAspectRatio <= 1.0) {
-      xy.x = (xy.x - 0.5) * _OutputAspectRatio;
-
-      if (_OutputAspectRatio < 1.0) {
-         xy.y -= 0.5;
-         xy   *= _OutputAspectRatio;
-         xy.y += 0.5;
-      }
-
-      xy.x += 0.5;
-   }
-   else {
-      xy.y = (xy.y - 0.5) / _OutputAspectRatio;
-
-      if (_OutputAspectRatio < 1.0) {
-         xy.x -= 0.5;
-         xy   /= _OutputAspectRatio;
-         xy.x += 0.5;
-      }
-
-      xy.y += 0.5;
-   }
-
-   float4 retval = tex2D (s_Matte, xy);
+   float4 Fgd = ReadPixel (Inp, uv1);
+   float4 retval = tex2D (Matte, uv2);
 
    float luma   = dot (retval.rgb, RGB_WEIGHT);
    float buffer = dot (Colour.rgb, RGB_WEIGHT);
@@ -275,19 +127,10 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    temp.y = ((3.0 * (buffer + 1.0)) * luma - (3.0 * buffer + 1.0) * temp.x) / 2.0;
    temp.z = 3.0 * luma - temp.y - temp.x;
 
-   retval   = (Hrange < 1.0) ? temp.zyxw : (Hrange < 2.0) ? temp.xzyw : temp.yxzw;
-   temp.rgb = (((pow (retval.rgb, 1.0 / GammVal) * Gain) + Brightness.xxx - 0.5.xxx) * Contrast) + 0.5.xxx;
+   retval = (Hrange < 1.0) ? temp.zyxw : (Hrange < 2.0) ? temp.xzyw : temp.yxzw;
+   retval = (((pow (retval, 1.0 / GammVal) * Gain) + (Brightness - 0.5).xxxx) * Contrast) + 0.5.xxxx;
+   retval.a = 1.0;
 
-   return lerp (Fgd, temp, Opacity);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique FractalMatte_3
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Matte;"; > ExecuteShader (ps_fractals)
-   pass P_2 ExecuteShader (ps_main)
+   return lerp (Fgd, retval, tex2D (Mask, uv1));
 }
 

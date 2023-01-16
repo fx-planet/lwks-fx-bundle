@@ -1,18 +1,13 @@
 // @Maintainer jwrl
-// @Released 2021-09-04
+// @Released 2023-01-01
 // @Author jwrl
-// @Created 2021-09-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/Plasma_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Plasma.mp4
+// @Created 2023-01-01
 
 /**
  This effect generates soft plasma-like cloud patterns.  Hue, level, saturation, and rate
- of change of the pattern are all adjustable, and the pattern is also adjustable.  Because
- this background is newly created  media it will be produced at the sequence resolution.
- This means that any background video will also be locked to that resolution.
+ of change of the pattern are all adjustable, and the pattern is also adjustable.
 
- NOTE: Backgrounds are newly created media and are produced at the sequence resolution.
- They are then cropped to the background resolution.
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,138 +15,59 @@
 //
 // Version history:
 //
-// Rewrite 2021-09-04 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Plasma matte";
-   string Category    = "Matte";
-   string SubCategory = "Backgrounds";
-   string Notes       = "Generates soft plasma clouds";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Plasma matte", "Mattes", "Backgrounds", "Generates soft plasma clouds", "CanSize|HasMinOutputSize");
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define RGB_LUMA float3(0.2989, 0.5866, 0.1145)
-
-#define TWO_PI   6.2831853072
-#define HALF_PI  1.5707963268
-
-float _Progress;
-float _LengthFrames;
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Input and target
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (Rate, "Rate", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Style, "Pattern style", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Scale, "Scale", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Gain, "Pattern gain", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Level, "Level", kNoGroup, kNoFlags, 0.6666666667, 0.0, 1.0);
+DeclareFloatParam (Hue, "Hue", kNoGroup, kNoFlags, 0, -180, 180);
+DeclareFloatParam (Saturation, "Saturation", kNoGroup, "DisplayAsPercentage", 1.0, 0.0, 2.0);
 
-float Rate
-<
-   string Description = "Rate";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_Progress);
+DeclareFloatParam (_Length);
 
-float Style
-<
-   string Description = "Pattern style";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (_OutputAspectRatio);
 
-float Scale
-<
-   string Description = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Gain
-<
-   string Description = "Pattern gain";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Level
-<
-   string Description = "Level";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.6666666667;
-
-float Hue
-<
-   string Description = "Hue";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Saturation
-<
-   string Description = "Saturation";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_LengthFrames);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv0 : TEXCOORD, float2 uv1 : TEXCOORD1) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define RGB_LUMA float3(0.2989, 0.5866, 0.1145)
+
+#define TWO_PI  6.2831853072
+#define HALF_PI 1.5707963268
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (PlasmaMatte)
 {
-   float4 Bgnd = GetPixel (s_Input, uv1);
-
    float2 xy = uv0;
 
    if (_OutputAspectRatio <= 1.0) {
@@ -177,7 +93,8 @@ float4 ps_main (float2 uv0 : TEXCOORD, float2 uv1 : TEXCOORD1) : COLOR
       xy.y += 0.5;
    }
 
-   float rate = _LengthFrames * _Progress / (1.0 + (Rate * 38.0));
+   float rate = _LengthFrames * _Progress / (1.0 + ((1.0 - Rate) * 100.0));
+   float _hue = (Hue + 180) / 360;
 
    float2 xy1, xy2, xy3, xy4 = (xy - 0.5.xx) * HALF_PI;
 
@@ -196,25 +113,17 @@ float4 ps_main (float2 uv0 : TEXCOORD, float2 uv1 : TEXCOORD1) : COLOR
 
    ptrn.y = dot (xy1, xy2.xx) + dot (xy3, xy4.xx);
    ptrn.z = dot (xy2, xy3.yy) + dot (xy1, xy4.yy);
-   ptrn  += float3 (Hue, 0.5, 1.0 - Hue) * TWO_PI;
+   ptrn  += float3 (_hue, 0.5, 1.0 - _hue) * TWO_PI;
 
-   float3 retval = sin (ptrn) * ((Gain * 0.5) + 0.05);
+   float3 ret = sin (ptrn) * ((Gain * 0.5) + 0.05);
 
-   retval = saturate (retval + Level.xxx);
+   ret = saturate (ret + Level.xxx);
 
-   float luma = dot (retval, RGB_LUMA);
+   float luma = dot (ret, RGB_LUMA);
 
-   retval = lerp (luma.xxx, retval, Saturation * 2.0);
+   float4 Fgd = ReadPixel (Inp, uv1);
+   float4 retval = float4 (lerp (luma.xxx, ret, Saturation), Fgd.a);
 
-   return lerp (Bgnd, float4 (retval, 1.0), Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique PlasmaMatte
-{
-   pass P_1 ExecuteShader (ps_main)
+   return lerp (Fgd, retval, tex2D (Mask, uv1));
 }
 

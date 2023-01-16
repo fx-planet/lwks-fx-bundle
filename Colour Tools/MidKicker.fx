@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-08-18
+// @Released 2023-01-07
 // @Author jwrl
-// @Created 2021-08-18
-// @see https://www.lwks.com/media/kunena/attachments/6375/MidtoneKicker_640.png
+// @Created 2023-01-07
 
 /**
  This adjusts mid-range red, green and blue levels to enhance or reduce them.  It does
@@ -10,6 +9,8 @@
  or expands the black and white RGB levels to compensate.  Since that means that the
  final look that you achieve will be affected by the black and white levels provision
  has been made to adjust them.  This should be done before doing anything else.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,140 +18,38 @@
 //
 // Version history:
 //
-// Rewrite 2021-08-18 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-07 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Midtone kicker";
-   string Category    = "Colour";
-   string SubCategory = "Colour Tools";
-   string Notes       = "Adjusts mid-range RGB levels to enhance or reduce them";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Midtone kicker", "Colour", "Colour Tools", "Adjusts mid-range RGB levels to enhance or reduce them", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-bool Reference
-<
-   string Description = "Set black & white references and levels first";
-> = true;
+DeclareBoolParam (Reference, "Set black & white references and levels first", kNoGroup, true);
 
-float4 WhitePoint
-<
-   string Group = "Reference points";
-   string Description = "White";
-   bool SupportsAlpha = false;
-> = { 1.0, 1.0, 1.0, -1.0 };
+DeclareColourParam (WhitePoint, "White", "Reference points", kNoFlags, 1.0, 1.0, 1.0);
+DeclareColourParam (BlackPoint, "Black", "Reference points", kNoFlags, 0.0, 0.0, 0.0);
 
-float4 BlackPoint
-<
-   string Group = "Reference points";
-   string Description = "Black";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, -1.0 };
+DeclareFloatParam (S_curve, "Contrast", "Midtone adjustments", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Vibrance, "Saturation", "Midtone adjustments", kNoFlags, 0.0, -1.0, 1.0);
 
-float S_curve
-<
-   string Group = "Midtone adjustments";
-   string Description = "Contrast";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Vibrance
-<
-   string Group = "Midtone adjustments";
-   string Description = "Saturation";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float WhiteLevel
-<
-   string Group = "Fine tuning";
-   string Description = "White level";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.5;
-   float MaxVal = 1.5;
-> = 1.0;
-
-float Trim_R
-<
-   string Group = "Fine tuning";
-   string Description = "Red midtones";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Trim_G
-<
-   string Group = "Fine tuning";
-   string Description = "Green midtones";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Trim_B
-<
-   string Group = "Fine tuning";
-   string Description = "Blue midtones";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float BlackLevel
-<
-   string Group = "Fine tuning";
-   string Description = "Black level";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 0.5;
-> = 0.0;
+DeclareFloatParam (WhiteLevel, "White level", "Fine tuning", "DisplayAsPercentage", 1.0, 0.5, 1.5);
+DeclareFloatParam (Trim_R, "Red midtones", "Fine tuning", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Trim_G, "Green midtones", "Fine tuning", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Trim_B, "Blue midtones", "Fine tuning", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (BlackLevel, "Black level", "Fine tuning", "DisplayAsPercentage", 0.0, -0.5, 0.5);
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -167,19 +66,20 @@ float fn_s_curve (float video, float curve, float level)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (MidtoneKicker)
 {
-   float4 inp = GetPixel (s_Input, uv);
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   if (!Reference) {
-      inp.rgb = ((inp.rgb - BlackPoint.rgb) / WhitePoint.rgb);
-      inp.rgb = ((inp.rgb * WhiteLevel) + BlackLevel.xxx);
-   }
+   float4 Bgd = tex2D (Inp, uv1);
+   float4 ret = Bgd;
 
-   float3 retval = inp.rgb;
+   ret.rgb = (ret.rgb - BlackPoint.rgb) / WhitePoint.rgb;
+   ret.rgb = (ret.rgb * WhiteLevel) + BlackLevel.xxx;
+
+   float3 retval = ret.rgb;
 
    float vibval = pow (1.0 + Vibrance, 2.0) - 1.0;
    float maxval = max (retval.r, max (retval.g, retval.b));
@@ -197,18 +97,10 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
    vibval *= ((retval.r + retval.g + retval.b) / 3.0) - maxval;
    retval  = lerp (retval, maxval.xxx, vibval);
 
-   inp.r = lerp (inp.r, fn_s_curve (retval.r, curves, amount), Trim_R + 1.0);
-   inp.g = lerp (inp.g, fn_s_curve (retval.g, curves, amount), Trim_G + 1.0);
-   inp.b = lerp (inp.b, fn_s_curve (retval.b, curves, amount), Trim_B + 1.0);
+   ret.r = lerp (ret.r, fn_s_curve (retval.r, curves, amount), Trim_R + 1.0);
+   ret.g = lerp (ret.g, fn_s_curve (retval.g, curves, amount), Trim_G + 1.0);
+   ret.b = lerp (ret.b, fn_s_curve (retval.b, curves, amount), Trim_B + 1.0);
 
-   return inp;
+   return lerp (Bgd, ret, tex2D (Mask, uv1));
 }
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique MidtoneKicker
-{
-   pass P_1 ExecuteShader (ps_main)
-}

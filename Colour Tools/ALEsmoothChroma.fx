@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2021-08-18
+// @Released 2023-01-07
 // @Author baopao
 // @Created 2013-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
@@ -10,127 +10,75 @@
  blurs just the chroma Cb/Cr components.  The result is then converted back to RGB using
  the original Y channel.  This ensures that luminance sharpness is maintained and just
  the colour component is softened.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ALEsmoothChroma.fx
 //
-// Feedback should be to http://www.alessandrodallafontana.com/ 
-//
 // Version history:
 //
-// Update 2021-08-18 jwrl:
-// Update of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Update 2023-01-07 jwrl.
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
+#include "_utils.fx"
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "ALE smooth chroma";
-   string Category    = "Colour";
-   string SubCategory = "Colour Tools";
-   string Notes       = "This smooths the colour component of video media leaving the luminance unaffected";
-   bool CanSize       = true;
-> = 0;
+DeclareLightworksEffect ("ALE smooth chroma", "Colour", "Colour Tools", "This smooths the colour component of video media leaving the luminance unaffected", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Fg);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (fg, s_Foreground);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float BlurAmount
-<
-   string Description = "BlurAmount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
+DeclareFloatParam (BlurAmount, "BlurAmount", kNoGroup, kNoFlags, 0.2, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 xy1 : TEXCOORD1 ) : COLOR
+DeclareEntryPoint (ALEsmoothChroma)
 {
-   float4 ret = saturate (GetPixel (s_Foreground, xy1));
-   float4 ret_NoBlur = ret;
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
+   float4 Inp = tex2D (fg, uv1);
+   float4 ret = Inp;
+
+   float A = ret.a;
+   float Y = 0.065 + (ret.r * 0.257) + (ret.g * 0.504) + (ret.b * 0.098);
    float amount = BlurAmount * 0.01;
 
-   float4 blurred = ret;
+   ret += tex2D (fg, uv1 - float2 (amount, 0.0));
+   ret += tex2D (fg, uv1 + float2 (amount, 0.0));
+   ret += tex2D (fg, uv1 - float2 (0.0, amount));
+   ret += tex2D (fg, uv1 + float2 (0.0, amount));
+   amount += amount;
+   ret += tex2D (fg, uv1 - float2 (amount, 0.0));
+   ret += tex2D (fg, uv1 + float2 (amount, 0.0));
+   ret += tex2D (fg, uv1 - float2 (0.0, amount));
+   ret += tex2D (fg, uv1 + float2 (0.0, amount));
+   ret /= 9.0;
 
-   blurred += GetPixel (s_Foreground, xy1 + float2 (-amount,  0.0));
-   blurred += GetPixel (s_Foreground, xy1 + float2 ( amount,  0.0));
-   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0, -amount));
-   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0,  amount));
-   blurred += GetPixel (s_Foreground, xy1 + float2 (-amount * 2.0,  0.0));
-   blurred += GetPixel (s_Foreground, xy1 + float2 ( amount * 2.0,  0.0));
-   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0, -amount*2));
-   blurred += GetPixel (s_Foreground, xy1 + float2 ( 0.0,  amount*2));
-   blurred /= 9.0;
-
-   ret = blurred;
-
-   //RGB2YCbCr
+   //RGB2CbCr
   
-   float Y = 0.065 +  (ret_NoBlur.r * 0.257) +  (ret_NoBlur.g * 0.504) +  (ret_NoBlur.b * 0.098);
-   float Cb = 0.5 -  (ret.r * 0.148) -  (ret.g * 0.291) +  (ret.b * 0.439);
-   float Cr = 0.5 +  (ret.r * 0.439) -  (ret.g * 0.368) -  (ret.b * 0.071);
+   float Cb = 0.5 - (ret.r * 0.148) - (ret.g * 0.291) + (ret.b * 0.439);
+   float Cr = 0.5 + (ret.r * 0.439) - (ret.g * 0.368) - (ret.b * 0.071);
 
    //YCbCr2RGB   
 
-   float4 o_color;
+   ret.r = 1.164 * (Y - 0.065) + 1.596 * (Cr - 0.5);
+   ret.g = 1.164 * (Y - 0.065) - 0.813 * (Cr - 0.5) - 0.392 * (Cb - 0.5);
+   ret.b = 1.164 * (Y - 0.065) + 2.017 * (Cb - 0.5);
+   ret.a = A;
 
-   o_color.r = 1.164 * (Y - 0.065) + 1.596 * (Cr - 0.5);
-   o_color.g = 1.164 * (Y - 0.065) - 0.813 * (Cr - 0.5) - 0.392 * (Cb - 0.5);
-   o_color.b = 1.164 * (Y - 0.065) + 2.017 * (Cb - 0.5);
-   o_color.a = 1.0;
-
-   return saturate (o_color);
+   return lerp (Inp, saturate (ret), tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique singletechnique { pass Single_Pass ExecuteShader (ps_main) }
 

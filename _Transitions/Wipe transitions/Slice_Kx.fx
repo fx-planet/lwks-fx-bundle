@@ -1,163 +1,65 @@
 // @Maintainer jwrl
-// @Released 2021-07-24
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-07-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Slice_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ax_Slice.mp4
+// @Created 2023-01-16
 
 /**
  This transition splits a blended foreground image into strips which then move off
  either horizontally or vertically to reveal the incoming image.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Slice_Kx.fx
 //
-// This effect is a combination of two previous effects, Slice_Ax and Slice_Adx.
-//
 // Version history:
 //
-// Rewrite 2021-07-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-16 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Slice transition (keyed)";
-   string Category    = "Mix";
-   string SubCategory = "Wipe transitions";
-   string Notes       = "Splits the foreground into strips which move on or off horizontally or vertically";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, TSAMPLE) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler TSAMPLE = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+DeclareLightworksEffect ("Slice transition (keyed)", "Mix", "Wipe transitions", "Splits the foreground into strips which move on or off horizontally or vertically", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Super, s_Super);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0    = 0.0;
-   float KF1    = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-int Source
-<
-   string Description = "Source";
-   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
-> = 0;
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
 
-int Ttype
-<
-   string Description = "Transition position";
-   string Enum = "At start if delta key folded,At start of clip,At end of clip";
-> = 1;
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
-bool CropEdges
-<
-   string Description = "Crop effect to background";
-> = false;
+DeclareIntParam (SetTechnique, "Strip direction", kNoGroup, 1, "Right to left|Left to right|Top to bottom|Bottom to top");
+DeclareIntParam (Mode, "Strip type", kNoGroup, 0, "Mode A|Mode B");
 
-int SetTechnique
-<
-   string Description = "Strip direction";
-   string Enum = "Right to left,Left to right,Top to bottom,Bottom to top";
-> = 1;
+DeclareFloatParam (StripNumber, "Strip number", kNoGroup, kNoFlags, 20.0, 10.0, 50.0);
 
-int Mode
-<
-   string Description = "Strip type";
-   string Enum = "Mode A,Mode B";
-> = 0;
-
-float StripNumber
-<
-   string Description = "Strip number";
-   float MinVal = 10.0;
-   float MaxVal = 50.0;
-> = 20.0;
-
-float KeyGain
-<
-   string Description = "Key trim";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Bgnd, Fgnd = GetPixel (s_Foreground, uv1);
+   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
 
    if (Source == 0) {
       if (Ttype == 0) {
          Bgnd = Fgnd;
-         Fgnd = GetPixel (s_Background, uv2);
+         Fgnd = ReadPixel (B, xy2);
       }
-      else Bgnd = GetPixel (s_Background, uv2);
+      else Bgnd = ReadPixel (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -170,7 +72,16 @@ float4 ps_keygen (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 ps_left (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+// technique Slice left
+
+DeclarePass (Super_L)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (Slice_Left)
 {
    float4 Bgnd;
 
@@ -196,19 +107,25 @@ float4 ps_left (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
 
    if (Ttype == 0) {
       bgd = uv1;
-      Bgnd = GetPixel (s_Foreground, uv1);
+      Bgnd = ReadPixel (Fg, uv1);
    }
    else {
       bgd = uv2;
-      Bgnd = GetPixel (s_Background, uv2);
+      Bgnd = ReadPixel (Bg, uv2);
    }
 
-   float4 Fgnd = (CropEdges && Overflow (bgd)) ? EMPTY : GetPixel (s_Super, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_L, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-float4 ps_right (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+
+// technique Slice right
+
+DeclarePass (Super_R)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (Slice_Right)
 {
    float4 Bgnd;
 
@@ -222,7 +139,7 @@ float4 ps_right (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TE
 
       xy.x -= (Mode == 1) ? (ceil (xy.y * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.y) * strips) * amount_2) + amount_1;
-      Bgnd = GetPixel (s_Background, uv2);
+      Bgnd = ReadPixel (Bg, uv2);
    }
    else {
       float amount_1 = 1.0 - Amount;
@@ -231,24 +148,30 @@ float4 ps_right (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TE
       amount_1 = pow (amount_1, 3.0);
       xy.x += (Mode == 1) ? (ceil (xy.y * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.y) * strips) * amount_2) + amount_1;
-      Bgnd = (Ttype == 0) ? GetPixel (s_Foreground, uv1) : GetPixel (s_Background, uv2);
+      Bgnd = (Ttype == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
    }
 
    if (Ttype == 0) {
       bgd = uv1;
-      Bgnd = GetPixel (s_Foreground, uv1);
+      Bgnd = ReadPixel (Fg, uv1);
    }
    else {
       bgd = uv2;
-      Bgnd = GetPixel (s_Background, uv2);
+      Bgnd = ReadPixel (Bg, uv2);
    }
 
-   float4 Fgnd = (CropEdges && Overflow (bgd)) ? EMPTY : GetPixel (s_Super, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_R, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-float4 ps_top (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+
+// technique Slice top
+
+DeclarePass (Super_T)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (Slice_Top)
 {
    float4 Bgnd;
 
@@ -262,7 +185,7 @@ float4 ps_top (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXC
 
       xy.y -= (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = GetPixel (s_Background, uv2);
+      Bgnd = ReadPixel (Bg, uv2);
    }
    else {
       float amount_1 = 1.0 - Amount;
@@ -271,24 +194,30 @@ float4 ps_top (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXC
       amount_1 = pow (amount_1, 3.0);
       xy.y += (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = (Ttype == 0) ? GetPixel (s_Foreground, uv1) : GetPixel (s_Background, uv2);
+      Bgnd = (Ttype == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
    }
 
    if (Ttype == 0) {
       bgd = uv1;
-      Bgnd = GetPixel (s_Foreground, uv1);
+      Bgnd = ReadPixel (Fg, uv1);
    }
    else {
       bgd = uv2;
-      Bgnd = GetPixel (s_Background, uv2);
+      Bgnd = ReadPixel (Bg, uv2);
    }
 
-   float4 Fgnd = (CropEdges && Overflow (bgd)) ? EMPTY : GetPixel (s_Super, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_T, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
-float4 ps_bottom  (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+
+// technique Slice bottom
+
+DeclarePass (Super_B)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (Slice_Bottom)
 {
    float4 Bgnd;
 
@@ -302,7 +231,7 @@ float4 ps_bottom  (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : 
 
       xy.y += (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = GetPixel (s_Background, uv2);
+      Bgnd = ReadPixel (Bg, uv2);
    }
    else {
       float amount_1 = 1.0 - Amount;
@@ -311,48 +240,20 @@ float4 ps_bottom  (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : 
       amount_1 = pow (amount_1, 3.0);
       xy.y -= (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = (Ttype == 0) ? GetPixel (s_Foreground, uv1) : GetPixel (s_Background, uv2);
+      Bgnd = (Ttype == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
    }
 
    if (Ttype == 0) {
       bgd = uv1;
-      Bgnd = GetPixel (s_Foreground, uv1);
+      Bgnd = ReadPixel (Fg, uv1);
    }
    else {
       bgd = uv2;
-      Bgnd = GetPixel (s_Background, uv2);
+      Bgnd = ReadPixel (Bg, uv2);
    }
 
-   float4 Fgnd = (CropEdges && Overflow (bgd)) ? EMPTY : GetPixel (s_Super, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_B, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Slice_Kx_Left
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 ExecuteShader (ps_left)
-}
-
-technique Slice_Kx_Right
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 ExecuteShader (ps_right)
-}
-
-technique Slice_Kx_Top
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 ExecuteShader (ps_top)
-}
-
-technique Slice_Kx_Bottom
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Super;"; > ExecuteShader (ps_keygen)
-   pass P_2 ExecuteShader (ps_bottom)
 }
 

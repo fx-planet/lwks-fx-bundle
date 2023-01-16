@@ -1,329 +1,160 @@
 // @Maintainer jwrl
-// @Released 2021-07-26
+// @Released 2022-12-31
 // @Author jwrl
-// @Created 2021-07-26
-// @see https://www.lwks.com/media/kunena/attachments/6375/TheDarkSide_640.png
+// @Created 2022-12-31
 
 /**
- The dark side (DarkSide.fx) gives a dark "glow" (don't know what else to call it) to an
- image.  All parameters are minimum range limited to prevent manual entry of illegal or
+ The dark side gives a dark "glow" (don't know what else to call it) to an image.
+ All parameters are minimum range limited to prevent manual entry of illegal or
  negative values.  There is no such limit to the maximum values possible.  The alpha
  channel is fully preserved throughout.
+
+ It's sort of based on the Lightworks Glow effect, but only slightly.  The code under
+ the hood differs from the code in their effect, and "Size" scales from 0% to 100%,
+ not from 1 to 10.  It also has the ability to feather the red, green and blue values
+ and add a glow colour to them, which the Lightorks effect does not.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DarkSide.fx
 //
-// Sort of based on the Lightworks "Glow" effect, I started work on this effect then
-// decided to check the Lightworks code.  Accordingly, the user interface is now exactly
-// the same as theirs, with the exception of the "Size" parameter.  The code under the
-// hood varies more than somewhat, and "Size" scales from 0% to 100%, not from 1 to 10.
-//
-// The main difference is that they have used different techniques for their four options:
-// I had already built the luma version and opted to use conditional execution to expand
-// the options to match theirs.  It's ever so slightly slower, but it adds the benefit of
-// being able to feather the RGB values and apply a glow colour to them.
-//
-// One minor difference is that the box blur samples fifteen deep instead of thirteen.  I
-// had already written that and had arrived at that figure empirically, and didn't feel
-// the need to change it.  I was in fact going to use my super blur engine but decided that
-// the complexity wasn't warranted, and opted for simplicity instead.
-//
-// The feather scale factor was a late change that I stole from the "Glow" effect, but done
-// as a definition and not a constant.  Previously I hadn't scaled the value at all.  This
-// is better because it gives better control.
-//
-// "GlowSpread" originally adjusted from 0 to 1 and was further offset and scaled prior to
-// use.  Their implementation of "Spread" was simpler, so I used it.  I would have had to in
-// any case to make the user interfaces match.
-//
-// If you're interested, the original settings order was Source, glowAmount, glowKnee,
-// glowFeather, glowSpread then Colour.  You should be able to work out what the user would
-// have seen from the parameter names.
-//
-// Version history:
-//
-// Rewrite 2021-07-26 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2022-12-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "The dark side";
-   string Category    = "Stylize";
-   string SubCategory = "Art Effects";
-   string Notes       = "Creates a shadow enhancing soft darkness spread.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("The dark side", "Stylize", "Art Effects", "Creates a shadow enhancing soft dark blur.", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DeclareInput( TEXTURE, SAMPLER ) \
-                                         \
-   texture TEXTURE;                      \
-                                         \
-   sampler SAMPLER = sampler_state       \
-   {                                     \
-      Texture   = <TEXTURE>;             \
-      AddressU  = ClampToEdge;           \
-      AddressV  = ClampToEdge;           \
-      MinFilter = Linear;                \
-      MagFilter = Linear;                \
-      MipFilter = Linear;                \
-   }
-
-#define DeclareTarget( TARGET, TSAMPLE ) \
-                                         \
-   texture TARGET : RenderColorTarget;   \
-                                         \
-   sampler TSAMPLE = sampler_state       \
-   {                                     \
-      Texture   = <TARGET>;              \
-      AddressU  = Mirror;                \
-      AddressV  = Mirror;                \
-      MinFilter = Linear;                \
-      MagFilter = Linear;                \
-      MipFilter = Linear;                \
-   }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY      0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define RED     1
-#define GREEN   2
-#define BLUE    3
-
-#define R_LUMA  0.2989
-#define G_LUMA  0.5866
-#define B_LUMA  0.1145
-
-#define F_SCALE 0.5
-#define P_SCALE 0.0015
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and targets
-//-----------------------------------------------------------------------------------------//
-
-DeclareInput (Inp, s_Input);
-
-DeclareTarget (Glow_1, s_Glow_1);
-DeclareTarget (Glow_2, s_Glow_2);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Source";
-   string Enum = "Luminance,Red,Green,Blue";
-> = 0;
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Luminance|Red|Green|Blue");
 
-float glowKnee
-<
-   string Description = "Tolerance";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (glowKnee, "Tolerance", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (glowFeather, "Feather", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (glowSpread, "Size", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (glowAmount, "Strength", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-float glowFeather
-<
-   string Description = "Feather";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareColourParam (Colour, "Colour difference", kNoGroup, kNoFlags, 0.0, 0.0, 0.0, 1.0);
 
-float glowSpread
-<
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float glowAmount
-<
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float4 Colour
-<
-   string Description = "Colour difference";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, 1.0 };
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_extract_Y (float2 uv : TEXCOORD1) : COLOR
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define LUMA float3(0.2989, 0.5866, 0.1145)
+
+#define F_SCALE 0.5
+#define P_SCALE 0.0015
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (Video)
+{ return ReadPixel (Inp, uv1); }
+
+DeclarePass (Glow_1)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
+   float4 retval = tex2D (Video, uv2);
 
    float feather = max (glowFeather, 0.0) * F_SCALE;
    float knee = max (glowKnee, 0.0);
-   float vid = (dot (retval.rgb, float3 (R_LUMA, G_LUMA, B_LUMA))) * retval.a;
+   float vid = Source == 1 ? retval.r : Source == 2 ? retval.g :
+               Source == 3 ? retval.b : dot (retval.rgb, LUMA);
+
+   vid *= retval.a;
 
    if (vid < knee) { retval.rgb = 1.0.xxx; }
-   else if (vid < (knee + feather)) { retval.rgb = lerp (1.0.xxx, Colour.rgb, (vid - knee) / feather); }
-   else retval.rgb = Colour.rgb;
+   else if (vid >= (knee + feather)) { retval.rgb = Colour.rgb; }
+   else retval.rgb = lerp (1.0.xxx, Colour.rgb, (vid - knee) / feather);
 
    return retval;
 }
 
-float4 ps_extract_R (float2 uv : TEXCOORD1) : COLOR
+DeclarePass (Glow_2)
 {
-   float4 retval = GetPixel (s_Input, uv);
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   float feather = max (glowFeather, 0.0) * F_SCALE;
-   float knee = max (glowKnee, 0.0);
-   float vid = retval.r * retval.a;
-
-   if (vid < knee) { retval.rgb = 1.0.xxx; }
-   else if (vid < (knee + feather)) { retval.rgb = lerp (1.0.xxx, Colour.rgb, (vid - knee) / feather); }
-   else retval.rgb = Colour.rgb;
-
-   return retval;
-}
-
-float4 ps_extract_G (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 retval = GetPixel (s_Input, uv);
-
-   float feather = max (glowFeather, 0.0) * F_SCALE;
-   float knee = max (glowKnee, 0.0);
-   float vid = retval.g * retval.a;
-
-   if (vid < knee) { retval.rgb = 1.0.xxx; }
-   else if (vid < (knee + feather)) { retval.rgb = lerp (1.0.xxx, Colour.rgb, (vid - knee) / feather); }
-   else retval.rgb = Colour.rgb;
-
-   return retval;
-}
-
-float4 ps_extract_B (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 retval = GetPixel (s_Input, uv);
-
-   float feather = max (glowFeather, 0.0) * F_SCALE;
-   float knee = max (glowKnee, 0.0);
-   float vid = retval.b * retval.a;
-
-   if (vid < knee) { retval.rgb = 1.0.xxx; }
-   else if (vid < (knee + feather)) { retval.rgb = lerp (1.0.xxx, Colour.rgb, (vid - knee) / feather); }
-   else retval.rgb = Colour.rgb;
-
-   return retval;
-}
-
-float4 ps_part_blur (float2 uv : TEXCOORD2) : COLOR
-{
-   float2 xy = uv;
+   float2 xy = uv2;
    float2 offset = float2 (max (glowSpread, P_SCALE) * P_SCALE, 0.0);
 
-   float4 retval = tex2D (s_Glow_1, xy);
+   float4 retval = tex2D (Glow_1, xy);
 
-   xy += offset; retval += tex2D (s_Glow_1, xy);
-   xy += offset; retval += tex2D (s_Glow_1, xy);
-   xy += offset; retval += tex2D (s_Glow_1, xy);
-   xy += offset; retval += tex2D (s_Glow_1, xy);
-   xy += offset; retval += tex2D (s_Glow_1, xy);
-   xy += offset; retval += tex2D (s_Glow_1, xy);
-   xy += offset; retval += tex2D (s_Glow_1, xy);
+   xy += offset; retval += tex2D (Glow_1, xy);
+   xy += offset; retval += tex2D (Glow_1, xy);
+   xy += offset; retval += tex2D (Glow_1, xy);
+   xy += offset; retval += tex2D (Glow_1, xy);
+   xy += offset; retval += tex2D (Glow_1, xy);
+   xy += offset; retval += tex2D (Glow_1, xy);
+   xy += offset; retval += tex2D (Glow_1, xy);
 
-   xy = uv - offset;
-   retval += tex2D (s_Glow_1, xy);
+   xy = uv2 - offset;
+   retval += tex2D (Glow_1, xy);
 
-   xy -= offset; retval += tex2D (s_Glow_1, xy);
-   xy -= offset; retval += tex2D (s_Glow_1, xy);
-   xy -= offset; retval += tex2D (s_Glow_1, xy);
-   xy -= offset; retval += tex2D (s_Glow_1, xy);
-   xy -= offset; retval += tex2D (s_Glow_1, xy);
-   xy -= offset; retval += tex2D (s_Glow_1, xy);
+   xy -= offset; retval += tex2D (Glow_1, xy);
+   xy -= offset; retval += tex2D (Glow_1, xy);
+   xy -= offset; retval += tex2D (Glow_1, xy);
+   xy -= offset; retval += tex2D (Glow_1, xy);
+   xy -= offset; retval += tex2D (Glow_1, xy);
+   xy -= offset; retval += tex2D (Glow_1, xy);
 
    return retval / 15.0;
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (DarkSide)
 {
-   float4 retval = GetPixel (s_Input, uv1);
-   float4 gloVal = tex2D (s_Glow_2, uv2);
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
+   float4 retval = tex2D (Video, uv2);
+   float4 gloVal = tex2D (Glow_2, uv2);
+   float4 source = retval;
 
    float2 offset = float2 (0.0, max (glowSpread, P_SCALE) * _OutputAspectRatio * P_SCALE);
    float2 xy = uv2;
 
-   xy += offset; gloVal += tex2D (s_Glow_2, xy);
-   xy += offset; gloVal += tex2D (s_Glow_2, xy);
-   xy += offset; gloVal += tex2D (s_Glow_2, xy);
-   xy += offset; gloVal += tex2D (s_Glow_2, xy);
-   xy += offset; gloVal += tex2D (s_Glow_2, xy);
-   xy += offset; gloVal += tex2D (s_Glow_2, xy);
-   xy += offset; gloVal += tex2D (s_Glow_2, xy);
+   xy += offset; gloVal += tex2D (Glow_2, xy);
+   xy += offset; gloVal += tex2D (Glow_2, xy);
+   xy += offset; gloVal += tex2D (Glow_2, xy);
+   xy += offset; gloVal += tex2D (Glow_2, xy);
+   xy += offset; gloVal += tex2D (Glow_2, xy);
+   xy += offset; gloVal += tex2D (Glow_2, xy);
+   xy += offset; gloVal += tex2D (Glow_2, xy);
 
    xy = uv2 - offset;
-   gloVal += tex2D (s_Glow_2, xy);
+   gloVal += tex2D (Glow_2, xy);
 
-   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
-   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
-   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
-   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
-   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
-   xy -= offset; gloVal += tex2D (s_Glow_2, xy);
+   xy -= offset; gloVal += tex2D (Glow_2, xy);
+   xy -= offset; gloVal += tex2D (Glow_2, xy);
+   xy -= offset; gloVal += tex2D (Glow_2, xy);
+   xy -= offset; gloVal += tex2D (Glow_2, xy);
+   xy -= offset; gloVal += tex2D (Glow_2, xy);
+   xy -= offset; gloVal += tex2D (Glow_2, xy);
 
    gloVal = saturate (retval - (gloVal / 15.0));
 
    float amount = max (glowAmount, 0.0);
 
-   return lerp (retval, gloVal, amount);
-}
+   retval.rgb = lerp (retval, gloVal, amount).rgb;
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique DarkSide_Y
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_Y)
-   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique DarkSide_R
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_R)
-   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique DarkSide_G
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_G)
-   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
-   pass P_3 ExecuteShader (ps_main)
-}
-
-technique DarkSide_B
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Glow_1;"; > ExecuteShader (ps_extract_B)
-   pass P_2 < string Script = "RenderColorTarget0 = Glow_2;"; > ExecuteShader (ps_part_blur)
-   pass P_3 ExecuteShader (ps_main)
+   return lerp (source, retval, tex2D (Mask, uv2));
 }
 

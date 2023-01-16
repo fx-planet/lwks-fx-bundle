@@ -1,14 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-11-19
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyWithDVE_640.png
+// @Created 2023-01-10
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
  some simple DVE adjustments added.
 
  The ChromaKey sections are copyright (c) LWKS Software Ltd.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,74 +17,63 @@
 //
 // Version history:
 //
-// Update 2021-11-19 jwrl.
-// Removed Fg initialise pass.  With 2022.1 it's no longer necessary.
-// Also added KeyColour, Tolerance and ToleranceSoftness defaults to match LW chromakeyer.
-//
-// Rewrite 2021-10-06 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Chromakey with DVE";
-   string Category    = "Key";
-   string SubCategory = "Key Extras";
-   string Notes       = "A customised version of the Lightworks Chromakey effect with cropping and a simple DVE";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Chromakey with DVE", "Key", "Key Extras", "A Chromakey effect with cropping and a simple DVE", CanSize);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareColourParam (KeyColour, "Key colour", "Chromakey", "SpecifiesColourRange", 150.0, 0.8, 0.8, -1.0);
+DeclareColourParam (Tolerance, "Tolerance", "Chromakey", "SpecifiesColourRange|Hidden", 20.0, 0.2, 0.2, -1.0);
+DeclareColourParam (ToleranceSoftness, "Tolerance softness", "Chromakey", "SpecifiesColourRange|Hidden", 10.0, 0.1, 0.1, -1.0);
+
+DeclareFloatParam (KeySoftAmount, "Key softness", "Chromakey", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (RemoveSpill, "Remove spill", "Chromakey", kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareBoolParam (Invert, "Invert", "Chromakey", false);
+DeclareBoolParam (Reveal, "Reveal", "Chromakey", false);
+
+DeclareFloatParam (CentreX, "Position", "Foreground DVE", "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.0, 2.0);
+DeclareFloatParam (CentreY, "Position", "Foreground DVE", "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.0, 2.0);
+
+DeclareFloatParam (MasterScale, "Master", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
+DeclareFloatParam (XScale, "Width", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
+DeclareFloatParam (YScale, "Height", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
+
+DeclareFloatParam (Left, "Left", "Crop", kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (Right, "Right", "Crop", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Top, "Top", "Crop", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Bottom, "Bottom", "Crop", kNoFlags, 0.0, 0.0, 1.0);
+
+DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
+
+DeclareIntParam (_FgOrientation);
+
+DeclareFloat4Param (_FgExtents);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHD) { PixelShader = compile PROFILE SHD (); }
-
-#define BadPos(P, p1, p2) (P < max (0.0, p1)) || (P > min (1.0, 1.0 - p2))
-#define Bad_XY(XY, L, R, T, B)  (BadPos (XY.x, L, R) || BadPos (XY.y, T, B))
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define allPos(RGB) (all (RGB > 0.0))
 
@@ -95,244 +85,128 @@ float _FallOff = 0.12;
 float _oneSixth = 1.0 / 6.0;
 float _minTolerance = 1.0 / 256.0;
 
-float _OutputWidth  = 1.0;
-float _OutputHeight = 1.0;
-
-float _BgXScale = 1.0;
-float _BgYScale = 1.0;
-float _FgXScale = 1.0;
-float _FgYScale = 1.0;
-
-float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // See Pascals Triangle
+float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // Pascals Triangle
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (DVEvid, s_DVEvideo);
-DefineTarget (RawKey, s_RawKey);
-DefineTarget (BlurKey, s_BlurKey);
-DefineTarget (FullKey, s_FullKey);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float4 KeyColour
-<
-   string Group = "Chromakey";
-   string Description = "Key Colour";
-   string Flags = "SpecifiesColourRange";
-> = { 150.0, 0.7, 0.75, 0.0 };
-
-float4 Tolerance
-<
-   string Group = "Chromakey";
-   string Description = "Tolerance";
-   string Flags = "SpecifiesColourRange";
-   bool Visible = false;
-> = { 20.0, 0.3, 0.25, 0.0 };
-
-float4 ToleranceSoftness
-<
-   string Group = "Chromakey";
-   string Description = "Tolerance softness";
-   string Flags = "SpecifiesColourRange";
-   bool Visible = false;
-> = { 15.0, 0.115, 0.11, 0.0 };
-
-float KeySoftAmount
-<
-   string Group = "Chromakey";
-   string Description = "Key softness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float RemoveSpill
-<
-   string Group = "Chromakey";
-   string Description = "Remove spill";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-bool Invert
-<
-   string Group = "Chromakey";
-   string Description = "Invert";
-> = false;
-
-bool Reveal
-<
-   string Group = "Chromakey";
-   string Description = "Reveal";
-> = false;
-
-float CentreX
-<
-   string Description = "DVE Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.0;
-   float MaxVal = 2.0;
-> = 0.5;
-
-float CentreY
-<
-   string Description = "DVE Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.0;
-   float MaxVal = 2.0;
-> = 0.5;
-
-float MasterScale
-<
-   string Group = "DVE Scale";
-   string Description = "Master";
-   float MinVal = 0.0;
-   float MaxVal = 10.0;
-> = 1.0;
-
-float XScale
-<
-   string Group = "DVE Scale";
-   string Description = "X";
-   float MinVal = 0.0;
-   float MaxVal = 10.0;
-> = 1.0;
-
-float YScale
-<
-   string Group = "DVE Scale";
-   string Description = "Y";
-   float MinVal = 0.0;
-   float MaxVal = 10.0;
-> = 1.0;
-
-float CropL
-<
-   string Group = "DVE Crop";
-   string Description = "Left";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CropT
-<
-   string Group = "DVE Crop";
-   string Description = "Top";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CropR
-<
-   string Group = "DVE Crop";
-   string Description = "Right";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CropB
-<
-   string Group = "DVE Crop";
-   string Description = "Bottom";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Opacity
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
 //-----------------------------------------------------------------------------------------//
 
 //-----------------------------------------------------------------------------------------//
-// ps_DVE
+// Crop and position parameters
+//
+// This function recovers cropping and position parameters, corrected for image size,
+// rotation and aspect ratio.
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_FgParams (out float2 p)
+{
+   float4 crop = float4 (Left, 1.0 - Top, 1.0 - Right, Bottom);
+
+   p = float2 (0.5 - CentreX, CentreY - 0.5);
+
+   if (abs (abs (_FgOrientation - 90) - 90)) {
+      p = 0.5.xx - float2 (CentreY, CentreX);
+      crop = crop.wxyz;
+   }
+
+   if (_FgOrientation > 90) {
+      p = -p;
+      crop = crop.zwxy;
+   }
+
+   p *= abs (_FgExtents.xy - _FgExtents.zw);
+
+   crop.zw = 1.0 - crop.zw;
+
+   return crop;
+}
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------------------//
+// DVE
 //
 // A much cutdown version of the standard 2D DVE effect, this version doesn't include
 // drop shadow generation which would be pointless in this configuration.
 //-----------------------------------------------------------------------------------------//
-float4 ps_DVE (float2 uv : TEXCOORD1) : COLOR
+
+DeclarePass (DVEvid)
 {
    // The first section adjusts the position allowing for the foreground resolution.
-   // A resolution corrected scale factor is also created and applied.
+   // Resolution and orientation corrected cropping is also created.
 
-   float scaleX = max (0.00001, MasterScale * XScale);
-   float scaleY = max (0.00001, MasterScale * YScale);
+   float2 pos;
 
-   // Arrange for the foreground image to be centred on the same background pixel,
-   // regardless of output shape & wide/narrow settings
+   float4 Crop = fn_FgParams (pos);
 
-   float Xpos = (CentreX - 0.5) * _BgXScale;
-   float Ypos = (CentreY - 0.5) * _BgYScale;
+   float2 xy = uv1 + pos;
+   float2 scale = MasterScale * float2 (XScale, YScale);
 
-   Xpos = -Xpos / _FgXScale;
-   Ypos =  Ypos / _FgYScale;
+   xy = ((xy - 0.5.xx) / scale) + 0.5.xx;
 
-   float2 xy = uv + float2 (Xpos, Ypos);
+   // Now the scaled, cropped and positioned foreground is recovered.  The crop data is
+   // stored as a float4, ordered such that W corresponds to the bottom edge of the frame,
+   // X to the left, Y to the top, and Z to the right.
 
-   xy.x = ((xy.x - 0.5) / scaleX) + 0.5;
-   xy.y = ((xy.y - 0.5) / scaleY) + 0.5;
+   float4 retval;
 
-   // Now the scaled, positioned and cropped foreground is recovered.
+   if ((xy.x >= Crop.x) && (xy.x <= Crop.z) && (xy.y >= Crop.y) && (xy.y <= Crop.w)) {
+      retval = ReadPixel (Fg, xy);
+   }
+   else retval = kTransparentBlack;
 
-   return Bad_XY (xy, CropL, CropR, CropT, CropB) ? EMPTY : GetPixel (s_Foreground, xy);
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_keygen
+// Key generation
 //
-// Convert the source to HSV and then compute its similarity with the specified key-colour
+// Convert the source to HSV and then compute its similarity to the specified key colour
 //-----------------------------------------------------------------------------------------//
-float4 ps_keygen (float2 uv : TEXCOORD3) : COLOR
+
+DeclarePass (RawKey)
 {
-   float keyVal = 1.0;
-   float hueSimilarity = 1.0;
+   float4 Fgnd = ReadPixel (DVEvid, uv3);
 
-   float4 tolerance1 = Tolerance + _minTolerance;
-   float4 tolerance2 = tolerance1 + ToleranceSoftness;
+   // This first block of code converts the input RGB to HSV for the colour match.
 
-   float4 hsva = 0.0;
-   float4 rgba = tex2D (s_DVEvideo, uv);
+   float4 hsva = kTransparentBlack;
 
-   float maxComponentVal = max (max (rgba.r, rgba.g), rgba.b);
-   float minComponentVal = min (min (rgba.r, rgba.g), rgba.b);
+   float maxComponentVal = max (max (Fgnd.r, Fgnd.g), Fgnd.b);
+   float minComponentVal = min (min (Fgnd.r, Fgnd.g), Fgnd.b);
    float componentRange  = maxComponentVal - minComponentVal;
 
-   hsva[ VAL_IDX ] = maxComponentVal;
-   hsva[ SAT_IDX ] = componentRange / maxComponentVal;
+   hsva [VAL_IDX] = maxComponentVal;
+   hsva [SAT_IDX] = componentRange / maxComponentVal;
 
-   if (hsva [SAT_IDX] == 0.0) { hsva [HUE_IDX] = 0.0; }   // undefined
-   else {
-      if (rgba.r == maxComponentVal) { hsva [HUE_IDX] = (rgba.g - rgba.b) / componentRange; }
-      else if (rgba.g == maxComponentVal) { hsva [HUE_IDX] = 2.0 + ((rgba.b - rgba.r) / componentRange ); }
-      else hsva [HUE_IDX] = 4.0 + ((rgba.r - rgba.g) / componentRange);
+   if (hsva [SAT_IDX] != 0.0) {
+      if (Fgnd.r == maxComponentVal) { hsva [HUE_IDX] = (Fgnd.g - Fgnd.b) / componentRange; }
+      else if (Fgnd.g == maxComponentVal) { hsva [HUE_IDX] = 2.0 + ((Fgnd.b - Fgnd.r) / componentRange ); }
+      else hsva [HUE_IDX] = 4.0 + ((Fgnd.r - Fgnd.g) / componentRange);
 
       hsva [HUE_IDX] *= _oneSixth;
-      if (hsva [HUE_IDX] < 0.0) hsva [HUE_IDX] += 1.0;
-      }
 
-   // Calc difference between current pixel and specified key-colour
+      if (hsva [HUE_IDX] < 0.0) { hsva [HUE_IDX] += 1.0; }
+   }
+
+   // Calculate the difference between current pixel and specified key colour
 
    float4 diff = abs (hsva - KeyColour);
 
-   if (diff [HUE_IDX] > 0.5) diff [HUE_IDX] = 1.0 - diff [HUE_IDX];
+   if (diff [HUE_IDX] > 0.5) { diff [HUE_IDX] = 1.0 - diff [HUE_IDX]; }
 
    // Work out the opacity of the corrected pixel
 
-   tolerance2 -= diff;
-   diff -= tolerance1;
+   diff -= Tolerance + _minTolerance;
 
-   if (allPos (tolerance2)) {
+   float4 colourmatch = ToleranceSoftness - diff;
+
+   float keyVal = 1.0;
+   float hueSimilarity = 1.0;
+
+   if (allPos (colourmatch)) {
       if (allPos (diff)) {
          hueSimilarity = diff [HUE_IDX];
          diff /= ToleranceSoftness;
@@ -347,73 +221,81 @@ float4 ps_keygen (float2 uv : TEXCOORD3) : COLOR
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_blur1
+// Blur 1
 //
 // Blurs the image horizontally using Pascal's triangle
 //-----------------------------------------------------------------------------------------//
-float4 ps_blur1 (float2 uv : TEXCOORD3) : COLOR
-{
-   float2 onePixAcross   = float2 (KeySoftAmount / _OutputWidth, 0.0);
-   float2 twoPixAcross   = onePixAcross * 2.0;
-   float2 threePixAcross = onePixAcross * 3.0;
 
-   float4 retval = tex2D (s_RawKey, uv);
+DeclarePass (BlurKey)
+{
+   float2 onePixel = float2 (KeySoftAmount / _OutputWidth, 0.0);
+   float2 twoPixel = onePixel * 2.0;
+   float2 threePix = onePixel * 3.0;
+
+   float4 retval = tex2D (RawKey, uv3);
 
    retval.r *= blur [0];
-   retval.r += tex2D (s_RawKey, uv + onePixAcross).r * blur [1];
-   retval.r += tex2D (s_RawKey, uv - onePixAcross).r * blur [1];
-   retval.r += tex2D (s_RawKey, uv + twoPixAcross).r * blur [2];
-   retval.r += tex2D (s_RawKey, uv - twoPixAcross).r * blur [2];
-   retval.r += tex2D (s_RawKey, uv + threePixAcross).r * blur [3];
-   retval.r += tex2D (s_RawKey, uv - threePixAcross).r * blur [3];
+   retval.r += tex2D (RawKey, uv3 + onePixel).r * blur [1];
+   retval.r += tex2D (RawKey, uv3 - onePixel).r * blur [1];
+   retval.r += tex2D (RawKey, uv3 + twoPixel).r * blur [2];
+   retval.r += tex2D (RawKey, uv3 - twoPixel).r * blur [2];
+   retval.r += tex2D (RawKey, uv3 + threePix).r * blur [3];
+   retval.r += tex2D (RawKey, uv3 - threePix).r * blur [3];
 
    return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_blur2
+// Blur 2
 //
 // Blurs the image vertically
 //-----------------------------------------------------------------------------------------//
-float4 ps_blur2 (float2 uv : TEXCOORD3) : COLOR
-{
-   float2 onePixDown   = float2 (0.0, KeySoftAmount / _OutputHeight);
-   float2 twoPixDown   = onePixDown * 2.0;
-   float2 threePixDown = onePixDown * 3.0;
 
-   float4 retval = tex2D (s_BlurKey, uv);
+DeclarePass (FullKey)
+{
+   float2 onePixel = float2 (0.0, KeySoftAmount / _OutputHeight);
+   float2 twoPixel = onePixel * 2.0;
+   float2 threePix = onePixel * 3.0;
+
+   float4 retval = tex2D (BlurKey, uv3);
 
    retval.r *= blur [0];
-   retval.r += tex2D (s_BlurKey, uv + onePixDown).r * blur [1];
-   retval.r += tex2D (s_BlurKey, uv - onePixDown).r * blur [1];
-   retval.r += tex2D (s_BlurKey, uv + twoPixDown).r * blur [2];
-   retval.r += tex2D (s_BlurKey, uv - twoPixDown).r * blur [2];
-   retval.r += tex2D (s_BlurKey, uv + threePixDown).r * blur [3];
-   retval.r += tex2D (s_BlurKey, uv - threePixDown).r * blur [3];
+   retval.r += tex2D (BlurKey, uv3 + onePixel).r * blur [1];
+   retval.r += tex2D (BlurKey, uv3 - onePixel).r * blur [1];
+   retval.r += tex2D (BlurKey, uv3 + twoPixel).r * blur [2];
+   retval.r += tex2D (BlurKey, uv3 - twoPixel).r * blur [2];
+   retval.r += tex2D (BlurKey, uv3 + threePix).r * blur [3];
+   retval.r += tex2D (BlurKey, uv3 - threePix).r * blur [3];
 
    return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_main
+// Main code
 //
 // Blends the cropped, resized and positioned foreground with the background using the
 // key that was built in ps_keygen.   Apply spill-suppression as we go.
 //-----------------------------------------------------------------------------------------//
-float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+
+DeclareEntryPoint (ChromakeyWithDVE)
 {
+   float4 key = tex2D (FullKey, uv3);
+   float4 fg  = tex2D (DVEvid, uv3);
+   float4 bg  = ReadPixel (Bg, uv2);
    float4 retval;
 
-   float4 fg  = tex2D (s_DVEvideo, uv3);
-   float4 bg  = Overflow (uv2) ? BLACK : tex2D (s_Background, uv2);
-   float4 key = tex2D (s_FullKey, uv3);
+   // This next is done to ensure that the backgroound is completely opaque.  While
+   // this may corrupt backgrounds that have transparency, it definitely will protect
+   // keys over a background with a differing background aspect ratio to the sequence.
+
+   bg.a = 1.0;
 
    // key.r = blurred key
    // key.g = raw, unblurred key
    // key.a = spill removal amount
 
    // Using min (key.r, key.g) means that any softness around the key causes the foreground
-   // to shrink in from the edges
+   // to shrink in from the edges.
 
    float mix = saturate ((1.0 - min (key.r, key.g) * fg.a) * 2.0);
 
@@ -425,36 +307,23 @@ float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
       if (Invert) {
          retval = lerp (bg, fg, mix * bg.a);
          retval.a = max (bg.a, mix);
-         }
+      }
       else {
          if (key.a > 0.8) {
             float4 fgLum = (fg.r + fg.g + fg.b) / 3.0;
 
-            // Remove spill..
+            // Remove spill.
 
             fg = lerp (fg, fgLum, ((key.a - 0.8) / 0.2) * RemoveSpill);
-            }
+         }
 
          retval = lerp (fg, bg, mix * bg.a);
          retval.a = max (bg.a, 1.0 - mix);
-         }
-
-      retval = lerp (bg, retval, Opacity);
       }
 
-   return retval;
-}
+      retval = lerp (bg, retval, Opacity);
+   }
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique ChromakeyWithDVE
-{
-   pass P_1 < string Script = "RenderColorTarget0 = DVEvid;"; > ExecuteShader (ps_DVE)
-   pass P_2 < string Script = "RenderColorTarget0 = RawKey;"; > ExecuteShader (ps_keygen)
-   pass P_3 < string Script = "RenderColorTarget0 = BlurKey;"; > ExecuteShader (ps_blur1)
-   pass P_4 < string Script = "RenderColorTarget0 = FullKey;"; > ExecuteShader (ps_blur2)
-   pass P_5 ExecuteShader (ps_main)
+   return lerp (bg, retval, tex2D (Mask, uv1));
 }
 

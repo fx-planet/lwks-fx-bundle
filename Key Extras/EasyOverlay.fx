@@ -1,9 +1,8 @@
 // @Maintainer jwrl
-// @Released 2021-10-06
+// @Released 2023-01-10
 // @Author hugly
 // @Author schrauber
 // @Created 2019-08-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/EasyOverlay_640a.png
 
 /**
  'Easy overlay' is a luminance keyer for overlays which show luminance for transparency,
@@ -15,94 +14,48 @@
  adjustments should be necessary, start with 'MaskGain'.  'Fg Lift' influences overall
  brightness of the overlay while preserving highlights.  'Fg Opacity' is e.g. useful to
  dissolve from/to the overlay using keyframes.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect EasyOverlay.fx
+// Lightworks user effect EasyOverlay_2022.fx
 //
 // Version history:
 //
-// Update 2021-10-06 jwrl.
-// Updated the original effect to support LW 2021 resolution independence.
-//
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
-//
-// Modified 2020-06-15 jwrl:
-// Removed redundant TEXCOORD3 input to oa_main().
+// Updated 2023-01-10 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<  string EffectGroup = "GenericPixelShader";
-   string Description = "Easy overlay";
-   string Category    = "Key";
-   string SubCategory = "Key Extras";
-   string Notes       = "For overlays where luminance represents transparency";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Easy overlay 2022.2+", "Key", "Key Extras", "For overlays where luminance represents transparency", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInputs (fg, bg);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-#define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (fg, FgSampler);
-DefineInput (bg, BgSampler);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float MaskGain
-<  string Description = "Mask Gain";
-   float MinVal = 0.0;
-   float MaxVal = 6.0;
-> = 3;
+DeclareFloatParam (MaskGain, "Mask Gain", kNoGroup, kNoFlags, 3.0, 0.0, 6.0);
+DeclareFloatParam (FgLift, "Fg Lift", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (FgOpacity, "Fg Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float FgLift
-<  string Description = "Fg Lift";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-float FgOpacity
-<  string Description = "Fg Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define BLACK float2(0.0, 1.0).xxxy
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -122,29 +75,23 @@ float4 setFgLift (float4 x)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Samplers
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 oa_main (float2 xy1 : TEXCOORD1, float2 xy2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (EasyOverlay)
 {
-   float4 fg = GetPixel (FgSampler, xy1);
-   float4 bg = Overflow (xy2) ? BLACK : tex2D (BgSampler, xy2);
-   float4 mask = fg;
+   float4 Fgd  = ReadPixel (fg, uv1);
+   float4 Bgd  = IsOutOfBounds (uv2) ? BLACK : tex2D (bg, uv2);
+   float4 mask = Fgd;
 
-   fg = setFgLift (fg);
+   Fgd = setFgLift (Fgd);
 
    float alpha = mask.a * min (((mask.r + mask.g + mask.b) / 3.0) * MaskGain, 1.0);
 
-   float4 ret = lerp (bg, fg, alpha * FgOpacity);
+   float4 ret = lerp (Bgd, Fgd, alpha * FgOpacity);
 
    ret.a = 1.0;
 
-   return ret;
+   return lerp (Bgd, ret, tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique ps { pass SinglePass ExecuteShader (oa_main) }
 

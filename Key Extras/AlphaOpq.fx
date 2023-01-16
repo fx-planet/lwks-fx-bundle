@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-06
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/AlphaOpq_640.png
+// @Created 2023-01-10
 
 /**
  This simple effect turns the alpha channel of a clip fully on, making it opaque.  There
@@ -12,6 +11,8 @@
 
  A means of boosting alpha before processing to support clips such as Lightworks titles
  has also been included.  This only functions when the background is being replaced.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,105 +20,43 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-06 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Alpha opaque";
-   string Category    = "Key";
-   string SubCategory = "Key Extras";
-   string Notes       = "Makes a transparent image or title completely opaque";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Alpha opaque", "Key", "Key Extras", "Makes a transparent image or title completely opaque", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInput (Inp);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Opacity mode";
-   string Enum = "Make opaque,Blend with colour";
-> = 0;
+DeclareIntParam (OpacityMode, "Opacity mode", kNoGroup, 0, "Make opaque|Blend with colour");
+DeclareIntParam (KeyMode, "Type of alpha channel", kNoGroup, 0, "Standard|Premultiplied|Lightworks title effects");
 
-int KeyMode
-<
-   string Description = "Type of alpha channel";
-   string Enum = "Standard,Premultiplied,Lightworks title effects";
-> = 0;
-
-float4 Colour
-<
-   string Description = "Background colour";
-   bool SupportsAlpha = false;
-> = { 0.0, 0.0, 0.0, 0.0 };
+DeclareColourParam (Colour, "Background colour", kNoGroup, kNoFlags, 0.0, 0.0, 0.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_0 (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (AlphaOpq)
 {
-   return float4 (GetPixel (s_Input, uv).rgb, 1.0);
-}
+   float4 Fgd = ReadPixel (Inp, uv1);
 
-float4 ps_main_1 (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 Fgd = GetPixel (s_Input, uv);
+   if (!OpacityMode) return lerp (kTransparentBlack, float4 (Fgd.rgb, 1.0), tex2D (Mask, uv1));
 
    if (KeyMode == 2) Fgd.a = pow (Fgd.a, 0.5);
    if (KeyMode > 0) Fgd.rgb /= Fgd.a;
 
-   return float4 (lerp (Colour.rgb, Fgd.rgb, Fgd.a), 1.0);
+   return lerp (Colour, float4 (lerp (Colour.rgb, Fgd.rgb, Fgd.a), 1.0), tex2D (Mask, uv1 ));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique AlphaOpq_0 { pass P_1 ExecuteShader (ps_main_0) }
-
-technique AlphaOpq_1 { pass P_1 ExecuteShader (ps_main_1) }
 

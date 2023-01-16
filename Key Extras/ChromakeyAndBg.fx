@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-06
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-06
-// @see https://www.lwks.com/media/kunena/attachments/6375/ChromakeyAndBg_640.png
+// @Created 2023-01-10
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
@@ -10,85 +9,79 @@
  background has also been added.  The colour of the background and its linearity can be
  adjusted to give a very realistic studio look.
 
- The ChromaKey sections are based on work copyright (c) LWKS Software Ltd.
+ The ChromaKey sections are based on work copyright (c) LWKS Software Ltd.  To allow full
+ screen width of the background in all combinations of foreground and sequence this effect
+ must break resolution independence.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect ChromakeyAndBg.fx
 //
-// This effect is an extension of a previous effect, "Chromakey with DVE".
-//
 // Version history:
 //
-// Rewrite 2021-10-06 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Chromakey and background";
-   string Category    = "Key";
-   string SubCategory = "Key Extras";
-   string Notes       = "A chromakey effect with a simple DVE and cyclorama background generation.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Chromakey and background", "Key", "Key Extras", "A chromakey effect with a simple DVE and cyclorama background generation.", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Inp);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareColourParam (KeyColour, "Key Colour", kNoGroup, "SpecifiesColourRange", 150.0, 0.7, 0.75, 0.0);
+DeclareColourParam (Tolerance, "Tolerance", kNoGroup, "SpecifiesColourRange|Hidden", 20.0, 0.3, 0.25, 0.0);
+DeclareColourParam (ToleranceSoftness, "Tolerance softness", kNoGroup, "SpecifiesColourRange|Hidden", 15.0, 0.115, 0.11, 0.0);
+
+DeclareFloatParam (KeySoftAmount, "Key softness", "Key settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (RemoveSpill, "Remove spill", "Key settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareBoolParam (Reveal, "Reveal", "Key settings", false);
+
+DeclareFloatParam (CentreX, "DVE position", kNoGroup, "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.5, 1.5);
+DeclareFloatParam (CentreY, "DVE position", kNoGroup, "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.5, 1.5);
+DeclareFloatParam (CentreZ, "DVE position", kNoGroup, "SpecifiesPointZ", 0.0, -1.0, 1.0);
+
+DeclareFloatParam (CropLeft, "Top left", "Crop", "SpecifiesPointX", 0.0, 0.0, 1.0);
+DeclareFloatParam (CropTop, "Top left", "Crop", "SpecifiesPointY", 1.0, 0.0, 1.0);
+DeclareFloatParam (CropRight, "Bottom right", "Crop", "SpecifiesPointX", 1.0, 0.0, 1.0);
+DeclareFloatParam (CropBottom, "Bottom right", "Crop", "SpecifiesPointY", 0.0, 0.0, 1.0);
+
+DeclareColourParam (HorizonColour, "Lighting colour", "Cyclorama", kNoFlags, 0.631, 0.667, 0.702, 1.0);
+DeclareFloatParam (Lighting, "Overhead light", "Cyclorama", "DisplayAsPercentage", 1.5, 0.5, 2.0);
+DeclareFloatParam (Groundrow, "Groundrow light", "Cyclorama", "DisplayAsPercentage", 1.1, 0.5, 2.0);
+DeclareFloatParam (Horizon, "Horizon line", "Cyclorama", "DisplayAsPercentage", 0.3, 0.1, 0.9);
+
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
+
+DeclareFloat4Param (_InpExtents);
+
+DeclareIntParam (_InpOrientation);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define IsPos(RGB) any(RGB.rgb > 0.0)
+#define CENTRE 0.5
 
 #define HUE_IDX 0
 #define SAT_IDX 1
 #define VAL_IDX 2
-
-float _OutputWidth;
-float _OutputHeight;
 
 float _FallOff = 0.12;
 float _oneSixth = 1.0 / 6.0;
@@ -97,179 +90,56 @@ float _minTolerance = 1.0 / 256.0;
 float blur [] = { 20.0 / 64.0, 15.0 / 64.0, 6.0 / 64.0, 1.0 / 64.0 };  // See Pascal's Triangle
 
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Inp, s_RawInp);
+bool allPositive (float4 pix)
+{
+   return (pix.r > 0.0) && (pix.g > 0.0) && (pix.b > 0.0);
+}
 
-DefineTarget (FixInp, s_Input);
-DefineTarget (DVEvid, s_DVEvideo);
-DefineTarget (RawKey, s_RawKey);
-DefineTarget (BlurKey, s_BlurKey);
-DefineTarget (FullKey, s_FullKey);
+float2 fixParams (out float L, out float T, out float R, out float B)
+{
+   float4 crop = float4 (CropLeft, 1.0 - CropTop, 1.0 - CropRight, CropBottom);
 
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
+   float2 pos = float2 (CENTRE - CentreX, CentreY - CENTRE);
 
-float4 KeyColour
-<
-   string Description = "Key Colour";
-   string Flags = "SpecifiesColourRange";
-> = { 150.0, 0.7, 0.75, 0.0 };
+   if (abs (abs (_InpOrientation - 90) - 90)) {
+      crop = crop.wxyz;
+      pos = CENTRE - float2 (CentreY, CentreX);
+   }
 
-float4 Tolerance
-<
-   string Description = "Tolerance";
-   string Flags = "SpecifiesColourRange";
-   bool Visible = false;
-> = { 20.0, 0.3, 0.25, 0.0 };
+   if (_InpOrientation > 90) {
+      crop = crop.zwxy;
+      pos = -pos;
+   }
 
-float4 ToleranceSoftness
-<
-   string Description = "Tolerance softness";
-   string Flags = "SpecifiesColourRange";
-   bool Visible = false;
-> = { 15.0, 0.115, 0.11, 0.0 };
+   L = crop.x;
+   T = crop.y;
+   R = 1.0 - crop.z;
+   B = 1.0 - crop.z;
 
-float KeySoftAmount
-<
-   string Group = "Key settings";
-   string Description = "Key softness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float RemoveSpill
-<
-   string Group = "Key settings";
-   string Description = "Remove spill";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-bool Reveal
-<
-   string Group = "Key settings";
-   string Description = "Reveal";
-> = false;
-
-float CentreX
-<
-   string Description = "DVE position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CentreY
-<
-   string Description = "DVE position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CentreZ
-<
-   string Description = "DVE position";
-   string Flags = "SpecifiesPointZ";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CropLeft
-<
-   string Group = "Crop";
-   string Description = "Top left";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CropTop
-<
-   string Group = "Crop";
-   string Description = "Top left";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float CropRight
-<
-   string Group = "Crop";
-   string Description = "Bottom right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float CropBottom
-<
-   string Group = "Crop";
-   string Description = "Bottom right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float4 HorizonColour
-<
-   string Group = "Cyclorama";
-   string Description = "Lighting colour";
-   bool SupportsAlpha = false;
-> = { 0.631, 0.667, 0.702, 1.0 };
-
-float Lighting
-<
-   string Group = "Cyclorama";
-   string Description = "Overhead light";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.5;
-   float MaxVal = 2.0;
-> = 1.5;
-
-float Groundrow
-<
-   string Group = "Cyclorama";
-   string Description = "Groundrow light";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.5;
-   float MaxVal = 2.0;
-> = 1.1;
-
-float Horizon
-<
-   string Group = "Cyclorama";
-   string Description = "Horizon line";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.1;
-   float MaxVal = 0.9;
-> = 0.3;
+   return (pos / abs (_InpExtents.xy - _InpExtents.zw)) + CENTRE;
+}
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
 //-----------------------------------------------------------------------------------------//
-// ps_dve
+// DVE
 //
 // This simple shader adjusts the cropping, position and scaling of the foreground image.
 // It is a new addition to the original Lightworks chromakey effect.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_dve (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (DVEvid)
 {
-   // Calculate the crop boundaries.  These are limited to the edge of frame so that no
-   // illegal addresses for the input sampler ranges can ever be produced.
+   // Calculate the crop boundaries and adjust the position to correct for Inp size.
 
-   float L = max (0.0, CropLeft);
-   float R = min (1.0, CropRight);
-   float T = max (0.0, 1.0 - CropTop);
-   float B = min (1.0, 1.0 - CropBottom);
+   float Left, Top, Right, Bottom;
+
+   float2 position = fixParams (Left, Top, Right, Bottom);
 
    // Set up the scale factor, using the Z axis position.  Unlike the Lightworks 3D DVE
    // the range isn't linear and operates smallest to largest.  Since it is intended to
@@ -279,16 +149,16 @@ float4 ps_dve (float2 uv : TEXCOORD2) : COLOR
 
    // Set up the image position and scaling
 
-   float2 xy = ((uv - 0.5.xx) / scale) + float2 (-CentreX, CentreY) + 0.5.xx;
+   float2 xy = ((uv1 - CENTRE) / scale) + position;
 
    // Now return the cropped, repositioned and resized image.
 
-   return (xy.x >= L) && (xy.y >= T) && (xy.x <= R) && (xy.y <= B)
-          ? tex2D (s_Input, xy) : EMPTY;
+   return (xy.x >= Left) && (xy.y >= Top) && (xy.x <= Right) && (xy.y <= Bottom)
+          ? ReadPixel (Inp, xy) : kTransparentBlack;
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_keygen
+// Key generation
 //
 // Convert the source to HSV and then compute its similarity with the specified key-colour.
 //
@@ -298,11 +168,17 @@ float4 ps_dve (float2 uv : TEXCOORD2) : COLOR
 // A new flag is also set in the returned z component if the key is valid.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_keygen (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (RawKey)
 {
+   float keyVal = 1.0;
+   float hueSimilarity = 1.0;
+
    // First recover the cropped image.
 
-   float4 rgba = tex2D (s_DVEvideo, uv);
+   float4 tolerance1 = Tolerance + _minTolerance;
+   float4 tolerance2 = tolerance1 + ToleranceSoftness;
+   float4 rgba = tex2D (DVEvid, uv2);
+   float4 hsva = 0.0.xxxx;
 
    // The float maxComponentVal has been set up here to save a redundant evalution
    // in the following conditional code.
@@ -317,13 +193,6 @@ float4 ps_keygen (float2 uv : TEXCOORD2) : COLOR
 
    // Now return to the Lightworks original, minus the rgba = tex2D() section and
    // the maxComponentVal initialisation for the HSV conversion.
-
-   float keyVal = 1.0;
-   float hueSimilarity = 1.0;
-
-   float4 hsva = 0.0;
-   float4 tolerance1 = Tolerance + _minTolerance;
-   float4 tolerance2 = tolerance1 + ToleranceSoftness;
 
    float minComponentVal = min (min (rgba.r, rgba.g), rgba.b);
    float componentRange  = maxComponentVal - minComponentVal;
@@ -354,8 +223,8 @@ float4 ps_keygen (float2 uv : TEXCOORD2) : COLOR
 
    // Work out how transparent/opaque the corrected pixel will be
 
-   if (IsPos (tolerance2 - diff)) {
-      if (IsPos (tolerance1 - diff)) { keyVal = 0.0; }
+   if (allPositive (tolerance2 - diff)) {
+      if (allPositive (tolerance1 - diff)) { keyVal = 0.0; }
       else {
          diff -= tolerance1;
          hueSimilarity = diff [HUE_IDX];
@@ -375,19 +244,19 @@ float4 ps_keygen (float2 uv : TEXCOORD2) : COLOR
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_blur1
+// Blur 1
 //
 // Does the horizontal component of the blur.  Added a check for a valid key presence at
 // the start of the shader using the new flag in result.z.  If it isn't set, quit.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_blur1 (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (BlurKey)
 {
-   float4 result = tex2D (s_RawKey, uv);
+   float4 result = tex2D (RawKey, uv2);
 
    // This next check will only be true if ps_keygen() has been bypassed.
 
-   if (result.z == 0.0) return result;
+   if (result.z != 1.0) return result;
 
    float2 onePixel    = float2 (KeySoftAmount / _OutputWidth, 0.0);
    float2 twoPixels   = onePixel * 2.0;
@@ -396,28 +265,28 @@ float4 ps_blur1 (float2 uv : TEXCOORD2) : COLOR
    // Calculate return result;
 
    result.x *= blur [0];
-   result.x += tex2D (s_RawKey, uv + onePixel).x    * blur [1];
-   result.x += tex2D (s_RawKey, uv - onePixel).x    * blur [1];
-   result.x += tex2D (s_RawKey, uv + twoPixels).x   * blur [2];
-   result.x += tex2D (s_RawKey, uv - twoPixels).x   * blur [2];
-   result.x += tex2D (s_RawKey, uv + threePixels).x * blur [3];
-   result.x += tex2D (s_RawKey, uv - threePixels).x * blur [3];
+   result.x += tex2D (RawKey, uv2 + onePixel).x    * blur [1];
+   result.x += tex2D (RawKey, uv2 - onePixel).x    * blur [1];
+   result.x += tex2D (RawKey, uv2 + twoPixels).x   * blur [2];
+   result.x += tex2D (RawKey, uv2 - twoPixels).x   * blur [2];
+   result.x += tex2D (RawKey, uv2 + threePixels).x * blur [3];
+   result.x += tex2D (RawKey, uv2 - threePixels).x * blur [3];
 
    return result;
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_blur2
+// Blur 2
 //
 // Adds the vertical component of the blur.  Added a check for key presence at the start
 // of the shader using the new flag in result.z.  If it isn't set, quit.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_blur2 (float2 uv : TEXCOORD2) : COLOR
+DeclarePass (FullKey)
 {
-   float4 result = tex2D (s_BlurKey, uv);
+   float4 result = tex2D (BlurKey, uv2);
 
-   if (result.z == 0.0) return result;
+   if (result.z != 1.0) return result;
 
    float2 onePixel    = float2 (0.0, KeySoftAmount / _OutputHeight);
    float2 twoPixels   = onePixel * 2.0;
@@ -426,32 +295,31 @@ float4 ps_blur2 (float2 uv : TEXCOORD2) : COLOR
    // Calculate return result;
 
    result.x *= blur [0];
-   result.x += tex2D (s_BlurKey, uv + onePixel).x    * blur [1];
-   result.x += tex2D (s_BlurKey, uv - onePixel).x    * blur [1];
-   result.x += tex2D (s_BlurKey, uv + twoPixels).x   * blur [2];
-   result.x += tex2D (s_BlurKey, uv - twoPixels).x   * blur [2];
-   result.x += tex2D (s_BlurKey, uv + threePixels).x * blur [3];
-   result.x += tex2D (s_BlurKey, uv - threePixels).x * blur [3];
+   result.x += tex2D (BlurKey, uv2 + onePixel).x    * blur [1];
+   result.x += tex2D (BlurKey, uv2 - onePixel).x    * blur [1];
+   result.x += tex2D (BlurKey, uv2 + twoPixels).x   * blur [2];
+   result.x += tex2D (BlurKey, uv2 - twoPixels).x   * blur [2];
+   result.x += tex2D (BlurKey, uv2 + threePixels).x * blur [3];
+   result.x += tex2D (BlurKey, uv2 - threePixels).x * blur [3];
 
    return result;
 }
 
 //-----------------------------------------------------------------------------------------//
-// ps_main
+// Main keyer
 //
-// Blend the foreground with the background using the key that was built in ps_keygen.
+// Blend the foreground with the background using the key that was built earlier.
 // Apply spill suppression as we go.
 //
 // New: 1.  Original foreground sampler replaced with DVE version.
 //      2.  Original background sampler replaced with generated version.
 //      3.  The invert key function which is pointless in this context has been removed.
-//      4.  Redundant TEXCOORD2 has been removed.
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD2) : COLOR
+DeclareEntryPoint (ChromakeyAndBg)
 {
-   float4 Fgd = tex2D (s_DVEvideo, uv);
-   float4 Key = tex2D (s_FullKey, uv);
+   float4 Fgd = tex2D (DVEvid, uv2);
+   float4 Key = tex2D (FullKey, uv2);
 
    // Key.w = spill removal amount
    // Key.x = blurred key
@@ -465,19 +333,7 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
    // If we just want to show the key we can get out now.  Because we no longer have the
    // invert key function this process has become simpler than the Lightworks original.
 
-   if (Reveal) return float4 (mix.xxx, 1.0);
-
-   // Perform spill removal on the foreground if necessary
-
-   if (Key.w > 0.8) {
-      float fgLum = (Fgd.r + Fgd.g + Fgd.b) / 3.0;
-
-      // Remove spill.
-
-      Fgd = lerp (Fgd, fgLum.xxxx, ((Key.w - 0.8) / 0.2) * RemoveSpill);
-   }
-
-   //  From here on differs significantly from the code in the Lightworks effect.
+   if (Reveal) return lerp (kTransparentBlack, float4 (mix.xxx, 1.0), tex2D (Mask, uv1));
 
    // Now we generate the background. The groundrow distance to the centre point, cg,
    // is first calculated using a range limited version of Horizon.  Subtracting that
@@ -490,8 +346,8 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
    // otherwise the Groundrow value is used.  The amount of gamma correction to use is
    // given by the normalised distance of the Y position from Horizon.
 
-   float gamma = (uv.y < cl) ? lerp (1.0 / Lighting, 1.0, uv.y / cl)
-                             : lerp (1.0 / Groundrow, 1.0, (1.0 - uv.y) / cg);
+   float gamma = (uv2.y < cl) ? lerp (1.0 / Lighting, 1.0, uv2.y / cl)
+                              : lerp (1.0 / Groundrow, 1.0, (1.0 - uv2.y) / cg);
 
    if (gamma < 1.0) gamma = pow (gamma, 3.0);
 
@@ -499,20 +355,20 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
    // to produce the desired lighting effect on the background.  That is then combined
    // with the foreground and the alpha is set to 1 and we quit.
 
-   return float4 (lerp (Fgd, pow (HorizonColour, gamma), mix).rgb, 1.0);
-}
+   float4 Bgd = float4 (pow (HorizonColour, gamma).rgb, 1.0);
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
+   // Perform spill removal on the foreground if necessary
 
-technique ChromakeyAndBg
-{
-   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_1 < string Script = "RenderColorTarget0 = DVEvid;"; > ExecuteShader (ps_dve)
-   pass P_2 < string Script = "RenderColorTarget0 = RawKey;"; > ExecuteShader (ps_keygen)
-   pass P_3 < string Script = "RenderColorTarget0 = BlurKey;"; > ExecuteShader (ps_blur1)
-   pass P_4 < string Script = "RenderColorTarget0 = FullKey;"; > ExecuteShader (ps_blur2)
-   pass P_5 ExecuteShader (ps_main)
+   if (Key.w > 0.8) {
+      float4 fgLum = float4 ((Fgd.r + Fgd.g + Fgd.b).xxx / 3.0, 1.0);
+
+      // Remove spill.
+
+      Fgd = lerp (Fgd, fgLum, ((Key.w - 0.8) / 0.2) * RemoveSpill);
+   }
+
+   float4 retval = IsOutOfBounds (uv1) ? Bgd :  float4 (lerp (Fgd, Bgd, mix).rgb, 1.0);
+
+   return lerp (Bgd, retval, tex2D (Mask, uv1));
 }
 

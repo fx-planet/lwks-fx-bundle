@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-12-21
+// @Released 2023-01-12
 // @Author jwrl
-// @Created 2021-12-21
-// @see https://forum.lwks.com/attachments/analogtvdisaster_480-png.40092/
+// @Created 2023-01-12
 
 /**
  This simulates loss of horizontal and/or vertical hold on analog TV sets.  It works
@@ -15,6 +14,9 @@
  vertical lock can be set manually, or can continuously unlock.  Roll speed and horizontal
  skew rate are both adjustable.  Colour glitches are supported, or in monochrome, ghost
  images can be generated.
+
+ NOTE:  This effect breaks resolution independence.  It is only suitable for use with
+ Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,66 +24,56 @@
 //
 // Version history:
 //
-// Created 2021-12-21 jwrl.
+// Built 2023-01-12 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Analog TV disaster";
-   string Category    = "Stylize";
-   string SubCategory = "Video artefacts";
-   string Notes       = "Simulates just about anything that could go wrong with analog TV";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Analog TV disaster", "Stylize", "Video artefacts", "Simulates just about anything that could go wrong with analog TV", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Inp);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (TVmode, "TV standard", kNoGroup, 0, "PAL|NTSC|625 line mono|525 line mono|409 line mono|819 line mono");
+
+DeclareFloatParam (Horizontal, "Skew", "Horizontal", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Offset, "Offset", "Horizontal", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Hhold, "H. hold", "Horizontal", kNoFlags, 0.0, -1.0, 1.0);
+
+DeclareFloatParam (Vertical, "Roll", "Vertical", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Vhold, "V. hold", "Vertical", kNoFlags, 0.0, -1.0, 1.0);
+
+DeclareFloatParam (ScanLines, "Scan lines", kNoGroup, kNoFlags, 0.75, 0.0, 1.0);
+DeclareFloatParam (VideoNoise, "Video noise", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
+
+DeclareFloatParam (Visibility, "Visibility", "Glitches / ghosts", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (GlitchRate, "Rate / ghosting", "Glitches / ghosts", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (EdgeJitter, "Edge jitter", "Glitches / ghosts", kNoFlags, 0.5, -1.0, 1.0);
+
+DeclareFloatParam (_Length);
+DeclareFloatParam (_LengthFrames);
+
+DeclareFloatParam (_Progress);
+
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define SetTargetMode(TGT, SMP, MODE) \
-                                      \
- texture TGT : RenderColorTarget;     \
-                                      \
- sampler SMP = sampler_state          \
- {                                    \
-   Texture   = <TGT>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
 #define BLACK float2(0.0, 1.0).xxxy
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define PI    3.1415926536
 #define SCALE 0.01
@@ -93,111 +85,10 @@ Wrong_Lightworks_version
 #define IOGAM 0.75
 #define IOCOL float3(0.225, 0.238, 0.537)
 
+#define pWrap(P)   (P = P < 0.0 ? 1.0 - frac (abs (P)) : frac (P))
+#define xyWrap(XY) float2(pWrap (XY.x), pWrap (XY.y))
+
 float _ref[6] = { 12.0, 10.0, 12.0, 10.0, 8.0, 16.0 };
-
-float _Length;
-float _LengthFrames;
-
-float _Progress;
-
-float _OutputWidth;
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Input and sampler
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
-
-SetTargetMode (Video, s_Video, Wrap);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int TVmode
-<
-   string Description = "TV standard";
-   string Enum = "PAL,NTSC,625 line mono,525 line mono,409 line mono,819 line mono";
-> = 0;
-
-float Horizontal
-<
-   string Group = "Horizontal";
-   string Description = "Skew";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Offset
-<
-   string Group = "Horizontal";
-   string Description = "Offset";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Hhold
-<
-   string Group = "Horizontal";
-   string Description = "H. hold";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Vertical
-<
-   string Group = "Vertical";
-   string Description = "Roll";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Vhold
-<
-   string Group = "Vertical";
-   string Description = "V. hold";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float ScanLines
-<
-   string Description = "Scan lines";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.75;
-
-float VideoNoise
-<
-   string Description = "Video noise";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Visibility
-<
-   string Group = "Glitches / ghosts";
-   string Description = "Visibility";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float GlitchRate
-<
-   string Group = "Glitches / ghosts";
-   string Description = "Rate / ghosting";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float EdgeJitter
-<
-   string Group = "Glitches / ghosts";
-   string Description = "Edge jitter";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.5;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -230,16 +121,16 @@ float2 fn_modulate (float y, float r)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
 // This sets up vertical and horizontal sync intervals by scaling the video down slightly
 // and adding greyscale levels outside it to emulate sync pulses and colour burst signals.
 // It also adds scanlines.
 
-float4 ps_init (float2 uv : TEXCOORD1) : COLOR
+DeclarePass (Video)
 {
-   float2 xy = float2 (uv.x * 1.2, uv.y * 1.1111);
+   float2 xy = float2 (uv1.x * 1.2, uv1.y * 1.1111);
 
    float lines = _ref [TVmode] * 50.0;
    float blend = 0.002;
@@ -252,8 +143,12 @@ float4 ps_init (float2 uv : TEXCOORD1) : COLOR
 
    if (any (xy > 1.0)) retval = float2 (BLANK, 1.0).xxxy;
    else {
-      retval = tex2D (s_Input, xy);
+      retval = tex2D (Inp, xy);
+
       if (TVmode > 1) retval.rgb = pow (dot (retval.rgb, IOCOL), IOGAM).xxx;
+
+      retval.rgb *= 0.9125;
+      retval.rgb += 0.0875.xxx;
    }
 
    if ((xy.y <= 1.0) || (xy.y >= 1.045)) {
@@ -280,7 +175,7 @@ float4 ps_init (float2 uv : TEXCOORD1) : COLOR
    return saturate (retval);
 }
 
-float4 ps_main (float2 uv : TEXCOORD2) : COLOR
+DeclareEntryPoint (AnalogTVdisaster)
 {
    float divisor = _ref [TVmode];
    float multiplier = divisor * 25.0;
@@ -302,46 +197,36 @@ float4 ps_main (float2 uv : TEXCOORD2) : COLOR
       offset.x = lerp (-0.05, 0.05, GlitchRate);
    }
 
-   float2 xy1 = float2 (uv.x / 1.2, uv.y / 1.1111);
-   float2 xy2 = fn_modulate (uv.y, rate);
-   float2 xy3 = float2 (round ((uv.x - 0.5) / Xval) * Xval, round ((uv.y - 0.5) / Yval) * Yval);
+   float2 xy1 = float2 (uv2.x / 1.2, uv2.y / 1.1111);
+   float2 xy2 = fn_modulate (uv2.y, rate);
+   float2 xy3 = float2 (round ((uv2.x - 0.5) / Xval) * Xval, round ((uv2.y - 0.5) / Yval) * Yval);
 
    float modulation = 1.0 - (abs (xy1.x) * MODLN);
-   float seed_1 = _Progress;
-   float seed_2 = seed_1 + 1.0;
-   float seed_3 = seed_2 + 1.0;
    float vertcl = Vertical + (Vhold * _Length * _Progress);
    float horztl = Hhold + Horizontal;
    float skew_1 = Hhold * _Length * _Progress * 7.0;
 
-   horztl = horztl < 0.0 ? -frac (abs (horztl)) : frac (horztl);
-
    xy2.x *= xy2.y;
-   xy2 = float2 (dot (xy2, jitter.xx) * SCALE, 0.0);
-
+   xy2    = float2 (dot (xy2, jitter.xx) * SCALE, 0.0);
    xy1.x += skew_1 - Offset + (horztl * round (xy1.y * multiplier)) / divisor;
-   xy1.y += vertcl < 0.0 ? -frac (abs (vertcl)) : frac (vertcl);
+   xy1.y += vertcl;
 
-   float4 retval = tex2D (s_Video, xy1);
-   float4 Vnoise = float4 (fn_noise (xy3, seed_1), fn_noise (xy3, seed_2),
-                           fn_noise (xy3, seed_3), retval.a);
+   xy1 = xyWrap (xy1);
+   xy3 = xy1 - xy2;
+   xy2 = xy1 + xy2 + offset;
+   xy2 = xyWrap (xy2);
+   xy3 = xyWrap (xy3);
 
-   retval.r = lerp (retval.r, tex2D (s_Video, xy1 + xy2 + offset).r, amount);
-   retval.b = lerp (retval.b, tex2D (s_Video, xy1 - xy2).b, amount);
+   float4 retval = tex2D (Video, xy1);
+   float4 Vnoise = float4 (fn_noise (xy3, _Progress), fn_noise (xy3, _Progress + 1.0),
+                           fn_noise (xy3, _Progress + 2.0), retval.a);
+
+   retval.r = lerp (retval.r, tex2D (Video, xy2).r, amount);
+   retval.b = lerp (retval.b, tex2D (Video, xy3).b, amount);
    retval   = lerp (retval, Vnoise, saturate (VideoNoise) * 0.3);
 
    if (TVmode > 1) retval.rgb = lerp (retval.g, saturate (retval.b - retval.r * 0.5), Visibility).xxx;
 
    return retval;
-}
-
-//-----------------------------------------------------------------------------------------//
-//  Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique AnalogTVdisaster
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Video;"; > ExecuteShader (ps_init)
-   pass P_2 ExecuteShader (ps_main)
 }
 

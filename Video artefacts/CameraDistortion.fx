@@ -1,18 +1,20 @@
 // @Maintainer jwrl
-// @Released 2021-11-01
+// @Released 2023-01-12
 // @Author jwrl
-// @Created 2021-11-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/CameraDistortions_640.png
+// @Created 2023-01-12
 
 /**
  Camera distortions adds colour fringing effects, pincushion distortion, scaling and
  anamorphic adjustment to an image.  The centre of action of the effect can also be
  adjusted.  It can be used to simulate camera distortion or possibly even correct it,
  and can also be used as an effect in its own right.
+
+ NOTE:  This effect breaks resolution independence.  It is only suitable for use with
+ Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect CameraDistortions.fx
+// Lightworks user effect CameraDistortion.fx
 //
 // This effect was suggested by CubicLensDistortion.fx by Lightworks user brdloush.
 // This implementation is my own, based on the cubic lens distortion algorithm from
@@ -60,67 +62,46 @@
 //
 // Version history:
 //
-// Rewrite 2021-11-01 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.  This
-// version has also slightly reduced the number of conditionals used.
+// Built 2023-01-12 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Camera distortion";
-   string Category    = "Stylize";
-   string SubCategory = "Video artefacts";
-   string Notes       = "Simulates a range of digital camera distortion artefacts";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Camera distortion", "Stylize", "Video artefacts", "Simulates a range of digital camera distortion artefacts", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Art, Inp);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareBoolParam (DistortScale, "Enable basic distortion autoscaling", "Distortion", false);
+
+DeclareFloatParam (BasicDistortion, "Basic", "Distortion", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (CubicDistortion, "Cubic", "Distortion", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (Scale, "Scale", "Distortion", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (AnamorphicDistortion, "Anamorphic", "Distortion", kNoFlags, 0.0, -1.0, 1.0);
+
+DeclareIntParam (SetTechnique, "Camera type", "Chromatic aberration", 0, "Single chip|Single chip (portrait)|Three chip|Three chip (portrait)");
+DeclareFloatParam (OpticalErrors, "Optical errors", "Chromatic aberration", kNoFlags, 0.0, -1.0, 1.0);
+DeclareFloatParam (ElectronicErrors, "Electronic errors", "Chromatic aberration", kNoFlags, 0.0, -1.0, 1.0);
+
+DeclareFloatParam (Xcentre, "Centre", "Effect position", "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (Ycentre, "Centre", "Effect position", "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define STEPS     12
 #define FRNG_INC  1.0/STEPS
@@ -132,121 +113,28 @@ Wrong_Lightworks_version
 #define HORIZ     true
 #define VERT      false
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Inp, s_RawInp);
-
-DefineTarget (FixInp, s_Input);
-DefineTarget (Lens, s_Lens);
-DefineTarget (Distort, s_Distort);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-bool DistortScale
-<
-   string Group = "Distortion";
-   string Description = "Enable basic distortion autoscaling";
-> = false;
-
-float BasicDistortion
-<
-   string Group = "Distortion";
-   string Description = "Basic";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float CubicDistortion
-<
-   string Group = "Distortion";
-   string Description = "Cubic";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Scale
-<
-   string Group = "Distortion";
-   string Description = "Scale";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float AnamorphicDistortion
-<
-   string Group = "Distortion";
-   string Description = "Anamorphic";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-int SetTechnique
-<
-   string Group = "Chromatic aberration";
-   string Description = "Camera type";
-   string Enum = "Single chip,Single chip (portrait),Three chip,Three chip (portrait)";
-> = 0;
-
-float OpticalErrors
-<
-   string Group = "Chromatic aberration";
-   string Description = "Optical errors";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float ElectronicErrors
-<
-   string Group = "Chromatic aberration";
-   string Description = "Electronic errors";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
-
-float Xcentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Ycentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
-float4 ps_lens (float2 uv : TEXCOORD2) : COLOR
+float4 fn_lens (sampler S, float2 uv)
 {
-   float4 retval = tex2D (s_Input, uv);
+   float4 retval = tex2D (S, uv);
 
    if (OpticalErrors != 0.0) {
       retval.rgb = 0.0.xxx;
 
       float2 centre = float2 (Xcentre, 1.0 - Ycentre);
-      float2 fringe, xy = uv - centre;
+      float2 xy1 = uv - centre;
+      float2 fringe, xy2;
 
       float fringing = 0.0;
       float strength = 1.0;
-      float str_diff = (OpticalErrors / 100.0) * length (xy);
+      float str_diff = (OpticalErrors / 100.0) * length (xy1);
 
       for (int i = 0; i < STEPS; i++) {
-         fringe = tex2D (s_Input, (xy * strength) + centre).rg / STEPS;
+         xy2 = (xy1 * strength) + centre;
+         fringe = tex2D (S, xy2).rg / STEPS;
 
          retval.rg += fringe * float2 (1.0 - fringing, fringing);
 
@@ -255,7 +143,8 @@ float4 ps_lens (float2 uv : TEXCOORD2) : COLOR
       }
 
       for (int i = 0; i < STEPS; i++) {
-         fringe = tex2D (s_Input, (xy * strength) + centre).gb / STEPS;
+         xy2 = (xy1 * strength) + centre;
+         fringe = ReadPixel (S, xy2).gb / STEPS;
 
          retval.gb += fringe * float2 (2.0 - fringing, fringing - 1.0);
 
@@ -264,7 +153,8 @@ float4 ps_lens (float2 uv : TEXCOORD2) : COLOR
       }
 
       for (int i = 0; i < STEPS; i++) {
-         fringe = tex2D (s_Input, (xy * strength) + centre).rb / STEPS;
+         xy2 = (xy1 * strength) + centre;
+         fringe = ReadPixel (S, xy2).rb / STEPS;
 
          retval.rb += fringe * float2 (fringing - 2.0, 3.0 - fringing);
 
@@ -276,146 +166,146 @@ float4 ps_lens (float2 uv : TEXCOORD2) : COLOR
    return retval;
 }
 
-float4 ps_distort (float2 uv : TEXCOORD2) : COLOR
+float4 fn_distort (sampler S, float2 xy)
 {
    float autoscale [] = { 1.0,    0.8249, 0.7051, 0.6175, 0.5478, 0.4926, 0.4462,
                           0.4093, 0.3731, 0.3476, 0.3243, 0.3039, 0.286,  0.2707,
                           0.2563, 0.2435, 0.2316, 0.2214, 0.2116, 0.2023, 0.1942 };
 
-   if (!BasicDistortion && !CubicDistortion && !AnamorphicDistortion) return tex2D (s_Lens, uv);
+   if (BasicDistortion || CubicDistortion || AnamorphicDistortion) {
+      float sa, sb = (Scale * ((Scale / 2.0) - 1.0)) + 0.5;
 
-   float sa, sb = (Scale * ((Scale / 2.0) - 1.0)) + 0.5;
+      sb += pow (max (0.0, -Scale) * DISTORT, 2.0);
 
-   sb += pow (max (0.0, -Scale) * DISTORT, 2.0);
+      if (DistortScale) {
+         float a_s0 = saturate (BasicDistortion) * 20;
+         float a_s1 = floor (a_s0);
+         float a_s2 = ceil (a_s0);
 
-   if (DistortScale) {
-      float a_s0 = saturate (BasicDistortion) * 20;
-      float a_s1 = floor (a_s0);
-      float a_s2 = ceil (a_s0);
+         sa = autoscale [a_s1];
 
-      sa = autoscale [a_s1];
-
-      if (a_s1 != a_s2) {
-         a_s0 -= a_s1;
-         a_s0  = sqrt (a_s0 / 9) + (0.666667 * a_s0);
-         sa = lerp (sa, autoscale [a_s2], a_s0);
+         if (a_s1 != a_s2) {
+            a_s0 -= a_s1;
+            a_s0  = sqrt (a_s0 / 9) + (0.666667 * a_s0);
+            sa = lerp (sa, autoscale [a_s2], a_s0);
+         }
       }
+      else sa = 1.0;
+
+      float2 centre = float2 (Xcentre, 1.0 - Ycentre);
+      float2 sf = max (0.0, float2 (AnamorphicDistortion, -AnamorphicDistortion));
+
+      xy = 2.0 * (xy - centre);
+      sf = (sb.xx - (sf * sf * DISTORT)) * xy * sa;
+
+      float r = _OutputAspectRatio * _OutputAspectRatio * xy.x * xy.x + xy.y * xy.y;
+      float f = CubicDistortion ? 1.0 + (r * (BasicDistortion + (CubicDistortion * sqrt (r))))
+                                : 1.0 + (r * BasicDistortion);
+      xy = (sf * f) + centre;
    }
-   else sa = 1.0;
 
-   float2 centre = float2 (Xcentre, 1.0 - Ycentre);
-   float2 sf = max (0.0, float2 (AnamorphicDistortion, -AnamorphicDistortion));
-   float2 xy = 2.0 * (uv - centre);
-
-   sf = (sb.xx - (sf * sf * DISTORT)) * xy * sa;
-
-   float r = _OutputAspectRatio * _OutputAspectRatio * xy.x * xy.x + xy.y * xy.y;
-   float f = CubicDistortion ? 1.0 + (r * (BasicDistortion + (CubicDistortion * sqrt (r))))
-                             : 1.0 + (r * BasicDistortion);
-   xy = (sf * f) + centre;
-
-   return GetPixel (s_Lens, xy);
+   return ReadPixel (S, xy);
 }
 
-float4 ps_single_H (float2 uv : TEXCOORD2) : COLOR
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+// Single chip landscape
+
+DeclarePass (Inp_SH)
+{ return fn_lens (Inp, uv1); }
+
+DeclarePass (Distort_SH)
+{ return fn_distort (Inp_SH, uv2); }
+
+DeclareEntryPoint (CameraDistortion_Single_H)
 {
-   if (ElectronicErrors == 0.0) return tex2D (s_Distort, uv);
+   if (ElectronicErrors == 0.0) return tex2D (Distort_SH, uv2);
 
    float offset = (ElectronicErrors * CHIP_ERR) / _OutputAspectRatio;
 
-   float2 xy1 = float2 (uv.x - offset, uv.y);
-   float2 xy2 = float2 (uv.x + offset, uv.y);
+   float2 xy1 = float2 (uv2.x - offset, uv2.y);
+   float2 xy2 = float2 (uv2.x + offset, uv2.y);
 
-   float4 retval = tex2D (s_Distort, xy1);
+   float4 retval = tex2D (Distort_SH, xy1);
 
-   retval.g = tex2D (s_Distort, xy2).g;
+   retval.g = tex2D (Distort_SH, xy2).g;
 
    return retval;
 }
 
-float4 ps_single_V (float2 uv : TEXCOORD2) : COLOR
+//Single chip portrait
+
+DeclarePass (Inp_SV)
+{ return fn_lens (Inp, uv1); }
+
+DeclarePass (Distort_SV)
+{ return fn_distort (Inp_SV, uv2); }
+
+DeclareEntryPoint (CameraDistortion_Single_V)
 {
-   if (ElectronicErrors == 0.0) return tex2D (s_Distort, uv);
+   if (ElectronicErrors == 0.0) return tex2D (Distort_SV, uv2);
 
    float offset = ElectronicErrors * CHIP_ERR;
 
-   float2 xy1 = float2 (uv.x, uv.y - offset);
-   float2 xy2 = float2 (uv.x, uv.y + offset);
+   float2 xy1 = float2 (uv2.x, uv2.y - offset);
+   float2 xy2 = float2 (uv2.x, uv2.y + offset);
 
-   float4 retval = tex2D (s_Distort, xy1);
+   float4 retval = tex2D (Distort_SV, xy1);
 
-   retval.g = tex2D (s_Distort, xy2).g;
+   retval.g = tex2D (Distort_SV, xy2).g;
 
    return retval;
 }
 
-float4 ps_dichroic_H (float2 uv : TEXCOORD2) : COLOR
+//Three chip landscape
+
+DeclarePass (Inp_DH)
+{ return fn_lens (Inp, uv1); }
+
+DeclarePass (Distort_DH)
+{ return fn_distort (Inp_DH, uv2); }
+
+DeclareEntryPoint (CameraDistortion_Dichroic_H)
 {
-   float4 retval = tex2D (s_Distort, uv);
+   float4 retval = tex2D (Distort_DH, uv2);
 
    if (ElectronicErrors != 0.0) {
       float offset = (ElectronicErrors * DICHROIC) / _OutputAspectRatio;
 
-      float2 xy1 = float2 (uv.x + offset, uv.y);
-      float2 xy2 = float2 (uv.x - offset, uv.y);
+      float2 xy1 = float2 (uv2.x + offset, uv2.y);
+      float2 xy2 = float2 (uv2.x - offset, uv2.y);
 
-      retval.r = tex2D (s_Distort, xy1).r;
-      retval.b = tex2D (s_Distort, xy2).b;
+      retval.r = tex2D (Distort_DH, xy1).r;
+      retval.b = tex2D (Distort_DH, xy2).b;
    }
 
    return retval;
 }
 
-float4 ps_dichroic_V (float2 uv : TEXCOORD2) : COLOR
+//Three chip portrait
+
+DeclarePass (Inp_DV)
+{ return fn_lens (Inp, uv1); }
+
+DeclarePass (Distort_DV)
+{ return fn_distort (Inp_DV, uv2); }
+
+DeclareEntryPoint (CameraDistortion_Dichroic_V)
 {
-   float4 retval = tex2D (s_Distort, uv);
+   float4 retval = tex2D (Distort_DV, uv2);
 
    if (ElectronicErrors != 0.0) {
       float offset = ElectronicErrors * DICHROIC;
 
-      float2 xy1 = float2 (uv.x, uv.y - offset);
-      float2 xy2 = float2 (uv.x, uv.y + offset);
+      float2 xy1 = float2 (uv2.x, uv2.y - offset);
+      float2 xy2 = float2 (uv2.x, uv2.y + offset);
 
-      retval.r = tex2D (s_Distort, xy1).r;
-      retval.b = tex2D (s_Distort, xy2).b;
+      retval.r = tex2D (Distort_DV, xy1).r;
+      retval.b = tex2D (Distort_DV, xy2).b;
    }
 
    return retval;
-}
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-technique OneChip_H
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Lens;"; > ExecuteShader (ps_lens)
-   pass P_3 < string Script = "RenderColorTarget0 = Distort;"; > ExecuteShader (ps_distort)
-   pass P_4 ExecuteShader (ps_single_H)
-}
-
-technique OneChip_V
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Lens;"; > ExecuteShader (ps_lens)
-   pass P_3 < string Script = "RenderColorTarget0 = Distort;"; > ExecuteShader (ps_distort)
-   pass P_4 ExecuteShader (ps_single_V)
-}
-
-technique ThreeChip_H
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Lens;"; > ExecuteShader (ps_lens)
-   pass P_3 < string Script = "RenderColorTarget0 = Distort;"; > ExecuteShader (ps_distort)
-   pass P_4 ExecuteShader (ps_dichroic_H)
-}
-
-technique ThreeChip_V
-{
-   pass P_1 < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass P_2 < string Script = "RenderColorTarget0 = Lens;"; > ExecuteShader (ps_lens)
-   pass P_3 < string Script = "RenderColorTarget0 = Distort;"; > ExecuteShader (ps_distort)
-   pass P_4 ExecuteShader (ps_dichroic_V)
 }
 

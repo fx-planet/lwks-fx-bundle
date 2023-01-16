@@ -1,17 +1,18 @@
 // @Maintainer jwrl
-// @Released 2021-11-01
+// @Released 2023-01-12
 // @Author jwrl
-// @Created 2021-11-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/Low_res_cam_2018-05-23.png
+// @Created 2023-01-12
 
 /**
  This effect was designed to simulate the pixellation that you get when a low-resolution
  camera is blown up just that little too much.
 
- NOTE:  Because this effect needs to be able to precisely set mosaic sizes no matter
+ NOTE 1:  Because this effect needs to be able to precisely set mosaic sizes no matter
  what the original clip size or aspect ratio is it has not been possible to make it
  truly resolution independent.  What it does is lock the clip resolution to sequence
  resolution instead.
+
+ NOTE 2:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,66 +20,38 @@
 //
 // Version history:
 //
-// Rewrite 2021-11-01 jwrl.
-// Rewrite of the original effect to better support LW 2021 and higher.
+// Built 2023-01-12 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Low-res camera";
-   string Category    = "Stylize";
-   string SubCategory = "Video artefacts";
-   string Notes       = "Simulates the pixellation that you get when a low-res camera is blown up just that little too much";
-   bool CanSize       = false;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Low-res camera", "Stylize", "Video artefacts", "Simulates the pixellation that you get when a low-res camera is blown up just that little too much", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Input);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (SetTechnique, "Blur position", kNoGroup, 0, "Apply blur before mosaic|Apply blur after mosaic|Apply blur either side of mosaic");
+
+DeclareFloatParam (Pixelation, "Pixelation", kNoGroup, kNoFlags, 0.1, 0.0, 1.0);
+DeclareFloatParam (Blurriness, "Blurriness", kNoGroup, kNoFlags, 0.35, 0.0, 1.0);
+DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 // Pascal's triangle magic numbers for blur
 
@@ -88,154 +61,132 @@ Wrong_Lightworks_version
 #define BLUR_3  0.09375
 #define BLUR_4  0.01563
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Input, s_Input);
-
-DefineTarget (Buffer_1, s_Buffer_1);
-DefineTarget (Buffer_2, s_Buffer_2);
-DefineTarget (Buffer_3, s_Buffer_3);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int SetTechnique
-<
-   string Description = "Blur position";
-   string Enum = "Apply blur before mosaic,Apply blur after mosaic,Apply blur either side of mosaic";
-> = 0;
-
-float blockSize
-<
-   string Description = "Pixellation";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float blurAmt
-<
-   string Description = "Blurriness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.35;
-
-float Amount
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 set_in (float2 uv : TEXCOORD1) : COLOR
+float4 fn_do_mosaic (sampler S, float2 uv)
 {
-   return GetPixel (s_Input, uv);
+   if (Pixelation > 0.0) {
+      float size = Pixelation / 50;
+
+      uv.x = (round ((uv.x - 0.5) / size) * size) + 0.5;
+      size *= _OutputAspectRatio;
+      uv.y = (round ((uv.y - 0.5) / size) * size) + 0.5;
+   }
+
+   return tex2D (S, uv);
 }
 
-float4 do_mosaic (float2 uv : TEXCOORD1) : COLOR
+float4 fn_preblur (sampler S, float2 uv)
 {
-   float2 xy;
+   float4 retval = tex2D (S, uv);
 
-   if (blockSize == 0.0) return tex2D (s_Buffer_2, uv);
+   if (Blurriness == 0.0) return retval;
 
-   float Xsize = blockSize / 50;
-   xy.x = (round ((uv.x - 0.5) / Xsize) * Xsize) + 0.5;
-
-   float Ysize = Xsize * _OutputAspectRatio;
-   xy.y = (round ((uv.y - 0.5) / Ysize) * Ysize) + 0.5;
-
-   return tex2D (s_Buffer_2, xy);
-}
-
-float4 preblur (float2 uv : TEXCOORD1) : COLOR
-{
-   float4 retval = tex2D (s_Buffer_3, uv);
-
-   if (blurAmt == 0.0) return retval;
-
-   float2 offset_X1 = float2 (blurAmt * BLUR_0, 0.0);
+   float2 offset_X1 = float2 (Blurriness * BLUR_0, 0.0);
    float2 offset_X2 = offset_X1 + offset_X1;
    float2 offset_X3 = offset_X1 + offset_X2;
 
    retval *= BLUR_1;
-   retval += tex2D (s_Buffer_3, uv + offset_X1) * BLUR_2;
-   retval += tex2D (s_Buffer_3, uv - offset_X1) * BLUR_2;
-   retval += tex2D (s_Buffer_3, uv + offset_X2) * BLUR_3;
-   retval += tex2D (s_Buffer_3, uv - offset_X2) * BLUR_3;
-   retval += tex2D (s_Buffer_3, uv + offset_X3) * BLUR_4;
-   retval += tex2D (s_Buffer_3, uv - offset_X3) * BLUR_4;
+   retval += tex2D (S, uv + offset_X1) * BLUR_2;
+   retval += tex2D (S, uv - offset_X1) * BLUR_2;
+   retval += tex2D (S, uv + offset_X2) * BLUR_3;
+   retval += tex2D (S, uv - offset_X2) * BLUR_3;
+   retval += tex2D (S, uv + offset_X3) * BLUR_4;
+   retval += tex2D (S, uv - offset_X3) * BLUR_4;
 
    return retval;
 }
 
-float4 fullblur (float2 uv : TEXCOORD1) : COLOR
+float4 fn_fullblur (sampler S, float2 uv)
 {
-   float4 retval = tex2D (s_Buffer_1, uv);
+   float4 retval = tex2D (S, uv);
 
-   if (blurAmt == 0.0) return retval;
+   if (Blurriness == 0.0) return retval;
 
-   float2 offset_Y1 = float2 (0.0, blurAmt * _OutputAspectRatio * BLUR_0);
+   float2 offset_Y1 = float2 (0.0, Blurriness * _OutputAspectRatio * BLUR_0);
    float2 offset_Y2 = offset_Y1 + offset_Y1;
    float2 offset_Y3 = offset_Y1 + offset_Y2;
 
    retval *= BLUR_1;
-   retval += tex2D (s_Buffer_1, uv + offset_Y1) * BLUR_2;
-   retval += tex2D (s_Buffer_1, uv - offset_Y1) * BLUR_2;
-   retval += tex2D (s_Buffer_1, uv + offset_Y2) * BLUR_3;
-   retval += tex2D (s_Buffer_1, uv - offset_Y2) * BLUR_3;
-   retval += tex2D (s_Buffer_1, uv + offset_Y3) * BLUR_4;
-   retval += tex2D (s_Buffer_1, uv - offset_Y3) * BLUR_4;
+   retval += tex2D (S, uv + offset_Y1) * BLUR_2;
+   retval += tex2D (S, uv - offset_Y1) * BLUR_2;
+   retval += tex2D (S, uv + offset_Y2) * BLUR_3;
+   retval += tex2D (S, uv - offset_Y2) * BLUR_3;
+   retval += tex2D (S, uv + offset_Y3) * BLUR_4;
+   retval += tex2D (S, uv - offset_Y3) * BLUR_4;
 
    return retval;
 }
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+float4 fn_main (sampler S1, sampler S2, float2 uv)
 {
-   float4 Image = GetPixel (s_Input, uv);
+   float4 Image = ReadPixel (S1, uv);
 
-   if (Amount == 0.0) return Image;
+   if (Opacity <= 0.0) return Image;
 
-   return lerp (Image, GetPixel (s_Buffer_3, uv), Amount);
+   return lerp (Image, ReadPixel (S2, uv), Opacity);
 }
 
 //-----------------------------------------------------------------------------------------//
-// Techniques
+// Code
 //-----------------------------------------------------------------------------------------//
 
-technique pre_mosaic
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Buffer_3;"; > ExecuteShader (set_in)
-   pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; > ExecuteShader (preblur)
-   pass P_3 < string Script = "RenderColorTarget0 = Buffer_2;"; > ExecuteShader (fullblur)
-   pass P_4 < string Script = "RenderColorTarget0 = Buffer_3;"; > ExecuteShader (do_mosaic)
-   pass P_5 ExecuteShader (ps_main)
-}
+// Apply blur before mosaic
 
-technique postmosaic
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Buffer_2;"; > ExecuteShader (set_in)
-   pass P_2 < string Script = "RenderColorTarget0 = Buffer_3;"; > ExecuteShader (do_mosaic)
-   pass P_3 < string Script = "RenderColorTarget0 = Buffer_1;"; > ExecuteShader (preblur)
-   pass P_4 < string Script = "RenderColorTarget0 = Buffer_3;"; > ExecuteShader (fullblur)
-   pass P_5 ExecuteShader (ps_main)
-}
+DeclarePass (InpPre)
+{ return ReadPixel (Input, uv1); }
 
-technique full_blur
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Buffer_3;"; > ExecuteShader (set_in)
-   pass P_2 < string Script = "RenderColorTarget0 = Buffer_1;"; > ExecuteShader (preblur)
-   pass P_3 < string Script = "RenderColorTarget0 = Buffer_2;"; > ExecuteShader (fullblur)
-   pass P_4 < string Script = "RenderColorTarget0 = Buffer_3;"; > ExecuteShader (do_mosaic)
-   pass P_5 < string Script = "RenderColorTarget0 = Buffer_1;"; > ExecuteShader (preblur)
-   pass P_6 < string Script = "RenderColorTarget0 = Buffer_3;"; > ExecuteShader (fullblur)
-   pass P_7 ExecuteShader (ps_main)
-}
+DeclarePass (Buffer_1_0)
+{ return fn_preblur (InpPre, uv2); }
+
+DeclarePass (Buffer_2_0)
+{ return fn_fullblur (Buffer_1_0, uv2); }
+
+DeclarePass (MosaicPre)
+{ return fn_do_mosaic (Buffer_2_0, uv2); }
+
+DeclareEntryPoint (PreMosaic)
+{ return fn_main (InpPre, MosaicPre, uv2); }
+
+// Apply blur after mosaic
+
+DeclarePass (InpPost)
+{ return ReadPixel (Input, uv1); }
+
+DeclarePass (Buffer_1_1)
+{ return fn_do_mosaic (InpPost, uv2); }
+
+DeclarePass (Buffer_2_1)
+{ return fn_preblur (Buffer_1_1, uv2); }
+
+DeclarePass (MosaicPost)
+{ return fn_fullblur (Buffer_2_1, uv2); }
+
+DeclareEntryPoint (PostMosaic)
+{ return fn_main (InpPost, MosaicPost, uv2); }
+
+// Apply blur either side of mosaic
+
+DeclarePass (InpFull)
+{ return ReadPixel (Input, uv1); }
+
+DeclarePass (Buffer_1_2)
+{ return fn_preblur (InpFull, uv2); }
+
+DeclarePass (Buffer_2_2)
+{ return fn_fullblur (Buffer_1_2, uv2); }
+
+DeclarePass (Buffer_1)
+{ return fn_do_mosaic (Buffer_2_2, uv2); }
+
+DeclarePass (Buffer_2)
+{ return fn_preblur (Buffer_1, uv2); }
+
+DeclarePass (MosaicFull)
+{ return fn_fullblur (Buffer_2, uv2); }
+
+DeclareEntryPoint (FullMosaic)
+{ return fn_main (InpFull, MosaicFull, uv2); }
 

@@ -1,13 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-11-01
+// @Released 2023-01-12
 // @Author hugly
 // @Author flyingrub https://www.shadertoy.com/view/wsBXWW
 // @Created 2019-09-07
-// @see https://www.lwks.com/media/kunena/attachments/6375/ScreenShake_640.png
 
 /**
  This effect adds an adjustable pseudo-random shake to the screen.  So that the edges of the
  frame aren't seen the image is zoomed in slightly.
+
+ NOTE:  This effect breaks resolution independence.  It is only suitable for use with
+ Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,55 +17,39 @@
 //
 // Version history:
 //
-// Update 2021-11-01 jwrl.
-// Updated the original effect to better support LW v2021 and higher.
+// Updated 2023-01-12 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Screen shake";
-   string Category    = "Stylize";
-   string SubCategory = "Video artefacts";
-   string Notes       = "Random screen shake, slightly zoomed in, no motion blur";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Screen shake", "Stylize", "Video artefacts", "Random screen shake, slightly zoomed in, no motion blur", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Fg);
+
+DeclareMask;
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParam (strength, "Strength", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (speed, "Speed", kNoGroup, kNoFlags, 1.0, 0.4, 2.0);
+
+DeclareFloatParam (_Progress);
+DeclareFloatParam (_Length);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-uniform float _Progress;
-uniform float _Length;
 
 #define iTime (_Length * _Progress) 
 
@@ -71,28 +57,6 @@ uniform float _Length;
 #define THIRD_3 0.3333333.xxx
 #define HALF_3  0.5.xxx
 #define ONE_3   1.0.xxx
-
-//-----------------------------------------------------------------------------------------//
-// Inputs
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Fg, s_Fg);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float strength
-<  string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float speed
-<  string Description = "Speed";
-   float MinVal = 0.4;
-   float MaxVal = 2.0;
-> = 1.0;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -128,23 +92,18 @@ float simplex3d (float3 p)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_Screenshake (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (Screenshake)
 {    
-   float2 xy = ((uv - 0.5.xx) / 1.04) + 0.5.xx;   //** zoom
+   float2 xy = ((uv1 - 0.5.xx) / 1.04) + 0.5.xx;   //** zoom
 
    float3 p3 = float3 (0.0.xx, frac (iTime / 13.0) * speed * 104.0) + 200.0.xxx;
 
    xy += float2 (simplex3d (p3), simplex3d (p3 + 10.0.xxx)) * strength / 30.0;
 
-   return Overflow (uv) ? EMPTY : tex2D (s_Fg, xy);
+   return IsOutOfBounds (uv1) ? kTransparentBlack
+                              : lerp (kTransparentBlack, tex2D (Fg, xy), tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique tech_Screenshake { pass one ExecuteShader (ps_Screenshake) }
 

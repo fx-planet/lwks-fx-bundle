@@ -1,12 +1,13 @@
 // @Maintainer jwrl
-// @Released 2021-10-28
+// @Released 2023-01-11
 // @Author khaver
 // @Created 2011-05-05
-// @see https://www.lwks.com/media/kunena/attachments/6375/Shrink16_235_640.png
 
 /**
  This is one of three tools to manage broadcast colour space.  The names are self-explanatory.
  They install into the custom category "User", subcategory "Technical".
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,80 +15,38 @@
 //
 // Version history:
 //
-// Update 2021-10-28 jwrl.
-// Updated the original effect to better support LW 2021 resolution independence.
+// Updated 2023-01-11 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Shrink 0-255 to 16-235";
-   string Category    = "User";
-   string SubCategory = "Technical";
-   string Notes       = "Shrinks full gamut RGB signals to broadcast legal video";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Shrink 0-255 to 16-235", "User", "Technical", "Shrinks full gamut RGB signals to broadcast legal video", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
-// Input and shader
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Input, s_Input);
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclareEntryPoint (Shrink_16_235)
 {
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
+   float4 color = tex2D (Input, uv1);
+
+   float alpha = color.a;
    float highc = 235.0 / 255.0;
    float lowc = 16.0 / 255.0;
    float scale = 255.0 / 219.0;
 
-   float4 color = GetPixel (s_Input, uv);
-
-   color = (color / scale) + lowc;
-
-   if (color.r > highc) color.r = highc;
-   if (color.g > highc) color.g = highc;
-   if (color.b > highc) color.b = highc;
-   if (color.a > highc) color.a = highc;
-   if (color.r < lowc) color.r = lowc;
-   if (color.g < lowc) color.g = lowc;
-   if (color.b < lowc) color.b = lowc;
-   if (color.a < lowc) color.a = lowc;
+   color = clamp ((color / scale) + lowc.xxxx, lowc, highc);
+   color.a = alpha;
 
    return color;
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Shrink16_235 { pass p0 ExecuteShader (ps_main) }
 

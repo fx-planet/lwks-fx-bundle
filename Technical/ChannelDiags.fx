@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2021-10-28
+// @Released 2023-01-11
 // @Author jwrl
-// @Created 2021-10-28
-// @see https://www.lwks.com/media/kunena/attachments/6375/Channels_640a.png
+// @Created 2023-01-11
 
 /**
  This is a diagnostic tool that can be used to display individual RGB channels, luminance,
- summed RGB, U, V and alpha channels.
+ summed RGB, U, V and alpha channels.  The alpha channel is preserved for potential later
+ use in other effects.
 
- Note: the alpha channel is preserved for potential later use in other effects.
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,166 +16,118 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-28 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-11 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Channel diagnostics";
-   string Category    = "User";
-   string SubCategory = "Technical";
-   string Notes       = "Can be used to display individual RGB channels, luminance, summed RGB, U, V and alpha channels";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Channel diagnostics", "User", "Technical", "Can be used to display individual RGB channels, luminance, summed RGB, U, V and alpha channels", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define MATRIX601  float3(0.2989, 0.5866, 0.1145)
-#define MATRIX709  float3(0.2126, 0.7152, 0.0722)
-#define MATRIX2020 float3(0.2627, 0.678,  0.0593)
-
-#define U_601      0.564
-#define V_601      0.713
-
-#define U_709      0.635
-#define V_709      0.539
-
-#define U_2020     0.5315
-#define V_2020     0.6782
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Inp, s_Input);
+DeclareInput (Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Colour space";
-   string Enum = "Rec-601 (Standard definition),Rec-709 (High definition),Rec-2020 (Ultra high definition)";
-> = 1;
+DeclareIntParam (ColourSpace, "Colour space", kNoGroup, 1, "Rec-601 (Standard definition)|Rec-709 (High definition)|Rec-2020 (Ultra high definition)");
+DeclareIntParam (SetTechnique, "Display channel", kNoGroup, 0, "Bypass|Luminance (Y)|RGB sum|Red|Green|Blue|Alpha|B-Y (U/Pb/Cb)|R-Y (V/Pr/Cr)");
 
-int Channel
-<
-   string Description = "Display channel";
-   string Enum = "Bypass,Luminance (Y),RGB sum,Red,Green,Blue,Alpha,B-Y (U/Pb/Cb),R-Y (V/Pr/Cr)";
-> = 0;
-
-bool Negative
-<
-   string Description = "Display as negative";
-> = false;
+DeclareBoolParam (Negative, "Display as negative", kNoGroup, false);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main_601 (float2 xy : TEXCOORD1) : COLOR
+float3 _Luma_matrix [3] = { { 0.2989, 0.5866, 0.1145 }, { 0.2126, 0.7152, 0.0722 },
+                            { 0.2627, 0.678,  0.0593 } };
+
+float _Cb_matrix [3] = { 0.564, 0.635, 0.5315 };
+float _Cr_matrix [3] = { 0.713, 0.539, 0.6782 };
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (ChannelDiags_Bypass)
 {
-   float4 RGBval = GetPixel (s_Input, xy);
+   float4 retval = ReadPixel (Inp, uv1);
 
-   if ((Channel == 1) || (Channel > 6)) {
-      float luma = dot (RGBval.rgb, MATRIX601);
-
-      if (Channel == 7) luma = saturate (((luma - RGBval.b) * U_601) + 0.5);
-      if (Channel == 8) luma = saturate (((luma - RGBval.r) * V_601) + 0.5);
-
-      RGBval.rgb = luma.xxx;
-   }
-
-   if (Channel == 2) RGBval.rgb = float ((RGBval.r + RGBval.g + RGBval.b) / 3.0).xxx;
-   if (Channel == 3) RGBval.rgb = RGBval.rrr;
-   if (Channel == 4) RGBval.rgb = RGBval.ggg;
-   if (Channel == 5) RGBval.rgb = RGBval.bbb;
-   if (Channel == 6) RGBval.rgb = RGBval.aaa;
-
-   if (Negative) RGBval.rgb = 1.0.xxx - RGBval.rgb;
-
-   return RGBval;
+   return Negative ? float4 (1.0.xxx - retval.rgb, retval.a) : retval;
 }
 
-float4 ps_main_709 (float2 xy : TEXCOORD1) : COLOR
+DeclareEntryPoint (ChannelDiags_Y)
 {
-   float4 RGBval = GetPixel (s_Input, xy);
+   float4 retval = ReadPixel (Inp, uv1);
 
-   if ((Channel == 1) || (Channel > 6)) {
-      float luma = dot (RGBval.rgb, MATRIX709);
+   retval.rgb = dot (retval.rgb, _Luma_matrix [ColourSpace]).xxx;
 
-      if (Channel == 7) luma = saturate (((luma - RGBval.b) * U_709) + 0.5);
-      if (Channel == 8) luma = saturate (((luma - RGBval.r) * V_709) + 0.5);
-
-      RGBval.rgb = luma.xxx;
-   }
-
-   if (Channel == 2) RGBval.rgb = float ((RGBval.r + RGBval.g + RGBval.b) / 3.0).xxx;
-   if (Channel == 3) RGBval.rgb = RGBval.rrr;
-   if (Channel == 4) RGBval.rgb = RGBval.ggg;
-   if (Channel == 5) RGBval.rgb = RGBval.bbb;
-   if (Channel == 6) RGBval.rgb = RGBval.aaa;
-
-   if (Negative) RGBval.rgb = 1.0.xxx - RGBval.rgb;
-
-   return RGBval;
+   return Negative ? float4 (1.0.xxx - retval.rgb, retval.a) : retval;
 }
 
-float4 ps_main_2020 (float2 xy : TEXCOORD1) : COLOR
+DeclareEntryPoint (ChannelDiags_RGBsum)
 {
-   float4 RGBval = GetPixel (s_Input, xy);
+   float4 retval = ReadPixel (Inp, uv1);
 
-   if ((Channel == 1) || (Channel > 6)) {
-      float luma = dot (RGBval.rgb, MATRIX2020);
+   retval.rgb = ((retval.r + retval.g + retval.b) / 3.0).xxx;
 
-      if (Channel == 7) luma = saturate (((luma - RGBval.b) * U_2020) + 0.5);
-      if (Channel == 8) luma = saturate (((luma - RGBval.r) * V_2020) + 0.5);
-
-      RGBval.rgb = luma.xxx;
-   }
-
-   if (Channel == 2) RGBval.rgb = float ((RGBval.r + RGBval.g + RGBval.b) / 3.0).xxx;
-   if (Channel == 3) RGBval.rgb = RGBval.rrr;
-   if (Channel == 4) RGBval.rgb = RGBval.ggg;
-   if (Channel == 5) RGBval.rgb = RGBval.bbb;
-   if (Channel == 6) RGBval.rgb = RGBval.aaa;
-
-   if (Negative) RGBval.rgb = 1.0.xxx - RGBval.rgb;
-
-   return RGBval;
+   return Negative ? float4 (1.0.xxx - retval.rgb, retval.a) : retval;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
+DeclareEntryPoint (ChannelDiags_Red)
+{
+   float4 retval = ReadPixel (Inp, uv1).rrra;
 
-technique ChannelDiags_601 { pass P_1 ExecuteShader (ps_main_601) }
-technique ChannelDiags_709 { pass P_1 ExecuteShader (ps_main_709) }
-technique ChannelDiags_2020 { pass P_1 ExecuteShader (ps_main_2020) }
+   return Negative ? float4 (1.0.xxx - retval.rgb, retval.a) : retval;
+}
+
+DeclareEntryPoint (ChannelDiags_Green)
+{
+   float4 retval = ReadPixel (Inp, uv1).ggga;
+
+   return Negative ? float4 (1.0.xxx - retval.rgb, retval.a) : retval;
+}
+
+DeclareEntryPoint (ChannelDiags_Blue)
+{
+   float4 retval = ReadPixel (Inp, uv1).bbba;
+
+   return Negative ? float4 (1.0.xxx - retval.rgb, retval.a) : retval;
+}
+
+DeclareEntryPoint (ChannelDiags_Alpha)
+{
+   float4 retval = ReadPixel (Inp, uv1).aaaa;
+
+   return Negative ? float4 (1.0.xxx - retval.rgb, retval.a) : retval;
+}
+
+DeclareEntryPoint (ChannelDiags_Cb)
+{
+   float4 retval = ReadPixel (Inp, uv1);
+
+   float luma = dot (retval.rgb, _Luma_matrix [ColourSpace]);
+
+   luma = saturate (((luma - retval.b) * _Cb_matrix [ColourSpace]) + 0.5);
+
+   if (Negative) luma = 1.0.xxx - retval.rgb;
+
+   return float4 (luma.xxx, retval.a);
+}
+
+DeclareEntryPoint (ChannelDiags_Cr)
+{
+   float4 retval = ReadPixel (Inp, uv1);
+
+   float luma = dot (retval.rgb, _Luma_matrix [ColourSpace]);
+
+   luma = saturate (((luma - retval.r) * _Cr_matrix [ColourSpace]) + 0.5);
+
+   if (Negative) luma = 1.0.xxx - retval.rgb;
+
+   return float4 (luma.xxx, retval.a);
+}
 

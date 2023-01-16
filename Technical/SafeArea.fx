@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-10-28
+// @Released 2023-01-11
 // @Author jwrl
-// @Created 2021-10-28
-// @see https://www.lwks.com/media/kunena/attachments/6375/SafeAreaAndXhatch_640.png
+// @Created 2023-01-11
 
 /**
  This safe area and cross hatch generator can display EBU R 95, SMPTE RP 218, or legacy
@@ -14,6 +13,8 @@
  area settings can fall outside the input.  This effect also kills any resolution
  independence.  The crosshatch pattern can be adjusted from 8 to 32 lines across the
  image width, and the line weight can be adjusted for best visibility.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -26,75 +27,63 @@
 //
 // Version history:
 //
-// Built 2021-10-28 jwrl.
-// Rewrote the original effect to better support LW 2021 resolution independence.
+// Built 2023-01-11 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup    = "GenericPixelShader";
-   string Description    = "Safe area and crosshatch";
-   string Category       = "User";
-   string SubCategory    = "Technical";
-   string Notes          = "This effect is probably now redundant, but may be useful for viewfinder simulations";
-   bool CanSize          = false;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Safe area and crosshatch", "User", "Technical", "This effect is probably now redundant, but may be useful for viewfinder simulations", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInput (Input);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareIntParam (safeMode, "Standard", "Safe area", 1, "EBU R 95|SMPTE RP 218|Legacy RP 218");
+
+DeclareBoolParam (showCentre, "Centre cross", "Safe area", true);
+DeclareBoolParam (showTitle, "Title safe", "Safe area", true);
+DeclareBoolParam (showAction, "Action safe", "Safe area", true);
+DeclareBoolParam (show4x3, "Show central 4:3 zones (disabled if the aspect ratio is not 16:9)", "Safe area", false);
+
+DeclareIntParam (showSafeArea, "Line display", "Safe area", 2, "Add|Subtract|Difference");
+
+DeclareFloatParam (opacity, "Opacity", "Safe area", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (lineWeight, "Line weight", "Safe area", kNoFlags, 0.2, 0.0, 1.0);
+
+DeclareIntParam (showXhatch, "Line display", "Crosshatch", 3, "Add|Subtract|Difference|Disabled");
+
+DeclareFloatParam (X_opacity, "Opacity", "Crosshatch", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (XhatchLines, "Squares across", "Crosshatch", kNoFlags, 16.0, 8.0, 32.0);
+DeclareFloatParam (XhatchWeight, "Line weight", "Crosshatch", kNoFlags, 0.2, 0.0, 1.0);
+
+DeclareBoolParam (lockWeight, "Control this line weight with the safe area line weight fader", "Crosshatch", false);
+
+DeclareBoolParam (disableFgd, "Disable foreground", kNoGroup, false);
+DeclareBoolParam (disableBgd, "Disable background", kNoGroup, false);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
 
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
-}
-
-#define DefineTarget(TEXTURE, SAMPLER) \
-                                       \
- texture TEXTURE : RenderColorTarget;  \
-                                       \
- sampler SAMPLER = sampler_state       \
- {                                     \
-   Texture   = <TEXTURE>;              \
-   AddressU  = ClampToEdge;            \
-   AddressV  = ClampToEdge;            \
-   MinFilter = Linear;                 \
-   MagFilter = Linear;                 \
-   MipFilter = Linear;                 \
-}
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY   0.0.xxxx
 #define BLACK   float2(0.0, 1.0).xxxy
 #define WHITE   1.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define SUBTRACT     1           // Subtract value used by showIt and showSafeArea
 #define DIFFERENCE   2           // Difference value used by showIt and showSafeArea
 #define DISABLED     3           // Disabled value used by showIt
 
-#define MIN_LINES    8           // Minimum number of horizontal crosshatch lines
-#define DFT_LINES    16          // Default number of horizontal crosshatch lines
 #define MAX_LINES    32          // Maximum number of horizontal crosshatch lines
 
 #define T_L_0        0.0325      // These two give an action safe area of 93.5%,
@@ -137,121 +126,6 @@ Wrong_Lightworks_version
 
 #define AR16x9       1.7         // 16x9 rounded down to give minimum identification
 #define AR16x9a      1.8         // 16x9 rounded up to give maximum ID
-
-float _OutputAspectRatio;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and targets
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, s_Input);
-
-DefineTarget (Xhatch, s_Xhatch);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-int safeMode
-<
-   string Group = "Safe area";
-   string Description = "Standard";
-   string Enum = "EBU R 95,SMPTE RP 218,Legacy RP 218";
-> = RP218;
-
-bool showCentre
-<
-   string Group = "Safe area";
-   string Description = "Centre cross";
-> = true;
-
-bool showTitle
-<
-   string Group = "Safe area";
-   string Description = "Title safe";
-> = true;
-
-bool showAction
-<
-   string Group = "Safe area";
-   string Description = "Action safe";
-> = true;
-
-bool show4x3
-<
-   string Group = "Safe area";
-   string Description = "Show central 4:3 zones (disabled if the aspect ratio is not 16:9)";
-> = false;
-
-int showSafeArea
-<
-   string Group = "Safe area";
-   string Description = "Line display";
-   string Enum = "Add,Subtract,Difference";
-> = DIFFERENCE;
-
-float opacity
-<
-   string Group = "Safe area";
-   string Description = "Opacity";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.50;
-
-float lineWeight
-<
-   string Group = "Safe area";
-   string Description = "Line weight";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.20;
-
-int showXhatch
-<
-   string Group = "Crosshatch";
-   string Description = "Line display";
-   string Enum = "Add,Subtract,Difference,Disabled";
-> = DISABLED;
-
-float X_opacity
-<
-   string Group = "Crosshatch";
-   string Description = "Opacity";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.50;
-
-float XhatchLines
-<
-   string Group = "Crosshatch";
-   string Description = "Squares across";
-   float MinVal = MIN_LINES;
-   float MaxVal = MAX_LINES;
-> = DFT_LINES;
-
-float XhatchWeight
-<
-   string Group = "Crosshatch";
-   string Description = "Line weight";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.20;
-
-bool lockWeight
-<
-   string Group = "Crosshatch";
-   string Description = "Control this line weight with the safe area line weight fader";
-> = false;
-
-bool disableFgd
-<
-   string Description = "Disable foreground";
-> = false;
-
-bool disableBgd
-<
-   string Description = "Disable background";
-> = false;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -313,21 +187,21 @@ float4 fn_safe_area (float4 bgnd, float4 Bounds, float2 xy, float X, float Y, bo
 }
 
 //-----------------------------------------------------------------------------------------//
-// Pixel Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_crosshatch (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclarePass (Xhatch)
 {
    float pixVal, xLine_value, yLine_value, xHatch = 0.0;
    float Xlevel;
 
-   float4 retval, Bgnd = disableBgd ? BLACK : GetPixel (s_Input, uv1);
+   float4 retval, Bgnd = disableBgd ? BLACK : ReadPixel (Input, uv1);
 
    // If the background is disabled we show black or white, depending on the crosshatch polarity
    // Otherwise we get the background video and set the opacity values.
 
    if (disableBgd) {
-      Bgnd = (showXhatch == SUBTRACT) ? WHITE : EMPTY;
+      Bgnd = (showXhatch == SUBTRACT) ? WHITE : kTransparentBlack;
       Xlevel = 1.0;
     }
    else Xlevel = X_opacity;
@@ -375,7 +249,7 @@ float4 ps_crosshatch (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1, float2 uv2
       }
 
       float4 overlay_1 = xHatch.xxxx;                       // Recover the crosshatch pattern
-      float4 overlay_2 = lerp (EMPTY, overlay_1, Xlevel);   // The level setting is applied at this point
+      float4 overlay_2 = lerp (kTransparentBlack, overlay_1, Xlevel);   // The level setting is applied at this point
 
       // This produces the actual crosshatch submaster, whether add, subtract or difference
 
@@ -388,9 +262,9 @@ float4 ps_crosshatch (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1, float2 uv2
    return retval;
 }
 
-float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclareEntryPoint (SafeArea)
 {
-   float4 Bgnd = GetPixel (s_Xhatch, uv2);
+   float4 Bgnd = ReadPixel (Xhatch, uv2);
 
    float Slevel = (disableBgd) ? 0.5 : opacity;
 
@@ -467,7 +341,7 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1, float2 uv2 : TEX
             && (uv0.y >= 0.0) && (uv0.y <= 1.0)) overlay = float2 (0.5, 1.0).yxxy;
          }
 
-      float4 retval = lerp (EMPTY, overlay, Slevel);  // Recover the safe area display
+      float4 retval = lerp (kTransparentBlack, overlay, Slevel);  // Recover the safe area display
 
       if (showSafeArea == DIFFERENCE) { retval = abs (Bgnd - retval); }
       else retval = clamp (((showSafeArea == SUBTRACT) ? Bgnd - retval : Bgnd + retval), 0.0, 1.0);
@@ -476,15 +350,5 @@ float4 ps_main (float2 uv0 : TEXCOORD0, float2 uv1 : TEXCOORD1, float2 uv2 : TEX
    }
 
    return Bgnd;
-}
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-technique SafeArea
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Xhatch;"; > ExecuteShader (ps_crosshatch)
-   pass P_2 ExecuteShader (ps_main)
 }
 

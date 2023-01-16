@@ -1,15 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-10-28
+// @Released 2023-01-11
 // @Author khaver
 // @Created 2016-06-03
-// @see https://www.lwks.com/media/kunena/attachments/6375/Tenderizer_640.png
 
 /**
  This effect converts 8 bit video to 10 bit video by adding intermediate colors and luminance
  values using spline interpolation.  Set project to 10 bit or better and set source width and
- height for best results.
+ height for best results.  The alpha channel is unaltered, but there may be a slight image
+ softening.
 
- Note: the alpha channel is not changed, but there may be some image softening.
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,91 +17,43 @@
 //
 // Version history:
 //
-// Update 2021-10-28 jwrl.
-// Updated the original effect to better support LW 2021 resolution independence.
+// Updated 2023-01-11 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Tenderizer";
-   string Category    = "User";
-   string SubCategory = "Technical";
-   string Notes       = "Converts 8 bit video to 10 bit video by adding intermediate levels using spline interpolation";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Tenderizer", "User", "Technical", "Converts 8 bit video to 10 bit video by adding intermediate levels using spline interpolation", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-#define GetAlpha(SHADER,XY) (Overflow(XY) ? 0.0 : tex2D(SHADER, XY).a)
-
-float _OutputWidth = 1.0;
-float _OutputHeight = 1.0;
-
-float _idxX[8] = { 0.0, 720.0, 1280.0, 1440.0, 1920.0, 2048.0, 3840.0, 4096.0 };
-float _idxY[6] = { 0.0, 480.0, 576.0, 720.0, 1080.0, 2160.0 };
-
-//-----------------------------------------------------------------------------------------//
-// Input and shader
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (V, VSampler);
+DeclareInput (V);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int ReX
-<
-   string Description = "Source Horizontal Resolution";
-   string Enum = "Project,720,1280,1440,1920,2048,3840,4096";
-> = 0;
+DeclareIntParam (ReX, "Source Horizontal Resolution", kNoGroup, 0, "Project|720|1280|1440|1920|2048|3840|4096");
+DeclareIntParam (ReY, "Source Vertical Resolution", kNoGroup, 0, "Project|480|576|720|1080|2160");
 
-int ReY
-<
-   string Description = "Source Vertical Resolution";
-   string Enum = "Project,480,576,720,1080,2160";
-> = 0;
+DeclareBoolParam (Luma, "Tenderize Luma", kNoGroup, true);
+DeclareBoolParam (Chroma, "Tenderize Chroma", kNoGroup, true);
 
-bool Luma
-<
-   string Description = "Tenderize Luma";
-> = true;
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
 
-bool Chroma
-<
-   string Description = "Tenderize Chroma";
-> = true;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+float _idxX[8] = { 0.0, 720.0, 1280.0, 1440.0, 1920.0, 2048.0, 3840.0, 4096.0 };
+float _idxY[6] = { 0.0, 480.0, 576.0, 720.0, 1080.0, 2160.0 };
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -120,7 +72,7 @@ float4 Hermite (float t, float4 A, float4 B, float4 C, float4 D)
 
 float4 colorsep (sampler samp, float2 xy, float2 pix)
 {
-   float4 color = GetPixel (samp, xy + pix);
+   float4 color = tex2D (samp, xy + pix);
 
    float Cmin = min (color.r, min (color.g, color.b));
 
@@ -138,11 +90,16 @@ float closest (float test, float orig, float bit)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 Tenderize (float2 xy : TEXCOORD1) : COLOR
+DeclarePass (VSampler)
+{ return ReadPixel (V, uv1); }
+
+DeclareEntryPoint (Tenderizer)
 {
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
    float2 pixel;
 
    pixel.x = (ReX == 0) ? _OutputWidth : _idxX [ReX];
@@ -150,55 +107,55 @@ float4 Tenderize (float2 xy : TEXCOORD1) : COLOR
 
    pixel = 1.0 / max (1.0e-6, pixel);
 
-   float4 seporg = colorsep (VSampler, xy, 0.0.xx);
+   float4 seporg = colorsep (VSampler, uv2, 0.0.xx);
    float4 samp2, samp3, samp4, samp5, samp6, samp7, samp8;
 
-   float4 samp00 = colorsep (VSampler, xy, float2 (pixel.x * -2.0, 0.0));
-   float4 samp01 = colorsep (VSampler, xy, float2 (-pixel.x, 0.0));
-   float4 samp02 = colorsep (VSampler, xy, float2 (pixel.x, 0.0));
-   float4 samp03 = colorsep (VSampler, xy, float2 (pixel.x * 2.0, 0.0));
+   float4 samp00 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, 0.0));
+   float4 samp01 = colorsep (VSampler, uv2, float2 (-pixel.x, 0.0));
+   float4 samp02 = colorsep (VSampler, uv2, float2 (pixel.x, 0.0));
+   float4 samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, 0.0));
    float4 samp1  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, xy, float2 ((pixel.x * -2.0), -pixel.y));
-   samp01 = (colorsep (VSampler, xy, float2 (-pixel.x, 0)) + colorsep (VSampler, xy, float2 (-pixel.x, -pixel.y))) / 2.0;
-   samp02 = (colorsep (VSampler, xy, float2 (pixel.x, 0)) + colorsep (VSampler, xy, float2 (pixel.x, pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, xy, float2 (pixel.x * 2.0, pixel.y));
+   samp00 = colorsep (VSampler, uv2, float2 ((pixel.x * -2.0), -pixel.y));
+   samp01 = (colorsep (VSampler, uv2, float2 (-pixel.x, 0)) + colorsep (VSampler, uv2, float2 (-pixel.x, -pixel.y))) / 2.0;
+   samp02 = (colorsep (VSampler, uv2, float2 (pixel.x, 0)) + colorsep (VSampler, uv2, float2 (pixel.x, pixel.y))) / 2.0;
+   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, pixel.y));
    samp2  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, xy, float2 (pixel.x * -2.0, pixel.y * -2.0));
-   samp01 = colorsep (VSampler, xy, float2 (-pixel.x, -pixel.y));
-   samp02 = colorsep (VSampler, xy, float2 (pixel.x, pixel.y));
-   samp03 = colorsep (VSampler, xy, float2 (pixel.x * 2.0, pixel.y * 2.0));
+   samp00 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, pixel.y * -2.0));
+   samp01 = colorsep (VSampler, uv2, float2 (-pixel.x, -pixel.y));
+   samp02 = colorsep (VSampler, uv2, float2 (pixel.x, pixel.y));
+   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, pixel.y * 2.0));
    samp3  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, xy, float2 (-pixel.x, pixel.y * -2.0));
-   samp01 = (colorsep (VSampler, xy, float2 (-pixel.x, -pixel.y)) + colorsep (VSampler, xy, float2(0, -pixel.y))) / 2.0;
-   samp02 = (colorsep(VSampler, xy, float2 (0.0, pixel.y)) + colorsep (VSampler, xy, float2 (pixel.x, pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, xy, float2 (pixel.x, pixel.y * 2.0));
+   samp00 = colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y * -2.0));
+   samp01 = (colorsep (VSampler, uv2, float2 (-pixel.x, -pixel.y)) + colorsep (VSampler, uv2, float2(0, -pixel.y))) / 2.0;
+   samp02 = (colorsep(VSampler, uv2, float2 (0.0, pixel.y)) + colorsep (VSampler, uv2, float2 (pixel.x, pixel.y))) / 2.0;
+   samp03 = colorsep (VSampler, uv2, float2 (pixel.x, pixel.y * 2.0));
    samp4  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, xy, float2 (0.0, pixel.y * -2.0));
-   samp01 = colorsep (VSampler, xy, float2 (0.0, -pixel.y));
-   samp02 = colorsep (VSampler, xy, float2 (0.0, pixel.y));
-   samp03 = colorsep (VSampler, xy, float2 (0.0, pixel.y * 2.0));
+   samp00 = colorsep (VSampler, uv2, float2 (0.0, pixel.y * -2.0));
+   samp01 = colorsep (VSampler, uv2, float2 (0.0, -pixel.y));
+   samp02 = colorsep (VSampler, uv2, float2 (0.0, pixel.y));
+   samp03 = colorsep (VSampler, uv2, float2 (0.0, pixel.y * 2.0));
    samp5  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, xy, float2 (pixel.x, pixel.y * -2.0));
-   samp01 = (colorsep (VSampler, xy, float2 (pixel.x, -pixel.y)) + colorsep (VSampler, xy, float2 (0.0, -pixel.y))) / 2.0;
-   samp02 = (colorsep (VSampler, xy, float2 (0.0, pixel.y)) + colorsep (VSampler, xy, float2 (-pixel.x, pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, xy, float2 (-pixel.x, pixel.y * 2.0));
+   samp00 = colorsep (VSampler, uv2, float2 (pixel.x, pixel.y * -2.0));
+   samp01 = (colorsep (VSampler, uv2, float2 (pixel.x, -pixel.y)) + colorsep (VSampler, uv2, float2 (0.0, -pixel.y))) / 2.0;
+   samp02 = (colorsep (VSampler, uv2, float2 (0.0, pixel.y)) + colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y))) / 2.0;
+   samp03 = colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y * 2.0));
    samp6  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, xy, float2 (pixel.x * 2.0, pixel.y * -2.0));
-   samp01 = colorsep (VSampler, xy, float2 (pixel.x, -pixel.y));
-   samp02 = colorsep (VSampler, xy, float2 (-pixel.x, pixel.y));
-   samp03 = colorsep (VSampler, xy, float2 (pixel.x * -2.0, pixel.y * 2.0));
+   samp00 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, pixel.y * -2.0));
+   samp01 = colorsep (VSampler, uv2, float2 (pixel.x, -pixel.y));
+   samp02 = colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y));
+   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, pixel.y * 2.0));
    samp7  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, xy, float2 (pixel.x * -2.0, pixel.y));
-   samp01 = (colorsep (VSampler, xy, float2 (-pixel.x, 0.0)) + colorsep (VSampler, xy, float2 (-pixel.x, pixel.y))) / 2.0;
-   samp02 = (colorsep (VSampler, xy, float2 (pixel.x, 0.0)) + colorsep (VSampler, xy, float2 (pixel.x, -pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, xy, float2 (pixel.x * 2.0, -pixel.y));
+   samp00 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, pixel.y));
+   samp01 = (colorsep (VSampler, uv2, float2 (-pixel.x, 0.0)) + colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y))) / 2.0;
+   samp02 = (colorsep (VSampler, uv2, float2 (pixel.x, 0.0)) + colorsep (VSampler, uv2, float2 (pixel.x, -pixel.y))) / 2.0;
+   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, -pixel.y));
    samp8  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
    float cbit = 1.0 / 256.0;
@@ -224,12 +181,6 @@ float4 Tenderize (float2 xy : TEXCOORD1) : COLOR
    }
    else L = seporg.a;
 
-   return float4 (R + L, G + L, B + L, GetAlpha (VSampler, xy));
+   return float4 (R + L, G + L, B + L, tex2D (VSampler, uv2).a);
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Tenderizer { pass P_1 ExecuteShader (Tenderize) }
 

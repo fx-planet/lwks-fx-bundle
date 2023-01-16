@@ -1,12 +1,13 @@
 // @Maintainer jwrl
-// @Released 2021-10-28
+// @Released 2023-01-11
 // @Author khaver
 // @Created 2011-12-05
-// @see https://www.lwks.com/media/kunena/attachments/6375/ColorBars_640.png
 
 /**
  This version of colorbars provides a SMPTE alternative to the Lightworks-supplied EBU
  version.  It installs into the custom category "User", subcategory "Technical".
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,47 +15,31 @@
 //
 // Version history:
 //
-// Update 2021-10-28 jwrl.
-// Updated the original effect to explicitly bypass LW 2021 resolution independence.
+// Updated 2023-01-11 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Color bars";
-   string Category    = "User";
-   string SubCategory = "Technical";
-   string Notes       = "Provides SMPTE-standard colour bars as an alternative to the Lightworks-supplied EBU version";
-   bool CanSize       = false;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
+DeclareLightworksEffect ("Color bars", "User", "Technical", "Provides SMPTE-standard colour bars as an alternative to the Lightworks-supplied EBU version", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-// No input required.
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SetTechnique
-<
-   string Description = "Aspect Ratio";
-   string Enum = "HD,SD";
-> = 0;
+DeclareIntParam (SetTechnique, "Aspect Ratio", kNoGroup, 0, "HD|SD");
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 PS_BarsHD (float2 uv : TEXCOORD0) : COLOR
+DeclareEntryPoint (Colorbars_HD)
 {
    float v1 = 7.0 / 12.0;
    float v2 = 2.0 / 3.0;
@@ -65,19 +50,19 @@ float4 PS_BarsHD (float2 uv : TEXCOORD0) : COLOR
    float hdb2 = hd17 * 2.0;
    float hdb3 = hd17 * (5.0/6.0);
    float hdb4 = hd17 * (1.0/3.0);
-   if (uv.y > v1) {
-      if (uv.y > v2) {
-         if (uv.y > v3) {
-            if (uv.x > hd01) {
-               if (uv.x > hd01 + hdb1) {
-                  if (uv.x > hd01 + hdb1 + hdb2) {
-                     if (uv.x > hd01 + hdb1 + hdb2 + hdb3) {
-                        if (uv.x > 1.0 - hd01 - hd17 - (hdb4*4.0)) {
-                           if (uv.x > 1.0 - hd01 - hd17 - (hdb4*3.0)) {
-                              if (uv.x > 1.0 - hd01 - hd17 - (hdb4*2.0)) {
-                                 if (uv.x > 1.0 - hd01 - hd17 - hdb4) {
-                                    if (uv.x > 1.0 - hd01 - hd17) {
-                                       if (uv.x > 1.0 - hd01) {
+   if (uv0.y > v1) {
+      if (uv0.y > v2) {
+         if (uv0.y > v3) {
+            if (uv0.x > hd01) {
+               if (uv0.x > hd01 + hdb1) {
+                  if (uv0.x > hd01 + hdb1 + hdb2) {
+                     if (uv0.x > hd01 + hdb1 + hdb2 + hdb3) {
+                        if (uv0.x > 1.0 - hd01 - hd17 - (hdb4*4.0)) {
+                           if (uv0.x > 1.0 - hd01 - hd17 - (hdb4*3.0)) {
+                              if (uv0.x > 1.0 - hd01 - hd17 - (hdb4*2.0)) {
+                                 if (uv0.x > 1.0 - hd01 - hd17 - hdb4) {
+                                    if (uv0.x > 1.0 - hd01 - hd17) {
+                                       if (uv0.x > 1.0 - hd01) {
                                           return float4(0.15,0.15,0.15,1);
                                        }
                                        return float4(0,0,0,1);
@@ -100,18 +85,18 @@ float4 PS_BarsHD (float2 uv : TEXCOORD0) : COLOR
             }
             return float4(0.15,0.15,0.15,1);         
          }
-         if (uv.x > hd01) {
-            if (uv.x > 1.0 - hd01) {
+         if (uv0.x > hd01) {
+            if (uv0.x > 1.0 - hd01) {
                return float4(1,0,0,1);
             }
-            float color = (uv.x - hd01) * (1.0 / (0.875f-hd01));
+            float color = (uv0.x - hd01) * (1.0 / (0.875f-hd01));
             return float4(color,color,color,1);
          }
          return float4(1,1,0,1);
       }
-      if (uv.x > hd01) {
-         if (uv.x > hd01 + hd17) {
-            if (uv.x > 1.0 - hd01) {
+      if (uv0.x > hd01) {
+         if (uv0.x > hd01 + hd17) {
+            if (uv0.x > 1.0 - hd01) {
                return float4(0,0,1,1);
             }
             return float4(0.75,0.75,0.75,1);
@@ -120,14 +105,14 @@ float4 PS_BarsHD (float2 uv : TEXCOORD0) : COLOR
       }
       return float4(0,1,1,1);
    }
-   if (uv.x > hd01) {
-      if (uv.x > hd01 + hd17) {
-         if (uv.x > hd01 + (hd17*2.0)) {
-            if (uv.x > hd01 + (hd17*3.0)) {
-               if (uv.x > hd01 + (hd17*4.0)) {
-                  if (uv.x > hd01 + (hd17*5.0)) {
-                     if (uv.x > hd01 + (hd17*6.0)) {
-                        if (uv.x > 1.0 - hd01) {
+   if (uv0.x > hd01) {
+      if (uv0.x > hd01 + hd17) {
+         if (uv0.x > hd01 + (hd17*2.0)) {
+            if (uv0.x > hd01 + (hd17*3.0)) {
+               if (uv0.x > hd01 + (hd17*4.0)) {
+                  if (uv0.x > hd01 + (hd17*5.0)) {
+                     if (uv0.x > hd01 + (hd17*6.0)) {
+                        if (uv0.x > 1.0 - hd01) {
                            return float4(0.4,0.4,0.4,1);
                         }
                         return float4(0,0,0.75,1);
@@ -147,7 +132,7 @@ float4 PS_BarsHD (float2 uv : TEXCOORD0) : COLOR
    return float4(0.4,0.4,0.4,1);
 }
 
-float4 PS_BarsSD (float2 uv : TEXCOORD0) : COLOR
+DeclareEntryPoint (Colorbars_SD)
 {
    float v1 = 7.0 / 12.0;
    float v2 = 2.0 / 3.0;
@@ -157,17 +142,17 @@ float4 PS_BarsSD (float2 uv : TEXCOORD0) : COLOR
    float sdb2 = sd17 * 2.0;
    float sdb3 = sd17 * (5.0/6.0);
    float sdb4 = sd17 * (1.0/3.0);
-   if (uv.y > v1) {
-      if (uv.y > v2) {
-         if (uv.y > v3) {
-            if (uv.x > sdb1) {
-               if (uv.x > sdb1 + sdb2) {
-                  if (uv.x > sdb1 + sdb2 + sdb3) {
-                     if (uv.x > 1.0 - sd17 - (sdb4*4.0)) {
-                        if (uv.x > 1.0 - sd17 - (sdb4*3.0)) {
-                           if (uv.x > 1.0 - sd17 - (sdb4*2.0)) {
-                              if (uv.x > 1.0 - sd17 - sdb4) {
-                                 if (uv.x > 1.0 - sd17) {
+   if (uv0.y > v1) {
+      if (uv0.y > v2) {
+         if (uv0.y > v3) {
+            if (uv0.x > sdb1) {
+               if (uv0.x > sdb1 + sdb2) {
+                  if (uv0.x > sdb1 + sdb2 + sdb3) {
+                     if (uv0.x > 1.0 - sd17 - (sdb4*4.0)) {
+                        if (uv0.x > 1.0 - sd17 - (sdb4*3.0)) {
+                           if (uv0.x > 1.0 - sd17 - (sdb4*2.0)) {
+                              if (uv0.x > 1.0 - sd17 - sdb4) {
+                                 if (uv0.x > 1.0 - sd17) {
                                     return float4(0,0,0,1);
                                  }
                                  return float4(0.04,0.04,0.04,1);
@@ -186,22 +171,22 @@ float4 PS_BarsSD (float2 uv : TEXCOORD0) : COLOR
             }
             return float4(0,0,0,1);
          }
-         if (uv.x >= 0.0) {
-            float color = uv.x;
+         if (uv0.x >= 0.0) {
+            float color = uv0.x;
             return float4(color,color,color,1);
          }
       }
-      if (uv.x > sd17) {
+      if (uv0.x > sd17) {
          return float4(0.75,0.75,0.75,1);
       }
       return float4(0.75,0.75,0.75,1);
    }
-   if (uv.x > sd17) {
-      if (uv.x > (sd17*2.0)) {
-         if (uv.x > (sd17*3.0)) {
-            if (uv.x > (sd17*4.0)) {
-               if (uv.x > (sd17*5.0)) {
-                  if (uv.x > (sd17*6.0)) {
+   if (uv0.x > sd17) {
+      if (uv0.x > (sd17*2.0)) {
+         if (uv0.x > (sd17*3.0)) {
+            if (uv0.x > (sd17*4.0)) {
+               if (uv0.x > (sd17*5.0)) {
+                  if (uv0.x > (sd17*6.0)) {
                      return float4(0,0,0.75,1);
                   }
                   return float4(0.75,0,0,1);
@@ -216,12 +201,4 @@ float4 PS_BarsSD (float2 uv : TEXCOORD0) : COLOR
    }
    return float4(0.75,0.75,0.75,1);
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique HD { pass Pass1 ExecuteShader (PS_BarsHD) }
-
-technique SD { pass Pass1 ExecuteShader (PS_BarsSD) }
 

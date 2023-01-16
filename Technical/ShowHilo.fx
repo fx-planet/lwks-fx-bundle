@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2021-10-28
+// @Released 2023-01-11
 // @Author juhartik
-// @AuthorEmail juha@linearteam.org
 // @Created 2016-05-09
-// @see https://www.lwks.com/media/kunena/attachments/6375/JHshowHiLo_640.png
 
 /**
  This effect blinks extreme blacks and whites.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,87 +17,39 @@
 //
 // Version history:
 //
-// Update 2021-10-28 jwrl.
-// Updated the original effect to better support LW 2021 resolution independence.
+// Updated 2023-01-13 jwrl.
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Show highs and lows";
-   string Category    = "User";
-   string SubCategory = "Technical";
-   string Notes       = "This effect blinks blacks and whites that exceed preset levels";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Show highs and lows", "User", "Technical", "This effect blinks blacks and whites that exceed preset levels", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _Length;
-float _Progress;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, FgSampler);
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float LoLimit
-<
-   string Description = "Low Limit";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.05;
+DeclareFloatParam (LoLimit, "Low Limit", kNoGroup, kNoFlags, 0.05, 0.0, 1.0);
+DeclareFloatParam (HiLimit, "High Limit", kNoGroup, kNoFlags, 0.95, 0.0, 1.0);
 
-float HiLimit
-<
-   string Description = "High Limit";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.95;
+DeclareFloatParam (_Length);
+DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 MainPS (float2 xy : TEXCOORD1) : COLOR
+DeclareEntryPoint (ShowHiLo)
 {
-   float4 color = GetPixel (FgSampler, xy);
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+
+   float4 color = tex2D (Input, uv1);
 
    float weight = (color.r + color.g + color.b) / 3.0;
 
@@ -106,10 +58,4 @@ float4 MainPS (float2 xy : TEXCOORD1) : COLOR
 
    return color;
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique ShowHiLo { pass p0 ExecuteShader (MainPS) }
 

@@ -1,11 +1,10 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2023-01-10
 // @Author schrauber
 // @Created 2020-06-08
-// @see: https://www.lwks.com/media/kunena/attachments/6375/QuadSss_640.png
 
 /**
- This s a single effect with 4 inputs.  It features:
+ This is a single effect with 4 inputs.  It features:
  - Fast (low GPU load)
  - Easy handling if you only need a standardized layout without cropping etc.
 
@@ -18,97 +17,42 @@
  The background color is adjustable. If Alpha is set to 0, the Background can be replaced
  in a subsequent effect (e.g. "Blend").  It should be possible to nest this effect to make
  larger arrays than 4x4.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect
+// Lightworks user effect QuadScreenS.fx
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
+// Updated 2023-01-10 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Quad split screen, simply";  
-   string Category    = "DVE";
-   string SubCategory = "Multiscreen Effects";
-   string Notes       = "Revised version of 8 June 2020";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
+DeclareLightworksEffect ("Quad split screen, simply", "DVE", "Multiscreen Effects", "Revised version of 8 June 2020", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (a, b, c, d);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
+DeclareFloatParam (BaseScale, "Scale", kNoGroup, kNoFlags, 0.495, 0.0, 0.5);
 
-float baseSkale
-<
-   string Description = "Scale";
-   float MinVal = 0.0;
-   float MaxVal = 0.5;
-> = 0.495;
-
-
-float4 Bg
-<
-   string Description = "Background";
-   bool SupportsAlpha = true;
-> = { 0.0, 0.0, 0.0, 1.0 };
-
-
-
+DeclareColourParam (Bg, "Background", kNoGroup, kNoFlags, 0.0, 0.0, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Common definitions, declarations, macros
 //-----------------------------------------------------------------------------------------//
 
-#define EMPTY         0.0.xxxx
-#define THUMBNAILS    4
-
-
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and Samplers 
-//-----------------------------------------------------------------------------------------//
-
-// Macros as short form of the sampler definitions: 
-
-#ifdef _LENGTH                 
-// Versions check Lightworks > 14.0
-   // For current Lightworks versions ClampToEdge is used for low GPU load, but for versions prior to Ligtworks 14.5 Mirror is used for compatibility.
-   #define CLAMP_OR_MIRROR \
-      AddressU  = ClampToEdge;\
-      AddressV  = ClampToEdge;\
-      MinFilter = Linear;\
-      MagFilter = Linear;\
-      MipFilter = Linear;
-#else
-   #define CLAMP_OR_MIRROR \
-      AddressU  = Mirror;\
-      AddressV  = Mirror;\
-      MinFilter = Linear;\
-      MagFilter = Linear;\
-      MipFilter = Linear;
-#endif
-
-
-texture a;
-sampler s_Fg0 = sampler_state { Texture = <a>; CLAMP_OR_MIRROR };
-
-texture b;
-sampler s_Fg1 = sampler_state { Texture = <b>; CLAMP_OR_MIRROR };
-
-texture c;
-sampler s_Fg2 = sampler_state { Texture  = <c>; CLAMP_OR_MIRROR };
-
-texture d;
-sampler s_Fg3 = sampler_state { Texture  = <d>; CLAMP_OR_MIRROR };
-
-
+#define THUMBNAILS 4
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -116,72 +60,63 @@ sampler s_Fg3 = sampler_state { Texture  = <d>; CLAMP_OR_MIRROR };
 
 float4 fn_tex2D (sampler s_fn, float2 xy)
 {
-   if (xy.x < 0.0 || xy.x > 1.0 || xy.y < 0.0 || xy.y > 1.0) return EMPTY;
+   if (xy.x < 0.0 || xy.x > 1.0 || xy.y < 0.0 || xy.y > 1.0) return float2 (0.0,1.0).xxxy;
+
    return tex2D (s_fn, xy);
 }
 
-
-     
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_splitScreen (float2 uv_  : TEXCOORD1,
-                       float2 uv_1 : TEXCOORD2,
-                       float2 uv_2 : TEXCOORD3,
-                       float2 uv_3 : TEXCOORD4) : COLOR
+DeclarePass (s_Fg0)
+{ return fn_tex2D (a, uv1); }
+
+DeclarePass (s_Fg1)
+{ return fn_tex2D (b, uv2); }
+
+DeclarePass (s_Fg2)
+{ return fn_tex2D (c, uv3); }
+
+DeclarePass (s_Fg3)
+{ return fn_tex2D (d, uv4); }
+
+DeclareEntryPoint (QuadScreenS)
 { 
    int i; // loop counter
 
-   float2 uv[THUMBNAILS];
-   uv[0] = uv_;
-   uv[1] = uv_1;
-   uv[2] = uv_2;
-   uv[3] = uv_3;
-
   // Zoom positions:
-   float2 pos[THUMBNAILS];
-   pos[0] = float2 ( 0.0, 0.0);
-   pos[1] = float2 ( 1.0, 0.0);
-   pos[2] = float2 ( 0.0, 1.0);
-   pos[3] = float2 ( 1.0, 1.0);
 
-  // Direction vectors
-   float2 vPt[THUMBNAILS];  
-   for(i=0; i<THUMBNAILS; i++)
-   { 
-      vPt[i] = pos[i] - uv[i];   // Direction vector of the set position to the currently calculated texel.
+   float2 pos [THUMBNAILS] = { { 0.0, 0.0 }, { 1.0, 0.0 }, { 0.0, 1.0 }, { 1.0, 1.0 } };
+
+  // Direction vectors and zoom
+
+   float2 vPt [THUMBNAILS];  
+
+   float zoom = 1.0 - (1.0 / max (1.0e-9, BaseScale));  // The zoom range from [0..1] is rescaled to [-1e-9 .. 0]   ( 0 = Dimensions 100%, -1 = Dimensions 50 %, -2 Dimensions 33.3 %, -1e-9 (approximately negative infinite) = size 0%)
+
+   for (i = 0; i < THUMBNAILS; i++) { 
+      vPt [i] = pos [i] - uv5;   // Direction vector of the set position to the currently calculated texel.
+      vPt [i] = (vPt [i] * zoom) + uv5;
    }
 
-   // ------ ZOOM & samplers:
-   float4 input[THUMBNAILS];
-   float zoom = 1.0 + (-1.0 / max (1.0e-9, baseSkale));  // The zoom range from [0..1] is rescaled to [-1e-9 .. 0]   ( 0 = Dimensions 100%, -1 = Dimensions 50 %, -2 Dimensions 33.3 %, -1e-9 (approximately negative infinite) = size 0%)
-   input[0] = fn_tex2D (s_Fg0, zoom * vPt[0] + uv[0]);   // Thumbnail top left. 
-   input[1] = fn_tex2D (s_Fg1, zoom * vPt[1] + uv[1]);   // Thumbnail top right.
-   input[2] = fn_tex2D (s_Fg2, zoom * vPt[2] + uv[2]);   // Thumbnail bottom left.
-   input[3] = fn_tex2D (s_Fg3, zoom * vPt[3] + uv[3]);   // Thumbnail bottom right.
+   // ------ Four samplers:
+
+   float4 input [THUMBNAILS];
+
+   input [0] = ReadPixel (s_Fg0, vPt [0]);   // Thumbnail top left. 
+   input [1] = ReadPixel (s_Fg1, vPt [1]);   // Thumbnail top right.
+   input [2] = ReadPixel (s_Fg2, vPt [2]);   // Thumbnail bottom left.
+   input [3] = ReadPixel (s_Fg3, vPt [3]);   // Thumbnail bottom right.
 
    // ------ Mix:
-   float4 mix = max (input[0], input[1]);
-          mix = max (mix, input[2]);
-          mix = max (mix, input[3]);
+
+   float4 mix = max (input [0], input [1]);
+          mix = max (mix, input [2]);
+          mix = max (mix, input [3]);
 
    // ------ Mix Bg & Alpha:
-   float4 retval = mix;
-   retval = lerp (Bg, mix, mix.a);
 
-   return retval;
+   return lerp (Bg, mix, mix.a);
 }
 
-
-
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-
-technique tech_main
-{
-   pass P_1  { PixelShader = compile PROFILE ps_splitScreen (); }
-}

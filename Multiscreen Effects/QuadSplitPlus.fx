@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2020-11-13
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2020-06-22
-// @see https://www.lwks.com/media/kunena/attachments/6375/QuadSplitPlus_640.png
+// @Created 2023-01-10
 
 /**
  This simple effect produces individually sized and positioned images of up to four sources
@@ -25,6 +24,8 @@
 
  The order of the various parameters in the user interface is the suggested order in which
  they should be set up.  No adjustments are provided for input X.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -32,332 +33,87 @@
 //
 // Version history:
 //
-// Update 2020-11-13 jwrl.
-// Added Cansize switch for LW 2021 support.
-//
-// Modified 2020-07-04 jwrl:
-// Allow individual crop/size settings to be ungrouped from A group settings.
-//
-// Modified 2020-06-23 jwrl:
-// Extended position parameter ranges from 0% - 100% to -50% - 150%.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Quad split plus";
-   string Category    = "DVE";
-   string SubCategory = "Multiscreen Effects";
-   string Notes       = "Produces four split screen images with borders over an optional daisy-chained background";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Quad split plus", "DVE", "Multiscreen Effects", "Produces four split screen images with borders over an optional daisy-chained background", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-texture A;
-texture B;
-texture C;
-texture D;
-
-texture X;
-
-//-----------------------------------------------------------------------------------------//
-// Samplers
-//-----------------------------------------------------------------------------------------//
-
-sampler s_Input_A = sampler_state { Texture = <A>; };
-sampler s_Input_B = sampler_state { Texture = <B>; };
-sampler s_Input_C = sampler_state { Texture = <C>; };
-sampler s_Input_D = sampler_state { Texture = <D>; };
-
-sampler s_Background = sampler_state { Texture = <X>; };
+DeclareInputs (A, B, C, D, X);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float A_Opacity
-<
-   string Group = "Source A";
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (A_Opacity, "Opacity", "Source A", kNoFlags, 1.0, 0.0, 1.0);
+DeclareIntParam (A_Group, "Crop / size grouping", "Source A", 0, "Set each input individually|Use source A settings for all");
+DeclareFloatParam (A_Size, "Size", "Source A", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (A_Crop_X, "Symmetrical crop", "Source A", "SpecifiesPointX", 1.0, 0.0, 1.0);
+DeclareFloatParam (A_Crop_Y, "Symmetrical crop", "Source A", "SpecifiesPointY", 1.0, 0.0, 1.0);
+DeclareFloatParam (A_Position_X, "Position", "Source A", "SpecifiesPointX|DisplayAsPercentage", 0.0, -0.5, 1.5);
+DeclareFloatParam (A_Position_Y, "Position", "Source A", "SpecifiesPointY|DisplayAsPercentage", 1.0, -0.5, 1.5);
 
-int A_Group
-<
-   string Group = "Source A";
-   string Description = "Crop / size grouping";
-   string Enum = "Set each input individually,Use source A settings for all";
-> = 0;
+DeclareFloatParam (B_Opacity, "Opacity", "Source B", kNoFlags, 1.0, 0.0, 1.0);
+DeclareIntParam (B_Group, "Crop / size grouping", "Source B", 1, "Only use B settings|Follow source A group settings)";
+DeclareFloatParam (B_Size, "Size", "Source B", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (B_Crop_X, "Symmetrical crop", "Source B", "SpecifiesPointX", 1.0, 0.0, 1.0);
+DeclareFloatParam (B_Crop_Y, "Symmetrical crop", "Source B", "SpecifiesPointY", 1.0, 0.0, 1.0);
+DeclareFloatParam (B_Position_X, "Position", "Source B", "SpecifiesPointX|DisplayAsPercentage", 0.25, -0.5, 1.5);
+DeclareFloatParam (B_Position_Y, "Position", "Source B", "SpecifiesPointY|DisplayAsPercentage", 1.0, -0.5, 1.5);
 
-float A_Size
-<
-   string Group = "Source A";
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (C_Opacity, "Opacity", "Source C", kNoFlags, 1.0, 0.0, 1.0);
+DeclareIntParam (C_Group, "Crop / size grouping", "Source C", 1, "Only use C settings|Follow source A group settings)";
+DeclareFloatParam (C_Size, "Size", "Source C", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (C_Crop_X, "Symmetrical crop", "Source C", "SpecifiesPointX", 1.0, 0.0, 1.0);
+DeclareFloatParam (C_Crop_Y, "Symmetrical crop", "Source C", "SpecifiesPointY", 1.0, 0.0, 1.0);
+DeclareFloatParam (C_Position_X, "Position", "Source C", "SpecifiesPointX|DisplayAsPercentage", 0.5, -0.5, 1.5);
+DeclareFloatParam (C_Position_Y, "Position", "Source C", "SpecifiesPointY|DisplayAsPercentage", 1.0, -0.5, 1.5);
 
-float A_Crop_X
-<
-   string Group = "Source A";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (D_Opacity, "Opacity", "Source D", kNoFlags, 1.0, 0.0, 1.0);
+DeclareIntParam (D_Group, "Crop / size grouping", "Source D", 1, "Only use D settings|Follow source A group settings");
+DeclareFloatParam (D_Size, "Size", "Source D", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (D_Crop_X, "Symmetrical crop", "Source D", "SpecifiesPointX", 1.0, 0.0, 1.0);
+DeclareFloatParam (D_Crop_Y, "Symmetrical crop", "Source D", "SpecifiesPointY", 1.0, 0.0, 1.0);
+DeclareFloatParam (D_Position_X, "Position", "Source D", "SpecifiesPointX|DisplayAsPercentage", 0.75, -0.5, 1.5);
+DeclareFloatParam (D_Position_Y, "Position", "Source D", "SpecifiesPointY|DisplayAsPercentage", 1.0, -0.5, 1.5);
 
-float A_Crop_Y
-<
-   string Group = "Source A";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (BorderWidth, "Width", "Border", kNoFlags, 0.025, 0.0, 0.1);
+DeclareColourParam (BorderColour, "Colour", "Border", kNoFlags, 0.694, 0.255, 0.710);
 
-float A_Position_X
-<
-   string Group = "Source A";
-   string Description = "Position";
-   string Flags = "SpecifiesPointX|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 0.0;
-
-float A_Position_Y
-<
-   string Group = "Source A";
-   string Description = "Position";
-   string Flags = "SpecifiesPointY|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 1.0;
-
-float B_Opacity
-<
-   string Group = "Source B";
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-int B_Group
-<
-   string Group = "Source B";
-   string Description = "Crop / size grouping";
-   string Enum = "Only use B settings,Follow source A group settings";
-> = 1;
-
-float B_Size
-<
-   string Group = "Source B";
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float B_Crop_X
-<
-   string Group = "Source B";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float B_Crop_Y
-<
-   string Group = "Source B";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float B_Position_X
-<
-   string Group = "Source B";
-   string Description = "Position";
-   string Flags = "SpecifiesPointX|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 0.25;
-
-float B_Position_Y
-<
-   string Group = "Source B";
-   string Description = "Position";
-   string Flags = "SpecifiesPointY|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 1.0;
-
-float C_Opacity
-<
-   string Group = "Source C";
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-int C_Group
-<
-   string Group = "Source C";
-   string Description = "Crop / size grouping";
-   string Enum = "Only use C settings,Follow source A group settings";
-> = 1;
-
-float C_Size
-<
-   string Group = "Source C";
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float C_Crop_X
-<
-   string Group = "Source C";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float C_Crop_Y
-<
-   string Group = "Source C";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float C_Position_X
-<
-   string Group = "Source C";
-   string Description = "Position";
-   string Flags = "SpecifiesPointX|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 0.5;
-
-float C_Position_Y
-<
-   string Group = "Source C";
-   string Description = "Position";
-   string Flags = "SpecifiesPointY|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 1.0;
-
-float D_Opacity
-<
-   string Group = "Source D";
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-int D_Group
-<
-   string Group = "Source D";
-   string Description = "Crop / size grouping";
-   string Enum = "Only use D settings,Follow source A group settings";
-> = 1;
-
-float D_Size
-<
-   string Group = "Source D";
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float D_Crop_X
-<
-   string Group = "Source D";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float D_Crop_Y
-<
-   string Group = "Source D";
-   string Description = "Symmetrical crop";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
-
-float D_Position_X
-<
-   string Group = "Source D";
-   string Description = "Position";
-   string Flags = "SpecifiesPointX|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 0.75;
-
-float D_Position_Y
-<
-   string Group = "Source D";
-   string Description = "Position";
-   string Flags = "SpecifiesPointY|DisplayAsPercentage";
-   float MinVal = -0.5;
-   float MaxVal = 1.5;
-> = 1.0;
-
-float BorderWidth
-<
-   string Group = "Border";
-   string Description = "Width";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.0;
-   float MaxVal = 0.1;
-> = 0.025;
-
-float4 BorderColour
-<
-   string Group = "Border";
-   string Description = "Colour";
-   bool SupportsAlpha = false;
-> = { 0.694, 0.255, 0.710, 1.0 };
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH   // Only available in version 14.5 and up
-Bad_LW_version    // Forces a compiler error if the Lightworks version is bad.
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define BLANK  0.0.xxxx
-
-float _OutputAspectRatio;
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_miniDVE (sampler s_Input, float2 uv, float3 group, float4 vid, float a, float b)
+float4 fn_tex2D (sampler s, float2 uv)
+{
+   if (any (uv < 0.0) || any (uv > 1.0)) return float2 (0.0,1.0).xxxy;
+
+   return tex2D (s, uv);
+}
+
+float4 fn_miniDVE (sampler s, float2 uv, float3 group, float4 vid, float a, float b)
 {
    float2 xy1 = uv / group.z;
    float2 xy2 = abs (xy1 - 0.5.xx) * 2.0;
    float2 border = group.xy - float2 (b, b * _OutputAspectRatio) / group.z;
 
-   float4 retval = (xy2.x <= border.x) && (xy2.y <= border.y) ? tex2D (s_Input, xy1) :
-                   (xy2.x <= group.x)  && (xy2.y <= group.y)  ? BorderColour : BLANK;
+   float4 retval = (xy2.x <= border.x) && (xy2.y <= border.y) ? tex2D (s, xy1) :
+                   (xy2.x <= group.x)  && (xy2.y <= group.y)  ? BorderColour : kTransparentBlack;
 
    return lerp (vid, retval, retval.a * a);
 }
@@ -366,9 +122,21 @@ float4 fn_miniDVE (sampler s_Input, float2 uv, float3 group, float4 vid, float a
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv : TEXCOORD1) : COLOR
+DeclarePass (Aquad)
+{ return fn_tex2D (A, uv1); }
+
+DeclarePass (Bquad)
+{ return fn_tex2D (B, uv2); }
+
+DeclarePass (Cquad)
+{ return fn_tex2D (C, uv3); }
+
+DeclarePass (Dquad)
+{ return fn_tex2D (D, uv4); }
+
+DeclareEntryPoint (QuadSplitPlus)
 {
-   float4 retval = tex2D (s_Background, uv);
+   float4 retval = fn_tex2D (X, uv5);
 
    // First build an array of the four crop and size settings
 
@@ -387,40 +155,31 @@ float4 ps_main (float2 uv : TEXCOORD1) : COLOR
 
    // Get the adjusted image position.
 
-   float2 xy = uv - float2 (D_Position_X, 1.0 - D_Position_Y);
+   float2 xy = uv6 - float2 (D_Position_X, 1.0 - D_Position_Y);
 
    // Recover the D video, scaled, cropped, bordered and mixed with the background.
 
-   retval = fn_miniDVE (s_Input_D, xy, group [idx], retval, D_Opacity, border);
+   retval = fn_miniDVE (Dquad, xy, group [idx], retval, D_Opacity, border);
 
    // Generate the C index into the crop and size array.  In this case it will be either 0 or 2.
 
    idx = int (saturate (2.0 - A_Group - C_Group)); idx += idx;
-   xy = uv - float2 (C_Position_X, 1.0 - C_Position_Y);
+   xy = uv6 - float2 (C_Position_X, 1.0 - C_Position_Y);
 
-   retval = fn_miniDVE (s_Input_C, xy, group [idx], retval, C_Opacity, border);
+   retval = fn_miniDVE (Cquad, xy, group [idx], retval, C_Opacity, border);
 
    // Generate the B index into the crop and size array which will be either 0 or 1.
 
    idx = int (saturate (2.0 - A_Group - B_Group));
-   xy = uv - float2 (B_Position_X, 1.0 - B_Position_Y);
+   xy = uv6 - float2 (B_Position_X, 1.0 - B_Position_Y);
 
-   retval = fn_miniDVE (s_Input_B, xy, group [idx], retval, B_Opacity, border);
+   retval = fn_miniDVE (Bquad, xy, group [idx], retval, B_Opacity, border);
 
    // The A index can only ever be zero, so we can explicitly declare it.
 
    idx = 0;
-   xy = uv - float2 (A_Position_X, 1.0 - A_Position_Y);
+   xy = uv6 - float2 (A_Position_X, 1.0 - A_Position_Y);
 
-   return fn_miniDVE (s_Input_A, xy, group [idx], retval, A_Opacity, border);
+   return fn_miniDVE (Aquad, xy, group [idx], retval, A_Opacity, border);
 }
 
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique QuadSplitPlus
-{
-   pass P_1
-   { PixelShader = compile PROFILE ps_main (); }
-}

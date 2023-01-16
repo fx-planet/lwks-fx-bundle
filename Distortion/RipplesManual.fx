@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2021-08-30
+// @Released 2023-01-08
 // @Author schrauber
 // @Created 2016-03-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/RippleManual_640.png
 
 /**
  There are two related effects, "Ripples (automatic expansion)" and this version
  "Ripples (manual expansion)".  This is the simple version, which is the one to use
- when you want to control the wave expansion via keyframes. 
+ when you want to control the wave expansion via keyframes.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,238 +16,112 @@
 //
 // Version history:
 //
-// Update 2021-08-30 jwrl.
-// Update of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Updated 2023-01-08 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Ripples (manual expansion)";
-   string Category    = "DVE";
-   string SubCategory = "Distortion";
-   string Notes       = "Radiating ripples are produced under full user control";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Ripples (manual expansion)", "DVE", "Distortion", "Radiating ripples are produced under full user control", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define SetTargetMode(TGT, SMP, MODE) \
-                                      \
- texture TGT : RenderColorTarget;     \
-                                      \
- sampler SMP = sampler_state          \
- {                                    \
-   Texture   = <TGT>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _InputWidthNormalised;
-float _OutputAspectRatio;
-	
-float _Progress;
-
-//-----------------------------------------------------------------------------------------//
-// Input and shader
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Input, s_RawInp);
-
-SetTargetMode (FixInp, FgSampler, Mirror);
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-bool enable_timing
-<
-	string Description = "Enable expansion setting";
-> = true;
+DeclareBoolParam (enable_timing, "Enable expansion setting", kNoGroup, true);
 
+DeclareFloatParam (expansionSetting, "Expansion", kNoGroup, kNoFlags, 0.4, 0.0, 1.0);
 
-float expansionSetting
-<
-	string Description = "Expansion";
-	float MinVal = 0;
-	float MaxVal = 1;
-> = 0.4;
+DeclareFloatParam (Xcentre, "Effect centre", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (Ycentre, "Effect centre", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
+DeclareFloatParam (zoom_lin, "Wave depth", "waveform", kNoFlags, 0.3, 0.0, 1.0);
+DeclareFloatParam (Frequency, "Frequency", "waveform", kNoFlags, 100.0, 0.0, 1000.0);
+DeclareFloatParam (phase_shift, "Phase", "waveform", kNoFlags, 0.0, -12.0, 12.0);
 
-float Xcentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
+DeclareBoolParam (pulsing, "Pulsation on", "waveform", false);
+DeclareBoolParam (pulse_negative, "Invert pulses", "waveform", false);
 
-float Ycentre
-<
-   string Description = "Effect centre";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.00;
-   float MaxVal = 1.00;
-> = 0.5;
+DeclareFloatParam (speed, "Wave dynamics", kNoGroup, kNoFlags, 100.0, -5000.0, 5000.0);
 
+DeclareBoolParam (Flip_edge, "Flip edge", kNoGroup, true);
 
-float zoom_lin
-<
-	string Group = "waveform";
-	string Description = "Wave depth";
-	float MinVal = 0;
-	float MaxVal = 1;
-> = 0.3;
+DeclareFloatParam (_InputWidthNormalised);
+DeclareFloatParam (_OutputAspectRatio);
 
-float Frequency
-<
-	string Group = "waveform";
-	string Description = "Frequency";
-	float MinVal = 0;
-	float MaxVal = 1000;
-> = 100;
-
-
-
-float phase_shift
-<
-	string Group = "waveform";
-	string Description = "Phase";
-	float MinVal = -12;
-	float MaxVal = 12;
-> = 0;
-
-
-bool pulsing
-<
-	string Group = "waveform";
-	string Description = "Pulsation on";
-> = false;
-
-bool pulse_negative
-<	
-	string Group = "waveform";
-	string Description = "Invert pulses";
-> = false;
-
-float speed
-<
-	string Description = "Wave dynamics";
-	float MinVal = -5000;
-	float MaxVal = 5000;
-> = 100;
-
-bool Flip_edge
-<
-	string Description = "Flip edge";
-> = true;
+DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
-
-float4 universal (float2 uv : TEXCOORD1, float2 xy : TEXCOORD2) : COLOR 
-{ 
-   if (Overflow (uv)) return EMPTY;    // If we fall outside the original limits we don't see anything, so processing empty media is pointless - jwrl.
-
- float2 XYc = float2 (Xcentre, 1.0 - Ycentre);
- float2 xy1 = XYc - xy;
- float2 pos_zoom = float2 (xy1.x, xy1.y / _OutputAspectRatio);
-
- float _distance = distance ((0.0).xx, pos_zoom) / _InputWidthNormalised;    // Partially corrects distance scale - jwrl
- float freq = Frequency;
- float phase = 0;
- float damping, distortion, duration, expansion, zoom;
-
- if ((pulsing) || (pulse_negative)) freq = Frequency /2;							// Frequency adjustment, when the waveform was changed. ___________German: Frequenzanpassung, wenn die Wellenfom geÃ¤ndert wurde.
- 
- 
- // ............ Effect without expansion rate...............
-
- if (!enable_timing) {
-  zoom =0.05 * pow((zoom_lin * 2.4),3);  
-  phase = (sin (phase_shift +  (_Progress * (speed*-1)) + (freq * _distance))) ;				// Create a wave.
-  distortion = zoom * phase / _distance;									//  Wave height ____________ German: WellenhÃ¶he 
-  distortion = distortion / (_distance + 2.86);									// WellenhÃ¶he distanzabhÃ¤ngige Einstellungen
-  if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
-  if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
- }else{
-
-
- // ............ Effect with expansion rate ...........
- 
-  damping = pow(expansionSetting * 3 , 3) + 0.696;		
-  expansion = damping; 
-                                                     
-  zoom =pow((zoom_lin*0.001),2) / pow (expansion , 3.6); if (expansion < 0.7) zoom = 0;			//Optimize the zoom setting characteristic, and expansion characteristic of the wave. (partly determined by tests)
- 									
-  phase = (sin (phase_shift +  (_Progress * (speed*-1)) + (freq * _distance))) ;					// Create a wave.
-
-	
-  distortion = zoom * phase / (1 + _distance);								// Wave height  ___________German: WellenhÃ¶he 
-
-  duration = pow(_distance , damping); 									// Time behavior of the wave ___________German: Zeitverhalten des Wellenlaufes
-  distortion = distortion / (pow(duration,4) + 28561E-12);						//	  Wave height, time-dependent attenuation. (Mainly through experiments determined) ___________German:  WellenhÃ¶he, zeitabhÃ¤ngige DÃ¤mpfung. (Ã¼berwiegend durch Versuche ermittelt)
-
-  if (pulsing) distortion = sqrt(distortion) / 3;								// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
-  if (pulse_negative) distortion = sqrt(distortion) / -3;							// Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
- }
-
- // ..........................................................
-
-
- xy1 = distortion * xy1 + xy;
-
-
- if (!Flip_edge && Overflow (xy1)) return EMPTY;
-
- return tex2D (FgSampler, xy1); 
-} 
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique SampleFxTechnique
+float4 MirrorEdge (sampler S, float2 uv)
 {
-   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass SinglePass ExecuteShader (universal)
+   float2 xy = 1.0.xx - abs (2.0 * (frac (uv / 2.0) - 0.5.xx));
+
+   return tex2D (S, xy);
+}
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (RipplesManual)
+{
+   if (IsOutOfBounds (uv1)) return kTransparentBlack;    // If we fall outside the original limits we don't see anything, so processing empty media is pointless - jwrl.
+
+   float2 XYc = float2 (Xcentre, 1.0 - Ycentre);
+   float2 xy1 = XYc - uv1;
+   float2 pos_zoom = float2 (xy1.x, xy1.y / _OutputAspectRatio);
+
+   float _distance = distance ((0.0).xx, pos_zoom) / _InputWidthNormalised;    // Partially corrects distance scale - jwrl
+   float freq = Frequency;
+   float phase = 0;
+   float damping, distortion, duration, expansion, zoom;
+
+   if (pulsing || pulse_negative) freq = Frequency / 2.0;       // Frequency adjustment, when the waveform was changed. ___________German: Frequenzanpassung, wenn die Wellenfom geÃ¤ndert wurde.
+
+   // ............ Effect without expansion rate...............
+
+   if (!enable_timing) {
+      zoom = 0.05 * pow ((zoom_lin * 2.4), 3.0);
+      phase = (sin (phase_shift - (_Progress * speed) + (freq * _distance)));    // Create a wave.
+      distortion = zoom * phase / _distance;         //  Wave height ____________ German: WellenhÃ¶he
+      distortion = distortion / (_distance + 2.86);         // WellenhÃ¶he distanzabhÃ¤ngige Einstellungen
+
+      if (pulsing) distortion = sqrt (distortion) / 3.0;        // Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
+
+      if (pulse_negative) distortion = -sqrt (distortion) / 3.0;       // Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
+   }
+   else { // ............ Effect with expansion rate ...........
+      damping = pow (expansionSetting * 3.0, 3.0) + 0.696;
+      expansion = damping;
+      zoom = pow ((zoom_lin * 0.001), 2.0) / pow (expansion, 3.6);
+
+      if (expansion < 0.7) zoom = 0;   // Optimize the zoom setting characteristic, and expansion characteristic of the wave. (partly determined by tests)
+
+      phase = (sin (phase_shift - (_Progress * speed) + (freq * _distance))) ;     // Create a wave.
+      distortion = zoom * phase / (1.0 + _distance);        // Wave height  ___________German: WellenhÃ¶he
+      duration = pow (_distance, damping);          // Time behavior of the wave ___________German: Zeitverhalten des Wellenlaufes
+      distortion = distortion / (pow (duration, 4.0) + 28561E-12);      //   Wave height, time-dependent attenuation. (Mainly through experiments determined) ___________German:  WellenhÃ¶he, zeitabhÃ¤ngige DÃ¤mpfung. (Ã¼berwiegend durch Versuche ermittelt)
+
+      if (pulsing) distortion = sqrt (distortion) / 3.0;        // Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
+
+      if (pulse_negative) distortion = -sqrt (distortion) / 3.0;       // Edit waveform ___________German:  Wellenfom Ã¤ndern (ggf. auch fÃ¼r Druckwelle geeignet?)
+   }
+
+   // ..........................................................
+
+   xy1 = distortion * xy1 + uv1;
+
+   if (!Flip_edge && IsOutOfBounds (xy1)) return kTransparentBlack;
+
+   return MirrorEdge (Input, xy1);
 }
 

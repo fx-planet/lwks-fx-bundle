@@ -1,230 +1,185 @@
 // @Maintainer jwrl
-// @Released 2021-08-30
-// @Author khaver
-// @Created 2011-06-27
-// @see https://www.lwks.com/media/kunena/attachments/6375/Perspective_640.png
+// @Released 2023-01-08
+// @Author windsturm
+// @OriginalAuthor "Evan Wallace"
+// @Created 2017-05-03
 
 /**
- The name of the effect describes what it does.  It's a neat, simple effect for adding
- a perspective illusion to a flat plane.  With resolution independence, the image will
- only wrap to the boundaries of the undistorted image.  If the aspect ratio of the input
- video is such that it doesn't fill the frame, neither will the warped image.
+ This effect warps one rectanglur area to another with a perspective transform.  It can be
+ used to make a 2D image look 3D or to flatten a 2D image captured in a 3D environment.
+
+ With current resolution independence, the image wrap display will only wrap to the edges
+ of the undistorted image.  If the aspect ratio of the input video is such that it doesn't
+ fill the frame, neither will the wrapped image.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Perspective.fx
+//-----------------------------------------------------------------------------------------//
+/**
+  * Perspective.
+  * @description  Warps one quadrangle to another with a perspective transform. This can be used to
+  *               make a 2D image look 3D or to recover a 2D image captured in a 3D environment.
+  * 
+  * @forked Windsturm
+  * @version 1.0.0
+
+forked from evanw/glfx.js https://github.com/evanw/glfx.js
+
+Copyright (C) 2011 by Evan Wallace
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+//-----------------------------------------------------------------------------------------//
 //
 // Version history:
 //
-// Update 2021-08-30 jwrl.
-// Update of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Updated 2023-01-08 jwrl
+// Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Perspective";
-   string Category    = "DVE";
-   string SubCategory = "Distortion";
-   string Notes       = "A neat, simple effect for adding a perspective illusion to a flat plane";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Perspective", "DVE", "Distortion", "Warps one rectangle to another using a perspective transform", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define WHITE 1.0.xxxx
+DeclareInput (Input);
 
 //-----------------------------------------------------------------------------------------//
-// Inputs and samplers
+// Parameters
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Inp, s_RawInp);
+DeclareBoolParam (viewSsource, "View source", kNoGroup, false);
 
-DefineTarget (FixInp, InputSampler);
+DeclareBoolParam (modeWrap, "Image Wrap", kNoGroup, false);
 
-//-----------------------------------------------------------------------------------------//
-// Parameters 
-//-----------------------------------------------------------------------------------------//
+DeclareFloatParam (bTLX, "Top Left", "Before", "SpecifiesPointX", 0.1, 0.0, 1.0);
+DeclareFloatParam (bTLY, "Top Left", "Before", "SpecifiesPointY", 0.9, 0.0, 1.0);
 
-bool showGrid
-<
-   string Description = "Show grid";
-> = false;
+DeclareFloatParam (bTRX, "Top Right", "Before", "SpecifiesPointX", 0.9, 0.0, 1.0);
+DeclareFloatParam (bTRY, "Top Right", "Before", "SpecifiesPointY", 0.9, 0.0, 1.0);
 
-float TLX
-<
-   string Description = "Top Left";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
+DeclareFloatParam (bBLX, "Bottom Left", "Before", "SpecifiesPointX", 0.1, 0.0, 1.0);
+DeclareFloatParam (bBLY, "Bottom Left", "Before", "SpecifiesPointY", 0.1, 0.0, 1.0);
 
-float TLY
-<
-   string Description = "Top Left";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
+DeclareFloatParam (bBRX, "Bottom Right", "Before", "SpecifiesPointX", 0.9, 0.0, 1.0);
+DeclareFloatParam (bBRY, "Bottom Right", "Before", "SpecifiesPointY", 0.1, 0.0, 1.0);
 
-float TRX
-<
-   string Description = "Top Right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
+DeclareFloatParam (aTLX, "Top Left", "After", "SpecifiesPointX", 0.2, 0.0, 1.0);
+DeclareFloatParam (aTLY, "Top Left", "After", "SpecifiesPointY", 0.8, 0.0, 1.0);
 
-float TRY
-<
-   string Description = "Top Right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
+DeclareFloatParam (aTRX, "Top Right", "After", "SpecifiesPointX", 0.8, 0.0, 1.0);
+DeclareFloatParam (aTRY, "Top Right", "After", "SpecifiesPointY", 0.8, 0.0, 1.0);
 
-float BLX
-<
-   string Description = "Bottom Left";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
+DeclareFloatParam (aBLX, "Bottom Left", "After", "SpecifiesPointX", 0.2, 0.0, 1.0);
+DeclareFloatParam (aBLY, "Bottom Left", "After", "SpecifiesPointY", 0.2, 0.0, 1.0);
 
-float BLY
-<
-   string Description = "Bottom Left";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float BRX
-<
-   string Description = "Bottom Right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
-
-float BRY
-<
-   string Description = "Bottom Right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float ORGX
-<
-   string Description = "Pan";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float ORGY
-<
-   string Description = "Pan";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Zoom
-<
-   string Description = "Zoom";
-   float MinVal = 0.0;
-   float MaxVal = 2.0;
-> = 1.0;
+DeclareFloatParam (aBRX, "Bottom Right", "After", "SpecifiesPointX", 0.8, 0.0, 1.0);
+DeclareFloatParam (aBRY, "Bottom Right", "After", "SpecifiesPointY", 0.2, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float3x3 getSquareToQuad (float x0, float y0, float x1, float y1,
+                          float x2, float y2, float x3, float y3)
+{
+   float dx1 = x1 - x2;
+   float dy1 = y1 - y2;
+   float dx2 = x3 - x2;
+   float dy2 = y3 - y2;
+   float dx3 = x0 - x1 + x2 - x3;
+   float dy3 = y0 - y1 + y2 - y3;
+   float det = dx1*dy2 - dx2*dy1;
+   float a = (dx3*dy2 - dx2*dy3) / det;
+   float b = (dx1*dy3 - dx3*dy1) / det;
+
+   return float3x3(
+      x1 - x0 + a*x1, y1 - y0 + a*y1, a,
+      x3 - x0 + b*x3, y3 - y0 + b*y3, b,
+      x0, y0, 1
+   );
+}
+
+float3x3 getInverse (float3x3 m)
+{
+   float a = m[0].x, b = m[0].y, c = m[0].z;
+   float d = m[1].x, e = m[1].y, f = m[1].z;
+   float g = m[2].x, h = m[2].y, i = m[2].z;
+   float det = a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g;
+
+   return float3x3(
+      (e*i - f*h) / det, (c*h - b*i) / det, (b*f - c*e) / det,
+      (f*g - d*i) / det, (a*i - c*g) / det, (c*d - a*f) / det,
+      (d*h - e*g) / det, (b*g - a*h) / det, (a*e - b*d) / det
+   );
+}
+
+float3x3 multiply (float3x3 a, float3x3 b)
+{
+   return float3x3(
+      a[0].x*b[0].x + a[0].y*b[1].x + a[0].z*b[2].x,
+      a[0].x*b[0].y + a[0].y*b[1].y + a[0].z*b[2].y,
+      a[0].x*b[0].z + a[0].y*b[1].z + a[0].z*b[2].z,
+      a[1].x*b[0].x + a[1].y*b[1].x + a[1].z*b[2].x,
+      a[1].x*b[0].y + a[1].y*b[1].y + a[1].z*b[2].y,
+      a[1].x*b[0].z + a[1].y*b[1].z + a[1].z*b[2].z,
+      a[2].x*b[0].x + a[2].y*b[1].x + a[2].z*b[2].x,
+      a[2].x*b[0].y + a[2].y*b[1].y + a[2].z*b[2].y,
+      a[2].x*b[0].z + a[2].y*b[1].z + a[2].z*b[2].z
+   );
+}
+
+float2 matrixWarp (float3x3 m, float2 coord)
+{
+   float3 warp = mul (float3 (coord, 1.0), m);
+
+   return warp.xy / warp.z;
+}
+
+//-----------------------------------------------------------------------------------------//
+// Code
 //-----------------------------------------------------------------------------------------//
 
 // This preamble pass means that we handle rotated video correctly.
 
-float4 ps_initInp (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawInp, uv); }
+DeclarePass (Inp)
+{ return ReadPixel (Input, uv1); }
 
-float4 ps_main (float2 uv : TEXCOORD2) : COLOR
+DeclareEntryPoint (PerspectiveFx)
 {
-   float x1 = lerp (0.1 - TLX, 1.9 - TRX, uv.x);
-   float x2 = lerp (0.1 - BLX, 1.9 - BRX, uv.x);
-   float y1 = lerp (TLY - 0.9, BLY + 0.9, uv.y);
-   float y2 = lerp (TRY - 0.9, BRY + 0.9, uv.y);
+   if (viewSsource) return ReadPixel (Inp, uv2);
 
-   float2 xy;
+   float3x3 a = getSquareToQuad (aTLX, 1-aTLY, aTRX, 1-aTRY, aBLX, 1-aBLY, aBRX, 1-aBRY);    // after
+   float3x3 b = getSquareToQuad (bTLX, 1-bTLY, bTRX, 1-bTRY, bBLX, 1-bBLY, bBRX, 1-bBRY);    // before
+   float3x3 c = multiply (getInverse (a), b);
 
-   xy.x = lerp (x1, x2, uv.y) + (0.5 - ORGX);
-   xy.y = lerp (y1, y2, uv.x) + (ORGY - 0.5);
+   float2 xy = matrixWarp (c, uv2);
+   float2 coord = frac (xy);
 
-   float2 zoomit = ((xy - 0.5.xx) / Zoom) + 0.5.xx;
+   // return Wrap or Border mode - Border mode simulated by blanking coord overflow
 
-   float4 color = GetPixel (InputSampler, zoomit);
-
-   if (showGrid) {
-      xy = frac (uv * 10.0);
-
-      if (any (xy <= 0.02) || any (xy >= 0.98))
-         color = WHITE - color;
-   }
-
-   return saturate (color);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Perspective
-{
-   pass Pin < string Script = "RenderColorTarget0 = FixInp;"; > ExecuteShader (ps_initInp)
-   pass Pass1 ExecuteShader (ps_main)
+   return modeWrap ? tex2D (Inp, coord) : any (xy - coord) ? kTransparentBlack : tex2D (Inp, xy);
 }
 

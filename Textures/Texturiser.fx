@@ -1,14 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-10-29
+// @Released 2023-01-12
 // @Author jwrl
-// @Created 2021-10-29
-// @see https://www.lwks.com/media/kunena/attachments/6375/Texturizer_640.png
+// @Created 2023-01-12
 
 /**
  This effect is designed to modulate the input with a texture from an external piece of
  art.  The texture may be coloured but only the luminance value will be used.  New in
- this version is a means of applying an offset to the texture depending on the luminance
- of the texture.
+ this version is a means of adjusting the texture levels and inverting them, and a way
+ to deal with the edges of frame of both video and texture has also been added.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,170 +17,124 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-29 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-12 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Texturiser";
-   string Category    = "Stylize";
-   string SubCategory = "Textures";
-   string Notes       = "Generates bump mapped textures on an image using external texture artwork";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and constants
-//-----------------------------------------------------------------------------------------//
-
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define SetInputMode(TEX, SMPL, MODE) \
-                                      \
- texture TEX;                         \
-                                      \
- sampler SMPL = sampler_state         \
- {                                    \
-   Texture   = <TEX>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define SetTargetMode(TGT, SMP, MODE) \
-                                      \
- texture TGT : RenderColorTarget;     \
-                                      \
- sampler SMP = sampler_state          \
- {                                    \
-   Texture   = <TGT>;                 \
-   AddressU  = MODE;                  \
-   AddressV  = MODE;                  \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-
-#define AMT         0.2            // Amount scale factor
-
-#define DPTH        1.5            // Depth scale factor
-
-#define SIZE        0.75           // Size scale factor
-
-#define REDUCTION   0.9            // Foreground reduction for texture add
-
-#define RED_LUMA    0.3
-#define GREEN_LUMA  0.59
-#define BLUE_LUMA   0.11
+DeclareLightworksEffect ("Texturiser", "Stylize", "Textures", "Generates bump mapped textures on an image using external texture artwork", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-SetInputMode (Art, s_RawArt, Mirror);
-SetInputMode (Inp, s_RawInp, Mirror);
-
-SetTargetMode (RawArt, s_Artwork, Mirror);
-SetTargetMode (RawInp, s_Input, Mirror);
+DeclareInputs (Art, Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Overlay";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (Amount, "Overlay", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Size, "Size", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (Depth, "Depth", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-float Size
-<
-   string Description = "Size";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.0;
+DeclareFloatParam (OffsetX, "X", "Offset", kNoFlags, 0.5, -1.0, 2.0);
+DeclareFloatParam (OffsetY, "Y", "Offset", kNoFlags, 0.5, -1.0, 2.0);
 
-float Depth
-<
-   string Description = "Depth";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareIntParam (VideoMode, "Video mode", kNoGroup, 0, "Single|Tiled|Mirrored");
+DeclareIntParam (TextureMode, "Texture mode", "Art setup", 1, "Single|Tiled|Mirrored");
 
-float OffsetX
-<
-   string Group = "Offset";
-   string Description = "X";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareBoolParam (InvertTexture, "Invert texture", "Art setup", false);
 
-float OffsetY
-<
-   string Group = "Offset";
-   string Description = "Y";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (Gamma, "Gamma", "Art setup", kNoFlags, 1.0, 0.0, 2.0);
+DeclareFloatParam (Contrast, "Contrast", "Art setup", "DisplayAsPercentage", 1.0, 0.0, 2.0);
+DeclareFloatParam (Gain, "Gain", "Art setup", "DisplayAsPercentage", 1.0, 0.0, 2.0);
+DeclareFloatParam (Brightness, "Brightness", "Art setup", "DisplayAsPercentage", 0.0, -1.0, 1.0);
+
+DeclareBoolParam (ShowTexture, "Show texture", "Art setup", false);
+
+DeclareIntParam (_InpOrientation);
+
+DeclareFloat4Param (_InpExtents);
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define AMT       0.2   // Amount scale factor
+#define DPTH      1.5   // Depth scale factor
+#define SIZE      0.75  // Size scale factor
+#define REDUCTION 0.9   // Foreground reduction for texture add
+
+#define BLACK float4(0.0.xxx, 1.0)
+
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float2 Mirrored (float2 uv)
+{ return 1.0.xx - (abs (frac (abs (uv) / 2.0) - 0.5.xx) * 2.0); }
+
+float2 Tiled (float2 uv)
+{ return frac (1.0.xx + frac (uv)); }
+
+float2 fixOffset (float displace)
+{
+   float2 offset = _InpOrientation == 90  ? 0.5.xx - float2 (OffsetY, OffsetX)
+                 : _InpOrientation == 180 ? float2 (OffsetX - 0.5, 0.5 - OffsetY)
+                 : _InpOrientation == 270 ? float2 (OffsetY, OffsetX) - 0.5.xx
+                                          : float2 (0.5 - OffsetX, OffsetY - 0.5);
+
+   return offset * abs (_InpExtents.xy - _InpExtents.zw) * displace / 100.0;
+}
 
 //-----------------------------------------------------------------------------------------//
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return tex2D (s_RawArt, uv); }
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return tex2D (s_RawInp, uv); }
+DeclarePass (Artwork)
+{
+   float2 xy = ((uv1 - 0.5.xx) * (1.0 - (Size * SIZE))) + 0.5.xx;
 
-float4 ps_main (float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+   float4 retval = TextureMode == 1 ? tex2D (Art, Tiled (xy))
+                 : TextureMode == 2 ? tex2D (Art, Mirrored (xy))
+                 : IsOutOfBounds (xy) ? BLACK : tex2D (Art, xy);
+
+   float luma = (retval.r + retval.g + retval.b) / 3.0;
+
+   if (InvertTexture) luma = 1.0 - luma;
+
+   luma = ((((pow (luma, 1.0 / Gamma) * Gain) + Brightness) - 0.5) * Contrast) + 0.5;
+
+   return float4 (luma.xxx, retval.a);
+}
+
+DeclareEntryPoint (Texturiser)
 {
    float amt = Amount * AMT;
 
-   float2 xy1 = uv3 - 0.5.xx;
-   float2 xy2 = float2 (OffsetX, -OffsetY) / 100.0;
+   float4 Tex = tex2D (Artwork, uv3);
 
-   xy1 *= 1.0 - (Size * SIZE);
-   xy1 += 0.5.xx;
+   if (ShowTexture) return Tex;
 
-   float4 Img = tex2D (s_Artwork, xy1);
+   Tex.rgb *= Depth * DPTH;
 
-   float luma = dot (Img.rgb, float3 (RED_LUMA, GREEN_LUMA, BLUE_LUMA)) * (Depth * DPTH);
+   float2 xy = uv2 + fixOffset (Tex.g);
 
-   Img.rgb = luma.xxx;
+   float4 Fgd = VideoMode == 1 ? tex2D (Inp, Tiled (xy))
+              : VideoMode == 2 ? tex2D (Inp, Mirrored (xy)) : tex2D (Inp, xy);
 
-   float4 Fgd = (tex2D (s_Input, uv3 + (luma * xy2)) * REDUCTION);
+   float alpha = Fgd.a;
 
-   Fgd = saturate (Fgd + (Img * amt));
-   Fgd = lerp (Fgd, Img, amt);
+   Fgd = saturate (Fgd + (Tex * amt));
+   Fgd = lerp (Fgd, Tex, amt);
 
-   float alpha = tex2D (s_Input, uv3).a;
+   if ((VideoMode == 0) && IsOutOfBounds (xy)) Fgd = BLACK;
 
-   return Overflow (uv2) ? EMPTY : float4 (Fgd.rgb, alpha);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique Texturiser
-{
-   pass P_1 < string Script = "RenderColorTarget0 = RawArt;"; > ExecuteShader (ps_initFg)
-   pass P_2 < string Script = "RenderColorTarget0 = RawInp;"; > ExecuteShader (ps_initBg)
-   pass P_3 ExecuteShader (ps_main)
+   return IsOutOfBounds (uv2) ? kTransparentBlack : float4 (Fgd.rgb, alpha);
 }
 

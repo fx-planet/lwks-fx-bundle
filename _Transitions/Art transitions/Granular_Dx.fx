@@ -12,7 +12,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Granular_Dx_2022.fx
+// Lightworks user effect Granular_Dx.fx
 //
 // Version history:
 //
@@ -21,7 +21,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Granular dissolve 2022+", "Mix", "Art transitions", "This effect provides a granular noise driven dissolve between shots", "CanSize");
+DeclareLightworksEffect ("Granular dissolve", "Mix", "Art transitions", "This effect provides a granular noise driven dissolve between shots", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

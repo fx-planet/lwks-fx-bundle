@@ -13,7 +13,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect DryBrush_Kx_2022.fx
+// Lightworks user effect DryBrush_Kx.fx
 //
 // Version history:
 //
@@ -22,7 +22,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Dry brush mix (keyed) 2022+", "Mix", "Art transitions", "Mimics the Photoshop angled brush effect to reveal or remove the foreground video", "CanSize");
+DeclareLightworksEffect ("Dry brush mix (keyed)", "Mix", "Art transitions", "Mimics the Photoshop angled brush effect to reveal or remove the foreground video", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

@@ -14,7 +14,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect FlareTran_Dx_2022.fx
+// Lightworks user effect FlareTran_Dx.fx
 //
 // Version history:
 //
@@ -24,7 +24,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Flare Tran 2022+", "Mix", "Art transitions", "Dissolves between images through an over-exposure style of flare", "CanSize");
+DeclareLightworksEffect ("Flare Tran", "Mix", "Art transitions", "Dissolves between images through an over-exposure style of flare", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

@@ -14,7 +14,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Toon_Dx_2022.fx
+// Lightworks user effect Toon_Dx.fx
 //
 // Version history:
 //
@@ -23,7 +23,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Toon transition 2022+", "Mix", "Art transitions", "A cartoon-like transition between the two images", "CanSize");
+DeclareLightworksEffect ("Toon transition", "Mix", "Art transitions", "A cartoon-like transition between the two images", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

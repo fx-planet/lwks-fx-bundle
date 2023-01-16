@@ -15,7 +15,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Toon_Kx_2022.fx
+// Lightworks user effect Toon_Kx.fx
 //
 // Version history:
 //
@@ -24,7 +24,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Toon transition (keyed) 2022+", "Mix", "Art transitions", "A stylised cartoon transition for supers and blends", "CanSize");
+DeclareLightworksEffect ("Toon transition (keyed)", "Mix", "Art transitions", "A stylised cartoon transition for supers and blends", "CanSize");
 
 DeclareLightworksEffect ("Abstraction #1 2022+", "Mix", "Abstract transitions", "An abstract geometric transition between two opaque sources", "CanSize");
 

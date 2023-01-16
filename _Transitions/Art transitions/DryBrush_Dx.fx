@@ -13,7 +13,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect DryBrush_Dx_2022.fx
+// Lightworks user effect DryBrush_Dx.fx
 //
 // Version history:
 //
@@ -22,7 +22,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Dry brush mix 2022+", "Mix", "Art transitions", "Uses an angled brush stroke effect to transition between two shots", "CanSize");
+DeclareLightworksEffect ("Dry brush mix", "Mix", "Art transitions", "Uses an angled brush stroke effect to transition between two shots", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

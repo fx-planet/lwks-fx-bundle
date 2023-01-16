@@ -15,7 +15,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Border_Kx_2022.fx
+// Lightworks user effect Border_Kx.fx
 //
 // Version history:
 //
@@ -24,7 +24,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Border transition (keyed) 2022+", "Mix", "Art transitions", "The foreground materialises from four directions or dematerialises to four directions", "CanSize");
+DeclareLightworksEffect ("Border transition (keyed)", "Mix", "Art transitions", "The foreground materialises from four directions or dematerialises to four directions", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

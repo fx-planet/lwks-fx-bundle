@@ -12,7 +12,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Granulate_Kx_2022.fx
+// Lightworks user effect Granulate_Kx.fx
 //
 // Version history:
 //
@@ -21,7 +21,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Granular dissolve (keyed) 2022+", "Mix", "Art transitions", "Uses a granular noise driven pattern to transition into or out of the foreground", "CanSize");
+DeclareLightworksEffect ("Granular dissolve (keyed)", "Mix", "Art transitions", "Uses a granular noise driven pattern to transition into or out of the foreground", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

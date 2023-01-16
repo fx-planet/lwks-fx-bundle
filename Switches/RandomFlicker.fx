@@ -1,13 +1,12 @@
 // @Maintainer jwrl
-// @Released 2021-10-24
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/RandomSwitch_640.png
+// @Created 2023-01-10
 
 /**
- This effect is a pseudo random switch between two inputs.  It can compile and run under
- Lightworks version 14.0 and earlier, and with slightly different and more stable control
- under version 14.5 and up.
+ This effect is a pseudo random switch between two inputs.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,98 +14,45 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-24 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Random flicker";
-   string Category    = "User";
-   string SubCategory = "Switches";
-   string Notes       = "Does a pseudo random switch between two inputs.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Random flicker", "User", "Switches", "Does a pseudo random switch between two inputs.", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
+DeclareInputs (In1, In2);
 
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-float _Progress;
-float _LengthFrames = 750.0;
-
-#define OFFS_1  1.8571428571
-#define OFFS_2  1.3076923077
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (In1, s_Input_1);
-DefineInput (In2, s_Input_2);
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Opacity
-<
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 1.0;
+DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-float Speed
-<
-   string Group = "Switch settings";
-   string Description = "Speed";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+DeclareFloatParam (Speed, "Speed", "Switch settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (Random, "Randomness", "Switch settings", kNoFlags, 0.5, 0.0, 1.0);
 
-float Random
-<
-   string Group = "Switch settings";
-   string Description = "Randomness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (_Progress);
+DeclareFloatParam (_LengthFrames);
 
-//-------------------------------------------------------------------------------------//
-// Shaders
-//-------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+#define OFFS_1  1.8571428571
+#define OFFS_2  1.3076923077
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclareEntryPoint (RandomFlicker)
 {
    float freq = floor ((_LengthFrames * _Progress) + 0.5) * max (Speed, 0.01) * 19.0;
    float frq1 = max (0.5, Random + 0.5);
@@ -116,14 +62,9 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
 
    float strobe = max (sin (freq) + sin (frq1) + sin (frq2), 0.0);
 
-   float4 Bgnd = GetPixel (s_Input_2, uv2);
+   float4 Bgnd = ReadPixel (In2, uv2);
+   float4 retval = strobe == 0.0 ? lerp (Bgnd, ReadPixel (In1, uv1), Opacity) : Bgnd;
 
-   return strobe == 0.0 ? lerp (Bgnd, GetPixel (s_Input_1, uv1), Opacity) : Bgnd;
+   return lerp (Bgnd, retval, tex2D (Mask, uv1));
 }
-
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
-
-technique RandomFlicker { pass P_1 ExecuteShader (ps_main) }
 

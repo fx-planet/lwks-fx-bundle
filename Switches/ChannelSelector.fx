@@ -1,14 +1,15 @@
 // @Maintainer jwrl
-// @Released 2021-10-24
+// @Released 2023-01-10
 // @Author jwrl
-// @Created 2021-10-24
-// @see https://www.lwks.com/media/kunena/attachments/6375/ChannelSelect_640.png
+// @Created 2023-01-10
 
 /**
  Channel selector can choose the RGBA channel to be used from up to four separate video
  layers.  It can be used as a simple matte generator for use in other blending effects,
- a means of producing black and white from colour, or just a means of producing a colour
- image from colour separations.
+ a means of producing black and white from colour, or even as a means of producing a
+ colour image from colour separations.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,167 +17,85 @@
 //
 // Version history:
 //
-// Rewrite 2021-10-24 jwrl.
-// Rewrite of the original effect to better support LW v2021 and later.
+// Built 2023-01-10 jwrl
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Channel selector";
-   string Category    = "User";
-   string SubCategory = "Switches";
-   string Notes       = "Selectively combine RGBA channels from up to four layers";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Channel selector", "User", "Switches", "Selectively combine RGBA channels from up to four layers", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define LUMA  float3(0.2989, 0.5866, 0.1145)
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (V1, s_Video_1);
-DefineInput (V2, s_Video_2);
-DefineInput (V3, s_Video_3);
-DefineInput (V4, s_Video_4);
+DeclareInputs (V1, V2, V3, V4);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-int SelectVideo_1
-<
-   string Description = "Select component to use from V1";
-   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
-> = 0;
+DeclareIntParam (SelectVideo_1, "Select component to use from V1", kNoGroup, 0, "RGBA|Luminance|Red|Green|Blue|Alpha|None");
+DeclareIntParam (RouteVideo_1, "Select channel to assign to V1", kNoGroup, 0, "RGBA|RGB|Red|Green|Blue|Alpha|None");
 
-int RouteVideo_1
-<
-   string Description = "Select channel to assign V1 to";
-   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
-> = 0;
+DeclareIntParam (SelectVideo_2, "Select component to use from V2", kNoGroup, 6, "RGBA|Luminance|Red|Green|Blue|Alpha|None");
+DeclareIntParam (RouteVideo_2, "Select channel to assign to V2", kNoGroup, 6, "RGBA|RGB|Red|Green|Blue|Alpha|None");
 
-int SelectVideo_2
-<
-   string Description = "Select component to use from V2";
-   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
-> = 6;
+DeclareIntParam (SelectVideo_3, "Select component to use from V3", kNoGroup, 6, "RGBA|Luminance|Red|Green|Blue|Alpha|None");
+DeclareIntParam (RouteVideo_3, "Select channel to assign to V3", kNoGroup, 6, "RGBA|RGB|Red|Green|Blue|Alpha|None");
 
-int RouteVideo_2
-<
-   string Description = "Select channel to assign V2 to";
-   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
-> = 6;
+DeclareIntParam (SelectVideo_4, "Select component to use from V4", kNoGroup, 6, "RGBA|Luminance|Red|Green|Blue|Alpha|None");
+DeclareIntParam (RouteVideo_4, "Select channel to assign to V4", kNoGroup, 6, "RGBA|RGB|Red|Green|Blue|Alpha|None");
 
-int SelectVideo_3
-<
-   string Description = "Select component to use from V3";
-   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
-> = 6;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-int RouteVideo_3
-<
-   string Description = "Select channel to assign V3 to";
-   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
-> = 6;
-
-int SelectVideo_4
-<
-   string Description = "Select component to use from V4";
-   string Enum = "RGBA,Luminance,Red,Green,Blue,Alpha,None"; 
-> = 6;
-
-int RouteVideo_4
-<
-   string Description = "Select channel to assign V4 to";
-   string Enum = "RGBA,RGB,Red,Green,Blue,Alpha,None"; 
-> = 6;
+#define LUMA  float3(0.2989, 0.5866, 0.1145)
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_select (sampler vidSample, float2 xy, int vidSelect)
+float4 fn_select (sampler S, float2 uv, int video)
 {
-   if (vidSelect == 6) return EMPTY;
+   if (video == 6) return kTransparentBlack;
 
-   float4 retval = GetPixel (vidSample, xy);
+   float4 retval = ReadPixel (S, uv);
 
-   if (vidSelect == 0) return retval;
-   if (vidSelect == 2) return retval.rrrr;
-   if (vidSelect == 3) return retval.gggg;
-   if (vidSelect == 4) return retval.bbbb;
+   if (video == 5) return retval.aaaa;
+   if (video == 4) return retval.bbbb;
+   if (video == 3) return retval.gggg;
+   if (video == 2) return retval.rrrr;
 
-   return (vidSelect == 5) ? dot (retval.rgb, LUMA).xxxx : retval.aaaa;
+   return (video == 1) ? dot (retval.rgb, LUMA).xxxx : retval;
 }
 
-float4 fn_route (float4 video_src, float4 video_ref, int vidRoute)
+float4 fn_route (float4 src, float4 ref, int routing)
 {
-   if (vidRoute == 1) return float4 (video_src.rgb, video_ref.a);
-   if (vidRoute == 2) return float4 (video_src.r, video_ref.gba);
-   if (vidRoute == 3) return float4 (video_ref.r, video_src.g, video_ref.ba);
-   if (vidRoute == 4) return float4 (video_ref.rg, video_src.b, video_ref.a);
-   if (vidRoute == 5) return float4 (video_ref.rgb, video_src.a);
+   if (routing == 1) return float4 (src.rgb, ref.a);
+   if (routing == 2) return float4 (src.r, ref.gba);
+   if (routing == 3) return float4 (ref.r, src.g, ref.ba);
+   if (routing == 4) return float4 (ref.rg, src.b, ref.a);
+   if (routing == 5) return float4 (ref.rgb, src.a);
 
-   return (vidRoute == 6) ? video_ref : video_src;
+   return (routing == 6) ? ref : src;
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2,
-                float2 uv3 : TEXCOORD3, float2 uv4 : TEXCOORD4) : COLOR
+DeclareEntryPoint (ChannelSelector)
 {
-   float4 newvid = fn_select (s_Video_1, uv1, SelectVideo_1);
-   float4 retval = fn_route (newvid, EMPTY, RouteVideo_1);
+   float4 newvid = fn_select (V1, uv1, SelectVideo_1);
+   float4 retval = fn_route (newvid, kTransparentBlack, RouteVideo_1);
 
-   newvid = fn_select (s_Video_2, uv2, SelectVideo_2);
+   newvid = fn_select (V2, uv2, SelectVideo_2);
    retval = fn_route (newvid, retval, RouteVideo_2);
-   newvid = fn_select (s_Video_3, uv3, SelectVideo_3);
+   newvid = fn_select (V3, uv3, SelectVideo_3);
    retval = fn_route (newvid, retval, RouteVideo_3);
-   newvid = fn_select (s_Video_4, uv4, SelectVideo_4);
+   newvid = fn_select (V4, uv4, SelectVideo_4);
 
    return fn_route (newvid, retval, RouteVideo_4);
 }
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique ChannelSelector { pass P_1 ExecuteShader (ps_main) }
 

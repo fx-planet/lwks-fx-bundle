@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-12-15
+// @Released 2023-01-16
 // @Author jwrl
-// @Created 2021-12-15
-// @see https://forum.lwks.com/data/video/40/40022-ea57525bdd87344d53a514c3ec0f937c.mp4
+// @Created 2023-01-16
 
 /**
  This transition posterises a blended overlay and develops outlines from its edges as it
@@ -11,214 +10,65 @@
  that allows adjustment of the white levels of the posterised colours.  If you're using
  a flat coloured title over a plain background you may not see much difference between
  this and a normal dissolve.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Toon_Kx.fx
+// Lightworks user effect Toon_Kx_2022.fx
 //
 // Version history:
 //
-// Built 2021-12-15 jwrl.
-// Built to provide blend support to the Toon transition
+// Built 2023-01-16 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Toon transition (keyed)";
-   string Category    = "Mix";
-   string SubCategory = "Art transitions";
-   string Notes       = "A stylised cartoon transition for supers and blends";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
 
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
+DeclareLightworksEffect ("Toon transition (keyed) 2022+", "Mix", "Art transitions", "A stylised cartoon transition for supers and blends", "CanSize");
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY)  (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define ONE_THIRD  0.3333333333
-#define PI         3.1415926536
-
-float _OutputWidth;
-float _OutputHeight;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and samplers
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Fg, s_Foreground);
-DefineInput (Bg, s_Background);
-
-DefineTarget (Mix_1, s_Mix_1);
-DefineTarget (Mix_2, s_Mix_2);
-DefineTarget (Pre, s_PreBlur);
+DeclareLightworksEffect ("Abstraction #1 2022+", "Mix", "Abstract transitions", "An abstract geometric transition between two opaque sources", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float Amount
-<
-   string Description = "Amount";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-   float KF0 = 0.0;
-   float KF1 = 1.0;
-> = 0.5;
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-int Source
-<
-   string Description = "Source";
-   string Enum = "Extracted foreground (delta key),Crawl/Roll/Title/Image key,Video/External image";
-> = 0;
+DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
 
-int Ttype
-<
-   string Description = "Transition position";
-   string Enum = "At start of folded delta key,At start of effect,At end of effect";
-> = 1;
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
-float Threshold
-<
-   string Group = "Edge detection";
-   string Description = "Threshold";
-   string Flags = "DisplayAsPercentage";
-   float MinVal = 0.0;
-   float MaxVal = 2.0;
-> = 0.3;
+DeclareFloatParam (Threshold, "Threshold", "Edge detection", "DisplayAsPercentage", 0.3, 0.0, 2.0);
+DeclareFloatParam (LineWeightX, "Line weight X", "Edge detection", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (LineWeightY, "Line weight Y", "Edge detection", kNoFlags, 0.5, 0.0, 1.0);
 
-float LineWeightX
-<
-   string Group = "Edge detection";
-   string Description = "Line weight X";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareIntParam (PosterizeDepth, "Posterize depth", "Posterize preprocess", 3, "2|3|4|5|6|7|8");
 
-float LineWeightY
-<
-   string Group = "Edge detection";
-   string Description = "Line weight Y";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (Preblur, "Preblur", "Posterize preprocess", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Saturation, "Saturation", "Posterize preprocess", "DisplayAsPercentage", 2.5, 0.0, 4.0);
+DeclareFloatParam (Gamma, "Gamma", "Posterize preprocess", kNoFlags, 0.6, 0.1, 4.0);
 
-int PosterizeDepth
-<
-   string Group = "Posterize preprocess";
-   string Description = "Posterize depth";
-   string Enum = "2,3,4,5,6,7,8";
-> = 3;
+DeclareFloatParam (Brightness, "Brightness", "Posterize postprocess", "DisplayAsPercentage", 0.0, -1.0, 1.0);
+DeclareFloatParam (Contrast, "Contrast", "Posterize postprocess", "DisplayAsPercentage", 1.0, 0.0, 5.0);
+DeclareFloatParam (Gain, "Gain", "Posterize postprocess", "DisplayAsPercentage", 1.0, 0.0, 4.0);
+DeclareFloatParam (HueAngle, "Hue (degrees)", "Posterize postprocess", kNoFlags, 0.0, -180.0, 180.0);
 
-float Preblur
-<
-   string Group = "Posterize preprocess";
-   string Description = "Preblur";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 
-float Saturation
-<
-   string Group = "Posterize preprocess";
-   string Flags = "DisplayAsPercentage";
-   string Description = "Saturation";
-   float MinVal = 0.0;
-   float MaxVal = 4.0;
-> = 2.5;
+DeclareFloatParam (_OutputWidth);
+DeclareFloatParam (_OutputHeight);
 
-float Gamma
-<
-   string Group = "Posterize preprocess";
-   string Description = "Gamma";
-   float MinVal = 0.1;
-   float MaxVal = 4.0;
-> = 0.6;
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-float Brightness
-<
-   string Group = "Posterize postprocess";
-   string Flags = "DisplayAsPercentage";
-   string Description = "Brightness";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.0;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
-float Contrast
-<
-   string Group = "Posterize postprocess";
-   string Flags = "DisplayAsPercentage";
-   string Description = "Contrast";
-   float MinVal = 0.0;
-   float MaxVal = 5.0;
-> = 1.0;
-
-float Gain
-<
-   string Group = "Posterize postprocess";
-   string Flags = "DisplayAsPercentage";
-   string Description = "Gain";
-   float MinVal = 0.0;
-   float MaxVal = 4.0;
-> = 1.0;
-
-float HueAngle
-<
-   string Group = "Posterize postprocess";
-   string Description = "Hue (degrees)";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 0.0;
-
-float KeyGain
-<
-   string Description = "Key trim";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
+#define ONE_THIRD  0.3333333333
+#define PI         3.1415926536
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -279,17 +129,17 @@ float3 fn_RGBtoHSL (float3 RGB)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Shaders
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 ps_mix (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
+DeclarePass (Mixed)
 {
    // Unlike most of my other key transitions, this ensures that we produce a mix in or
    // out of the title with the alpha channel of the key used as the mix alpha.  This
    // makes it slightly more complex, but it's the simplest way to handle it.
 
-   float4 Fgnd = GetPixel (s_Foreground, uv1);
-   float4 Bgnd = GetPixel (s_Background, uv2);
+   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Bgnd = ReadPixel (Bg, uv2);
    float4 temp;
 
    float alpha;
@@ -313,61 +163,61 @@ float4 ps_mix (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2) : COLOR
    return float4 (lerp (Bgnd.rgb, Fgnd.rgb, amt), alpha);
 }
 
-float4 ps_blurX (float2 uv : TEXCOORD3) : COLOR
+DeclarePass (Blur_X)
 {
-   float4 retval = tex2D (s_Mix_1, uv);
+   float4 retval = tex2D (Mixed, uv3);
 
    // What follows is the horizontal component of a standard box blur.  The maths used
    // takes advantage of the fact that the shader language can do float2 operations as
-   // efficiently as floats.  This way we save on having to manufacture a new float2
-   // every time that we need a new address for the next tap.
+   // efficiently as floats.  This way we save on having to manufacture a completely
+   // new float2 every time that we need a new address for the next tap.
 
    float2 xy0 = float2 (Preblur / _OutputWidth, 0.0);
-   float2 xy1 = uv + xy0;
-   float2 xy2 = uv - xy0;
+   float2 xy1 = uv3 + xy0;
+   float2 xy2 = uv3 - xy0;
 
-   retval += tex2D (s_Mix_1, xy1); xy1 += xy0;
-   retval += tex2D (s_Mix_1, xy1); xy1 += xy0;
-   retval += tex2D (s_Mix_1, xy1); xy1 += xy0;
-   retval += tex2D (s_Mix_1, xy1); xy1 += xy0;
-   retval += tex2D (s_Mix_1, xy1); xy1 += xy0;
-   retval += tex2D (s_Mix_1, xy1);
-   retval += tex2D (s_Mix_1, xy2); xy2 -= xy0;
-   retval += tex2D (s_Mix_1, xy2); xy2 -= xy0;
-   retval += tex2D (s_Mix_1, xy2); xy2 -= xy0;
-   retval += tex2D (s_Mix_1, xy2); xy2 -= xy0;
-   retval += tex2D (s_Mix_1, xy2); xy2 -= xy0;
-   retval += tex2D (s_Mix_1, xy2);
+   retval += tex2D (Mixed, xy1); xy1 += xy0;
+   retval += tex2D (Mixed, xy1); xy1 += xy0;
+   retval += tex2D (Mixed, xy1); xy1 += xy0;
+   retval += tex2D (Mixed, xy1); xy1 += xy0;
+   retval += tex2D (Mixed, xy1); xy1 += xy0;
+   retval += tex2D (Mixed, xy1);
+   retval += tex2D (Mixed, xy2); xy2 -= xy0;
+   retval += tex2D (Mixed, xy2); xy2 -= xy0;
+   retval += tex2D (Mixed, xy2); xy2 -= xy0;
+   retval += tex2D (Mixed, xy2); xy2 -= xy0;
+   retval += tex2D (Mixed, xy2); xy2 -= xy0;
+   retval += tex2D (Mixed, xy2);
 
    // Divide retval by 13 because there are 12 sampling taps plus the original image
 
    return retval / 13.0;
 }
 
-float4 ps_blurY (float2 uv : TEXCOORD3) : COLOR
+DeclarePass (Blur_Y)
 {
-   float4 RGB = tex2D (s_PreBlur, uv);
+   float4 RGB = tex2D (Blur_X, uv3);
 
    float alpha = RGB.a;
 
    // This is the vertical component of the box blur.
 
    float2 xy0 = float2 (0.0, Preblur / _OutputHeight);
-   float2 xy1 = uv + xy0;
-   float2 xy2 = uv - xy0;
+   float2 xy1 = uv3 + xy0;
+   float2 xy2 = uv3 - xy0;
 
-   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
-   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
-   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
-   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
-   RGB += tex2D (s_PreBlur, xy1); xy1 += xy0;
-   RGB += tex2D (s_PreBlur, xy1);
-   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
-   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
-   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
-   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
-   RGB += tex2D (s_PreBlur, xy2); xy2 -= xy0;
-   RGB += tex2D (s_PreBlur, xy2);
+   RGB += tex2D (Blur_X, xy1); xy1 += xy0;
+   RGB += tex2D (Blur_X, xy1); xy1 += xy0;
+   RGB += tex2D (Blur_X, xy1); xy1 += xy0;
+   RGB += tex2D (Blur_X, xy1); xy1 += xy0;
+   RGB += tex2D (Blur_X, xy1); xy1 += xy0;
+   RGB += tex2D (Blur_X, xy1);
+   RGB += tex2D (Blur_X, xy2); xy2 -= xy0;
+   RGB += tex2D (Blur_X, xy2); xy2 -= xy0;
+   RGB += tex2D (Blur_X, xy2); xy2 -= xy0;
+   RGB += tex2D (Blur_X, xy2); xy2 -= xy0;
+   RGB += tex2D (Blur_X, xy2); xy2 -= xy0;
+   RGB += tex2D (Blur_X, xy2);
 
    RGB /= 13.0;
 
@@ -402,7 +252,7 @@ float4 ps_blurY (float2 uv : TEXCOORD3) : COLOR
    return float4 (fn_HSLtoRGB (HSL), 1.0);
 }
 
-float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEXCOORD3) : COLOR
+DeclareEntryPoint (Toon_Kx)
 {
    float Amt = max ((abs (Amount - 0.5) * 2.0) - 0.5, 0.0) * 2.0;
    float Thr = Threshold * Threshold;
@@ -418,17 +268,17 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
 
    // Convolution
 
-   float4 vidX = GetPixel (s_Mix_1, xy1 - LwX);
+   float4 vidX = ReadPixel (Mixed, xy1 - LwX);
    float4 vidY = vidX;
-   float4 conv = GetPixel (s_Mix_1, xy1 + LwX);
+   float4 conv = ReadPixel (Mixed, xy1 + LwX);
 
-   vidX += conv - (GetPixel (s_Mix_1, xy1));
-   vidY -= (conv - GetPixel (s_Mix_1, uv3 - LwX) + GetPixel (s_Mix_1, uv3 + LwX));
+   vidX += conv - (ReadPixel (Mixed, xy1));
+   vidY -= (conv - ReadPixel (Mixed, uv3 - LwX) + ReadPixel (Mixed, uv3 + LwX));
 
-   conv  = GetPixel (s_Mix_1, xy2 - LwX);
-   vidX -= (conv - GetPixel (s_Mix_1, xy2));
+   conv  = ReadPixel (Mixed, xy2 - LwX);
+   vidX -= (conv - ReadPixel (Mixed, xy2));
    vidY += conv;
-   conv  = GetPixel (s_Mix_1, xy2 + LwX);
+   conv  = ReadPixel (Mixed, xy2 + LwX);
    vidX -= conv;
    vidY -= conv;
    conv  = (vidX * vidX) + (vidY * vidY);
@@ -438,9 +288,9 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
    float outlines = ((conv.x <= Thr) + (conv.y <= Thr) + (conv.z <= Thr)) / 3.0;
    float sinAmt = sin (Amount * PI);
 
-   float4 Bgnd = GetPixel (s_Mix_1, uv3);
+   float4 Bgnd = ReadPixel (Mixed, uv3);
    float4 retval = lerp (float4 (outlines.xxx, 1.0), Bgnd, Amt);
-   float4 Fgnd = GetPixel (s_Mix_2, uv3);
+   float4 Fgnd = ReadPixel (Blur_Y, uv3);
 
    float3 pp = fn_RGBtoHSL (Fgnd.rgb);
 
@@ -455,20 +305,18 @@ float4 ps_main (float2 uv1 : TEXCOORD1, float2 uv2 : TEXCOORD2, float2 uv3 : TEX
    Bgnd = lerp (Bgnd, saturate (Fgnd), Amt);
 
    retval.rgb = min (retval.rgb, Bgnd.rgb);
-   Bgnd = Ttype != 1 ? GetPixel (s_Foreground, uv1) : GetPixel (s_Background, uv2);
 
-   return lerp (Bgnd, retval, alpha);
-}
+   float2 uv;
 
-//-----------------------------------------------------------------------------------------//
-// Technique
-//-----------------------------------------------------------------------------------------//
+   if (Ttype == 0) {
+      Bgnd = ReadPixel (Fg, uv1);
+      uv = uv1;
+   }
+   else {
+      Bgnd = Ttype == 2 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
+      uv = uv2;
+   }
 
-technique Toon_Kx
-{
-   pass P_1 < string Script = "RenderColorTarget0 = Mix_1;"; > ExecuteShader (ps_mix)
-   pass P_2 < string Script = "RenderColorTarget0 = Pre;"; > ExecuteShader (ps_blurX)
-   pass P_3 < string Script = "RenderColorTarget0 = Mix_2;"; > ExecuteShader (ps_blurY)
-   pass P_4 ExecuteShader (ps_main)
+   return CropEdges && IsOutOfBounds (uv) ? kTransparentBlack : lerp (Bgnd, retval, alpha);
 }
 

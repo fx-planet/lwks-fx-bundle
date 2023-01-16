@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2021-08-31
+// @Released 2023-01-06
 // @Author jwrl
-// @Created 2021-08-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/BevelCrop_640.png
+// @Released 2023-01-06
 
 /**
  This is a crop tool that provides a bevelled border.  The lighting of the bevel can be
@@ -15,244 +14,71 @@
  scaling or rotation provided, nor is there intended to be.  It's complex enough for the
  user as it is!!!
 
- NOTE:  Any alpha information in the foreground is discarded by this effect.  It would
- be hard to maintain in a way that would make sense for all possible needs in any case.
- This means that wherever the foreground and bevelled border appears will be completely
- opaque.  The background alpha is preserved, even in areas covered by the drop shadow.
+ Any alpha information in the foreground is discarded by this effect.  This means that
+ wherever the foreground and bevelled border appears will be opaque black.  The
+ background alpha is preserved.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BevelCrop.fx
 //
-// This is all original work, so it probably could be done more efficiently than I have.
-//
 // Version history:
 //
-// Rewrite 2021-08-31 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-06 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Bevel edged crop";
-   string Category    = "DVE";
-   string SubCategory = "Border and crop";
-   string Notes       = "This provides a simple crop with a bevelled border and a hard-edged drop shadow";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Bevel edged crop", "DVE", "Border and crop", "This provides a simple crop with a bevelled border and a hard-edged drop shadow", CanSize);
 
 //-----------------------------------------------------------------------------------------//
-// Definitions and declarations
+// Inputs
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
-#ifdef WINDOWS
-#define PROFILE ps_3_0
-#endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
-
-#define SCALE  0.1
-#define SHADOW 0.025
-
-float _OutputAspectRatio;
-
-float _BgXScale = 1.0;
-float _BgYScale = 1.0;
-float _FgXScale = 1.0;
-float _FgYScale = 1.0;
-
-//-----------------------------------------------------------------------------------------//
-// Inputs and targets
-//-----------------------------------------------------------------------------------------//
-
-DefineInput (Fg, s_RawFg);
-DefineInput (Bg, s_RawBg);
-
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (RawBg, s_Background);
-DefineTarget (Bvl, s_Bevel);
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-float CropLeft
-<
-   string Group = "Crop";
-   string Description = "Top left";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
+DeclareFloatParam (CropLeft, "Top left", "Crop", "SpecifiesPointX", 0.1, 0.0, 1.0);
+DeclareFloatParam (CropTop, "Top left", "Crop", "SpecifiesPointY", 0.9, 0.0, 1.0);
+DeclareFloatParam (CropRight, "Bottom right", "Crop", "SpecifiesPointX", 0.9, 0.0, 1.0);
+DeclareFloatParam (CropBottom, "Bottom right", "Crop", "SpecifiesPointY", 0.1, 0.0, 1.0);
 
-float CropTop
-<
-   string Group = "Crop";
-   string Description = "Top left";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
+DeclareFloatParam (PosX, "Position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (PosY, "Position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-float CropRight
-<
-   string Group = "Crop";
-   string Description = "Bottom right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
+DeclareFloatParam (Border, "Width", "Border", kNoFlags, 0.125, 0.0, 1.0);
+DeclareColourParam (Colour, "Colour", "Border", kNoFlags, 0.375, 0.625, 0.75, 1.0);
 
-float CropBottom
-<
-   string Group = "Crop";
-   string Description = "Bottom right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
+DeclareFloatParam (Bevel, "Percent width", "Bevel", kNoFlags, 0.6, 0.0, 1.0);
+DeclareFloatParam (Intensity, "Light level", "Bevel", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Angle, "Light angle", "Bevel", kNoFlags, 80.0, -180.0, 180.0);
+DeclareFloatParam (Fill, "Fill light", "Bevel", kNoFlags, 0.4, 0.0, 1.0);
+DeclareColourParam (Light, "Colour", "Bevel", kNoFlags, 0.375, 0.625, 0.75, 1.0);
 
-float PosX
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareFloatParam (Strength, "Strength", "Drop shadow", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (ShadowX, "Offset", "Drop shadow", "SpecifiesPointX", -0.25, -1.0, 1.0);
+DeclareFloatParam (ShadowY, "Offset", "Drop shadow", "SpecifiesPointY", -0.25, -1.0, 1.0);
+DeclareColourParam (Shade, "Colour", "Drop shadow", kNoFlags, 0.125, 0.2, 0.25, 1.0);
 
-float PosY
-<
-   string Description = "Position";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
+DeclareBoolParam (CropToBgd, "Crop foreground to background", kNoGroup, false);
 
-float Border
-<
-   string Group = "Border";
-   string Description = "Width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.125;
+DeclareFloatParam (_OutputAspectRatio);
 
-float4 Colour
-<
-   string Group = "Border";
-   string Description = "Colour";
-   bool SupportsAlpha = false;
-> = { 0.375, 0.625, 0.75, 0.0 };
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
 
-float Bevel
-<
-   string Group = "Bevel";
-   string Description = "Percent width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.6;
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
-float Intensity
-<
-   string Group = "Bevel";
-   string Description = "Light level";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float Angle
-<
-   string Group = "Bevel";
-   string Description = "Light angle";
-   float MinVal = -180.0;
-   float MaxVal = 180.0;
-> = 80.0;
-
-float Fill
-<
-   string Group = "Bevel";
-   string Description = "Fill light";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.4;
-
-float4 Light
-<
-   string Group = "Bevel";
-   string Description = "Colour";
-   bool SupportsAlpha = false;
-> = { 0.375, 0.625, 0.75, 0.0 };
-
-float Strength
-<
-   string Group = "Drop shadow";
-   string Description = "Strength";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float ShadowX
-<
-   string Group = "Drop shadow";
-   string Description = "Offset";
-   string Flags = "SpecifiesPointX";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = -0.25;
-
-float ShadowY
-<
-   string Group = "Drop shadow";
-   string Description = "Offset";
-   string Flags = "SpecifiesPointY";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = -0.25;
-
-float4 Shade
-<
-   string Group = "Drop shadow";
-   string Description = "Colour";
-   bool SupportsAlpha = false;
-> = { 0.125, 0.2, 0.25, 0.0 };
+#define SCALE  0.1
+#define SHADOW 0.025
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -303,17 +129,14 @@ float3 fn_hsv2rgb (float3 hsv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-// These two passes map the foreground and background clips to TEXCOORD3, so that
-// variations in clip geometry and rotation are handled without too much effort.
-
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
-
-float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
+DeclarePass (Bvl)
 {
-   // Get the foreground but discard the alpha channel
+   // Get the foreground but discard the alpha channel after first using it to mask
+   // transparent sections of the image to black.
 
-   float3 retval = GetPixel (s_Foreground, uv).rgb;
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   float3 retval = lerp (kTransparentBlack, Fgnd, Fgnd.a).rgb;
 
    // Now set up the crop boundaries, the size of the border and the percentage of the
    // border that we want to be bevelled.
@@ -327,10 +150,10 @@ float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
    // we swing uv around the mid point of the crop and put that value in xy1.  This
    // will be used later to determine which quadrant we're working in.
 
-   float2 xy1 = uv - float2 (CropRight + CropLeft, 2.0 - CropTop - CropBottom) / 2.0;
+   float2 xy1 = uv0 - float2 (CropRight + CropLeft, 2.0 - CropTop - CropBottom) / 2.0;
 
    // The absolute value of xy1 is doubled and stored in xy2.  This can be used to
-   // simply produce the crop later.
+   // produce the crop simply later.
 
    float2 xy2 = abs (xy1) * 2.0;
 
@@ -420,28 +243,32 @@ float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
 
    // We now turn the alpha channel on and blank anything outside the border boundary.
 
-   return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? EMPTY : float4 (retval, 1.0);
+   return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? kTransparentBlack : float4 (retval, 1.0);
 }
 
-float4 ps_main (float2 uv : TEXCOORD3) : COLOR
+DeclareEntryPoint (BevelCrop)
 {
-   // First we calculate the position offset and put it in xy1.  A further offset is
+   // First we check to see if we're outside the background and masked and quit if so
+
+   if (CropToBgd && IsOutOfBounds (uv2)) return kTransparentBlack;
+
+   // Now we calculate the position offset and put it in xy1.  A further offset is
    // calculated for the drop shadow and placed in xy2.  While it would be possible
    // to use the bevel angle parameter to do this, it's much simpler this way.
 
-   float2 xy1 = uv + float2 (0.5 - PosX, PosY - 0.5);
+   float2 xy1 = uv3 + float2 (0.5 - PosX, PosY - 0.5);
    float2 xy2 = xy1 - float2 (ShadowX, -ShadowY * _OutputAspectRatio) * SHADOW;
 
-   // The alpha channel in s_Bevel is obtained using xy2 and scaled by the drop shadow
+   // The alpha channel in Bvl is obtained using xy2 and scaled by the drop shadow
    // strength parameter.  This is used later to create our drop shadow.
 
-   float alpha = GetPixel (s_Bevel, xy2).a * Strength;
+   float alpha = ReadPixel (Bvl, xy2).a * Strength;
 
-   // The foreground is recovered from s_Bevel using the position corrected xy1 and the
+   // The foreground is recovered from Bvl using the position corrected xy1 and the
    // background is recovered using the uv coordinates directly.
 
-   float4 Fgnd = GetPixel (s_Bevel, xy1);
-   float4 Bgnd = GetPixel (s_Background, uv);
+   float4 Fgnd = tex2D (Bvl, xy1);
+   float4 Bgnd = ReadPixel (Bg, uv2);
 
    // The background now has the drop shadow applied.  Note that opacity is preserved.
 
@@ -450,17 +277,5 @@ float4 ps_main (float2 uv : TEXCOORD3) : COLOR
    // Finally the bevelled cropped image is overlaid and the whole thing is returned.
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique BevelCrop
-{
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass P_1 < string Script = "RenderColorTarget0 = Bvl;"; > ExecuteShader (ps_crop)
-   pass P_2 ExecuteShader (ps_main)
 }
 

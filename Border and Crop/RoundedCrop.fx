@@ -1,12 +1,13 @@
 // @Maintainer jwrl
-// @Released 2021-08-31
+// @Released 2023-01-06
 // @Author jwrl
-// @Created 2021-08-31
-// @see https://www.lwks.com/media/kunena/attachments/6375/RoundedCrop_640.png
+// @Released 2023-01-06
 
 /**
  This is a bordered crop that produces rounding at the corners of the crop shape.  The
  border can be feathered, and is a mix of two colours.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,67 +15,48 @@
 //
 // Version history:
 //
-// Rewrite 2021-08-31 jwrl.
-// Rewrite of the original effect to support LW 2021 resolution independence.
-// Build date does not reflect upload date because of forum upload problems.
+// Built 2023-01-06 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-int _LwksEffectInfo
-<
-   string EffectGroup = "GenericPixelShader";
-   string Description = "Rounded crop";
-   string Category    = "DVE";
-   string SubCategory = "Border and crop";
-   string Notes       = "A bordered, drop shadowed crop with rounded corners.";
-   bool CanSize       = true;
-> = 0;
+#include "_utils.fx"
+
+DeclareLightworksEffect ("Rounded crop", "DVE", "Border and crop", "A bordered, drop shadowed crop with rounded corners", kNoFlags);
+
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
+
+//-----------------------------------------------------------------------------------------//
+// Parameters
+//-----------------------------------------------------------------------------------------//
+
+DeclareFloatParam (CropR, "Top right", "Crop", "SpecifiesPointX", 0.9, 0.0, 1.0);
+DeclareFloatParam (CropT, "Top right", "Crop", "SpecifiesPointY", 0.9, 0.0, 1.0);
+DeclareFloatParam (CropL, "Bottom left", "Crop", "SpecifiesPointX", 0.1, 0.0, 1.0);
+DeclareFloatParam (CropB, "Bottom left", "Crop", "SpecifiesPointY", 0.1, 0.0, 1.0);
+
+DeclareFloatParam (BorderWidth, "Width", "Border", kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (CropRadius, "Rounding", "Border", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (BorderFeather, "Edge softness", "Border", kNoFlags, 0.05, 0.0, 1.0);
+DeclareColourParam (BorderColour_1, "Colour 1", "Border", kNoFlags, 0.345, 0.655, 0.926);
+DeclareColourParam (BorderColour_2, "Colour 2", "Border", kNoFlags, 0.655, 0.345, 0.926);
+
+DeclareFloatParam (Shadow, "Opacity", "Shadow", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (ShadowSoft, "Softness", "Shadow", kNoFlags, 0.2, 0.0, 1.0);
+DeclareFloatParam (ShadowX, "X offset", "Shadow", kNoFlags, 0.25, -1.0, 1.0);
+DeclareFloatParam (ShadowY, "Y offset", "Shadow", kNoFlags, -0.25, -1.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-#ifndef _LENGTH
-Wrong_Lightworks_version
-#endif
-
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define DefineInput(TEXTURE, SAMPLER) \
-                                      \
- texture TEXTURE;                     \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TEXTURE>;             \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define DefineTarget(TARGET, SAMPLER) \
-                                      \
- texture TARGET : RenderColorTarget;  \
-                                      \
- sampler SAMPLER = sampler_state      \
- {                                    \
-   Texture   = <TARGET>;              \
-   AddressU  = ClampToEdge;           \
-   AddressV  = ClampToEdge;           \
-   MinFilter = Linear;                \
-   MagFilter = Linear;                \
-   MipFilter = Linear;                \
- }
-
-#define ExecuteShader(SHADER) { PixelShader = compile PROFILE SHADER (); }
-
-#define EMPTY 0.0.xxxx
-
-#define Overflow(XY) (any (XY < 0.0) || any (XY > 1.0))
-#define GetPixel(SHADER,XY) (Overflow(XY) ? EMPTY : tex2D(SHADER, XY))
 
 #define HALF_PI       1.5707963268
 
@@ -87,140 +69,11 @@ Wrong_Lightworks_version
 
 #define MINIMUM       0.0001.xx
 
-float _OutputAspectRatio;
-
 //-----------------------------------------------------------------------------------------//
-// Inputs and targets
+// Code
 //-----------------------------------------------------------------------------------------//
 
-DefineInput (Fg, s_RawFg);
-DefineInput (Bg, s_RawBg);
-
-DefineTarget (RawFg, s_Foreground);
-DefineTarget (RawBg, s_Background);
-DefineTarget (Mk, s_MaskShape);
-
-//-----------------------------------------------------------------------------------------//
-// Parameters
-//-----------------------------------------------------------------------------------------//
-
-float CropR
-<
-   string Group = "Crop";
-   string Description = "Top right";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
-
-float CropT
-<
-   string Group = "Crop";
-   string Description = "Top right";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.9;
-
-float CropL
-<
-   string Group = "Crop";
-   string Description = "Bottom left";
-   string Flags = "SpecifiesPointX";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float CropB
-<
-   string Group = "Crop";
-   string Description = "Bottom left";
-   string Flags = "SpecifiesPointY";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.1;
-
-float BorderWidth
-<
-   string Group = "Border";
-   string Description = "Width";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float CropRadius
-<
-   string Group = "Border";
-   string Description = "Rounding";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.5;
-
-float BorderFeather
-<
-   string Group = "Border";
-   string Description = "Edge softness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.05;
-
-float4 BorderColour_1
-<
-   string Group = "Border";
-   string Description = "Colour 1";
-   bool SupportsAlpha = false;
-> = { 0.345, 0.655, 0.926, 1.0 };
-
-float4 BorderColour_2
-<
-   string Group = "Border";
-   string Description = "Colour 2";
-   bool SupportsAlpha = false;
-> = { 0.655, 0.345, 0.926, 1.0 };
-
-float Shadow
-<
-   string Group = "Shadow";
-   string Description = "Opacity";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.50;
-
-float ShadowSoft
-<
-   string Group = "Shadow";
-   string Description = "Softness";
-   float MinVal = 0.0;
-   float MaxVal = 1.0;
-> = 0.2;
-
-float ShadowX
-<
-   string Group = "Shadow";
-   string Description = "X offset";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = 0.25;
-
-float ShadowY
-<
-   string Group = "Shadow";
-   string Description = "Y offset";
-   float MinVal = -1.0;
-   float MaxVal = 1.0;
-> = -0.25;
-
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-// These two passes map the foreground and background clips to TEXCOORD3, so that
-// variations in clip geometry and rotation are handled without too much effort.
-
-float4 ps_initFg (float2 uv : TEXCOORD1) : COLOR { return GetPixel (s_RawFg, uv); }
-float4 ps_initBg (float2 uv : TEXCOORD2) : COLOR { return GetPixel (s_RawBg, uv); }
-
-float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
+DeclarePass (MaskShape)
 {
    float adjust = max (0.0, max (CropL - CropR, CropB - CropT));
 
@@ -237,7 +90,7 @@ float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
    float radius_2 = min (radius_1 + feather.x, min (outer_2.x, outer_2.y / _OutputAspectRatio));
 
    float2 inner = max (0.0.xx, outer_2 - (radius_2 * aspect));
-   float2 xy = abs (uv - center);
+   float2 xy = abs (uv0 - center);
 
    float scope = distance ((xy - inner) / aspect, 0.0.xx);
 
@@ -280,31 +133,19 @@ float4 ps_crop (float2 uv : TEXCOORD3) : COLOR
    return Mask;
 }
 
-float4 ps_main (float2 uv : TEXCOORD3) : COLOR
+DeclareEntryPoint (RoundedCrop)
 {
-   float2 xy = uv - (float2 (ShadowX / _OutputAspectRatio, -ShadowY) * SHADOW_DEPTH);
+   float2 xy = uv3 - (float2 (ShadowX / _OutputAspectRatio, -ShadowY) * SHADOW_DEPTH);
 
-   float4 Fgnd = GetPixel (s_Foreground, uv);
-   float4 Bgnd = GetPixel (s_Background, uv);
-   float4 Mask = GetPixel (s_MaskShape, uv);
+   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Mask = tex2D (MaskShape, uv3);
 
-   float3 Shad = Overflow (xy) ? Bgnd.rgb : Bgnd.rgb * (1.0 - GetPixel (s_MaskShape, xy).w);
+   float3 Shad = IsOutOfBounds (xy) ? Bgnd.rgb : Bgnd.rgb * (1.0 - tex2D (MaskShape, xy).w);
 
    float4 Colour = lerp (BorderColour_2, BorderColour_1, Mask.y);
    float4 retval = lerp (float4 (Shad, Bgnd.a), Colour, Mask.z);
 
    return lerp (retval, Fgnd, Mask.x);
-}
-
-//-----------------------------------------------------------------------------------------//
-// Techniques
-//-----------------------------------------------------------------------------------------//
-
-technique RoundedCrop
-{
-   pass Pfg < string Script = "RenderColorTarget0 = RawFg;"; > ExecuteShader (ps_initFg)
-   pass Pbg < string Script = "RenderColorTarget0 = RawBg;"; > ExecuteShader (ps_initBg)
-   pass P_1 < string Script = "RenderColorTarget0 = Mk;"; > ExecuteShader (ps_crop)
-   pass P_2 ExecuteShader (ps_main)
 }
 

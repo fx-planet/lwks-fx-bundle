@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-17
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-17
 
 /**
  Originally created as YAblur.fx, this was an accident that looked interesting, so it was
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-17 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -80,7 +80,7 @@ DeclarePass (prelim)
 {
    float4 Fgd = tex2D (Input, uv1);
 
-   if IsOutOfBounds (uv1) return Fgd;
+   if (IsOutOfBounds (uv1)) return Fgd;
 
    float gamma = 3.0 / ((1.5 + Fog) * 2.0);
 

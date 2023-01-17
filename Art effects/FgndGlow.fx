@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-17
 // @Author jwrl
-// @Created 2022-12-31
+// @Created 2023-01-17
 
 /**
  This effect uses a glow based on the Lightworks Glow effect, with the blur section
@@ -27,7 +27,7 @@
 //
 // Version history:
 //
-// Built 2022-12-31 jwrl.
+// Built 2023-01-17 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -83,6 +83,22 @@ DeclareFloatParam (_OutputAspectRatio);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
+float4 fn_comp (sampler F, float2 xy1, sampler B, float2 xy2)
+{
+   float4 Fgnd = ReadPixel (F, xy1);
+    
+   if (Source == 0) return Fgnd;
+
+   float4 Bgnd = ReadPixel (B, xy2);
+
+   if (Source == 1) {
+      Fgnd.a = pow (abs (Fgnd.a), 0.375 + (KeyGain / 2.0));
+      Fgnd.rgb /= Fgnd.a;
+   }
+
+   return lerp (Bgnd, Fgnd, Fgnd.a);
+}
+
 float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
    if (IsOutOfBounds (xy1)) return kTransparentBlack;
@@ -94,7 +110,7 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
       Fgnd.rgb *= Fgnd.a;
    }
    else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+      Fgnd.a = pow (abs (Fgnd.a), 0.375 + (KeyGain / 2.0));
       Fgnd.rgb /= Fgnd.a;
    }
 
@@ -140,7 +156,7 @@ float4 fn_main (sampler G, sampler K, float2 uv, sampler F, float2 xy1, sampler 
    float4 Comp = Source == 0 ? tex2D (F, xy1)
                              : float4 (lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a), Bgnd.a);
 
-   retval = pow (retval, 1.0 / (1.0 + Strength));
+   retval = pow (abs (retval), 1.0 / (1.0 + Strength));
 
    if (Blend == 0) { retval.rgb = max (retval.rgb, Comp.rgb); }
    else if (Blend == 1) { retval.rgb = retval.rgb + Comp.rgb - (retval.rgb * Comp.rgb); }
@@ -186,8 +202,14 @@ DeclarePass (GlowL)
 { return fn_glow (GlowLy, uv3, RADIUS_2); }
 
 DeclareEntryPoint (FgndGlowLuminance)
-{ float4 retval = fn_main (GlowL, KeyL, uv3, Fg, uv1, Bg, uv2); }
+{
+   float4 retval = fn_main (GlowL, KeyL, uv3, Fg, uv1, Bg, uv2);
+   float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
+   return lerp (video, retval, tex2D (Mask, uv1));
+}
+
+//-----------------------------------------------------------------------------------------//
 
 DeclarePass (KeyR)
 { return fn_keygen (Fg, uv1, Bg, uv2); }
@@ -206,8 +228,14 @@ DeclarePass (GlowR)
 { return fn_glow (GlowRy, uv3, RADIUS_2); }
 
 DeclareEntryPoint (FgndGlowReds)
-{ return fn_main (GlowR, KeyR, uv3, Fg, uv1, Bg, uv2); }
+{
+   float4 retval = fn_main (GlowR, KeyR, uv3, Fg, uv1, Bg, uv2);
+   float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
+   return lerp (video, retval, tex2D (Mask, uv1));
+}
+
+//-----------------------------------------------------------------------------------------//
 
 DeclarePass (KeyG)
 { return fn_keygen (Fg, uv1, Bg, uv2); }
@@ -226,8 +254,14 @@ DeclarePass (GlowG)
 { return fn_glow (GlowGy, uv3, RADIUS_2); }
 
 DeclareEntryPoint (FgndGlowGreens)
-{ return fn_main (GlowG, KeyG, uv3, Fg, uv1, Bg, uv2); }
+{
+   float4 retval = fn_main (GlowG, KeyG, uv3, Fg, uv1, Bg, uv2);
+   float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
+   return lerp (video, retval, tex2D (Mask, uv1));
+}
+
+//-----------------------------------------------------------------------------------------//
 
 DeclarePass (KeyB)
 { return fn_keygen (Fg, uv1, Bg, uv2); }
@@ -246,13 +280,19 @@ DeclarePass (GlowB)
 { return fn_glow (GlowBy, uv3, RADIUS_2); }
 
 DeclareEntryPoint (FgndGlowBlues)
-{ return fn_main (GlowB, KeyB, uv3, Fg, uv1, Bg, uv2); }
+{
+   float4 retval = fn_main (GlowB, KeyB, uv3, Fg, uv1, Bg, uv2);
+   float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
+   return lerp (video, retval, tex2D (Mask, uv1));
+}
+
+//-----------------------------------------------------------------------------------------//
 
 DeclareEntryPoint (FgndGlowKeySetup)
 {
    float4 retval = fn_keygen (Fg, uv1, Bg, uv2);
 
-   return float4 (retval.rgb, 1.0);
+   return lerp (kTransparentBlack, retval, tex2D (Mask, uv1));
 }
 

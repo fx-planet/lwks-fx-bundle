@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-17
 // @Author jwrl
-// @Created 2023-01-05
+// @Created 2023-01-17
 
 /**
  Blend tools is an effect that is designed to help if the alpha channel may not be quite
@@ -29,7 +29,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-17 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -96,7 +96,7 @@ DeclarePass (Key)
    else if (unpremul == 1) { Fgd.rgb /= Fgd.a; }
 
    Fgd.a = ((KeyMode == 0) || (KeyMode == 2)) ? K.a : 1.0 - K.a;
-   Fgd.a = saturate (lerp (1.0, Fgd.a, Amount));
+   Fgd.a = saturate (lerp (0.0, Fgd.a, Opacity));
 
    if (unpremul == 2) Fgd.rgb /= Fgd.a;
 

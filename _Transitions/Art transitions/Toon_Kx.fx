@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-17
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-17
 
 /**
  This transition posterises a blended overlay and develops outlines from its edges as it
@@ -19,14 +19,18 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-17 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
 DeclareLightworksEffect ("Toon transition (keyed)", "Mix", "Art transitions", "A stylised cartoon transition for supers and blends", "CanSize");
 
-DeclareLightworksEffect ("Abstraction #1 2022+", "Mix", "Abstract transitions", "An abstract geometric transition between two opaque sources", "CanSize");
+//-----------------------------------------------------------------------------------------//
+// Inputs
+//-----------------------------------------------------------------------------------------//
+
+DeclareInputs (Fg, Bg);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters

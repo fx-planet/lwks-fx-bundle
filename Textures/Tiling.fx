@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-01-17
 // @Author khaver
 // @Created 2011-04-28
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-12 jwrl
+// Updated 2023-01-17 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -52,7 +52,7 @@ DeclareFloatParam (_OutputHeight);
 DeclarePass (Inp)
 { return ReadPixel (Input, uv1); }
 
-DeclareEntryPoint (Tiles)
+DeclareEntryPoint (MosaicTiles)
 {
    float Size = Tiles / 200.0;
    float EdgeWidth = BevelWidth / 100.0;

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-07
+// @Released 2023-01-17
 // @Author baopao
 // @Created 2013-06-03
 // @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
@@ -19,7 +19,7 @@
 //
 // Version history:
 //
-// Update 2023-01-07 jwrl.
+// Update 2023-01-17 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -49,22 +49,22 @@ DeclareEntryPoint (ALEsmoothChroma)
 {
    if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   float4 Inp = tex2D (fg, uv1);
+   float4 Inp = tex2D (Fg, uv1);
    float4 ret = Inp;
 
    float A = ret.a;
    float Y = 0.065 + (ret.r * 0.257) + (ret.g * 0.504) + (ret.b * 0.098);
    float amount = BlurAmount * 0.01;
 
-   ret += tex2D (fg, uv1 - float2 (amount, 0.0));
-   ret += tex2D (fg, uv1 + float2 (amount, 0.0));
-   ret += tex2D (fg, uv1 - float2 (0.0, amount));
-   ret += tex2D (fg, uv1 + float2 (0.0, amount));
+   ret += tex2D (Fg, uv1 - float2 (amount, 0.0));
+   ret += tex2D (Fg, uv1 + float2 (amount, 0.0));
+   ret += tex2D (Fg, uv1 - float2 (0.0, amount));
+   ret += tex2D (Fg, uv1 + float2 (0.0, amount));
    amount += amount;
-   ret += tex2D (fg, uv1 - float2 (amount, 0.0));
-   ret += tex2D (fg, uv1 + float2 (amount, 0.0));
-   ret += tex2D (fg, uv1 - float2 (0.0, amount));
-   ret += tex2D (fg, uv1 + float2 (0.0, amount));
+   ret += tex2D (Fg, uv1 - float2 (amount, 0.0));
+   ret += tex2D (Fg, uv1 + float2 (amount, 0.0));
+   ret += tex2D (Fg, uv1 - float2 (0.0, amount));
+   ret += tex2D (Fg, uv1 + float2 (0.0, amount));
    ret /= 9.0;
 
    //RGB2CbCr

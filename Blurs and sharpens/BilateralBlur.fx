@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-17
 // @Author baopao
 // @Created 2013-10-23
 
@@ -15,7 +15,7 @@
 //
 // Version history:
 //
-// Update 2023-01-16 jwrl.
+// Update 2023-01-17 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -27,7 +27,7 @@ DeclareLightworksEffect ("Bilateral blur", "Stylize", "Blurs and sharpens", "A s
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DeclareInput (Input);
+DeclareInput (Inp);
 
 DeclareMask;
 
@@ -69,10 +69,9 @@ DeclareEntryPoint (BilateralBlur)
 {
    if (IsOutOfBounds (uv1)) return kTransparentBlack;    // Ensures that only legal video is blurred
 
-   float4 tempC0 = tex2D (Input, uv1);
-   float4 Colour = tempC0;
    float4 normalizer = 1.0.xxxx;
-   float4 tempC1, tempC2, tempW;
+   float4 tempC0 = tex2D (Inp, uv1);
+   float4 tempC1, tempC2, tempW, Colour = tempC0;
 
    float2 position;
 

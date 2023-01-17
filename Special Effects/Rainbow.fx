@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-01-17
 // @Author jwrl
-// @Created 2023-01-11
+// @Created 2023-01-17
 
 /**
  This is a special effect that generates single and double rainbows.  The blue end of the
@@ -26,7 +26,7 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Built 2023-01-17 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -186,8 +186,7 @@ DeclareEntryPoint (Rainbow)
 
    Fgnd = saturate (Fgnd);
    Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * Amount * Amount_2);
-   Fgnd = lerp (Bgnd, Fgnd, fn_get_mask (MaskBounds, xy, Rmsk, OUTER));
 
-   return lerp (Bgnd, Fgnd, tex2D (Mask, uv1));
+   return lerp (Bgnd, Fgnd, fn_get_mask (MaskBounds, xy, Rmsk, OUTER));
 }
 

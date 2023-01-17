@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-17
 // @Author jwrl
-// @Released 2023-01-09
+// @Released 2023-01-17
 
 /**
  This effect is a simple 2D DVE with the ability to apply a circular, diamond or square
@@ -31,7 +31,7 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Built 2023-01-17 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -126,7 +126,7 @@ DeclareFloatParam (_OutputAspectRatio);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_main (sampler Fg, float2 uv, sampler Bg, float2 uv_2)
+float4 fn_main (sampler Fgd, float2 uv, sampler Bgd, float2 uv_2)
 {
    float2 xy1 = uv - float2 (ShadowX, ShadowY * _OutputAspectRatio) * 0.04;
    float2 xy2 = float2 (1.0, _OutputAspectRatio) * FEATHER_SOFT;
@@ -144,23 +144,23 @@ float4 fn_main (sampler Fg, float2 uv, sampler Bg, float2 uv_2)
       feather += softness;
       amount  /= 2.0;
 
-      alpha += tex2D (Fg, xy1 + float2 (xy2.x, 0.0) * feather).a * amount;
-      alpha += tex2D (Fg, xy1 - float2 (xy2.x, 0.0) * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 + float2 (xy2.x, 0.0) * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 - float2 (xy2.x, 0.0) * feather).a * amount;
 
-      alpha += tex2D (Fg, xy1 + float2 (0.0, xy2.y) * feather).a * amount;
-      alpha += tex2D (Fg, xy1 - float2 (0.0, xy2.y) * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 + float2 (0.0, xy2.y) * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 - float2 (0.0, xy2.y) * feather).a * amount;
 
-      alpha += tex2D (Fg, xy1 + xy2 * feather).a * amount;
-      alpha += tex2D (Fg, xy1 - xy2 * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 + xy2 * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 - xy2 * feather).a * amount;
 
-      alpha += tex2D (Fg, xy1 + float2 (xy2.x, -xy2.y) * feather).a * amount;
-      alpha += tex2D (Fg, xy1 - float2 (xy2.x, -xy2.y) * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 + float2 (xy2.x, -xy2.y) * feather).a * amount;
+      alpha += tex2D (Fgd, xy1 - float2 (xy2.x, -xy2.y) * feather).a * amount;
    }
 
    alpha = saturate (alpha * Shadow * 0.5);
 
-   float4 Fgnd   = tex2D (Fg, uv);
-   float4 Bgnd   = ReadPixel (Bg, xy3);
+   float4 Fgnd   = ReadPixel (Fgd, uv);
+   float4 Bgnd   = ReadPixel (Bgd, xy3);
    float4 retval = float4 (lerp (Bgnd.rgb, 0.0.xxx, alpha), Bgnd.a);
 
    return lerp (retval, Fgnd, Fgnd.a);
@@ -173,7 +173,7 @@ float4 fn_main (sampler Fg, float2 uv, sampler Bg, float2 uv_2)
 // Technique Circular DVE vignette
 
 DeclarePass (cFg)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fgd, uv1); }
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
 
 DeclarePass (cInp)
 {
@@ -225,13 +225,13 @@ DeclarePass (cInp)
 }
 
 DeclareEntryPoint (DVEvignetteCircle)
-{ return fn_main (cInp, uv3, Bgd, uv2); }
+{ return fn_main (cInp, uv3, Bg, uv2); }
 
 
 // Technique Square DVE vignette
 
 DeclarePass (sFg)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fgd, uv1); }
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
 
 DeclarePass (sInp)
 {
@@ -283,13 +283,13 @@ DeclarePass (sInp)
 }
 
 DeclareEntryPoint (DVEvignetteSquare)
-{ return fn_main (sInp, uv3, Bgd, uv2); }
+{ return fn_main (sInp, uv3, Bg, uv2); }
 
 
 // Technique Diamond DVE vignette
 
 DeclarePass (dFg)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fgd, uv1); }
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
 
 DeclarePass (dInp)
 {
@@ -338,5 +338,5 @@ DeclarePass (dInp)
 }
 
 DeclareEntryPoint (DVEvignetteDiamond)
-{ return fn_main (dInp, uv3, Bgd, uv2); }
+{ return fn_main (dInp, uv3, Bg, uv2); }
 

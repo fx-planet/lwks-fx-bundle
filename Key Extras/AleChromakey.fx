@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-17
 // @Author baopao
 // @Created 2013-06-07
 
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-17 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -86,6 +86,6 @@ DeclareEntryPoint (AleChromakey)
 
    color = IsOutOfBounds (uv1) ? colorBG : lerp (color, pow (color, 1.0 / GammaMix), OverMask);
 
-   return lerp (colorBg, color, tex2D (Mask, uv1));
+   return lerp (colorBG, color, tex2D (Mask, uv1));
 }
 

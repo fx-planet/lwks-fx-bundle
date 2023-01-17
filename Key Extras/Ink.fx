@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-17
 // @Author Nicholas Carroll
 // @Created 2016-21-02
 
@@ -26,7 +26,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-17 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -145,6 +145,8 @@ DeclareEntryPoint (Ink)
 
    float matte = saturate (((a4 - 0.5) * KeyGain) + 0.5);    // alpha
 
-   return lerp (background, float4 (lerp (background.rgb, chan, matte), matte), tex2D (Mask, uv1));
+   float4 Ckey = float4 (lerp (background.rgb, chan, matte), max (background.a, matte));
+
+   return lerp (background, Ckey, tex2D (Mask, uv1));
 }
 

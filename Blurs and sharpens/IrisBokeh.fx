@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-17
 // @Author khaver
 // @Created 2012-04-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
@@ -30,7 +30,7 @@
 //
 // Version history:
 //
-// Update 2023-01-16 jwrl.
+// Update 2023-01-17 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -184,7 +184,7 @@ DeclarePass (Inp)
 DeclarePass (Dpt)
 { return ReadPixel (Depth, uv2); }
 
-DeclarePass (Mask)
+DeclarePass (Bmask)
 {
    float4 orig = ReadPixel (Inp, uv3);
    float4 aff  = ReadPixel (Dpt, uv3);
@@ -207,19 +207,19 @@ DeclarePass (Mask)
 }
 
 DeclarePass (Bokeh1)
-{ return BokehFn (Mask, Mask, uv3, 6.0); }
+{ return BokehFn (Bmask, Bmask, uv3, 6.0); }
 
 DeclarePass (Bokeh2)
-{ return BokehFn (Mask, Bokeh1, uv3, 5.0); }
+{ return BokehFn (Bmask, Bokeh1, uv3, 5.0); }
 
 DeclarePass (Bokeh3)
-{ return BokehFn (Mask, Bokeh2, uv3, 4.0); }
+{ return BokehFn (Bmask, Bokeh2, uv3, 4.0); }
 
 DeclarePass (Bokeh4)
-{ return BokehFn (Mask, Bokeh3, uv3, 3.0); }
+{ return BokehFn (Bmask, Bokeh3, uv3, 3.0); }
 
 DeclarePass (Bokeh5)
-{ return BokehFn (Mask, Bokeh4, uv3, 2.0); }
+{ return BokehFn (Bmask, Bokeh4, uv3, 2.0); }
 
 DeclarePass (Bokeh6)
 {
@@ -256,19 +256,19 @@ DeclarePass (Bokeh7)
 }
 
 DeclarePass (Pass1)
-{ return BlurFn (Mask, Inp, uv3, 6.0); }
+{ return BlurFn (Bmask, Inp, uv3, 6.0); }
 
 DeclarePass (Pass2)
-{ return BlurFn (Mask, Pass1, uv3, 5.0); }
+{ return BlurFn (Bmask, Pass1, uv3, 5.0); }
 
 DeclarePass (Pass3)
-{ return BlurFn (Mask, Pass2, uv3, 4.0); }
+{ return BlurFn (Bmask, Pass2, uv3, 4.0); }
 
 DeclarePass (Pass4)
-{ return BlurFn (Mask, Pass3, uv3, 3.0); }
+{ return BlurFn (Bmask, Pass3, uv3, 3.0); }
 
 DeclarePass (Pass5)
-{ return BlurFn (Mask, Pass4, uv3, 2.0); }
+{ return BlurFn (Bmask, Pass4, uv3, 2.0); }
 
 DeclareEntryPoint (IrisBokeh)
 {

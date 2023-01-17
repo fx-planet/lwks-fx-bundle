@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-01-17
 // @Author schrauber
 // @Created 2016-03-16
 
@@ -22,7 +22,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-08 jwrl
+// Updated 2023-01-17 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -126,6 +126,6 @@ DeclareEntryPoint (Bulge)
    float4 retval = MirrorEdge (Input, (distortion * (centre - xy)) + xy);
    float4 source = ReadPixel (Input, uv1);
 
-   return lerp (source, retval, (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv1));
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-01-18
 // @Author jwrl
-// @Created 2023-01-11
+// @Created 2023-01-18
 
 /**
  To use this effect just apply it, select the colours to affect, then the spread and
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Built 2023-01-18 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -96,7 +96,7 @@ DeclareEntryPoint (VideoGlitch)
 {
    float roughness = lerp (1.0, 0.25, saturate (EdgeRoughen)) * _OutputHeight;
 
-   float2 xy = fn_noise (floor (uv2.y * roughness) / _OutputHeight);
+   float2 xy = fn_noise (floor (uv1.y * roughness) / _OutputHeight);
 
    xy.x *= xy.y;
 
@@ -110,9 +110,12 @@ DeclareEntryPoint (VideoGlitch)
 
    if (Mode != 3) xy /= 2.0;
 
+   float2 xy1 = uv1 + xy;
+   float2 xy2 = uv1 - xy;
+
    float4 video = ReadPixel (Inp, uv1);
-   float4 ret_1 = ReadPixel (Inp, uv1 + xy) * modulation;
-   float4 ret_2 = ReadPixel (Inp, uv1 - xy) * modulation;
+   float4 ret_1 = ReadPixel (Inp, xy1) * modulation;
+   float4 ret_2 = ReadPixel (Inp, xy2) * modulation;
    float4 glitch;
 
    glitch.r = Mode == 0 ? ret_2.r : ret_1.r;

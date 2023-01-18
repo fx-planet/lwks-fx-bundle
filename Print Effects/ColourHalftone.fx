@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-18
 // @Author windsturm
 // @Created 2012-06-16
 
@@ -15,13 +15,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-18 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Colour halftone", "Stylize", "Print Effects", "Emulates the dot pattern of a colour half-tone print image", kNoFlags);
+DeclareLightworksEffect ("Colour halftone", "Stylize", "Print Effects", "Emulates the dot pattern of a colour half-tone print image", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -35,10 +35,10 @@ DeclareMask;
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParam (centerX, "Center", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
-DeclareFloatParam (centerY, "Center", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
+DeclareFloatParam (centerX, "Center", NoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (centerY, "Center", NoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-DeclareFloatParam (dotSize, "Size", kNoGroup, kNoFlags, 0.01, 0.0, 1.0);
+DeclareFloatParam (dotSize, "Size", NoGroup, kNoFlags, 0.01, 0.0, 1.0);
 
 DeclareFloatParam (angleC, "Cyan", "Angle", kNoFlags, 15.0, 0.0, 90.0);
 DeclareFloatParam (angleM, "Magenta", "Angle", kNoFlags, 75.0, 0.0, 90.0);
@@ -53,11 +53,15 @@ DeclareColourParam (colorBG, "Background", "Color", kNoFlags, 1.0, 1.0, 1.0, 1.0
 
 DeclareFloatParam (_OutputAspectRatio);
 
+DeclareIntParam (_InputOrientation);
+
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
 #define SQRT_2 1.414214
+
+#define _IsPortrait (abs (_InputOrientation - 180) == 90)
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -75,7 +79,7 @@ float2x2 RotationMatrix (float rotation)
 float4 half_tone (float2 uv, float i, float s, float angle, float a)
 {
    float2 xy = uv;
-   float2 asp = float2 (1.0, _OutputAspectRatio);
+   float2 asp = _IsPortrait ? float2 (1.0, 1.0 / _OutputAspectRatio) : float2 (1.0, _OutputAspectRatio);
    float2 centerXY = float2 (centerX, 1.0 - centerY);
 
    float2 pointXY = mul ((xy - centerXY) / asp, RotationMatrix (radians (angle)));
@@ -143,6 +147,6 @@ DeclareEntryPoint (ColourHalftone)
 
    if (IsOutOfBounds (uv1)) ret = kTransparentBlack;
 
-   return (source, ret, tex2D (Mask, uv1));
+   return lerp (source, ret, tex2D (Mask, uv1));
 }
 

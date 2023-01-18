@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-18
 // @Author windsturm
 // @Created 2012-06-16
 // @OriginalAuthor "Evan Wallace"
@@ -45,13 +45,13 @@ THE SOFTWARE.
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-18 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Dot screen", "Stylize", "Print Effects", "This effect is a version of the dot pattern of a black and white half-tone print image", kNoFlags);
+DeclareLightworksEffect ("Dot screen", "Stylize", "Print Effects", "This effect is a version of the dot pattern of a black and white half-tone print image", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -75,7 +75,10 @@ DeclareFloatParam (dotSize, "Size", kNoGroup, kNoFlags, 3.0, 3.0, 1000.0);
 DeclareFloatParam (Strength, "Strength", kNoGroup, kNoFlags, 4.0, 0.0, 200.0);
 
 DeclareFloatParam (_OutputAspectRatio);
+
 DeclareFloatParam (_OutputWidth);
+
+DeclareIntParam (_InputOrientation);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -83,36 +86,36 @@ DeclareFloatParam (_OutputWidth);
 
 #define PI 3.14159265358979323846264
 
+#define _IsPortrait (abs (_InputOrientation - 180) == 90)
+
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
 DeclareEntryPoint (DotScreen)
 {
-    float4 source = ReadPixel (Input, uv1);
-    float4 color  = source;
+   float4 color = ReadPixel (Input, uv1);
+   float4 source = color;
 
-    float2 center = float2 (centerX, 1.0 - centerY);
-    
-    float s, c;
-    float luma = (skipGS == 1) ? (color.r + color.g + color.b) / 3.0
-                               : dot (color.rgb, float3 (0.299, 0.587, 0.114));
+   float2 center = float2 (centerX, 1.0 - centerY);
+   float2 xy0 = float2 (1.0, _OutputAspectRatio);
 
-    sincos (radians (angle), s, c);
+   float luma = (skipGS == 1) ? (color.r + color.g + color.b) / 3.0
+                              : dot (color.rgb, float3 (0.299, 0.587, 0.114));
+   float s, c;
 
-    float2 xy0 = float2 (1.0, _OutputAspectRatio);
+   sincos (radians (angle), s, c);
+   xy0 = _IsPortrait ? _OutputWidth * xy0 : _OutputWidth / xy0;
 
-    xy0 = _OutputWidth / xy0;
+   float2 xy1 = (uv1 - center) * xy0;
+   float2 xy2 = (xy1 * c - float2 (xy1.y, -xy1.x) * s) * PI / max (3.0, dotSize);
 
-    float2 xy1 = (uv1 - center) * xy0;
-    float2 xy2 = (xy1 * c - float2 (xy1.y, -xy1.x) * s) * PI / max (3.0, dotSize);
+   float pattern = sin (xy2.x) * sin (xy2.y) * Strength;
 
-    float pattern = sin (xy2.x) * sin (xy2.y) * Strength;
-
-    color.rgb = ((luma * 10.0) + pattern - 5.0).xxx;
+   color.rgb = ((luma * 10.0) + pattern - 5.0).xxx;
 
    if (IsOutOfBounds (uv1)) color = kTransparentBlack;
 
-   return (source, color, tex2D (Mask, uv1));
+   return lerp (source, color, tex2D (Mask, uv1));
 }
 

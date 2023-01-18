@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-18
 // @Author khaver
 // @Created 2011-05-18
 
@@ -17,13 +17,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-18 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Chromatic aberration fixer", "Stylize", "Repair tools", "Generates or removes chromatic aberration", kNoFlags);
+DeclareLightworksEffect ("Chromatic aberration fixer", "Stylize", "Repair tools", "Generates or removes chromatic aberration", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -45,6 +45,10 @@ DeclareBoolParam (saton, "Saturation", "Saturation", false);
 
 DeclareFloatParam (sat, "Adjustment", "Saturation", kNoFlags, 2.0, 0.0, 4.0);
 
+DeclareFloat4Param (_VExtents);
+
+DeclareIntParam (_VOrientation);
+
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
@@ -56,19 +60,27 @@ DeclareEntryPoint (ChromaticAbFixer)
    float gad = ((gadjust * 2.0 + 4.0) / 100.0) + 0.96;
    float bad = ((badjust * 2.0 + 4.0) / 100.0) + 0.96;
 
-   float2 xy = uv1 - 0.5.xx;
+   float2 xy = ((uv1 - _VExtents.xy) / (_VExtents.zw - _VExtents.xy)) - 0.5.xx;
+
+   if (_VOrientation > 0) xy.x = -xy.x;
+
+   if (_VOrientation > 90) xy = -xy;
 
    float3 source;
 
+   source.r = tex2D (V, (xy / rad) + 0.5.xx).r;
+   source.g = tex2D (V, (xy / gad) + 0.5.xx).g;
+   source.b = tex2D (V, (xy / bad) + 0.5.xx).b;
+
    float4 Fgd = ReadPixel (V, uv1);
 
-   source.r = ReadPixel (V, (xy / rad) + 0.5.xx).r;
-   source.g = ReadPixel (V, (xy / gad) + 0.5.xx).g;
-   source.b = ReadPixel (V, (xy / bad) + 0.5.xx).b;
+   float alpha = Fgd.a;
 
    float3 lum  = dot (source, float3 (0.299, 0.587, 0.114)).xxx;
    float3 dest = lerp (lum, source, satad);
 
-   return lerp (Fgd, lerp (kTransparentBlack, float4 (dest, 1.0), Fgd.a), tex2D (Mask, uv1));
+   float4 retval = lerp (kTransparentBlack, float4 (dest, alpha), alpha);
+
+   return lerp (Fgd, retval, tex2D (Mask, uv1));
 }
 

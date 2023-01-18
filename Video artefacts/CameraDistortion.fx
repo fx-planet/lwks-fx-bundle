@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-01-18
 // @Author jwrl
-// @Created 2023-01-12
+// @Created 2023-01-18
 
 /**
  Camera distortions adds colour fringing effects, pincushion distortion, scaling and
@@ -62,7 +62,7 @@
 //
 // Version history:
 //
-// Built 2023-01-12 jwrl
+// Built 2023-01-18 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -73,7 +73,7 @@ DeclareLightworksEffect ("Camera distortion", "Stylize", "Video artefacts", "Sim
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
-DeclareInputs (Art, Inp);
+DeclareInput (Inp);
 
 //-----------------------------------------------------------------------------------------//
 // Parameters

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-19
 // @Author khaver
 // @Created 2011-04-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Technicolor_640.png
@@ -13,7 +13,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-09 jwrl
+// Updated 2023-01-19 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -47,7 +47,9 @@ DeclareEntryPoint (TechnicolorTwoStrip)
    output.g += source.b / 2.0;
    output.b += source.g / 2.0;
 
-   return lerp (source, lerp (kTransparentBlack, output, source.a), tex2D (Mask, uv1));
+   output = lerp (kTransparentBlack, output, alpha);
+
+   return lerp (source, output, tex2D (Mask, uv1));
 }
 
 DeclareEntryPoint (TechnicolorThreeStrip)
@@ -59,7 +61,9 @@ DeclareEntryPoint (TechnicolorThreeStrip)
    output.g += (source.b - source.r) / 2.0;
    output.b += (source.g - source.r) / 2.0;
 
-   return lerp (source, lerp (kTransparentBlack, output, source.a), tex2D (Mask, uv1));
+   output = lerp (kTransparentBlack, output, alpha);
+
+   return lerp (source, output, tex2D (Mask, uv1));
 }
 
 

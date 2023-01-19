@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-19
 // @Author msi
 // @OriginalAuthor "Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)"
 // @Created 2011-05-27
@@ -20,7 +20,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-09 jwrl
+// Updated 2023-01-19 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -66,6 +66,8 @@ DeclareEntryPoint (VintageLook)
 
    // END Vintage Look routine by Wojciech Toman
 
-   return lerp (source, lerp (kTransparentBlack, corrected, source.a), tex2D (Mask, uv1));	
+   corrected = lerp (kTransparentBlack, corrected, source.a);	
+
+   return lerp (source, corrected, tex2D (Mask, uv1));	
 }
 

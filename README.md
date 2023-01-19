@@ -1,8 +1,6 @@
-# Lightworks user Fx library, January 16, 2023 - WIP.
+# Lightworks user Fx library, January 19, 2023.
 
-(Unfortunately I cannot test the revised effects in Lightworks 2023.1 without having them on line so that they can be browsed.  Without that ability I cannot verify thumbnail generation.  Sorry.)
-
-The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run versions of Lightworks from 2023.1 on.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
+The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
 You may notice that there have been several effects and even whole categories removed from this library.  This has in part been because with the addition of LW masking several user effects that added a mask to an existing effect are no longer necessary.  There is no checking in this library for effects with duplicate functionality, although with the reduction of the number of effects that should not be an issue.  It's up to you to check that any given effect does what you want, and does it better/faster/simpler than any alternative.
 
@@ -99,6 +97,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |3D bevelled crop              |3Dbevel.fx              |A simple crop with an inner 3D bevelled edge and a flat coloured outer border |
 |Bevel edged crop              |BevelCrop.fx            |This provides a crop with a bevelled border and a hard-edged drop shadow      |
 |Bordered crop                 |BorderedCrop.fx         |A crop tool with border, feathering and drop shadow                           |
+|Flexible crop                 |Flexicrop.fx            |A flexible bordered crop with drop shadow based on LW masking                 |
 |Polymask                      |Polymask.fx             |A multi-sided mask with feathered edges and optional background colour        |
 |Rounded crop                  |RoundedCrop.fx          |A bordered, drop shadowed crop with rounded corners                           |
 |Simple crop                   |SimpleCrop.fx           |A simple crop tool with blend                                                 |

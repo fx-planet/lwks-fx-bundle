@@ -28,7 +28,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Flexible crop", "DVE", "Border and Crop", "A flexible bordered crop", CanSize);
+DeclareLightworksEffect ("Flexible crop", "DVE", "Border and Crop", "A flexible bordered crop with drop shadow based on LW masking", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

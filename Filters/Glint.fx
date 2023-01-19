@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-19
 // @Author khaver
 // @Created 2012-10-03
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-19 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -188,7 +188,9 @@ float4 main (sampler S, float2 xy1, sampler T, float2 xy2)
    float4 source = ReadPixel (S, xy1);
    float4 comb = source + (blur * (1.0.xxxx - source));
 
-   return lerp (source, lerp (source, comb, source.a * Strength), tex2D (Mask, xy1));
+   comb = lerp (source, comb, source.a * Strength);
+
+   return lerp (source, comb, tex2D (Mask, xy1));
 }
 
 //-----------------------------------------------------------------------------------------//

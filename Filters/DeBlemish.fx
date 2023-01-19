@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-19
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-19
 
 /**
  This is a skin blemish removal tool similar in concept to "Skin smooth".  It uses a
@@ -21,7 +21,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-19 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -221,6 +221,8 @@ DeclareEntryPoint (DeBlemish)
       Fgnd.rgb = lerp (Fgnd.rgb, retval.rgb, retval.a * Amount);
    }
 
-   return lerp (source, lerp (kTransparentBlack, Fgnd, source.a), tex2D (Mask, uv1));
+   Fgnd = lerp (kTransparentBlack, Fgnd, source.a);
+
+   return lerp (source, Fgnd, tex2D (Mask, uv1));
 }
 

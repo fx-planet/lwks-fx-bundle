@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-19
 // @Author khaver
 // @Created 2011-05-24
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-19 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -84,6 +84,8 @@ DeclareEntryPoint (Flare)
    ret /= 15.0;
    ret.a = 0.0;
 
-   return lerp (source, lerp (kTransparentBlack, saturate (ret + source), source.a), tex2D (Mask, uv1));
+   ret = lerp (kTransparentBlack, saturate (ret + source), source.a);
+
+   return lerp (source, ret, tex2D (Mask, uv1));
 }
 

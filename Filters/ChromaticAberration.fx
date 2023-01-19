@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-19
 // @Author josely
 // @Created 2012-06-29
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-19 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -99,6 +99,8 @@ DeclareEntryPoint (ChromaticAberration)
    }
    else { fragColor.rb *= STEP_RB; }   // Half cycle correction
 
-   return lerp (source, lerp (kTransparentBlack, fragColor, ReadPixel (Input, uv1).a), tex2D (Mask, uv1));
+   fragColor = lerp (kTransparentBlack, fragColor, ReadPixel (Input, uv1).a);
+
+   return lerp (source, fragColor, tex2D (Mask, uv1));
 }
 

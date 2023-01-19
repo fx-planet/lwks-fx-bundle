@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-19
 // @Author khaver
 // @Created 2011-05-25
 
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-19 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -125,6 +125,8 @@ DeclareEntryPoint (AnamorphicLensFlare)
 
    blr = flare ? float4 (blr.rgb * Strength * 2.0, source.a) : lerp (source, comb, Strength);
 
-   return lerp (source, lerp (kTransparentBlack, blr, source.a), tex2D (Mask, uv2));
+   blr = lerp (kTransparentBlack, blr, source.a);
+
+   return lerp (source, blr, tex2D (Mask, uv2));
 }
 

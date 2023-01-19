@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-19
 // @Author jwrl
-// @Created 2023-01-05
+// @Created 2023-01-19
 
 /**
  This effect provides a simple means of smoothing the movement of a credit roll or crawl.
@@ -21,7 +21,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-19 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -33,8 +33,6 @@ DeclareLightworksEffect ("Crawl and roll fix", "Mix", "Blend Effects", "Directio
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
-
-DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters

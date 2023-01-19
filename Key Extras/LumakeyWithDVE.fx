@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-19
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-19
 
 /**
  DESCRIPTION:
@@ -37,7 +37,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-19 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -182,7 +182,8 @@ DeclareEntryPoint (LumakeyWithDVE)
 
    // Exit, showing the composite result or the alpha channel as opaque white on black.
 
-   return (ShowAlpha) ? lerp (kTransparentBlack, alpha.xxxx, tex2D (Mask, uv1))
-                      : lerp (Bgd, lerp (Bgd, Fgd, alpha * Opacity), tex2D (Mask, uv1));
+   Fgd = (ShowAlpha) ? alpha.xxxx : lerp (Bgd, Fgd, alpha * Opacity);
+
+   return lerp (Bgd, Fgd, tex2D (Mask, uv1));
 }
 

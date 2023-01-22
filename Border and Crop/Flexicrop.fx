@@ -58,7 +58,7 @@ DeclareFloatParam (SizeY, "Size", "DVE", "SpecifiesPointY|DisplayAsPercentage", 
 DeclareFloatParam (Pos_X, "Position", "DVE", "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.0, 2.0);
 DeclareFloatParam (Pos_Y, "Position", "DVE", "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.0, 2.0);
 
-DeclareBoolParam (UseBorder, "Use border", "Border", true);
+DeclareBoolParam (UseBorder, "Show border (mask softness must be on)", "Border", true);
 
 DeclareFloatParam (bStrength, "Strength", "Border", kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (bSoft, "Softness", "Border", kNoFlags, 0.5, 0.0, 1.0);
@@ -68,7 +68,7 @@ DeclareBoolParam (FlatColour, "Use inner colour only", "Border", false);
 DeclareColourParam (BorderColour_1, "Inner colour", "Border", kNoFlags, 0.2, 0.8, 0.8, 1.0);
 DeclareColourParam (BorderColour_2, "Outer colour", "Border", kNoFlags, 0.2, 0.1, 1.0, 1.0);
 
-DeclareBoolParam (UseShadow, "Use drop shadow", "Drop shadow", true);
+DeclareIntParam (UseShadow, "Use drop shadow", "Drop shadow", 1, "No|With border softness|With mask softness");
 
 DeclareFloatParam (sStrength, "Strength", "Drop shadow", kNoFlags, 0.5, 0.0, 1.0);
 
@@ -156,7 +156,7 @@ DeclarePass (Msk)
       // The two raw masks are adjusted to allow for the percentage border width.
 
       FgndMask = lerp (FgndMask, outerBorder, bStrength);
-      ShadMask = lerp (ShadMask, drop_shadow, bStrength);
+      if (UseShadow == 1) { ShadMask = lerp (ShadMask, drop_shadow, bStrength); }
    }
 
    // If we're using the drop shadow build it in retval, otherwise use transparent black

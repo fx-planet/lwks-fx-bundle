@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-21
+// @Released 2023-01-22
 // @Author jwrl
-// @Released 2023-01-21
+// @Released 2023-01-22
 
 /**
  This effect is a flexible vignette with the ability to apply a range of masks using
@@ -27,7 +27,7 @@
 //
 // Version history:
 //
-// Built 2023-01-21 jwrl.
+// Built 2023-01-22 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -62,6 +62,8 @@ DeclareBoolParam (UseBorder, "Use border", "Border", true);
 
 DeclareFloatParam (bStrength, "Strength", "Border", kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (bSoft, "Softness", "Border", kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareBoolParam (FlatColour, "Use inner colour only", "Border", false);
 
 DeclareColourParam (BorderColour_1, "Inner colour", "Border", kNoFlags, 0.2, 0.8, 0.8, 1.0);
 DeclareColourParam (BorderColour_2, "Outer colour", "Border", kNoFlags, 0.2, 0.1, 1.0, 1.0);
@@ -98,44 +100,52 @@ DeclarePass (Fgd)
 DeclarePass (Bgd)
 { return Invert ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
 
-DeclarePass (Dfg)
+DeclarePass (Msk)
 {
-   float4 Fgnd = ReadPixel (Fgd, uv3);          // The only input required is the nominal foreground
+   float4 Fgnd = tex2D (Fgd, uv3);    // The only input required is the nominal foreground
 
    // We now generate the XY coordinates for the drop shadow
 
    float2 xy1 = uv3 - float2 (ShadowX - 0.5, (0.5 - ShadowY) * _OutputAspectRatio);
 
-   // The raw mask softness data for both the the foreground and the drop shadow is now recovered.
+   // The mask softness data for both the the foreground and the drop shadow is now recovered.
 
-   float Mraw = tex2D (Mask, uv3).x;
-   float Sraw = tex2D (Mask, xy1).x;
+   float FgndMask = tex2D (Mask, uv3).x;
+   float ShadMask = tex2D (Mask, xy1).x;
 
-   // check if we're colouring the border or not and skip if no
+   // Check if we're colouring the border or not and skip if no
 
    if (UseBorder) {
 
       // First the raw mask data is scaled to run from 0 to 1.5.  This allows us to generate
       // the three transitions that we require for the border colours.  The first, innerBorder,
-      // transitions from 0 to 1 over two thirds of the mask softness, starting at the inner
-      // edge.  The next, colourMixer, occupies the middle third of the mask, and outerBorder
-      // takes up the final two thirds.
+      // has a maximum transition range of from 0 to 1 over two thirds of the mask softness,
+      // starting at the inner edge.  The next, colourMixer, at maximum occupies the middle
+      // third of the mask, and outerBorder at maximum softness takes up the final two thirds.
 
       float softness    = max (bSoft, 0.01);
-      float outerBorder = 1.5 * Mraw;
+      float outerBorder = 1.5 * FgndMask;
       float innerBorder = (1.5 - outerBorder) / softness;
-      float colourMixer = (((outerBorder * 2.0) - 1.5) / softness) + 0.5;
-      float drop_shadow = min (1.0, max ((1.5 * Sraw) / softness, 0.0));
+      float drop_shadow = min (1.0, max ((1.5 * ShadMask) / softness, 0.0));
+
+      // Now build the border colour, depending on whether it's flat or bicolour.
+
+      float4 BorderColour;
+
+      if (FlatColour) { BorderColour = BorderColour_1; }
+      else {
+         float colourMixer = (((outerBorder * 2.0) - 1.5) / softness) + 0.5;
+
+         colourMixer = min (max (colourMixer, 0.0), 1.0);
+         colourMixer = lerp (1.0, colourMixer, bStrength);
+
+         // The transition between the inner and outer colours is now built
+
+         BorderColour = lerp (BorderColour_2, BorderColour_1, colourMixer);
+      }
 
       innerBorder = 1.0 - min (max (innerBorder, 0.0), 1.0);
-      colourMixer = min (max (colourMixer, 0.0), 1.0);
       outerBorder = min (max (outerBorder / softness, 0.0), 1.0);
-
-      colourMixer = lerp (1.0, colourMixer, bStrength);
-
-      // The transition between the inner and outer colours for the border is now built
-
-      float4 BorderColour = lerp (BorderColour_2, BorderColour_1, colourMixer);
 
       // The foreground is now blended with the border colours
 
@@ -145,17 +155,18 @@ DeclarePass (Dfg)
 
       // The two raw masks are adjusted to allow for the percentage border width.
 
-      Mraw = lerp (Mraw, outerBorder, bStrength);
-      Sraw = lerp (Sraw, drop_shadow, bStrength);
+      FgndMask = lerp (FgndMask, outerBorder, bStrength);
+      ShadMask = lerp (ShadMask, drop_shadow, bStrength);
    }
 
    // If we're using the drop shadow build it in retval, otherwise use transparent black
 
-   float4 retval = UseShadow ? lerp (kTransparentBlack, BLACK, Sraw * sStrength) : kTransparentBlack;
+   float4 retval = UseShadow ? lerp (kTransparentBlack, BLACK, ShadMask * sStrength)
+                             : kTransparentBlack;
 
    // Return the masked and bordered foreground over the drop shadow.
 
-   return lerp (retval, Fgnd, Mraw);
+   return lerp (retval, Fgnd, FgndMask);
 }
 
 DeclareEntryPoint (Flexicrop)
@@ -175,8 +186,8 @@ DeclareEntryPoint (Flexicrop)
 
    // Recover the scaled and repositioned masked foreground and the background video
 
-   float4 Fgnd = ReadPixel (Dfg, xy1);
-   float4 Bgnd = ReadPixel (Bgd, uv3);
+   float4 Fgnd = tex2D (Msk, xy1);
+   float4 Bgnd = tex2D (Bgd, uv3);
 
    // Mix everything and get out.
 

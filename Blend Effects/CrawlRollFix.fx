@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-19
+// @Created 2023-01-23
 
 /**
  This effect provides a simple means of smoothing the movement of a credit roll or crawl.
@@ -21,7 +21,7 @@
 //
 // Version history:
 //
-// Built 2023-01-19 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -63,27 +63,14 @@ float4 mirror2D (sampler S, float2 xy)
    return tex2D (S, uv);
 }
 
-float4 keygen (sampler F, float2 xy1, sampler B,float2 xy2)
-{
-   float3 Fgd = ReadPixel (F, xy1).rgb;
-   float3 Bgd = ReadPixel (B, xy2).rgb;
-
-   float kDiff = distance (Bgd.g, Fgd.g);
-
-   kDiff = max (kDiff, distance (Bgd.r, Fgd.r));
-   kDiff = max (kDiff, distance (Bgd.b, Fgd.b));
-
-   return float4 (Fgd, smoothstep (0.0, 0.25, kDiff));
-}
-
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
 // technique SmoothRoll
 
-DeclarePass (r_Title)
-{ return keygen (Fg, uv1, Bg, uv2); }
+DeclarePass (Roll)
+{ return ReadPixel (Fg, uv1); }
 
 DeclareEntryPoint (SmoothRoll)
 {
@@ -91,25 +78,25 @@ DeclareEntryPoint (SmoothRoll)
 
    if (IsOutOfBounds (uv1)) return Bgnd;
 
-   float4 Fgnd = mirror2D (r_Title, uv3) * _gaussian [0];
+   float4 Fgnd = mirror2D (Roll, uv3) * _gaussian [0];
 
    float2 xy1 = float2 (0.0, Smoothing * _OutputAspectRatio * STRENGTH);
    float2 xy2 = uv3 + xy1;
 
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [1]; xy2 += xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [2]; xy2 += xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [3]; xy2 += xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [4]; xy2 += xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [5]; xy2 += xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [6];
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [1]; xy2 += xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [2]; xy2 += xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [3]; xy2 += xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [4]; xy2 += xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [5]; xy2 += xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [6];
 
    xy2 = uv3 - xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [1]; xy2 -= xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [2]; xy2 -= xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [3]; xy2 -= xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [4]; xy2 -= xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [5]; xy2 -= xy1;
-   Fgnd += mirror2D (r_Title, xy2) * _gaussian [6];
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [1]; xy2 -= xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [2]; xy2 -= xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [3]; xy2 -= xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [4]; xy2 -= xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [5]; xy2 -= xy1;
+   Fgnd += mirror2D (Roll, xy2) * _gaussian [6];
 
    Fgnd.a = pow (Fgnd.a, 0.5);
 
@@ -119,8 +106,8 @@ DeclareEntryPoint (SmoothRoll)
 
 // technique SmoothCrawl
 
-DeclarePass (c_Title)
-{ return keygen (Fg, uv1, Bg, uv2); }
+DeclarePass (Crawl)
+{ return ReadPixel (Fg, uv1); }
 
 DeclareEntryPoint (SmoothCrawl)
 {
@@ -128,25 +115,25 @@ DeclareEntryPoint (SmoothCrawl)
 
    if (IsOutOfBounds (uv1)) return Bgnd;
 
-   float4 Fgnd = mirror2D (c_Title, uv3) * _gaussian [0];
+   float4 Fgnd = mirror2D (Crawl, uv3) * _gaussian [0];
 
    float2 xy1 = float2 (Smoothing * STRENGTH, 0.0);
    float2 xy2 = uv3 + xy1;
 
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [1]; xy2 += xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [2]; xy2 += xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [3]; xy2 += xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [4]; xy2 += xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [5]; xy2 += xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [6];
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [1]; xy2 += xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [2]; xy2 += xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [3]; xy2 += xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [4]; xy2 += xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [5]; xy2 += xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [6];
 
    xy2 = uv3 - xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [1]; xy2 -= xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [2]; xy2 -= xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [3]; xy2 -= xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [4]; xy2 -= xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [5]; xy2 -= xy1;
-   Fgnd += mirror2D (c_Title, xy2) * _gaussian [6];
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [1]; xy2 -= xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [2]; xy2 -= xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [3]; xy2 -= xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [4]; xy2 -= xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [5]; xy2 -= xy1;
+   Fgnd += mirror2D (Crawl, xy2) * _gaussian [6];
 
    Fgnd.a = pow (Fgnd.a, 0.5);
 

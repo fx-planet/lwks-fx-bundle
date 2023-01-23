@@ -116,7 +116,7 @@ DeclarePass (KeyFg)
       Fgd.rgb *= Fgd.a;
    }
 
-   return lerp (0.0.xxxx, Fgd, tex2D (Mask, uv1));
+   return Fgd;
 }
 
 DeclarePass (Fractals)
@@ -281,6 +281,8 @@ DeclareEntryPoint (MagicalEdges)
    float4 glint = tex2D (Sample_4, uv3);
    float4 comb  = retval + (glint * (1.0 - retval));
 
-   return lerp (retval, comb, Strength);
+   retval = lerp (retval, comb, Strength);
+
+   return lerp (Bgd, retval, tex2D (Mask, uv1).x);
 }
 

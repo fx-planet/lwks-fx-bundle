@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-05
+// @Created 2023-01-23
 
 /**
  "Floating images" generates up to four floating images from a single foreground
@@ -24,7 +24,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -94,12 +94,13 @@ DeclarePass (FgKey)
       Fgd.rgb *= Fgd.a;
    }
 
-   return lerp (0.0.xxxx, Fgd, tex2D (Mask, uv1));
+   return Fgd;
 }
 
 DeclareEntryPoint (FloatingImages)
 {
    float4 Fgnd, Bgnd = ReadPixel (Bg, uv2);
+   float4 ret = Bgnd;
 
    float2 xy;
 
@@ -124,6 +125,8 @@ DeclareEntryPoint (FloatingImages)
    xy = ((uv3 - float2 (A_Xc, 1.0 - A_Yc)) / (A_Zoom *  A_Zoom)) + 0.5.xx;
    Fgnd = tex2D (FgKey, xy);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * A_Opac);
+   Bgnd = lerp (Bgnd, Fgnd, Fgnd.a * A_Opac);
+
+   return lerp (ret, Bgnd, tex2D (Mask, uv1).x);
 }
 

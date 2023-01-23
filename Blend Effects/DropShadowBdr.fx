@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-05
+// @Created 2023-01-23
 
 /**
  "Drop shadow and border" is a drop shadow and border generator.  It provides drop shadow
@@ -22,7 +22,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -330,6 +330,6 @@ DeclareEntryPoint (DropShadowBdr)
 
    float4 comp = float4 (lerp (Bgnd, retval, retval.a).rgb, max (Bgnd.a, retval.a));
 
-   return lerp (Bgnd, comp, tex2D (Mask, uv3));
+   return lerp (Bgnd, comp, tex2D (Mask, uv3).x);
 }
 

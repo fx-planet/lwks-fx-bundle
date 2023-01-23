@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-05
+// @Created 2023-01-23
 
 /**
  "Extrusion blend", as the name suggests, extrudes a foreground image either linearly
@@ -20,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -224,7 +224,7 @@ DeclarePass (KeyFg)
       Fgd.rgb *= Fgd.a;
    }
 
-   return lerp (0.0.xxxx, Fgd, tex2D (Mask, uv1));
+   return Fgd;
 }
 
 DeclarePass (blurPre)
@@ -279,6 +279,8 @@ DeclareEntryPoint (ExtrusionBlend)
 
    retval = lerp (Bgnd, retval, retval.a);
 
-   return lerp (Bgnd, retval, Opacity);
+   retval = lerp (Bgnd, retval, Opacity);
+
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 

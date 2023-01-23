@@ -142,6 +142,6 @@ DeclareEntryPoint (BlendTools)
    }
    else if (OutputMode == 2) Fgd = float4 (Fgd.a.xxx, 1.0);
 
-   return lerp (Bgd, Fgd, tex2D (Mask, uv3));
+   return lerp (Bgd, Fgd, tex2D (Mask, uv3).x);
 }
 

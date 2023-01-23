@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author baopao
 // @Created 2015-11-30
 // @see https://www.lwks.com/media/kunena/attachments/6375/Unpremultiply_640.png
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Update 2023-01-05 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -38,9 +38,8 @@ DeclareMask;
 
 DeclareEntryPoint (Unpremultiply)
 {
-   float4 color = ReadPixel (Inp, uv1);
-   float4 retval = float4 (color.rgb /= color.a, color.a);
+   float4 color = lerp (kTransparentBlack, ReadPixel (Inp, uv1), tex2D (Mask, uv1).x);
 
-   return lerp (color, retval, tex2D (Mask, uv1));
+   return float4 (color.rgb /= color.a, color.a);
 }
 

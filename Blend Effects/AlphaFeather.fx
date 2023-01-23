@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author khaver
 // @Created 2012-12-10
 
@@ -19,7 +19,7 @@
 //
 // Version history:
 //
-// Update 2023-01-05 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -137,6 +137,6 @@ DeclareEntryPoint (AlphaFeather)
 
    float4 retval = Show ? check.xxxx : lerp (orig, color, Mix);
 
-   return lerp (Bgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 

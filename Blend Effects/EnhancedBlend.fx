@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-05
+// @Created 2023-01-23
 
 /**
  "Enhanced blend" is a variant of the Lightworks blend effect with the option to boost the
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -150,11 +150,11 @@ DeclareEntryPoint (Normal)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (ExportAlpha)
-{ return initFg (uv1, uv2); }
+{ return lerp (kTransparentBlack, initFg (uv1, uv2), tex2D (Mask, uv1).x); }
 
 DeclareEntryPoint (Dummy_1)
 { return ReadPixel (Bg, uv2); }
@@ -172,7 +172,7 @@ DeclareEntryPoint (Darken)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Multiply)
@@ -186,7 +186,7 @@ DeclareEntryPoint (Multiply)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (ColourBurn)
@@ -202,7 +202,7 @@ DeclareEntryPoint (ColourBurn)
 
    float4 retval = float4 (lerp (Bgnd.rgb, min (Fgnd.rgb, 1.0.xxx), alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (LinearBurn)
@@ -216,7 +216,7 @@ DeclareEntryPoint (LinearBurn)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (DarkerColour)
@@ -232,7 +232,7 @@ DeclareEntryPoint (DarkerColour)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Dummy_2)
@@ -251,7 +251,7 @@ DeclareEntryPoint (Lighten)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Screen)
@@ -265,7 +265,7 @@ DeclareEntryPoint (Screen)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (ColourDodge)
@@ -281,7 +281,7 @@ DeclareEntryPoint (ColourDodge)
 
    float4 retval = float4 (lerp (Bgnd.rgb, min (Fgnd.rgb, 1.0.xxx), alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (LinearDodge)
@@ -295,7 +295,7 @@ DeclareEntryPoint (LinearDodge)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (LighterColour)
@@ -310,7 +310,7 @@ DeclareEntryPoint (LighterColour)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Dummy_3)
@@ -334,7 +334,7 @@ DeclareEntryPoint (Overlay)
 
    float4 retval = float4 (lerp (Bgnd.rgb, saturate (Fgnd.rgb), alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (SoftLight)
@@ -356,7 +356,7 @@ DeclareEntryPoint (SoftLight)
 
    float4 retval = float4 (lerp (Bgnd.rgb, saturate (Fgnd.rgb), alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (HardLight)
@@ -375,7 +375,7 @@ DeclareEntryPoint (HardLight)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (VividLight)
@@ -404,7 +404,7 @@ DeclareEntryPoint (VividLight)
 
    float4 retval = float4 (lerp (Bgnd.rgb, saturate (Fgnd.rgb), alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (LinearLight)
@@ -422,7 +422,7 @@ DeclareEntryPoint (LinearLight)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (PinLight)
@@ -441,7 +441,7 @@ DeclareEntryPoint (PinLight)
 
    float4 retval = float4 (lerp (Bgnd.rgb, saturate (Fgnd.rgb), alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (HardMix)
@@ -459,7 +459,7 @@ DeclareEntryPoint (HardMix)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Dummy_4)
@@ -478,7 +478,7 @@ DeclareEntryPoint (Difference)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Exclusion)
@@ -492,7 +492,7 @@ DeclareEntryPoint (Exclusion)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Subtract)
@@ -506,7 +506,7 @@ DeclareEntryPoint (Subtract)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Divide)
@@ -522,7 +522,7 @@ DeclareEntryPoint (Divide)
 
    float4 retval = float4 (lerp (Bgnd.rgb, Fgnd.rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Dummy_5)
@@ -542,7 +542,7 @@ DeclareEntryPoint (Hue)
 
    float4 retval = float4 (lerp (Bgnd.rgb, fn_hsv2rgb (blnd).rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Saturation)
@@ -557,7 +557,7 @@ DeclareEntryPoint (Saturation)
 
    float4 retval = float4 (lerp (Bgnd.rgb, fn_hsv2rgb (blnd).rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Colour)
@@ -572,7 +572,7 @@ DeclareEntryPoint (Colour)
 
    float4 retval = float4 (lerp (Bgnd.rgb, fn_hsv2rgb (blnd).rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (Luminosity)
@@ -587,6 +587,6 @@ DeclareEntryPoint (Luminosity)
 
    float4 retval = float4 (lerp (Bgnd.rgb, fn_hsv2rgb (blnd).rgb, alpha), max (Bgnd.a, alpha));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 

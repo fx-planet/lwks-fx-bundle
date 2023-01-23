@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2022-07-04
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2022-07-04
-// @see https://www.lwks.com/media/kunena/attachments/6375/GlitterEdge_640.png
+// @Created 2023-01-23
 
 /**
  This effect generates a border from a title or graphic with an alpha channel.  It then
@@ -25,7 +24,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -125,7 +124,7 @@ DeclarePass (KeyFg)
       Fgd.rgb *= Fgd.a;
    }
 
-   return lerp (0.0.xxxx, Fgd, tex2D (Mask, uv1));
+   return Fgd;
 }
 
 DeclarePass (Sample_0)
@@ -259,6 +258,8 @@ DeclareEntryPoint (GlitteryEdges)
    glint  = saturate (retval + glint - (glint * retval));
    retval = lerp (retval, glint, Strength);
 
-   return lerp (Bgd, retval, Amount);
+   retval = lerp (Bgd, retval, Amount);
+
+   return lerp (Bgd, retval, tex2D (Mask, uv1).x);
 }
 

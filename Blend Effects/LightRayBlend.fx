@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-05
+// @Created 2023-01-23
 
 /**
  This effect adds directional blurs to a key or any image with an alpha channel.  The
@@ -26,7 +26,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -117,7 +117,7 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
       Fgd.rgb *= Fgd.a;
    }
 
-   return lerp (0.0.xxxx, Fgd, tex2D (Mask, xy1));
+   return Fgd;
 }
 
 float4 main (sampler F, float2 xy1, sampler B, float2 xy2, float4 blurred)
@@ -148,7 +148,7 @@ float4 main (sampler F, float2 xy1, sampler B, float2 xy2, float4 blurred)
    retval  = lerp (retval, FxImage, fgImage.a);
    retval  = lerp (bgImage, retval, Opacity);
 
-   return float4 (retval.rgb, bgImage.a);
+   return lerp (bgImage, float4 (retval.rgb, bgImage.a), tex2D (Mask, xy1).x);
 }
 
 //-----------------------------------------------------------------------------------------//

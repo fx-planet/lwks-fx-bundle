@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-17
+// @Created 2023-01-23
 
 /**
  Originally created as YAblur.fx, this was an accident that looked interesting, so it was
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-17 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -125,6 +125,6 @@ DeclareEntryPoint (GhostlyBlur)
 
    retval.rgb += lerp (0.0.xxx, Fgd.rgb - (Fgd.rgb * retval.rgb), saturate (-Fog));
 
-   return lerp (Fgd, saturate (retval), tex2D (Mask, uv1));
+   return lerp (Fgd, saturate (retval), tex2D (Mask, uv1).x);
 }
 

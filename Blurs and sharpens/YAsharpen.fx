@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-23
 
 /**
  First, there is no such thing as the perfect edge sharpening effect.  They all have
@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect YAsharpen.fx
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -79,6 +79,6 @@ DeclareEntryPoint (YAsharpen)
 
    retval.rgb += ((saturate (dot (edges, luma_val)) * clamp * 2.0) - clamp).xxx;
 
-   return lerp (Input, retval, tex2D (Mask, uv1));
+   return lerp (Input, retval, tex2D (Mask, uv1).x);
 }
 

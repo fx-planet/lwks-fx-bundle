@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-23
 // @Author khaver
 // @Created 2012-04-12
 // @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
@@ -30,7 +30,7 @@
 //
 // Version history:
 //
-// Update 2023-01-17 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -287,6 +287,6 @@ DeclareEntryPoint (IrisBokeh)
    float4 retval = (Focus > 0.0) || (Size > 0.0)
           ? 1.0 - ((1.0 - (bokeh * bomix)) * (1.0 - (blurred * blmix))) : orig;
 
-   return lerp (orig, retval, tex2D (Mask, uv3));
+   return lerp (orig, retval, tex2D (Mask, uv3).x);
 }
 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-23
 // @Author baopao
 // @Created 2013-10-23
 
@@ -15,7 +15,7 @@
 //
 // Version history:
 //
-// Update 2023-01-17 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -172,6 +172,6 @@ DeclareEntryPoint (BilateralBlur)
       x += stepX;
    }
 
-   return lerp (tempC0, Colour / normalizer, tex2D (Mask, uv1));
+   return lerp (tempC0, Colour / normalizer, tex2D (Mask, uv1).x);
 }
 

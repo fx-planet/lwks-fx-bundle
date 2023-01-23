@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-23
 // @Author Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)
 // @Created 2012-07-30
 
@@ -43,7 +43,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-16 jwrl.
+// Updated 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 

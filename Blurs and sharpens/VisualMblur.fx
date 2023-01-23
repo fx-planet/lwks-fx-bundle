@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-23
 
 /**
  A directional blur that can be used to simulate fast motion, whip pans and the like.  This
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -100,6 +100,6 @@ DeclareEntryPoint (VisualMblur)
 
    // Finally mix the blur back into the original foreground video.
 
-   return lerp (Fgnd, Blur, tex2D (Mask, uv1) * Fgnd.a);
+   return lerp (Fgnd, Blur, tex2D (Mask, uv1).x * Fgnd.a);
 }
 

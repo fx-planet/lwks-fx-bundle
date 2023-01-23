@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-23
 // @Author khaver
 // @Created 2015-12-08
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Update 2023-01-16 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -172,7 +172,7 @@ float4 Combine (sampler m1, sampler s1, sampler F, sampler B, float2 uv)
                  : blurry > 0.0 ? ReadPixel (s1, uv)
                  : swap         ? ReadPixel (B, uv) : ReadPixel (F, uv);
 
-   return lerp (source, retval, tex2D (Mask, uv));
+   return lerp (source, retval, tex2D (Mask, uv).x);
 }
 
 //-----------------------------------------------------------------------------------------//

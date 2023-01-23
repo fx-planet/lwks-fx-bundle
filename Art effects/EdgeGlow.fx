@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2022-12-31
+// @Created 2023-01-23
 
 /**
  Edge glow (EdgeGlowFx.fx) is an effect that can use image levels or the edges of the
@@ -19,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2022-12-31 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -214,7 +214,7 @@ DeclareEntryPoint (EdgeGlowAdd)
 
    Glow.a = Fgnd.a;
 
-   return lerp (Fgnd, Glow, tex2D (Mask, uv2));
+   return lerp (Fgnd, Glow, tex2D (Mask, uv2).x);
 }
 
 DeclarePass (Vid_S)
@@ -248,7 +248,7 @@ DeclareEntryPoint (EdgeGlowScreen)
 
    retval.a = Fgnd.a;
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv2));
+   return lerp (Fgnd, retval, tex2D (Mask, uv2).x);
 }
 
 DeclarePass (Vid_L)
@@ -281,7 +281,7 @@ DeclareEntryPoint (EdgeGlowLighten)
 
    Glow.a = Fgnd.a;
 
-   return lerp (Fgnd, Glow, tex2D (Mask, uv2));
+   return lerp (Fgnd, Glow, tex2D (Mask, uv2).x);
 }
 
 DeclarePass (Vid_SG)
@@ -315,7 +315,7 @@ DeclareEntryPoint (EdgeGlowSoftGlow)
 
    retval.a = Fgnd.a;
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv2));
+   return lerp (Fgnd, retval, tex2D (Mask, uv2).x);
 }
 
 DeclarePass (Vid_VL)
@@ -348,6 +348,6 @@ DeclareEntryPoint (EdgeGlowVividLight)
 
    Glow.a = Fgnd.a;
 
-   return lerp (Fgnd, Glow, tex2D (Mask, uv2));
+   return lerp (Fgnd, Glow, tex2D (Mask, uv2).x);
 }
 

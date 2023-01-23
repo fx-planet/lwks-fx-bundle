@@ -106,6 +106,6 @@ DeclareEntryPoint (Edge)
       edge = float4 (org.rgb, alpha);
       }
 
-   return lerp (org, edge, tex2D (Mask, uv1));
+   return lerp (org, edge, tex2D (Mask, uv1).x);
 }
 

@@ -123,6 +123,6 @@ DeclareEntryPoint (FourTone)
    result = lerp (source, result, source.a);
    result.a = source.a;
 
-   return lerp (source, result, tex2D (Mask, uv1));
+   return lerp (source, result, tex2D (Mask, uv1).x);
 }
 

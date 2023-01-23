@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2022-12-31
+// @Created 2023-01-23
 
 /**
  The dark side gives a dark "glow" (don't know what else to call it) to an image.
@@ -20,7 +20,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect DarkSide.fx
 //
-// Built 2022-12-31 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -155,6 +155,6 @@ DeclareEntryPoint (DarkSide)
 
    retval.rgb = lerp (retval, gloVal, amount).rgb;
 
-   return lerp (source, retval, tex2D (Mask, uv2));
+   return lerp (source, retval, tex2D (Mask, uv2).x);
 }
 

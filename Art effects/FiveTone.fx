@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author idealsceneprod (Val Gameiro)
 // @Created 2014-12-24
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Update 2022-12-31 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -127,6 +127,6 @@ DeclareEntryPoint (FiveTone)
    result = lerp (source, result, source.a);
    result.a = source.a;
 
-   return lerp (source, result, tex2D (Mask, uv1));
+   return lerp (source, result, tex2D (Mask, uv1).x);
 }
 

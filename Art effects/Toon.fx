@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author khaver
 // @Created 2011-04-18
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Update 2022-12-31 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -94,6 +94,6 @@ DeclareEntryPoint (Toon)
 
    color.rgb *= edge;
 
-   return lerp (src1, color, tex2D (Mask, uv1));
+   return lerp (src1, color, tex2D (Mask, uv1).x);
 }
 

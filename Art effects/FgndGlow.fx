@@ -170,7 +170,7 @@ float4 fn_main (sampler G, sampler K, float2 uv, sampler F, float2 xy1, sampler 
    Comp.rgb = lerp (Comp.rgb, saturate (retval.rgb), Strength);
    Comp.rgb = lerp (Comp.rgb, Fgnd.rgb, Fgnd.a * FgOverlay);
 
-   return lerp (Bgnd, Comp, tex2D (Mask, uv));
+   return lerp (Bgnd, Comp, tex2D (Mask, uv).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -206,7 +206,7 @@ DeclareEntryPoint (FgndGlowLuminance)
    float4 retval = fn_main (GlowL, KeyL, uv3, Fg, uv1, Bg, uv2);
    float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
-   return lerp (video, retval, tex2D (Mask, uv1));
+   return lerp (video, retval, tex2D (Mask, uv1).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -232,7 +232,7 @@ DeclareEntryPoint (FgndGlowReds)
    float4 retval = fn_main (GlowR, KeyR, uv3, Fg, uv1, Bg, uv2);
    float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
-   return lerp (video, retval, tex2D (Mask, uv1));
+   return lerp (video, retval, tex2D (Mask, uv1).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -258,7 +258,7 @@ DeclareEntryPoint (FgndGlowGreens)
    float4 retval = fn_main (GlowG, KeyG, uv3, Fg, uv1, Bg, uv2);
    float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
-   return lerp (video, retval, tex2D (Mask, uv1));
+   return lerp (video, retval, tex2D (Mask, uv1).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -284,7 +284,7 @@ DeclareEntryPoint (FgndGlowBlues)
    float4 retval = fn_main (GlowB, KeyB, uv3, Fg, uv1, Bg, uv2);
    float4 video  = fn_comp (Fg, uv1, Bg, uv2);
 
-   return lerp (video, retval, tex2D (Mask, uv1));
+   return lerp (video, retval, tex2D (Mask, uv1).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -293,6 +293,6 @@ DeclareEntryPoint (FgndGlowKeySetup)
 {
    float4 retval = fn_keygen (Fg, uv1, Bg, uv2);
 
-   return lerp (kTransparentBlack, retval, tex2D (Mask, uv1));
+   return lerp (kTransparentBlack, retval, tex2D (Mask, uv1).x);
 }
 

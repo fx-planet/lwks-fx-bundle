@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2022-12-31
+// @Created 2023-01-23
 
 /**
  Poster paint (PosterPaintFx) is an effect that posterizes the image.  The adjustment runs
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2022-12-31 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -215,6 +215,6 @@ DeclareEntryPoint (PosterPaint)
 
    RGB = float4 (fn_HSLtoRGB (HSL), alpha);
 
-   return lerp (retval, RGB, tex2D (Mask, uv2));
+   return lerp (retval, RGB, tex2D (Mask, uv2).x);
 }
 

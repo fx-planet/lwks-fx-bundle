@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author khaver
 // @Author Daniel Taylor
 // @Created 2018-05-24
@@ -32,7 +32,7 @@
 //
 // Version history:
 //
-// Update 2022-12-31 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -161,6 +161,6 @@ DeclareEntryPoint (PencilSketch)
    result.a = AddAlpha ? 1.0 - avg : fg.a;
    result.rgb = avg.xxx + ((result.rgb - avg.xxx) * Saturation);
 
-   return lerp (fg, result, tex2D (Mask, uv1));
+   return lerp (fg, result, tex2D (Mask, uv1).x);
 }
 

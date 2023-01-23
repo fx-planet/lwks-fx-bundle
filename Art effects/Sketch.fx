@@ -172,6 +172,6 @@ DeclareEntryPoint (Sketch)
    color = lerp (color, back, color.a);
    color.a = alpha;
 
-   return lerp (src1, color, tex2D (Mask, uv1));
+   return lerp (src1, color, tex2D (Mask, uv1).x);
 }
 

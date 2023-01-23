@@ -169,6 +169,6 @@ DeclareEntryPoint (FractalMatte2)
    retval = (((pow (retval, 1.0 / GammVal) * Gain) + (Brightness - 0.5).xxxx) * Contrast) + 0.5.xxxx;
    retval.a = 1.0;
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 

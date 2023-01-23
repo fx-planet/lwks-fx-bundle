@@ -124,6 +124,6 @@ DeclareEntryPoint (PlasmaMatte)
    float4 Fgd = ReadPixel (Inp, uv1);
    float4 retval = float4 (lerp (luma.xxx, ret, Saturation), Fgd.a);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 

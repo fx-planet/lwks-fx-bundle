@@ -83,7 +83,7 @@ DeclareEntryPoint (MultiGradientFlat)
    float4 retval = float4 (topLeft.rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Horizontal left > right
@@ -106,7 +106,7 @@ DeclareEntryPoint (MultiGradientHoriz_LR)
    float4 retval = float4 (lerp (topLeft, topRight, horiz).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Horizontal to centre
@@ -131,7 +131,7 @@ DeclareEntryPoint (MultiGradientHoriz_C)
    float4 Fgd = ReadPixel (Inp, uv1);
 
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Vertical top > bottom
@@ -158,7 +158,7 @@ DeclareEntryPoint (MultiGradientVert_TB)
    float4 retval = float4 (lerp (topLeft, botLeft, vert).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Vertical to centre
@@ -184,7 +184,7 @@ DeclareEntryPoint (MultiGradientVert_C)
    float4 retval = float4 (lerp (topLeft, botLeft, vert).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Four way
@@ -214,7 +214,7 @@ DeclareEntryPoint (MultiGradientFourWay)
    float4 retval = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Four way to centre
@@ -239,7 +239,7 @@ DeclareEntryPoint (MultiGradientFourWay_C)
    float4 retval = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Four way to horizontal centre
@@ -267,7 +267,7 @@ DeclareEntryPoint (MultiGradientFourWay_HC)
    float4 retval = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Four way to vertical centre
@@ -294,7 +294,7 @@ DeclareEntryPoint (MultiGradientFourWay_VC)
    float4 retval = float4 (lerp (gradient, botRow, vert).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 
 // Radial
@@ -318,6 +318,6 @@ DeclareEntryPoint (MultiGradientRadial)
    float4 retval = float4 (lerp (topLeft, gradient, vert).rgb, 1.0);
    float4 Fgd = ReadPixel (Inp, uv1);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
 

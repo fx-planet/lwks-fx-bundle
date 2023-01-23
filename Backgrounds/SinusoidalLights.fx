@@ -119,6 +119,6 @@ DeclareEntryPoint (SinusoidalLights)
    retval = lerp (retval, fgdPat, sum);
    retval.a = 1.0;
 
-   return lerp (Bgnd, retval, tex2D (Mask, uv1));
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-01-24
 // @Author schrauber
 // @Created 2020-10-23
 
@@ -20,7 +20,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-08 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -132,6 +132,6 @@ DeclareEntryPoint (Liquify)
       }
    }
 
-   return lerp (ReadPixel (Input, uv1), retval, tex2D (Mask, uv1));
+   return lerp (ReadPixel (Input, uv1), retval, tex2D (Mask, uv1).x);
 }
 

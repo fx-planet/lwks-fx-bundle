@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-01-24
 // @Author schrauber
 // @Created 2017-01-05
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-08 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -82,6 +82,6 @@ DeclareEntryPoint (MagnifyingGlass)
                  ? float4 (MirrorEdge (Input, uv1).rgb, 0.0)
                  : MirrorEdge (Input, zoom * xydist + uv1);										// Zoom  (lens)
 
-   return lerp (ReadPixel (Input, uv1), retval, tex2D (Mask, uv1));
+   return lerp (ReadPixel (Input, uv1), retval, tex2D (Mask, uv1).x);
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-01-24
 // @Author jwrl
-// @Created 2023-01-08
+// @Created 2023-01-24
 
 /**
  This effect simulates a flag waving.  It incorporates a 3D DVE to allow the flag to be
@@ -20,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-08 jwrl
+// Built 2023-01-24 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -95,7 +95,7 @@ DeclareFloatParam (_LengthFrames);
 // These two preamble passes ensure that rotated video is handled correctly.
 
 DeclarePass (Foreground)
-{ return lerp (kTransparentBlack, ReadPixel (Fg, uv1), tex2D (Mask, uv1)); }
+{ return lerp (kTransparentBlack, ReadPixel (Fg, uv1), tex2D (Mask, uv1).x); }
 
 DeclarePass (Background)
 { return ReadPixel (Bg, uv2); }

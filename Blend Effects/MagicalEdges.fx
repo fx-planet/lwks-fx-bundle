@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-05
+// @Released 2023-01-23
 // @Author jwrl
 // @Author Robert Schütze
-// @Created 2023-01-05
+// @Created 2023-01-23
 
 /**
  This effect generates a border from a title or graphic with an alpha channel.  It then adds
@@ -20,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-05 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 DeclareLightworksEffect ("Magical edges", "Mix", "Blend Effects", "Fractal edges with star-shaped radiating blurs", CanSize);

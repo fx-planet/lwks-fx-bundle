@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author idealsceneprod (Val Gameiro)
 // @Created 2014-12-24
 
@@ -16,13 +16,13 @@
 //
 // Version history:
 //
-// Update 2022-12-31 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Four tone 2022.2+", "Colour", "Art Effects", "Extends the existing Lightworks Two Tone and Tri-Tone effects to provide four tonal values", kNoFlags);
+DeclareLightworksEffect ("Four tone", "Colour", "Art Effects", "Extends the existing Lightworks Two Tone and Tri-Tone effects to provide four tonal values", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

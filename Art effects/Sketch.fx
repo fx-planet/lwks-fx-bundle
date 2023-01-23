@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author khaver
 // @Created 2012-08-21
 
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Update 2022-12-31 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -87,9 +87,9 @@ int GY [3][3] =
 
 DeclarePass (Threshold)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
-
    float4 src1 = ReadPixel (Input, uv1);
+
+   if (IsOutOfBounds (uv1) || (src1.a <= 0.0)) return kTransparentBlack;
 
    float srcLum = saturate ((src1.r * RLevel) + (src1.g * GLevel) + (src1.b * BLevel));
 
@@ -103,13 +103,13 @@ DeclarePass (Threshold)
 
 DeclarePass (Blur1)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   float4 blurred = tex2D (Threshold, uv2);
+
+   if (IsOutOfBounds (uv1) || (blurred.a <= 0.0)) return kTransparentBlack;
 
    float one   = 1.0 / _OutputWidth;
    float tap1  = uv2.x + one;
    float ntap1 = uv2.x - one;
-
-   float4 blurred = tex2D (Threshold, uv2);
 
    blurred += tex2D (Threshold, float2 (tap1,  uv2.y));
    blurred += tex2D (Threshold, float2 (ntap1, uv2.y));
@@ -119,13 +119,13 @@ DeclarePass (Blur1)
 
 DeclarePass (Blur2)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   float4 ret = tex2D (Blur1, uv2);
+
+   if (IsOutOfBounds (uv1) || (ret.a <= 0.0)) return kTransparentBlack;
 
    float one  = 1.0 / _OutputHeight;
    float tap1 = uv2.y + one;
    float ntap1 = uv2.y - one;
-
-   float4 ret = tex2D (Blur1, uv2);
 
    ret += tex2D (Blur1, float2 (uv2.x, tap1));
    ret += tex2D (Blur1, float2 (uv2.x, ntap1));
@@ -135,7 +135,9 @@ DeclarePass (Blur2)
 
 DeclareEntryPoint (Sketch)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   float alpha = ReadPixel (Input, uv1).a;
+
+   if (IsOutOfBounds (uv1) || (alpha <= 0.0)) return kTransparentBlack;
 
    float4 bl = BorderLineColor;
 
@@ -168,7 +170,7 @@ DeclareEntryPoint (Sketch)
    if (Invert) return 1.0.xxxx - lerp (color, back, color.a);
 
    color = lerp (color, back, color.a);
-   color.a = tex2D (Input, uv1).a;
+   color.a = alpha;
 
    return lerp (src1, color, tex2D (Mask, uv1));
 }

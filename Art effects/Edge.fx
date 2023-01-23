@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2022-12-31
+// @Released 2023-01-23
 // @Author khaver
 // @Created 2011-07-08
 
@@ -21,7 +21,7 @@
 //
 // Version history:
 //
-// Update 2022-12-31 jwrl.
+// Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -59,9 +59,9 @@ DeclareBoolParam (Alpha, "Edge to alpha", kNoGroup, false);
 
 DeclareEntryPoint (Edge)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
-
    float4 org = tex2D (Input, uv1);
+
+   if (IsOutOfBounds (uv1) || (org.a <= 0.0)) return kTransparentBlack;
 
    float ThreshholdSq = Threshold * Threshold;
 

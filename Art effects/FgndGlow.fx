@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-17
+// @Created 2023-01-23
 
 /**
  This effect uses a glow based on the Lightworks Glow effect, with the blur section
@@ -27,12 +27,12 @@
 //
 // Version history:
 //
-// Built 2023-01-17 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Foreground glow", "Stylize", "Art Effects", "An effect that applies a glow to the foreground of a keyed or blended image", "ScaleAware|HasMinOutputSize");
+DeclareLightworksEffect ("Foreground glow", "Stylize", "Art Effects", "An effect that applies a glow to the foreground of a keyed or blended image", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

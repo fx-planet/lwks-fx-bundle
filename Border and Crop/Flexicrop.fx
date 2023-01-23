@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-22
+// @Released 2023-01-23
 // @Author jwrl
-// @Released 2023-01-22
+// @Released 2023-01-23
 
 /**
  This effect is a flexible vignette with the ability to apply a range of masks using
@@ -27,7 +27,7 @@
 //
 // Version history:
 //
-// Built 2023-01-22 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

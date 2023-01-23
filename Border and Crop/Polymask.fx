@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-22
 // @Author jwrl
-// @Released 2023-01-06
+// @Released 2023-01-22
 
 /**
  This is a Lightworks 2023 replacement for all of khaver's original Polymask effects,
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-22 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -48,6 +48,6 @@ DeclareEntryPoint ()
 {
    float4 Bgd = Mode == 0 ? ReadPixel (Bg, uv2) : BgColour;
 
-   return lerp (Bgd, ReadPixel (Fg, uv1), tex2D (Mask, uv1));
+   return lerp (Bgd, ReadPixel (Fg, uv1), tex2D (Mask, uv1).x);
 }
 

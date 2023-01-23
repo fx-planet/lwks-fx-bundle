@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-23
 // @Author jwrl
-// @Released 2023-01-06
+// @Released 2023-01-23
 
 /**
  This is a crop tool that provides a bevelled border.  The lighting of the bevel can be
@@ -26,7 +26,7 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -48,13 +48,14 @@ DeclareFloatParam (CropTop, "Top left", "Crop", "SpecifiesPointY", 0.9, 0.0, 1.0
 DeclareFloatParam (CropRight, "Bottom right", "Crop", "SpecifiesPointX", 0.9, 0.0, 1.0);
 DeclareFloatParam (CropBottom, "Bottom right", "Crop", "SpecifiesPointY", 0.1, 0.0, 1.0);
 
+DeclareFloatParam (Scale, "Size", kNoGroup, "DisplayAsPercentage", 1.0, 0.1, 5.0);
 DeclareFloatParam (PosX, "Position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (PosY, "Position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-DeclareFloatParam (Border, "Width", "Border", kNoFlags, 0.125, 0.0, 1.0);
+DeclareFloatParam (Border, "Width", "Border", kNoFlags, 0.25, 0.0, 1.0);
 DeclareColourParam (Colour, "Colour", "Border", kNoFlags, 0.375, 0.625, 0.75, 1.0);
 
-DeclareFloatParam (Bevel, "Percent width", "Bevel", kNoFlags, 0.6, 0.0, 1.0);
+DeclareFloatParam (Bevel, "Percent width", "Bevel", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (Intensity, "Light level", "Bevel", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (Angle, "Light angle", "Bevel", kNoFlags, 80.0, -180.0, 180.0);
 DeclareFloatParam (Fill, "Fill light", "Bevel", kNoFlags, 0.4, 0.0, 1.0);
@@ -252,11 +253,11 @@ DeclareEntryPoint (BevelCrop)
 
    if (CropToBgd && IsOutOfBounds (uv2)) return kTransparentBlack;
 
-   // Now we calculate the position offset and put it in xy1.  A further offset is
-   // calculated for the drop shadow and placed in xy2.  While it would be possible
+   // Now we calculate the position offset and and scale and put it in xy1.  The
+   // drop shadow is also calculated and placed in xy2.  While it would be possible
    // to use the bevel angle parameter to do this, it's much simpler this way.
 
-   float2 xy1 = uv3 + float2 (0.5 - PosX, PosY - 0.5);
+   float2 xy1 = ((uv3 - float2 (PosX, 1.0 - PosY)) / max (1e-6, Scale)) + 0.5.xx;
    float2 xy2 = xy1 - float2 (ShadowX, -ShadowY * _OutputAspectRatio) * SHADOW;
 
    // The alpha channel in Bvl is obtained using xy2 and scaled by the drop shadow

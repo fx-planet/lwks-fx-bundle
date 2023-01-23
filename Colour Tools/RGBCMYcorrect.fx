@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-07
+// @Released 2023-01-23
 // @Author baopao
 // @Created 2015-09-23
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-07 jwrl.
+// Updated 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -114,12 +114,15 @@ DeclareFloatParam (Y_Brightness, "Brightness", "YELLOW", kNoFlags, 0.0, -1.0, 2.
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Inp)
+{ return ReadPixel (Input, uv1); }
+
 DeclareEntryPoint (RGBCMYcorrect)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   if (IsOutOfBounds (uv2)) return kTransparentBlack;
 
-   float4 Inp = tex2D (Input, uv1);
-   float4 Cs = saturate (Inp);
+   float4 video = tex2D (Inp, uv2);
+   float4 Cs = saturate (video);
 
    float lum   = (Cs.r + Cs.g + Cs.b) / 3.0;
    float lum_1 = lum - 0.5;
@@ -202,6 +205,6 @@ DeclareEntryPoint (RGBCMYcorrect)
    Cs_M = lerp (Cs_C, Cs_M, magenta);
    Cs   = lerp (Cs_M, Cs_Y, yellow);
 
-   return lerp (Inp, saturate (Cs), tex2D (Mask, uv1));
+   return lerp (video, saturate (Cs), tex2D (Mask, uv2));
 }
 

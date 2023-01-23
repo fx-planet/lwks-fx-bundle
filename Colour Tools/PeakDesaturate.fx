@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-17
+// @Created 2023-01-23
 
 /**
  This is a tool designed to quickly and easily desaturate whites and blacks, which can
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-17 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -47,12 +47,15 @@ DeclareFloatParam (BlkDesat, "Desaturate", "Black", kNoFlags, 0.0, 0.0, 1.0);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Inp)
+{ return ReadPixel (Input, uv1); }
+
 DeclareEntryPoint (PeakDesaturate)
 {
    if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   float4 Inp    = tex2D (Input, uv1);
-   float4 retval = saturate (Inp);
+   float4 video  = tex2D (Inp, uv2);
+   float4 retval = saturate (video);
 
    // We use all RGB data for raw luminance so that we don't get hard contouring.
    // This may also give some colour noise reduction - possibly.
@@ -80,6 +83,6 @@ DeclareEntryPoint (PeakDesaturate)
 
    retval.rgb = lerp (lerp (retval.rgb, Luma.xxx, Blevel), Luma.xxx, Wlevel);
 
-   return lerp (Inp, retval, tex2D (Mask, uv1));
+   return lerp (video, retval, tex2D (Mask, uv2));
 }
 

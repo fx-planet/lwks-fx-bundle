@@ -45,26 +45,29 @@ DeclareFloatParam (BlurAmount, "BlurAmount", kNoGroup, kNoFlags, 0.2, 0.0, 1.0);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Input)
+{ return ReadPixel (Fg, uv1); }
+
 DeclareEntryPoint (ALEsmoothChroma)
 {
    if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   float4 Inp = tex2D (Fg, uv1);
+   float4 Inp = tex2D (Input, uv2);
    float4 ret = Inp;
 
    float A = ret.a;
    float Y = 0.065 + (ret.r * 0.257) + (ret.g * 0.504) + (ret.b * 0.098);
    float amount = BlurAmount * 0.01;
 
-   ret += tex2D (Fg, uv1 - float2 (amount, 0.0));
-   ret += tex2D (Fg, uv1 + float2 (amount, 0.0));
-   ret += tex2D (Fg, uv1 - float2 (0.0, amount));
-   ret += tex2D (Fg, uv1 + float2 (0.0, amount));
+   ret += tex2D (Input, uv2 - float2 (amount, 0.0));
+   ret += tex2D (Input, uv2 + float2 (amount, 0.0));
+   ret += tex2D (Input, uv2 - float2 (0.0, amount));
+   ret += tex2D (Input, uv2 + float2 (0.0, amount));
    amount += amount;
-   ret += tex2D (Fg, uv1 - float2 (amount, 0.0));
-   ret += tex2D (Fg, uv1 + float2 (amount, 0.0));
-   ret += tex2D (Fg, uv1 - float2 (0.0, amount));
-   ret += tex2D (Fg, uv1 + float2 (0.0, amount));
+   ret += tex2D (Input, uv2 - float2 (amount, 0.0));
+   ret += tex2D (Input, uv2 + float2 (amount, 0.0));
+   ret += tex2D (Input, uv2 - float2 (0.0, amount));
+   ret += tex2D (Input, uv2 + float2 (0.0, amount));
    ret /= 9.0;
 
    //RGB2CbCr
@@ -79,6 +82,6 @@ DeclareEntryPoint (ALEsmoothChroma)
    ret.b = 1.164 * (Y - 0.065) + 2.017 * (Cb - 0.5);
    ret.a = A;
 
-   return lerp (Inp, saturate (ret), tex2D (Mask, uv1));
+   return lerp (Inp, saturate (ret), tex2D (Mask, uv2));
 }
 

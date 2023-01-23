@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-07
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-07
+// @Created 2023-01-23
 
 /**
  This adjusts mid-range red, green and blue levels to enhance or reduce them.  It does
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-07 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -69,11 +69,14 @@ float fn_s_curve (float video, float curve, float level)
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Input)
+{ return ReadPixel (Inp, uv1); }
+
 DeclareEntryPoint (MidtoneKicker)
 {
    if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   float4 Bgd = tex2D (Inp, uv1);
+   float4 Bgd = tex2D (Input, uv2);
    float4 ret = Bgd;
 
    ret.rgb = (ret.rgb - BlackPoint.rgb) / WhitePoint.rgb;
@@ -101,6 +104,6 @@ DeclareEntryPoint (MidtoneKicker)
    ret.g = lerp (ret.g, fn_s_curve (retval.g, curves, amount), Trim_G + 1.0);
    ret.b = lerp (ret.b, fn_s_curve (retval.b, curves, amount), Trim_B + 1.0);
 
-   return lerp (Bgd, ret, tex2D (Mask, uv1));
+   return lerp (Bgd, ret, tex2D (Mask, uv2));
 }
 

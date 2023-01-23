@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-07
+// @Released 2023-01-23
 // @Author jMovie
 // @Created 2011-05-27
 // @see https://www.lwks.com/media/kunena/attachments/6375/SCurve_640.png
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-07 jwrl.
+// Updated 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -96,15 +96,18 @@ float fn_curve_magic (float valueIn, float indexFraction)
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Inp)
+{ return ReadPixel (Input, uv1); }
+
 DeclarePass (HSVsampler)
 // Original Pass0_Input converted by changing _RGBtoHSV function to in-line code.
 // All float3 variables converted to float4 to preserve alpha channel - jwrl
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   if (IsOutOfBounds (uv2)) return kTransparentBlack;
 
-   if (Visualize) return float4 (uv1.x, 0.0, 0.0, 1.0);
+   if (Visualize) return float4 (uv2.x, 0.0, 0.0, 1.0);
 
-   float4 src_rgba = tex2D (Input, uv1);
+   float4 src_rgba = tex2D (Inp, uv2);
 
    if (!ValueChannel) return src_rgba;
 
@@ -132,11 +135,11 @@ DeclarePass (HSVsampler)
 
 DeclareEntryPoint (Scurve)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   if (IsOutOfBounds (uv2)) return kTransparentBlack;
 
    float points [6] = { 0.0, InX * 0.2745, LowX * 0.6275, (HighX * 0.6667) + 0.3333, (OutX * 0.3333) + 0.6667, 1.0 };
 
-   float4 src_raw  = tex2D (Input, uv1);
+   float4 src_raw  = tex2D (Inp, uv2);
    float4 src_rgba = saturate (src_raw);
    float4 p2 = saturate (tex2D (HSVsampler, uv2));
    float4 src_hsv = p2, src_idx = 0.0;
@@ -151,7 +154,7 @@ DeclareEntryPoint (Scurve)
 
    p2.x = fn_curve_magic (p2.x, src_idx.x);
 
-   if (Visualize) { if ((1.0 - uv1.y) < (p2.x)) src_rgba = 0.0; }
+   if (Visualize) { if ((1.0 - uv2.y) < (p2.x)) src_rgba = 0.0; }
    else {
       src_hsv.z = fn_curve_magic (p2.z, src_idx.z);
 
@@ -183,6 +186,6 @@ DeclareEntryPoint (Scurve)
       }
    }
 
-   return lerp (src_raw, saturate (src_rgba), tex2D (Mask, uv1));
+   return lerp (src_raw, saturate (src_rgba), tex2D (Mask, uv2));
 }
 

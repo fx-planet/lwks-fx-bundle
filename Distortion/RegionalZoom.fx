@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-01-24
 // @Author schrauber
 // @Created 2016-03-14
 
@@ -17,7 +17,7 @@
 //
 // Version history.
 //
-// Updated 2023-01-08 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -30,6 +30,8 @@ DeclareLightworksEffect ("Regional zoom", "DVE", "Distortion", "This is designed
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Input);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -82,6 +84,8 @@ DeclareEntryPoint (RegionalZoom)
 
    float2 xy = uv1 + (zoom * xydist);						 // Get the distorted address.  It's the same whether mirrored or bordered.
 
-   return Mode ? MirrorEdge (Input, xy) : ReadPixel (Input, xy);		 // ReadPixel() blanks anything outside legal addresses, which adds a border to the distorted but mirrored video
+   float4 ret = Mode ? MirrorEdge (Input, xy) : ReadPixel (Input, xy);		 // ReadPixel() blanks anything outside legal addresses, which adds a border to the distorted but mirrored video
+
+   return lerp (ReadPixel (Input, uv1), ret, tex2D (Mask, uv1).x);		 // Return the masked regional zoom over the input video.
 }
 

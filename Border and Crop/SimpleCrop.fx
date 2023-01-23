@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-22
 // @Author jwrl
-// @Released 2023-01-06
+// @Released 2023-01-2
 
 /**
  This is a quick simple cropping tool.  You can also use it to blend images without
@@ -23,7 +23,7 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-22 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -63,6 +63,8 @@ DeclareFloatParam (_OutputAspectRatio);
 #define PROFILE ps_3_0
 #endif
 
+#define jSaturate(n)    min(max (n, 0.0), 1.0)
+
 #define BLACK float2(0.0, 1.0).xxxy
 
 //-----------------------------------------------------------------------------------------//
@@ -82,8 +84,8 @@ DeclareEntryPoint (SimpleCrop)
 
    float2 cropTL = float2 (CropLeft, 1.0 - CropTop);
    float2 cropBR = float2 (CropRight, 1.0 - CropBottom);
-   float2 bordTL = saturate (cropTL - brdrEdge);
-   float2 bordBR = saturate (cropBR + brdrEdge);
+   float2 bordTL = jSaturate (cropTL - brdrEdge);
+   float2 bordBR = jSaturate (cropBR + brdrEdge);
 
    float4 Fgnd = tex2D (Fgd, uv3);
    float4 Bgnd = ReadPixel (Bg, uv2);

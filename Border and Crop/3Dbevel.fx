@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-01-22
 // @Author jwrl
-// @Released 2023-01-06
+// @Released 2023-01-22
 
 /**
  This is a crop tool that provides a 3D bevelled border.  As the bevel width is adjusted
@@ -28,7 +28,7 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Built 2023-01-22 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -74,6 +74,8 @@ DeclareFloatParam (_OutputAspectRatio);
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
+
+#define jSaturate(n)    min(max (n, 0.0), 1.0)
 
 #define BEVEL  0.1
 #define BORDER 0.0125
@@ -143,7 +145,7 @@ DeclarePass (Bvl)
 
    float2 xy1 = uv3 - float2 (CropRight + CropLeft, 2.0 - CropTop - CropBottom) / 2.0;
    float2 xy2 = abs (xy1) * 2.0;
-   float2 xy3 = saturate (xy2 - cropBevel);
+   float2 xy3 = jSaturate (xy2 - cropBevel);
 
    xy3.x *= _OutputAspectRatio;
 
@@ -175,13 +177,13 @@ DeclarePass (Bvl)
       Fgnd = ReadPixel (Fgd, uv);
       retval = lerp (kTransparentBlack, Fgnd, Fgnd.a).rgb;
 
-      amt = saturate (0.95 - (amt * Intensity * 2.0)) * 6.0;
+      amt = jSaturate (0.95 - (amt * Intensity * 2.0)) * 6.0;
       amt = (amt >= 3.0) ? amt - 2.0 : 1.0 / (4.0 - amt);
       hsv.z = pow (hsv.z, amt);
 
-      if (hsv.z > 0.5) hsv.y = saturate (hsv.y - hsv.z + 0.5);
+      if (hsv.z > 0.5) hsv.y = jSaturate (hsv.y - hsv.z + 0.5);
 
-      hsv.z = saturate (hsv.z * 2.0);
+      hsv.z = jSaturate (hsv.z * 2.0);
 
       retval = lerp (retval, fn_hsv2rgb (hsv), (Bstrength * 0.5) + 0.25);
    }

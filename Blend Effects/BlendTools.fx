@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-17
+// @Created 2023-01-23
 
 /**
  Blend tools is an effect that is designed to help if the alpha channel may not be quite
@@ -29,7 +29,7 @@
 //
 // Version history:
 //
-// Built 2023-01-17 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -56,7 +56,7 @@ DeclareIntParam (Premultiply, "Unpremultiply", "Alpha fine tuning", 0, "None|Bef
 
 DeclareFloatParam (Transparency, "Transparency", "Alpha fine tuning", kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (Gamma, "Alpha gamma", "Alpha fine tuning", kNoFlags, 1.0, 0.1, 4.0);
-DeclareFloatParam (Contrast, "Alpha contrast", "Alpha fine tuning", kNoFlags, 0.1, 0.0, 5.0);
+DeclareFloatParam (Contrast, "Alpha contrast", "Alpha fine tuning", kNoFlags, 1.0, 0.0, 5.0);
 DeclareFloatParam (Brightness, "Alpha brightness", "Alpha fine tuning", kNoFlags, 0.0, -1.0, 1.0);
 DeclareFloatParam (Gain, "Alpha gain", "Alpha fine tuning", kNoFlags, 1.0, 0.0, 4.0);
 DeclareFloatParam (Feather, "Alpha feather", "Alpha fine tuning", kNoFlags, 0.0, 0.0, 1.0);

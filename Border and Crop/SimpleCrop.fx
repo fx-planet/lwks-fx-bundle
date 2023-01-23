@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-22
+// @Released 2023-01-23
 // @Author jwrl
-// @Released 2023-01-2
+// @Released 2023-01-23
 
 /**
  This is a quick simple cropping tool.  You can also use it to blend images without
@@ -23,12 +23,12 @@
 //
 // Version history:
 //
-// Built 2023-01-22 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Simple crop", "DVE", "Border and crop", "A simple crop tool with blend", kNoFlags);
+DeclareLightworksEffect ("Simple crop", "DVE", "Border and crop", "A simple crop tool with blend", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -88,12 +88,13 @@ DeclareEntryPoint (SimpleCrop)
    float2 bordBR = jSaturate (cropBR + brdrEdge);
 
    float4 Fgnd = tex2D (Fgd, uv3);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Bgnd = AlphaMode == 4 ? kTransparentBlack : ReadPixel (Bg, uv2);
 
-   if (all (uv3 > bordTL) && all (uv3 < bordBR)) { Bgnd = Colour; }
-   else if (AlphaMode == 4) Bgnd.a = 0.0;
+   if ((uv3.x < cropTL.x) || (uv3.y < cropTL.y)
+    || (uv3.x > cropBR.x) || (uv3.y > cropBR.y)) { Fgnd = Colour; }
 
-   if (any (uv3 < cropTL) || any (uv3 > cropBR)) { Fgnd = kTransparentBlack; }
+   if ((uv3.x < bordTL.x) || (uv3.y < bordTL.y)
+    || (uv3.x > bordBR.x) || (uv3.y > bordBR.y)) { Fgnd = kTransparentBlack; }
 
    float alpha = (AlphaMode == 0) ? 1.0
                : (AlphaMode == 1) ? Bgnd.a

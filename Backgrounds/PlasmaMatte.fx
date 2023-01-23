@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-01
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-01
+// @Created 2023-01-23
 
 /**
  This effect generates soft plasma-like cloud patterns.  Hue, level, saturation, and rate
@@ -15,12 +15,12 @@
 //
 // Version history:
 //
-// Built 2023-01-01 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Plasma matte", "Mattes", "Backgrounds", "Generates soft plasma clouds", "CanSize|HasMinOutputSize");
+DeclareLightworksEffect ("Plasma matte", "Mattes", "Backgrounds", "Generates soft plasma clouds", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

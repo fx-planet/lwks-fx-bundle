@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-01
+// @Released 2023-01-23
 // @Author jwrl
 // @Author trirop
-// @Created 2023-01-01
+// @Created 2023-01-23
 
 /**
  Fractal matte 3 produces backgrounds generated from fractal patterns.  The rate of
@@ -21,12 +21,12 @@
 //
 // Version history:
 //
-// Built 2023-01-01 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Fractal matte 3", "Mattes", "Backgrounds", "Produces fractal patterns for background generation", "CanSize|HasMinOutputSize" );
+DeclareLightworksEffect ("Fractal matte 3", "Mattes", "Backgrounds", "Produces fractal patterns for background generation", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

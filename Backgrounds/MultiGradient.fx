@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-01
+// @Released 2023-01-23
 // @Author jwrl
-// @Created 2023-01-01
+// @Created 2023-01-23
 
 /**
  This effect creates a colour field which can be set up to be just a flat colour or a wide
@@ -19,12 +19,12 @@
 //
 // Version history:
 //
-// Built 2023-01-01 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Multicolour gradient", "Mattes", "Backgrounds", "Creates a colour field with a wide range of possible gradients", "CanSize|HasMinOutputSize");
+DeclareLightworksEffect ("Multicolour gradient", "Mattes", "Backgrounds", "Creates a colour field with a wide range of possible gradients", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-01
+// @Released 2023-01-23
 // @Author baopao
 // @Author jwrl
-// @Created 2023-01-01
+// @Created 2023-01-23
 
 /**
  This is an enhanced version of Sinusoidal lights, a semi-abstract pattern generator
@@ -22,12 +22,12 @@
 //
 // Version history:
 //
-// Built 2023-01-01 jwrl.
+// Built 2023-01-23 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Sinusoidal lights", "Mattes", "Backgrounds", "A pattern generator that creates coloured stars in Lissajou curves over a coloured background", "CanSize|HasMinOutputSize");
+DeclareLightworksEffect ("Sinusoidal lights", "Mattes", "Backgrounds", "A pattern generator that creates coloured stars in Lissajou curves over a coloured background", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

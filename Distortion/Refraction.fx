@@ -59,6 +59,8 @@ DeclareLightworksEffect ("Refraction", "Stylize", "Distortion", "Simulates the d
 
 DeclareInputs (Inp, Msk);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//

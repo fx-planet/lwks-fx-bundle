@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-24
 // @Author msi
 // @OriginalAuthor "Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)"
 // @Created 2011-05-27
@@ -20,13 +20,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-19 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Vintage look", "Colour", "Film Effects", "Simulates what happens when the dye layers of old colour film stock start to fade.", CanSize);
+DeclareLightworksEffect ("Vintage look", "Colour", "Film Effects", "Simulates what happens when the dye layers of old colour film stock start to fade.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -68,6 +68,6 @@ DeclareEntryPoint (VintageLook)
 
    corrected = lerp (kTransparentBlack, corrected, source.a);	
 
-   return lerp (source, corrected, tex2D (Mask, uv1));	
+   return lerp (source, corrected, tex2D (Mask, uv1).x);	
 }
 

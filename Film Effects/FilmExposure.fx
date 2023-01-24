@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
-// @Author jwrl
+// @Released 2023-01-24
 // @Author abelmilanes
+// @Author jwrl
 // @Created 2017-03-04
 
 /**
@@ -17,13 +17,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-09 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Film exposure", "Colour", "Film Effects", "Simulates exposure adjustment using a Cineon profile", CanSize);
+DeclareLightworksEffect ("Film exposure", "Colour", "Film Effects", "Simulates exposure adjustment using a Cineon profile", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -76,7 +76,8 @@ DeclareEntryPoint (FilmExposure)
 
    retval.rgb = (test < 0.0031308) ? lin * 12.92 : (1.055 * pow (lin, 0.4166667)) - 0.055;
    retval = lerp (kTransparentBlack, float4 (saturate (retval.rgb), 1.0), Src.a);
+   retval = lerp (retval, Src, Amount);
 
-   return lerp (retval, Src, Amount * tex2D (Mask, uv1));
+   return lerp (Src, retval, tex2D (Mask, uv1).x);
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author jwrl
-// @Created 2023-01-09
+// @Created 2023-01-24
 
 /**
  This simulates the look of 35 mm colour masked negative film.
@@ -14,12 +14,12 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Built 2023-01-24 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Colour negative", "Colour", "Film Effects", "Simulates the look of 35 mm colour film dye-masked negative", CanSize);
+DeclareLightworksEffect ("Colour negative", "Colour", "Film Effects", "Simulates the look of 35 mm colour film dye-masked negative", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -42,6 +42,6 @@ DeclareEntryPoint (ColourNegative)
 
    retval = lerp (kTransparentBlack, retval, retval.a);
 
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv1).x);
 }
 

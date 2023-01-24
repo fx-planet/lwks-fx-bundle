@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author msi
 // @Created 2011-05-27
 // @License "CC BY-NC-SA"
@@ -18,13 +18,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-09 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Bleach bypass", "Colour", "Film Effects", "Emulates the altered contrast and saturation obtained by skipping the bleach step in classical colour film processing", CanSize);
+DeclareLightworksEffect ("Bleach bypass", "Colour", "Film Effects", "Emulates the altered contrast and saturation obtained by skipping the bleach step in classical colour film processing", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -57,8 +57,8 @@ DeclareEntryPoint (BleachBypass)
 
    float lum = dot (float3 (Red, Green, Blue), source.rgb);
 
-   float3 result1 = 2.0 * source.rgb * lum.rrr;
-   float3 result2 = 1.0.xxx - 2.0 * (1.0.xxx - lum.rrr) * (1.0.xxx - source.rgb);
+   float3 result1 = 2.0 * source.rgb * lum;
+   float3 result2 = 1.0.xxx - 2.0 * (1.0 - lum) * (1.0.xxx - source.rgb);
    float3 newC = lerp (result1, result2, saturate (10.0 * (lum - 0.45)));
    float3 mixRGB = (BlendOpacity * source.a) * newC.rgb;
 
@@ -68,6 +68,6 @@ DeclareEntryPoint (BleachBypass)
 
    float4 retval = float4 (lerp (kTransparentBlack, mixRGB, source.a), source.a);
 
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv1).x);
 }
 

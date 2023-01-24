@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-24
 // @Author khaver
 // @Created 2011-04-20
 // @see https://www.lwks.com/media/kunena/attachments/6375/Technicolor_640.png
@@ -13,13 +13,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-19 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Technicolor", "Colour", "Film Effects", "Simulates the look of the classic 2-strip and 3-strip Technicolor film processes", CanSize);
+DeclareLightworksEffect ("Technicolor", "Colour", "Film Effects", "Simulates the look of the classic 2-strip and 3-strip Technicolor film processes", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -47,9 +47,9 @@ DeclareEntryPoint (TechnicolorTwoStrip)
    output.g += source.b / 2.0;
    output.b += source.g / 2.0;
 
-   output = lerp (kTransparentBlack, output, alpha);
+   output = lerp (kTransparentBlack, output, source.a);
 
-   return lerp (source, output, tex2D (Mask, uv1));
+   return lerp (source, output, tex2D (Mask, uv1).x);
 }
 
 DeclareEntryPoint (TechnicolorThreeStrip)
@@ -61,9 +61,9 @@ DeclareEntryPoint (TechnicolorThreeStrip)
    output.g += (source.b - source.r) / 2.0;
    output.b += (source.g - source.r) / 2.0;
 
-   output = lerp (kTransparentBlack, output, alpha);
+   output = lerp (kTransparentBlack, output, source.a);
 
-   return lerp (source, output, tex2D (Mask, uv1));
+   return lerp (source, output, tex2D (Mask, uv1).x);
 }
 
 

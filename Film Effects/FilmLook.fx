@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author jwrl
-// @Created 2023-01-09
+// @Created 2023-01-24
 
 /**
  This effect simulates a filmic curve with exposure adjustment and controllable halation
@@ -40,12 +40,12 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Built 2023-01-24 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Filmic look", "Colour", "Film Effects", "Simulates a filmic curve with exposure adjustment, halation and vibrance.", CanSize);
+DeclareLightworksEffect ("Filmic look", "Colour", "Film Effects", "Simulates a filmic curve with exposure adjustment, halation and vibrance.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -246,6 +246,6 @@ DeclareEntryPoint (FilmLook)
       retval = lerp (retval, gloVal, amount);
    }
 
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv1).x);
 }
 

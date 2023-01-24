@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author khaver
 // @Author saabi
 // @Created 2018-06-20
@@ -31,13 +31,13 @@
 //
 // Version history:
 //
-// Updated  2023-01-09 jwrl
+// Updated  2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Old film look", "Colour", "Film Effects", "Simulates a black and white film with scratches, sprocket holes, weave and flicker.", CanSize);
+DeclareLightworksEffect ("Old film look", "Colour", "Film Effects", "Simulates a black and white film with scratches, sprocket holes, weave and flicker.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

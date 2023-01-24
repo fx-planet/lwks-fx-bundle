@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author jwrl
-// @Created 2023-01-09
+// @Created 2023-01-24
 
 /**
  This applies a range of tweaks to simulate the look of various colour film laboratory
@@ -46,12 +46,12 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Built 2023-01-24 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Film lab", "Colour", "Film Effects", "This is a colour film processing lab for video", CanSize);
+DeclareLightworksEffect ("Film lab", "Colour", "Film Effects", "This is a colour film processing lab for video", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -148,6 +148,6 @@ DeclareEntryPoint (FilmLab)
 
    vid = lerp (kTransparentBlack, lerp (vid, lab, Amount), src.a);
 
-   return lerp (src, vid, tex2D (Mask, uv1));
+   return lerp (src, vid, tex2D (Mask, uv1).x);
 }
 

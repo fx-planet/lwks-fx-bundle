@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author jwrl
-// @Created 2023-01-09
+// @Created 2023-01-24
 
 /**
  This simulates the effect of the old Duotone film colour process.
@@ -14,12 +14,12 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Built 2023-01-24 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Duotone print", "Colour", "Film Effects", "This simulates the look of the old Duotone colour film process", CanSize);
+DeclareLightworksEffect ("Duotone print", "Colour", "Film Effects", "This simulates the look of the old Duotone colour film process", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -85,6 +85,6 @@ DeclareEntryPoint (DuotonePrint)
 
    retval = lerp (kTransparentBlack, retval, alpha);
 
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv1).x);
 }
 

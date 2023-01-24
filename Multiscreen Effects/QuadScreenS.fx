@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-25
 // @Author schrauber
 // @Created 2020-06-08
 
@@ -26,13 +26,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-25 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Quad split screen, simply", "DVE", "Multiscreen Effects", "Revised version of 8 June 2020", kNoFlags);
+DeclareLightworksEffect ("Simple quad split screen", "DVE", "Multiscreen Effects", "A fast, simple single effect with 4 inputs", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

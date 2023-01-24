@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-01-24
 // @Author schrauber
 // @Created 2017-11-06
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-08 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -29,6 +29,8 @@ DeclareLightworksEffect ("Whirl", "DVE", "Distortion", "Simulates what happens w
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Input);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -98,7 +100,8 @@ DeclareEntryPoint (Whirl)
 
    // ------ OUTPUT-------
 
-   return MirrorEdge (Input, posZoom);
+   float4 ret = MirrorEdge (Input, posZoom);
 
+   return lerp (ReadPixel (Input, uv1), ret, tex2D (Mask, uv1).x);        // Return the masked regional zoom over the input video.
 }
 

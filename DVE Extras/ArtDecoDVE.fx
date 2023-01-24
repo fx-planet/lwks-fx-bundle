@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 
 /**
  This is an Art Deco take on the classic DVE effect.  It produces two independently
@@ -28,12 +28,12 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Built 2023-01-24 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Art Deco DVE", "DVE", "DVE Extras", "Art Deco flash lines are included in the 2D DVE borders", "ScaleAware|HasMinOutputSize");
+DeclareLightworksEffect ("Art Deco DVE", "DVE", "DVE Extras", "Art Deco flash lines are included in the 2D DVE borders", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

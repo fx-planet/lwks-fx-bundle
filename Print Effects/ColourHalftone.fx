@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-18
+// @Released 2023-01-24
 // @Author windsturm
 // @Created 2012-06-16
 
@@ -15,13 +15,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-18 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Colour halftone", "Stylize", "Print Effects", "Emulates the dot pattern of a colour half-tone print image", CanSize);
+DeclareLightworksEffect ("Colour halftone", "Stylize", "Print Effects", "Emulates the dot pattern of a colour half-tone print image", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -53,15 +53,11 @@ DeclareColourParam (colorBG, "Background", "Color", kNoFlags, 1.0, 1.0, 1.0, 1.0
 
 DeclareFloatParam (_OutputAspectRatio);
 
-DeclareIntParam (_InputOrientation);
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
 #define SQRT_2 1.414214
-
-#define _IsPortrait (abs (_InputOrientation - 180) == 90)
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -79,7 +75,7 @@ float2x2 RotationMatrix (float rotation)
 float4 half_tone (float2 uv, float i, float s, float angle, float a)
 {
    float2 xy = uv;
-   float2 asp = _IsPortrait ? float2 (1.0, 1.0 / _OutputAspectRatio) : float2 (1.0, _OutputAspectRatio);
+   float2 asp = float2 (1.0, _OutputAspectRatio);
    float2 centerXY = float2 (centerX, 1.0 - centerY);
 
    float2 pointXY = mul ((xy - centerXY) / asp, RotationMatrix (radians (angle)));
@@ -115,38 +111,42 @@ float4 half_tone (float2 uv, float i, float s, float angle, float a)
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (s0)
+{ return ReadPixel (Input, uv1); }
+
 DeclareEntryPoint (ColourHalftone)
 {
-   float4 source = ReadPixel (Input, uv1);
+   float4 ret, source = tex2D (s0, uv2);
 
-   if (dotSize <= 0.0) return source;
+   if (dotSize <= 0.0) { ret = source; }
+   else {
+      ret = colorBG;
 
-   float cmykang [4] = { angleK, angleC, angleM, angleY };
+      float cmykang [4] = {angleK, angleC, angleM, angleY};
 
-   float4 ret = colorBG;
+      float4 ret1 = half_tone (uv2, 0, 0.0, cmykang [0], 0.0);
+      float4 ret2 = half_tone (uv2, 0, dotSize, cmykang [0], 45.0);
 
-   float4 ret1 = half_tone (uv1, 0, 0.0, cmykang [0], 0.0);
-   float4 ret2 = half_tone (uv1, 0, dotSize, cmykang [0], 45.0);
+      if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
+      ret1 = half_tone (uv2, 1, 0.0, cmykang [1], 0.0);
+      ret2 = half_tone (uv2, 1, dotSize, cmykang [1], 45.0);
 
-   ret1 = half_tone (uv1, 1, 0.0, cmykang [1], 0.0);
-   ret2 = half_tone (uv1, 1, dotSize, cmykang [1], 45.0);
+      if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
+      ret1 = half_tone (uv2, 2, 0.0, cmykang [2], 0.0);
+      ret2 = half_tone (uv2, 2, dotSize, cmykang [2], 45.0);
 
-   ret1 = half_tone (uv1, 2, 0.0, cmykang [2], 0.0);
-   ret2 = half_tone (uv1, 2, dotSize, cmykang [2], 45.0);
+      if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
+      ret1 = half_tone (uv2, 3, 0.0, cmykang [3], 0.0);
+      ret2 = half_tone (uv2, 3, dotSize, cmykang [3], 45.0);
 
-   ret1 = half_tone (uv1, 3, 0.0, cmykang [3], 0.0);
-   ret2 = half_tone (uv1, 3, dotSize, cmykang [3], 45.0);
+      if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
 
-   if (ret1.a > -1.0 || ret2.a > -1.0) { ret *=  max (ret1, ret2); }
+      if (IsOutOfBounds (uv2)) ret = kTransparentBlack;
+   }
 
-   if (IsOutOfBounds (uv1)) ret = kTransparentBlack;
-
-   return lerp (source, ret, tex2D (Mask, uv1));
+   return lerp (source, ret, tex2D (Mask, uv2).x);
 }
 

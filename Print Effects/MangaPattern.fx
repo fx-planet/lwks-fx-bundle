@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-18
+// @Released 2023-01-24
 // @Author windsturm
 // @Author jwrl
 // @Created 2012-05-23
@@ -16,13 +16,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-18 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Manga pattern", "Stylize", "Print Effects", "This simulates the star pattern and hard contours used to create tonal values in a Manga half-tone image", CanSize);
+DeclareLightworksEffect ("Manga pattern", "Stylize", "Print Effects", "This simulates the star pattern and hard contours used to create tonal values in a Manga half-tone image", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -48,17 +48,12 @@ DeclareFloatParam (td4, "White threshold", "Sample threshold", kNoFlags, 0.8, 0.
 DeclareFloatParam (_OutputAspectRatio);
 DeclareFloatParam (_OutputWidth);
 
-DeclareIntParam (_InputOrientation);
-
-//-----------------------------------------------------------------------------------------//
-// Definitions and declarations
-//-----------------------------------------------------------------------------------------//
-
-#define _IsPortrait (abs (_InputOrientation - 180) == 90)
-
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
+
+DeclarePass (s0)
+{ return ReadPixel (Input, uv1); }
 
 DeclareEntryPoint (MangaPattern)
 {
@@ -68,12 +63,9 @@ DeclareEntryPoint (MangaPattern)
    int pArray [] = { 0, 1, 0, 2, 3, 2, 1, 4, 1, 3, 5, 3, 0, 1, 0, 2, 3, 2,
                      2, 3, 2, 0, 1, 0, 3, 5, 3, 1, 4, 1, 2, 3, 2, 0, 1, 0 };
 
-   float4 color = ReadPixel (Input, uv1);
+   float4 color = tex2D (s0, uv2);
 
-   float2 xy = float2 (1.0, _OutputAspectRatio);
-
-   int2 pSize = _IsPortrait ? _OutputWidth * xy : _OutputWidth / xy;
-   int2 pixXY = fmod (uv1 * pSize * (1.0 - threshold), 6.0.xx);
+   int2 pixXY = fmod (uv2 * float2 (1.0, 1.0 / _OutputAspectRatio) * _OutputWidth * (1.0 - threshold), 6.0.xx);
 
    int p = pArray [pixXY.x + (pixXY.y * 6)];
 
@@ -91,8 +83,10 @@ DeclareEntryPoint (MangaPattern)
    }
    else dots = 1.0.xxxx;
 
-   if (IsOutOfBounds (uv1)) dots = kTransparentBlack;
+   dots = lerp (kTransparentBlack, dots, color.a);
 
-   return lerp (color, dots, tex2D (Mask, uv1));
+   if (IsOutOfBounds (uv2)) dots = kTransparentBlack;
+
+   return lerp (color, dots, tex2D (Mask, uv2).x);
 }
 

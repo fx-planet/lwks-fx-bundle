@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-18
+// @Released 2023-01-24
 // @Author windsturm
 // @Created 2012-12-11
 
@@ -15,13 +15,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-18 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Halftone", "Stylize", "Print Effects", "Simulates the dot pattern used in a black and white half-tone print image", CanSize);
+DeclareLightworksEffect ("Halftone", "Stylize", "Print Effects", "Simulates the dot pattern used in a black and white half-tone print image", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -49,15 +49,11 @@ DeclareColourParam (colorBG, "Background", "Color", kNoFlags, 1.0, 1.0, 1.0, 1.0
 
 DeclareFloatParam (_OutputAspectRatio);
 
-DeclareIntParam (_InputOrientation);
-
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
 #define SQRT_2 1.414214
-
-#define _IsPortrait (abs (_InputOrientation - 180) == 90)
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -72,10 +68,10 @@ float2x2 RotationMatrix (float rotation)
    return float2x2 (c, -s, s ,c);
 }
 
-float4 half_tone (float2 uv, float s, float angle, float a)
+float4 half_tone (sampler ss, float2 uv, float s, float angle, float a)
 {
    float2 xy  = uv;
-   float2 asp = _IsPortrait ? float2 (1.0, 1.0 / _OutputAspectRatio) : float2 (1.0, _OutputAspectRatio);
+   float2 asp = float2 (1.0, _OutputAspectRatio);
 
    float2 centerXY = float2 (centerX, 1.0 - centerY);
    float2 pointXY  = mul ((xy - centerXY) / asp, RotationMatrix (radians (angle)));
@@ -85,11 +81,11 @@ float4 half_tone (float2 uv, float s, float angle, float a)
    pointXY = mul (pointXY, RotationMatrix (radians (-angle)));
    pointXY = pointXY * asp + centerXY;
 
-   float4 pointCol = tex2D (Input, pointXY);
+   float4 pointCol = tex2D (ss, pointXY);
 
    // xy slide
 
-   float2 slideXY = mul (float2 ((s) / SQRT_2, 0.0), RotationMatrix (radians ((angle + a) * -1.0)));
+   float2 slideXY = mul (float2 (s / SQRT_2, 0.0), RotationMatrix (radians ((angle + a) * -1.0)));
    slideXY *= asp;
 
    float luma;
@@ -97,36 +93,40 @@ float4 half_tone (float2 uv, float s, float angle, float a)
    if (lumaMode == 0) { luma = dot (float3 (0.212649, 0.715169, 0.072182), pointCol.rgb); }
    else if (lumaMode == 1) { luma = dot (float3 (0.222015, 0.706655, 0.071330), pointCol.rgb); }
    else luma = dot (float3 (0.298912, 0.586611, 0.114478), pointCol.rgb);
-    
+
    float4 fgColor = colorFG;
 
    if (toneMode == 2) fgColor = pointCol;
 
-   xy += slideXY;
    asp *= dotSize * ((toneMode == 0) ? 1.0 - luma : luma);
+   xy += slideXY;
 
    float2 aspectAdjustedpos = ((xy - pointXY) / asp) + pointXY;
 
-   return (distance (aspectAdjustedpos, pointXY) < 0.5) ? fgColor : (-1.0).xxxx;
+   return (distance (aspectAdjustedpos, pointXY) < 0.5) ? fgColor : -1.0.xxxx;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (s0)
+{ return ReadPixel (Input, uv1); }
+
 DeclareEntryPoint (Halftone)
 {
-   float4 source = ReadPixel (Input, uv1);
+   float4 retval, source = tex2D (s0, uv2);
 
-   if (dotSize <= 0.0) return source;
+   if (dotSize <= 0.0) { retval = source; }
+   else {
+      float4 ret1 = half_tone (s0, uv2, 0.0, Angle, 0.0);
+      float4 ret2 = half_tone (s0, uv2, dotSize, Angle, 45.0);
 
-   float4 ret1 = half_tone (uv1, 0.0, Angle, 0.0);
-   float4 ret2 = half_tone (uv1, dotSize, Angle, 45.0);
+      retval = (ret1.a > -1.0 || ret2.a > -1.0) ? max (ret1, ret2) : colorBG;
 
-   float4 retval = (ret1.a > -1.0 || ret2.a > -1.0) ? max (ret1, ret2) : colorBG;
+      if (IsOutOfBounds (uv2)) retval = kTransparentBlack;
+   }
 
-   if (IsOutOfBounds (uv1)) retval = kTransparentBlack;
-
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv2).x);
 }
 

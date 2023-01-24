@@ -25,7 +25,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Flag wave", "Stylize", "Distortion", "Simulates a waving flag.", CanSize);
+DeclareLightworksEffect ("Flag wave", "Stylize", "Distortion", "Simulates a waving flag.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

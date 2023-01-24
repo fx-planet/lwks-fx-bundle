@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-24
 // @Author khaver
 // @Author toninoni
 // @Created 2018-06-12
@@ -25,13 +25,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Lens Flare #2", "Stylize", "Filters", "Basic lens flare", kNoFlags);
+DeclareLightworksEffect ("Lens Flare", "Stylize", "Filters", "Basic lens flare", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

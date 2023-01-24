@@ -53,13 +53,6 @@ DeclareFloatParam (MaskGamma, "Mask linearity", "Mask settings", kNoFlags, 0.5, 
 DeclareFloatParam (MaskWhite, "White clip", "Mask settings", kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (MaskBlack, "Black crush", "Mask settings", kNoFlags, 0.0, 0.0, 1.0);
 
-DeclareFloatParam (CropLeft, "Top left", "Mask crop", "SpecifiesPointX", 0.0, 0.0, 1.0);
-DeclareFloatParam (CropTop, "Top left", "Mask crop", "SpecifiesPointY", 0.0, 0.0, 1.0);
-DeclareFloatParam (CropRight, "Bottom right", "Mask crop", "SpecifiesPointX", 0.0, 0.0, 1.0);
-DeclareFloatParam (CropBottom, "Bottom right", "Mask crop", "SpecifiesPointY", 0.0, 0.0, 1.0);
-
-DeclareIntParam (_InpOrientation);
-
 DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
@@ -111,25 +104,6 @@ float3 fn_hsv (float3 rgb)
    return float3 (hue, sat, val);
 }
 
-float fixCrop (out float L, out float T, out float R)
-{
-   float4 crop = float4 (CropLeft, CropTop, CropRight, CropBottom);
-
-   if (abs (abs (_InpOrientation - 90) - 90)) {
-      crop = crop.wxyz;
-   }
-
-   if (_InpOrientation > 90) {
-      crop = crop.zwxy;
-   }
-
-   L = crop.x;
-   T = crop.y;
-   R = 1.0 - crop.z;
-
-   return 1.0 - crop.w;
-}
-
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
@@ -139,14 +113,6 @@ DeclarePass (Input)
    float4 Fgnd = ReadPixel (Inp, uv1);       // First get the input to process
 
    // Before we do anything set up the crop, allowing for Inp rotation.
-
-   float CropL, CropT, CropR;
-   float CropB = fixCrop (CropL, CropT, CropR);
-
-   // If uv1 falls outside the crop boundaries set alpha to zero and quit.
-
-   if ((uv1.x < CropL) || (uv1.x > CropR) || (uv1.y < CropT) || (uv1.y > CropB))
-      return float4 (Fgnd.rgb, 0.0);
 
    float3 Fhsv = fn_hsv (Fgnd.rgb);          // Convert it to our modified HSV
    float3 Chsv = fn_hsv (MaskColour.rgb);    // Do the same for the ref colour

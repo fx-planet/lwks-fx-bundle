@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-01-24
 // @Author windsturm
 // @OriginalAuthor "Ian McEwan"
 // @Created 2012-10-25
@@ -45,7 +45,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-08 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -203,7 +203,7 @@ DeclarePass (Noise)
    return float4 (n.xxx, 1.0);
 }
 
-DeclareEntryPoint (Refraction)
+DeclarePass (Refract)
 {
    if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
@@ -251,4 +251,7 @@ DeclareEntryPoint (Refraction)
 
    return MirrorEdge (Input, xy);
 }
+
+DeclareEntryPoint (Refraction)
+{ return (tex2D (Input, uv3), tex2D (Refract, uv3), tex2D (Mask, uv3).x); }
 

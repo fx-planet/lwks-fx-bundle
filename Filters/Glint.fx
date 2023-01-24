@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-24
 // @Author khaver
 // @Created 2012-10-03
 
@@ -16,13 +16,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-19 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Glint", "Stylize", "Filters", "Creates rotatable star filter-like highlights, with 4, 6 or 8 points selectable", CanSize);
+DeclareLightworksEffect ("Glint", "Stylize", "Filters", "Creates rotatable star filter-like highlights, with 4, 6 or 8 points selectable", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -190,7 +190,7 @@ float4 main (sampler S, float2 xy1, sampler T, float2 xy2)
 
    comb = lerp (source, comb, source.a * Strength);
 
-   return lerp (source, comb, tex2D (Mask, xy1));
+   return lerp (source, comb, tex2D (Mask, xy1).x);
 }
 
 //-----------------------------------------------------------------------------------------//

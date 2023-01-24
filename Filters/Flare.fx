@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-24
 // @Author khaver
 // @Created 2011-05-24
 
@@ -16,13 +16,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-19 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Flare", "Stylize", "Filters", "Creates an adjustable lens flare effect", CanSize);
+DeclareLightworksEffect ("Flare", "Stylize", "Filters", "Creates an adjustable lens flare effect", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -86,6 +86,6 @@ DeclareEntryPoint (Flare)
 
    ret = lerp (kTransparentBlack, saturate (ret + source), source.a);
 
-   return lerp (source, ret, tex2D (Mask, uv1));
+   return lerp (source, ret, tex2D (Mask, uv1).x);
 }
 

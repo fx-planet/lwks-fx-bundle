@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-24
 // @Author josely
 // @Created 2012-06-29
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-19 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -101,6 +101,6 @@ DeclareEntryPoint (ChromaticAberration)
 
    fragColor = lerp (kTransparentBlack, fragColor, ReadPixel (Input, uv1).a);
 
-   return lerp (source, fragColor, tex2D (Mask, uv1));
+   return lerp (source, fragColor, tex2D (Mask, uv2).x);
 }
 

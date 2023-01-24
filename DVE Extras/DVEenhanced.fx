@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 
 /**
  2D DVE enhanced behaves in a similar way to the Lightworks version.  In addition,
@@ -32,7 +32,7 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Built 2023-01-24 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -204,7 +204,7 @@ DeclareEntryPoint (DVEenhanced_B)
       angle += ANGLE;
    }
 
-   Fgnd = lerp (kTransparentBlack, Fgnd / 25.0, tex2D (Mask, uv3));
+   Fgnd = lerp (kTransparentBlack, Fgnd / 25.0, tex2D (Mask, uv3).x);
 
    if (CropToBg) Fgnd = lerp (kTransparentBlack, Fgnd, Bgnd.a);
 

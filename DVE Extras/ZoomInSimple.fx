@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-01-24
 // @Author schrauber
 // @Created 2021-01-21
 
@@ -31,7 +31,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-09 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -42,6 +42,8 @@ DeclareLightworksEffect ("Zoom in, simple", "DVE", "DVE Extras", "Designed for s
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (In);
+
+DeclareMask;
 
 //--------------------------------------------------------------//
 // Parameters
@@ -134,8 +136,8 @@ DeclareEntryPoint (ZoomInSimple)
       if (retval.a == 0.0) retval.rgb = 0.0.xxx;       // Disables reflection at alpha 0                             
    }
 
-   return retval; 
-} 
+   return lerp (tex2D (FixInp, uv2), retval, tex2D (Mask, uv2).x);
+}
 
 // ******************************************************************
 

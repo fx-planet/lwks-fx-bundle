@@ -255,5 +255,5 @@ DeclarePass (Refract)
 }
 
 DeclareEntryPoint (Refraction)
-{ return (tex2D (Input, uv3), tex2D (Refract, uv3), tex2D (Mask, uv3).x); }
+{ return lerp (tex2D (Input, uv3), tex2D (Refract, uv3), tex2D (Mask, uv3).x); }
 

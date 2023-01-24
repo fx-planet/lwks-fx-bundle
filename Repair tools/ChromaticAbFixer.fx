@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-18
+// @Released 2023-01-24
 // @Author khaver
 // @Created 2011-05-18
 
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-18 jwrl
+// Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -45,13 +45,12 @@ DeclareBoolParam (saton, "Saturation", "Saturation", false);
 
 DeclareFloatParam (sat, "Adjustment", "Saturation", kNoFlags, 2.0, 0.0, 4.0);
 
-DeclareFloat4Param (_VExtents);
-
-DeclareIntParam (_VOrientation);
-
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
+
+DeclarePass (Inp)
+{ return ReadPixel (V, uv1); }
 
 DeclareEntryPoint (ChromaticAbFixer)
 {
@@ -60,27 +59,21 @@ DeclareEntryPoint (ChromaticAbFixer)
    float gad = ((gadjust * 2.0 + 4.0) / 100.0) + 0.96;
    float bad = ((badjust * 2.0 + 4.0) / 100.0) + 0.96;
 
-   float2 xy = ((uv1 - _VExtents.xy) / (_VExtents.zw - _VExtents.xy)) - 0.5.xx;
-
-   if (_VOrientation > 0) xy.x = -xy.x;
-
-   if (_VOrientation > 90) xy = -xy;
+   float2 xy = uv2 - 0.5.xx;
 
    float3 source;
 
-   source.r = tex2D (V, (xy / rad) + 0.5.xx).r;
-   source.g = tex2D (V, (xy / gad) + 0.5.xx).g;
-   source.b = tex2D (V, (xy / bad) + 0.5.xx).b;
+   source.r = tex2D (Inp, (xy / rad) + 0.5.xx).r;
+   source.g = tex2D (Inp, (xy / gad) + 0.5.xx).g;
+   source.b = tex2D (Inp, (xy / bad) + 0.5.xx).b;
 
-   float4 Fgd = ReadPixel (V, uv1);
-
-   float alpha = Fgd.a;
+   float4 Fgd = tex2D (Inp, uv2);
 
    float3 lum  = dot (source, float3 (0.299, 0.587, 0.114)).xxx;
    float3 dest = lerp (lum, source, satad);
 
-   float4 retval = lerp (kTransparentBlack, float4 (dest, alpha), alpha);
+   float4 retval = lerp (kTransparentBlack, float4 (dest, Fgd.a), Fgd.a);
 
-   return lerp (Fgd, retval, tex2D (Mask, uv1));
+   return lerp (Fgd, retval, tex2D (Mask, uv2).x);
 }
 

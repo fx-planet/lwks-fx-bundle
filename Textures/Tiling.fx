@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-25
 // @Author khaver
 // @Created 2011-04-28
 
 /**
- Breaks the image into a mosaic or glass tiles.  It's a combination of two original
+ Breaks the image into a mosaic or into glass tiles.  It's a combination of two original
  effects by khaver, Tiles.fx and GlassTiles.fx.
 
  NOTE:  This effect breaks resolution independence.  It is only suitable for use with
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-17 jwrl
+// Updated 2023-01-25 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 

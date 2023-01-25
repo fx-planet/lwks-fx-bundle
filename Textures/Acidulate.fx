@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-12
+// @Created 2023-01-25
 
 /**
  I was going to call this LSD, but this name will do.  Original effect.
@@ -27,6 +27,8 @@ DeclareLightworksEffect ("Acidulate", "Stylize", "Textures", "I was going to cal
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Input);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -60,6 +62,8 @@ DeclareEntryPoint (Acidulate)
 
    float2 xy = float2 (Img.b, Img.g - Img.r - 1.0);
 
-   return tex2D (Image, frac (abs (uv2 + frac (xy * Amount))));
+   Img = tex2D (Image, frac (abs (uv2 + frac (xy * Amount))));
+
+   return lerp (tex2D (Inp, uv2), Img, tex2D (Mask, uv2).x);
 }
 

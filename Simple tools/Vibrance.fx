@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-25
 
 /**
  This simple effect just adjusts the colour vibrance.  It does this by selectively  altering
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -41,11 +41,14 @@ DeclareFloatParam (Vibrance, "Vibrance", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Vid)
+{ return ReadPixel (Inp, uv1); }
+
 DeclareEntryPoint (Vibrance_2023)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   if (IsOutOfBounds (uv2)) return kTransparentBlack;
 
-   float4 source = tex2D (Inp, uv1);
+   float4 source = tex2D (Vid, uv2);
 
    float amount = pow (1.0 + Vibrance, 2.0) - 1.0;
    float maxval = max (source.r, max (source.g, source.b));
@@ -53,6 +56,6 @@ DeclareEntryPoint (Vibrance_2023)
 
    float4 retval = float4 (saturate (lerp (source.rgb, maxval.xxx, vibval)), source.a);
 
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv2).x);
 }
 

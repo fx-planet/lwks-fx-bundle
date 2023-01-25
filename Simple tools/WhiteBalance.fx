@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-25
 
 /**
  This is a simple black and white balance utility.  To use it, first sample the point that
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -48,11 +48,14 @@ DeclareFloatParam (BlackLevel, "Black", "Target levels", "DisplayAsPercentage", 
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Vid)
+{ return ReadPixel (Inp, uv1); }
+
 DeclareEntryPoint (WhiteBalance)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   if (IsOutOfBounds (uv2)) return kTransparentBlack;
 
-   float4 retval, source = tex2D (Inp, uv1);
+   float4 retval, source = tex2D (Vid, uv2);
 
    if (!Reference) {
       // Get the black and white reference points
@@ -67,8 +70,8 @@ DeclareEntryPoint (WhiteBalance)
    }
    else retval = source;
 
-   retval = lerp (kTransparentBlack, saturate (source), source.a);
+   retval = lerp (kTransparentBlack, saturate (retval), source.a);
 
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv2).x);
 }
 

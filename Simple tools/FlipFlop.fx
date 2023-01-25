@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-25
 
 /**
  This emulates a similar effect in other NLEs.  The resemblance to Lightworks' flip and
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -37,13 +37,16 @@ DeclareMask;
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Vid)
+{ return ReadPixel (Input, uv1); }
+
 DeclareEntryPoint (FlipFlop)
 {
-   float2 xy = 1.0.xx - uv1;
+   float2 xy = 1.0.xx - uv2;
 
-   float4 source = ReadPixel (Input, uv1);
-   float4 retval = ReadPixel (Input, xy);
+   float4 source = tex2D (Vid, uv2);
+   float4 retval = tex2D (Vid, xy);
 
-   return lerp (source, retval, tex2D (Mask, uv1));
+   return lerp (source, retval, tex2D (Mask, uv2).x);
 }
 

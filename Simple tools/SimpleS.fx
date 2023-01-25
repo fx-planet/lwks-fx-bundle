@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-25
 
 /**
  This effect allows the user to apply an S-curve correction to red, green and blue video
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -59,11 +59,14 @@ DeclareFloatParam (CurveB, "Blue curve", "RGB components", kNoFlags, 0.0, 0.0, 1
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Vid)
+{ return ReadPixel (Inp, uv1); }
+
 DeclareEntryPoint (SimpleS)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   if (IsOutOfBounds (uv2)) return kTransparentBlack;
 
-   float4 video  = tex2D (Inp, uv1);   // Recover the video source
+   float4 video  = tex2D (Vid, uv2);   // Recover the video source
    float4 retval = video;              // Only really needs video.a
 
    // Now load a float3 variable with double the Y curve and offset it
@@ -84,6 +87,8 @@ DeclareEntryPoint (SimpleS)
 
    // Return the processed video, mixing it back with the input video
 
-   return lerp (video, retval, tex2D (Mask, uv1) * Amount);
+   retval = lerp (video, retval, Amount);
+
+   return lerp (video, retval, tex2D (Mask, uv2).x);
 }
 

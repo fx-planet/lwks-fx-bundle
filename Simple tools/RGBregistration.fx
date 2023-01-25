@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-25
 
 /**
  This is a simple effect to allow removal or addition of the sorts of colour registration
@@ -17,18 +17,20 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("RGB registration", "Stylize", "Simple tools", "Adjusts the X-Y registration of the RGB channels of a video stream", CanSize);
+DeclareLightworksEffect ("RGB registration", "Stylize", "Simple tools", "Adjusts the X-Y registration of the RGB channels of a video stream", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Inp);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -39,27 +41,25 @@ DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (Xdisplace, "R-B displacement", kNoGroup, "SpecifiesPointX|DisplayAsPercentage", 0.0, -0.05, 0.05);
 DeclareFloatParam (Ydisplace, "R-B displacement", kNoGroup, "SpecifiesPointY|DisplayAsPercentage", 0.0, -0.05, 0.05);
 
-DeclareFloatParam (_OutputWidth);
-DeclareFloatParam (_OutputHeight);
-
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
-
-DeclarePass (Input)
-{ return ReadPixel (Inp, uv1); }
 
 DeclareEntryPoint (RGBregistration)
 {
    if (IsOutOfBounds (uv1)) return kTransparentBlack;
 
-   float2 xy = float2 (Xdisplace, Ydisplace);
+   float2 xy  = float2 (Xdisplace, Ydisplace);
+   float2 xy1 = uv1 - xy;
+   float2 xy2 = uv1 + xy;
 
-   float4 refrnc = tex2D (Input, uv2);
-   float4 retval = refrnc;
+   float4 video  = ReadPixel (Inp, uv1);
+   float4 retval = video;
 
-   retval.rb = float2 (tex2D (Input, uv2 - xy).r, tex2D (Input, uv2 + xy).b);
+   retval.rb = float2 (tex2D (Inp, xy1).r, tex2D (Inp, xy2).b);
 
-   return lerp (refrnc, retval, Opacity);
+   retval = lerp (video, retval, Opacity);
+
+   return lerp (video, retval, tex2D (Mask, uv1).x);
 }
 

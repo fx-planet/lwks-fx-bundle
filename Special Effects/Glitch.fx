@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-11
+// @Created 2023-01-25
 
 /**
  To use this effect just add it on top of your existing effect, select the colours
@@ -28,12 +28,12 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Glitch", "Key", "Special Effects", "Applies a glitch to titles or keys.  Just apply on top of your effect.", kNoFlags);
+DeclareLightworksEffect ("Glitch", "Stylize", "Special Effects", "Applies a glitch to titles or keys.  Just apply on top of your effect.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -164,6 +164,6 @@ DeclareEntryPoint (Glitch)
 
    glitch = lerp (video, glitch, Opacity);
 
-   return lerp (video, glitch, tex2D (Mask, uv1));
+   return lerp (video, glitch, tex2D (Mask, uv1).x);
 }
 

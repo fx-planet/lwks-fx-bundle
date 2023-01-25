@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-11
+// @Created 2023-01-25
 
 /**
  This effect creates the classic binocular mask shape.  It can be adjusted from a simple
@@ -17,12 +17,12 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Binocular mask", "DVE", "Special Effects", "Creates the classic binocular effect", kNoFlags);
+DeclareLightworksEffect ("Binocular mask", "Stylize", "Special Effects", "Creates the classic binocular effect", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

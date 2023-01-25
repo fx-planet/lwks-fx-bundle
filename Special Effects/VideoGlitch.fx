@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-18
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-18
+// @Created 2023-01-25
 
 /**
  To use this effect just apply it, select the colours to affect, then the spread and
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-18 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -30,6 +30,8 @@ DeclareLightworksEffect ("Video glitch", "Stylize", "Special Effects", "Applies 
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Inp);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -123,6 +125,8 @@ DeclareEntryPoint (VideoGlitch)
    glitch.b = Mode == 2 ? ret_2.b : ret_1.b;
    glitch.a = video.a;
 
-   return lerp (video, glitch, video.a * Amount);
+   glitch = lerp (video, glitch, video.a * Amount);
+
+   return lerp (video, glitch, tex2D (Mask, uv1).x);
 }
 

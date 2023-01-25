@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-17
+// @Created 2023-01-25
 
 /**
  This is a special effect that generates single and double rainbows.  The blue end of the
@@ -26,7 +26,7 @@
 //
 // Version history:
 //
-// Built 2023-01-17 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -136,10 +136,12 @@ DeclarePass (MaskBounds)
 
 DeclareEntryPoint (Rainbow)
 {
-   float2 xy = float2 (Pos_X - uv2.x, 1.0 - uv2.y - Pos_Y);
-
    float4 Bgnd = ReadPixel (Inp, uv1);
    float4 Rmsk = float4 (L_soft, R_angle, R_soft, L_angle);
+
+   if (Bgnd.a <= 0.0) return kTransparentBlack;
+
+   float2 xy = float2 (Pos_X - uv2.x, 1.0 - uv2.y - Pos_Y);
 
    float radius  = max (1.0e-6, Radius);
    float outer   = length (float2 (xy.x, xy.y / _OutputAspectRatio)) * RADIUS;

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-01-25
 // @Author jwrl
-// @Created 2023-01-11
+// @Created 2023-01-25
 
 /**
  This effect changes tones through a complex colour translation while performing what is
@@ -16,12 +16,12 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Built 2023-01-25 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Rainbow connection", "Stylize", "Special Effects", "Changes colours through rainbow patterns according to levels", CanSize);
+DeclareLightworksEffect ("Rainbow connection", "Stylize", "Special Effects", "Changes colours through rainbow patterns according to levels", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -98,6 +98,6 @@ DeclareEntryPoint (RainbowConnect)
    clip  = (HighClip * 1.0002) - (edge * 0.5) - 0.0001;
    Alpha = min (Alpha, saturate ((clip - Luma) / edge));
 
-   return lerp (Fgnd, retval, tex2D (Mask, uv1) * Alpha);
+   return lerp (Fgnd, retval, tex2D (Mask, uv1).x * Alpha);
 }
 

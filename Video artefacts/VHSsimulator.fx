@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-01-26
 // @Author khaver
 // @Created 2014-11-19
 
@@ -10,7 +10,8 @@
  that triggers the distortion and white, red and blue noise can be added.  There's also
  a Roll control to roll the image up or down at different speeds.
 
- NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+ NOTE:  This effect breaks resolution independence.  It is only suitable for use with
+ Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +19,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-12 jwrl
+// Updated 2023-01-26 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 

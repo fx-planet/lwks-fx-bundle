@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-01-26
 // @Author jwrl
-// @Created 2023-01-12
+// @Created 2023-01-26
 
 /**
  This effect emulates the faults that could occur with Quadruplex videotape playback.
@@ -27,7 +27,7 @@
 //
 // Version history:
 //
-// Built 2023-01-12 jwrl
+// Built 2023-01-26 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -77,32 +77,36 @@ DeclareFloatParam (_OutputAspectRatio);
 #endif
 
 #define BLACK float2(0.0, 1.0).xxxy
-#define WHITE     1.0.xxxx
+#define WHITE      1.0.xxxx
 
-#define B_W       float3(0.3, 0.59, 0.11)
+#define B_W        float3(0.3, 0.59, 0.11)
 
-#define SQRT_2    0.7071067812
+#define SQRT_2     0.7071067812
 
-#define TV_525    0
+#define TV_525     0
 
-#define PAL       14.6944
-#define PAL_OFFS  0.0063
+#define PAL        14.6944
+#define PAL_OFFS   0.0063
+#define PAL_T_ADJ  0.019845
+#define PAL_G_ADJ  0.0067
 
-#define NTSC      14.72
-#define NTSC_OFFS 0.0060619048
+#define NTSC       14.72
+#define NTSC_OFFS  0.0060619048
+#define NTSC_T_ADJ 0.02031
+#define NTSC_G_ADJ 0.0067116725
 
-#define TIP       0.02
-#define GUIDE     0.02125
+#define TIP        0.02
+#define GUIDE      0.02125
 
-#define HALF_PI   1.5707963268
+#define HALF_PI    1.5707963268
 
-#define N_1       12.1053
-#define N_2       13.7838
-#define N_3       75.7143
-#define N_4       75.4545
+#define N_1        12.1053
+#define N_2        13.7838
+#define N_3        75.7143
+#define N_4        75.4545
 
-#define S_1       51538.462
-#define S_2       53846.153
+#define S_1        51538.462
+#define S_2        53846.153
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -207,11 +211,23 @@ DeclarePass (SharpMono)
 
 DeclarePass (Mono)
 {
-   float tip = (Mode == TV_525) ? NTSC * (uv2.y + NTSC_OFFS) : PAL * (uv2.y + PAL_OFFS);
-   float phase = (tip - floor (tip));
+   float tip, tip_adj;
+
+   if (Mode == TV_525) {
+      tip = NTSC * (uv2.y + NTSC_OFFS);
+      tip_adj = NTSC_T_ADJ * min (Tip, 0.0);
+      tip_adj += NTSC_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
+   }
+   else {
+      tip = PAL * (uv2.y + PAL_OFFS);
+      tip_adj = PAL_T_ADJ * min (Tip, 0.0);
+      tip_adj += PAL_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
+   }
+
+   float phase = frac (tip);
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE) - tip_adj;
 
    float2 xy1 = uv2 + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
@@ -226,6 +242,7 @@ DeclarePass (Mono)
 DeclareEntryPoint (QuadVTR_Mono)
 { return fn_main (Mono, SharpMono, uv2); }
 
+//-----------------------------------------------------------------------------------------//
 
 // NTSC colour (Ampex)
 
@@ -237,23 +254,27 @@ DeclarePass (SharpNTSC)
 
 DeclarePass (NTSCvid)
 {
-   float tip, ph1, ph2;
+   float tip, tip_adj, ph1, ph2;
 
    if (Mode == TV_525) {
       ph1 = 35.0;
       ph2 = 36.0;
       tip = NTSC * (uv2.y + NTSC_OFFS);
+      tip_adj = NTSC_T_ADJ * min (Tip, 0.0);
+      tip_adj += NTSC_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
    }
    else {
       ph1 = 41.0;
       ph2 = 42.0;
       tip = PAL * (uv2.y + PAL_OFFS);
+      tip_adj = PAL_T_ADJ * min (Tip, 0.0);
+      tip_adj += PAL_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
    }
 
-   float phase = (tip - floor (tip));
+   float phase = frac (tip);
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE) - tip_adj;
    phase = Phase * ((phase * ph1) + uv2.x) / ph2;
 
    float2 xy1 = uv2 + float2 (tip, 0.0);
@@ -272,6 +293,7 @@ DeclarePass (NTSCvid)
 DeclareEntryPoint (QuadVTR_NTSC)
 { return fn_main (NTSCvid, SharpNTSC, uv2); }
 
+//-----------------------------------------------------------------------------------------//
 
 // PAL colour (Ampex)
 
@@ -283,11 +305,23 @@ DeclarePass (SharpPAL)
 
 DeclarePass (PALvid)
 {
-   float tip = (Mode == TV_525) ? NTSC * (uv2.y + NTSC_OFFS) : PAL * (uv2.y + PAL_OFFS);
-   float phase = (tip - floor (tip));
+   float tip, tip_adj;
+
+   if (Mode == TV_525) {
+      tip = NTSC * (uv2.y + NTSC_OFFS);
+      tip_adj = NTSC_T_ADJ * min (Tip, 0.0);
+      tip_adj += NTSC_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
+   }
+   else {
+      tip = PAL * (uv2.y + PAL_OFFS);
+      tip_adj = PAL_T_ADJ * min (Tip, 0.0);
+      tip_adj += PAL_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
+   }
+
+   float phase = frac (tip);
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE) - tip_adj;
 
    float2 xy1 = uv2 + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);
@@ -306,6 +340,7 @@ DeclarePass (PALvid)
 DeclareEntryPoint (QuadVTR_PAL)
 { return fn_main (PALvid, SharpPAL, uv2); }
 
+//-----------------------------------------------------------------------------------------//
 
 // PAL with Hanover bars (Ampex)
 
@@ -317,25 +352,29 @@ DeclarePass (SharpHanover)
 
 DeclarePass (Hanover)
 {
-   float tip, ph1, ph2, hanover;
+   float tip, tip_adj, ph1, ph2, hanover;
 
    if (Mode == TV_525) {
       ph1 = 35.0;
       ph2 = 36.0;
       tip = NTSC * (uv2.y + NTSC_OFFS);
+      tip_adj = NTSC_T_ADJ * min (Tip, 0.0);
+      tip_adj += NTSC_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
       hanover = frac (241.5 * uv2.y);
    }
    else {
       ph1 = 41.0;
       ph2 = 42.0;
       tip = PAL * (uv2.y + PAL_OFFS);
+      tip_adj = PAL_T_ADJ * min (Tip, 0.0);
+      tip_adj += PAL_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
       hanover = frac (288.0 * uv2.y);
    }
 
-   float phase = (tip - floor (tip));
+   float phase = frac (tip);
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE) - tip_adj;
    phase = Phase * ((phase * ph1) + uv2.x) / ph2;
 
    if (hanover >= 0.5) phase = -phase;
@@ -356,6 +395,7 @@ DeclarePass (Hanover)
 DeclareEntryPoint (QuadVTR_Hanover)
 { return fn_main (Hanover, SharpHanover, uv2); }
 
+//-----------------------------------------------------------------------------------------//
 
 // Colour offset (RCA)
 
@@ -367,11 +407,23 @@ DeclarePass (SharpRCA)
 
 DeclarePass (RCA)
 {
-   float tip = (Mode == TV_525) ? NTSC * (uv2.y + NTSC_OFFS) : PAL * (uv2.y + PAL_OFFS);
-   float phase = (tip - floor (tip));
+   float tip, tip_adj;
+
+   if (Mode == TV_525) {
+      tip = NTSC * (uv2.y + NTSC_OFFS);
+      tip_adj = NTSC_T_ADJ * min (Tip, 0.0);
+      tip_adj += NTSC_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
+   }
+   else {
+      tip = PAL * (uv2.y + PAL_OFFS);
+      tip_adj = PAL_T_ADJ * min (Tip, 0.0);
+      tip_adj += PAL_G_ADJ * (1.0 - abs (Tip)) * min (Guide, 0.0);
+   }
+
+   float phase = frac (tip);
    float guide = sin ((phase + 0.5) * HALF_PI) - SQRT_2;
 
-   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE);
+   tip = (Tip * phase * TIP) + (Guide * guide * GUIDE) - tip_adj;
 
    float2 xy1 = uv2 + float2 (tip, 0.0);
    float2 xy2 = abs (xy1 - 0.5.xx);

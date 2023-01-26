@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-01-26
 // @Author hugly
 // @Author flyingrub https://www.shadertoy.com/view/wsBXWW
 // @Created 2019-09-07
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-12 jwrl
+// Updated 2023-01-26 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -104,6 +104,6 @@ DeclareEntryPoint (Screenshake)
    xy += float2 (simplex3d (p3), simplex3d (p3 + 10.0.xxx)) * strength / 30.0;
 
    return IsOutOfBounds (uv1) ? kTransparentBlack
-                              : lerp (kTransparentBlack, tex2D (Fg, xy), tex2D (Mask, uv1));
+                              : lerp (kTransparentBlack, tex2D (Fg, xy), tex2D (Mask, uv1).x);
 }
 

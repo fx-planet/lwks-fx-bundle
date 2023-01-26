@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-01-26
 // @Author jwrl
-// @Created 2023-01-12
+// @Created 2023-01-26
 
 /**
  This simulates loss of horizontal and/or vertical hold on analog TV sets.  It works
@@ -24,7 +24,7 @@
 //
 // Version history:
 //
-// Built 2023-01-12 jwrl
+// Built 2023-01-26 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -53,8 +53,8 @@ DeclareFloatParam (Vhold, "V. hold", "Vertical", kNoFlags, 0.0, -1.0, 1.0);
 DeclareFloatParam (ScanLines, "Scan lines", kNoGroup, kNoFlags, 0.75, 0.0, 1.0);
 DeclareFloatParam (VideoNoise, "Video noise", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
 
-DeclareFloatParam (Visibility, "Visibility", "Glitches / ghosts", kNoFlags, 1.0, 0.0, 1.0);
-DeclareFloatParam (GlitchRate, "Rate / ghosting", "Glitches / ghosts", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Visibility, "Visibility", "Glitches / ghosts", kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (GlitchRate, "Rate / ghosting", "Glitches / ghosts", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (EdgeJitter, "Edge jitter", "Glitches / ghosts", kNoFlags, 0.5, -1.0, 1.0);
 
 DeclareFloatParam (_Length);
@@ -85,9 +85,6 @@ DeclareFloatParam (_OutputAspectRatio);
 #define IOGAM 0.75
 #define IOCOL float3(0.225, 0.238, 0.537)
 
-#define pWrap(P)   (P = P < 0.0 ? 1.0 - frac (abs (P)) : frac (P))
-#define xyWrap(XY) float2(pWrap (XY.x), pWrap (XY.y))
-
 float _ref[6] = { 12.0, 10.0, 12.0, 10.0, 8.0, 16.0 };
 
 //-----------------------------------------------------------------------------------------//
@@ -101,6 +98,16 @@ float fn_noise (float2 uv, float seed)
    sd_1 += frac (sin (sd_1 + seed) * (43758.5453));
 
    return frac (sin (sd_1) * (43758.5453));
+}
+
+float2 fn_xyWrap (float2 uv)
+{
+   float2 xy;
+
+   xy.x = uv.x < 0.0 ? 1.0 - frac (abs (uv.x)) : frac (uv.x);
+   xy.y = uv.y < 0.0 ? 1.0 - frac (abs (uv.y)) : frac (uv.y);
+
+   return xy;
 }
 
 float2 fn_modulate (float y, float r)
@@ -194,7 +201,7 @@ DeclareEntryPoint (AnalogTVdisaster)
       amount = 1.0;
       jitter = EdgeJitter * 0.5;
       rate = 0.2;
-      offset.x = lerp (-0.05, 0.05, GlitchRate);
+      offset.x = lerp (-0.5, 0.5, GlitchRate);
    }
 
    float2 xy1 = float2 (uv2.x / 1.2, uv2.y / 1.1111);
@@ -211,18 +218,17 @@ DeclareEntryPoint (AnalogTVdisaster)
    xy1.x += skew_1 - Offset + (horztl * round (xy1.y * multiplier)) / divisor;
    xy1.y += vertcl;
 
-   xy1 = xyWrap (xy1);
-   xy3 = xy1 - xy2;
-   xy2 = xy1 + xy2 + offset;
-   xy2 = xyWrap (xy2);
-   xy3 = xyWrap (xy3);
+   float2 xy4 = fn_xyWrap (xy1 - xy2);
+
+   xy2 = fn_xyWrap (xy1 + xy2 + offset);
+   xy1 = fn_xyWrap (xy1);
 
    float4 retval = tex2D (Video, xy1);
    float4 Vnoise = float4 (fn_noise (xy3, _Progress), fn_noise (xy3, _Progress + 1.0),
                            fn_noise (xy3, _Progress + 2.0), retval.a);
 
    retval.r = lerp (retval.r, tex2D (Video, xy2).r, amount);
-   retval.b = lerp (retval.b, tex2D (Video, xy3).b, amount);
+   retval.b = lerp (retval.b, tex2D (Video, xy4).b, amount);
    retval   = lerp (retval, Vnoise, saturate (VideoNoise) * 0.3);
 
    if (TVmode > 1) retval.rgb = lerp (retval.g, saturate (retval.b - retval.r * 0.5), Visibility).xxx;

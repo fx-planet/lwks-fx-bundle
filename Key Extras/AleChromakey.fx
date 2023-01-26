@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-26
 // @Author baopao
 // @Created 2013-06-07
 
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-17 jwrl
+// Updated 2023-01-26 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -52,11 +52,20 @@ DeclareColourParam (ColorReplace, "ColorReplace", kNoGroup, kNoFlags, 0.5, 0.5, 
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (FG)
+{ return ReadPixel (fg, uv1); }           // Color FG
+
+DeclarePass (BG)
+{ return ReadPixel (bg, uv2); }           // Color BG
+
+DeclarePass (Blur)
+{ return ReadPixel (despill, uv3); }      // BG Blur imput
+
 DeclareEntryPoint (AleChromakey)
 {
-   float4 color = ReadPixel (fg, uv1);             // Color FG
-   float4 colorBG = ReadPixel (bg, uv2);           // Color BG
-   float4 colorBGblur = ReadPixel (despill, uv3);  // BG Blur imput
+   float4 color = tex2D (FG, uv4);
+   float4 colorBG = tex2D (BG, uv4);
+   float4 colorBGblur = tex2D (Blur, uv4);
 
    float MixRB, KeyG;
 
@@ -86,6 +95,6 @@ DeclareEntryPoint (AleChromakey)
 
    color = IsOutOfBounds (uv1) ? colorBG : lerp (color, pow (color, 1.0 / GammaMix), OverMask);
 
-   return lerp (colorBG, color, tex2D (Mask, uv1));
+   return lerp (colorBG, color, tex2D (Mask, uv4).x);
 }
 

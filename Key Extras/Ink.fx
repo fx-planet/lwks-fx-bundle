@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-26
 // @Author Nicholas Carroll
 // @Created 2016-21-02
 
@@ -26,7 +26,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-17 jwrl
+// Updated 2023-01-26 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
@@ -55,10 +55,16 @@ DeclareFloatParam (KeyGain, "Key Gain", kNoGroup, "DisplayAsPercentage", 1.0, 0.
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (FG)
+{ return ReadPixel (fg, uv1); }           // Color FG
+
+DeclarePass (BG)
+{ return ReadPixel (bg, uv2); }           // Color BG
+
 DeclareEntryPoint (Ink)
 {
-   float4 foreground = ReadPixel (fg, uv1);
-   float4 background = ReadPixel (bg, uv2);
+   float4 foreground = tex2D (FG, uv3);
+   float4 background = tex2D (BG, uv3);
 
    if (IsOutOfBounds (uv1)) return background;
 
@@ -147,6 +153,6 @@ DeclareEntryPoint (Ink)
 
    float4 Ckey = float4 (lerp (background.rgb, chan, matte), max (background.a, matte));
 
-   return lerp (background, Ckey, tex2D (Mask, uv1));
+   return lerp (background, Ckey, tex2D (Mask, uv3).x);
 }
 

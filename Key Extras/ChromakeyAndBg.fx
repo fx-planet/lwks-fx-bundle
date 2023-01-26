@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-26
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-26
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
@@ -21,7 +21,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-26 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -367,8 +367,8 @@ DeclareEntryPoint (ChromakeyAndBg)
       Fgd = lerp (Fgd, fgLum, ((Key.w - 0.8) / 0.2) * RemoveSpill);
    }
 
-   float4 retval = IsOutOfBounds (uv1) ? Bgd :  float4 (lerp (Fgd, Bgd, mix).rgb, 1.0);
+   float4 retval = IsOutOfBounds (uv1) ? Bgd : float4 (lerp (Fgd, Bgd, mix).rgb, 1.0);
 
-   return lerp (Bgd, retval, tex2D (Mask, uv1));
+   return lerp (Bgd, retval, tex2D (Mask, uv2).x);
 }
 

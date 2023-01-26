@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-27
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-27
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-27 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -49,14 +49,9 @@ DeclareBoolParam (Reveal, "Reveal", "Chromakey", false);
 DeclareFloatParam (CentreX, "Position", "Foreground DVE", "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.0, 2.0);
 DeclareFloatParam (CentreY, "Position", "Foreground DVE", "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.0, 2.0);
 
-DeclareFloatParam (MasterScale, "Master", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
-DeclareFloatParam (XScale, "Width", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
-DeclareFloatParam (YScale, "Height", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
-
-DeclareFloatParam (Left, "Left", "Crop", kNoFlags, 0.0, 0.0, 1.0);
-DeclareFloatParam (Right, "Right", "Crop", kNoFlags, 1.0, 0.0, 1.0);
-DeclareFloatParam (Top, "Top", "Crop", kNoFlags, 1.0, 0.0, 1.0);
-DeclareFloatParam (Bottom, "Bottom", "Crop", kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (MasterScale, "Master", "Foreground Scale", kNoFlags, 1.0, 0.0, 10.0);
+DeclareFloatParam (XScale, "Width", "Foreground Scale", kNoFlags, 1.0, 0.0, 10.0);
+DeclareFloatParam (YScale, "Height", "Foreground Scale", kNoFlags, 1.0, 0.0, 10.0);
 
 DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
@@ -88,40 +83,6 @@ float _minTolerance = 1.0 / 256.0;
 float blur[] = { 20.0 / 64.0, 15.0 / 64.0, 6.0  / 64.0, 1.0  / 64.0 };  // Pascals Triangle
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-//-----------------------------------------------------------------------------------------//
-// Crop and position parameters
-//
-// This function recovers cropping and position parameters, corrected for image size,
-// rotation and aspect ratio.
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_FgParams (out float2 p)
-{
-   float4 crop = float4 (Left, 1.0 - Top, 1.0 - Right, Bottom);
-
-   p = float2 (0.5 - CentreX, CentreY - 0.5);
-
-   if (abs (abs (_FgOrientation - 90) - 90)) {
-      p = 0.5.xx - float2 (CentreY, CentreX);
-      crop = crop.wxyz;
-   }
-
-   if (_FgOrientation > 90) {
-      p = -p;
-      crop = crop.zwxy;
-   }
-
-   p *= abs (_FgExtents.xy - _FgExtents.zw);
-
-   crop.zw = 1.0 - crop.zw;
-
-   return crop;
-}
-
-//-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
@@ -129,35 +90,27 @@ float4 fn_FgParams (out float2 p)
 // DVE
 //
 // A much cutdown version of the standard 2D DVE effect, this version doesn't include
-// drop shadow generation which would be pointless in this configuration.
+// cropping or drop shadow generation which would be pointless in this configuration.
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (DVEvid)
 {
-   // The first section adjusts the position allowing for the foreground resolution.
-   // Resolution and orientation corrected cropping is also created.
+   // The first section adjusts the position allowing for the foreground orientation.
 
-   float2 pos;
+   float2 pos = abs (abs (_FgOrientation - 90) - 90)
+              ? 0.5.xx - float2 (CentreY, CentreX)
+              : float2 (0.5 - CentreX, CentreY - 0.5);
 
-   float4 Crop = fn_FgParams (pos);
+   if (_FgOrientation > 90) { pos = -pos; }
 
-   float2 xy = uv1 + pos;
+   float2 xy = uv1 + (pos * abs (_FgExtents.xy - _FgExtents.zw));
    float2 scale = MasterScale * float2 (XScale, YScale);
 
    xy = ((xy - 0.5.xx) / scale) + 0.5.xx;
 
-   // Now the scaled, cropped and positioned foreground is recovered.  The crop data is
-   // stored as a float4, ordered such that W corresponds to the bottom edge of the frame,
-   // X to the left, Y to the top, and Z to the right.
+   // That's all we need.  Now the scaled and positioned foreground is returned.
 
-   float4 retval;
-
-   if ((xy.x >= Crop.x) && (xy.x <= Crop.z) && (xy.y >= Crop.y) && (xy.y <= Crop.w)) {
-      retval = ReadPixel (Fg, xy);
-   }
-   else retval = kTransparentBlack;
-
-   return retval;
+   return ReadPixel (Fg, xy);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -324,6 +277,6 @@ DeclareEntryPoint (ChromakeyWithDVE)
       retval = lerp (bg, retval, Opacity);
    }
 
-   return lerp (bg, retval, tex2D (Mask, uv1));
+   return lerp (bg, retval, tex2D (Mask, uv3).x);
 }
 

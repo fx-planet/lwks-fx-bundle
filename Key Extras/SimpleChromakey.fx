@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-26
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-26
 
 /**
  This is a simple keyer that has only five adjustments, the key colour, key clip, key
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-26 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -146,6 +146,6 @@ DeclareEntryPoint (SimpleChromakey)
    Fgnd.rgb = lerp (Fgnd.rgb, Frng, DeFringeAmt);
    Fgnd.a  *= Amount;
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * tex2D (Mask, uv3));
+   return lerp (Bgnd, Fgnd, Fgnd.a * tex2D (Mask, uv3).x);
 }
 

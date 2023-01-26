@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-26
 // @Author jwrl
-// @Created 2023-01-19
+// @Created 2023-01-26
 
 /**
  This simple effect turns the alpha channel of a clip fully on, making it opaque.  There
@@ -20,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-19 jwrl
+// Built 2023-01-26 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -59,6 +59,6 @@ DeclareEntryPoint (AlphaOpq)
 
    Fgd = float4 (lerp (Colour.rgb, Fgd.rgb, Fgd.a), 1.0);
 
-   return lerp (Colour, Fgd, tex2D (Mask, uv1));
+   return lerp (Colour, Fgd, tex2D (Mask, uv1).x);
 }
 

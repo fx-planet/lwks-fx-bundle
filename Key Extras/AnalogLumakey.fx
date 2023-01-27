@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-27
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-27
 
 /**
  This keyer is similar to the Lightworks lumakey effect, but behaves more like an analogue
@@ -31,7 +31,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-27 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -77,10 +77,13 @@ DeclareBoolParam (InvertKey, "Invert key", "Key settings", false);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (FG)
+{ return ReadPixel (Fg, uv1); }
+
 DeclareEntryPoint (AnalogLumakey)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ((KeyMode > 1) || IsOutOfBounds (uv2)) ? BLACK : tex2D (Bg, uv2);
+   float4 Fgd = tex2D (FG, uv3);
+   float4 Bgd = KeyMode > 1 ? BLACK : ReadPixel (Bg, uv2);
 
    float luma  = dot (Fgd.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
    float edge  = max (0.00001, Softness);
@@ -93,6 +96,6 @@ DeclareEntryPoint (AnalogLumakey)
 
    alpha *= Amount;
 
-   return lerp (Bgd, Fgd, alpha * tex2D (Mask, uv1));
+   return lerp (Bgd, Fgd, alpha * tex2D (Mask, uv3).x);
 }
 

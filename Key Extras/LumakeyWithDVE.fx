@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-19
+// @Released 2023-01-27
 // @Author jwrl
-// @Created 2023-01-19
+// @Created 2023-01-27
 
 /**
  DESCRIPTION:
@@ -37,7 +37,7 @@
 //
 // Version history:
 //
-// Built 2023-01-19 jwrl
+// Built 2023-01-27 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -70,11 +70,6 @@ DeclareFloatParam (MasterScale, "Master", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0)
 DeclareFloatParam (XScale, "Width", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
 DeclareFloatParam (YScale, "Height", "DVE Scale", kNoFlags, 1.0, 0.0, 10.0);
 
-DeclareFloatParam (Left, "Left", "Crop", kNoFlags, 0.0, 0.0, 1.0);
-DeclareFloatParam (Right, "Right", "Crop", kNoFlags, 1.0, 0.0, 1.0);
-DeclareFloatParam (Top, "Top", "Crop", kNoFlags, 1.0, 0.0, 1.0);
-DeclareFloatParam (Bottom, "Bottom", "Crop", kNoFlags, 0.0, 0.0, 1.0);
-
 DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (_FgOrientation);
@@ -91,8 +86,6 @@ DeclareFloat4Param (_FgExtents);
 
 #define BLACK float2(0.0, 1.0).xxxy
 
-#define BrdrPixel(SHADER,XY) (IsOutOfBounds(XY) ? BLACK : tex2D(SHADER, XY))
-
 #define R_LUMA 0.2989
 #define G_LUMA 0.5866
 #define B_LUMA 0.1145
@@ -100,74 +93,51 @@ DeclareFloat4Param (_FgExtents);
 #define SHOW_BGD 1
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-//-----------------------------------------------------------------------------------------//
-// Crop and position parameters
-//
-// This function recovers cropping and position parameters, corrected for image size,
-// rotation and aspect ratio.
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_FgParams (out float2 p)
-{
-   float4 crop = float4 (Left, 1.0 - Top, 1.0 - Right, Bottom);
-
-   p = float2 (0.5 - CentreX, CentreY - 0.5);
-
-   if (abs (abs (_FgOrientation - 90) - 90)) {
-      p = 0.5.xx - float2 (CentreY, CentreX);
-      crop = crop.wxyz;
-   }
-
-   if (_FgOrientation > 90) {
-      p = -p;
-      crop = crop.zwxy;
-   }
-
-   p *= abs (_FgExtents.xy - _FgExtents.zw);
-
-   crop.zw = 1.0 - crop.zw;
-
-   return crop;
-}
-
-//-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclareEntryPoint (LumakeyWithDVE)
+DeclarePass (BG)
+{ return IsOutOfBounds(uv2) ? BLACK : tex2D (Bg, uv2); }
+
+//-----------------------------------------------------------------------------------------//
+// DVE
+//
+// A much cutdown version of the standard 2D DVE effect, this version doesn't include
+// cropping or drop shadow generation which would be pointless in this configuration.
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (FG)
 {
-   // This DVE section is a much cutdown version of the Lightworks 2D DVE.  It doesn't
-   // include drop shadow generation which would be pointless in this configuration.
-   // The first section adjusts the position allowing for the foreground resolution.
-   // Resolution and orientation corrected cropping is also created.
+   // The first section adjusts the position allowing for the foreground orientation.
 
-   float2 pos;
+   float2 pos = abs (abs (_FgOrientation - 90) - 90)
+              ? 0.5.xx - float2 (CentreY, CentreX)
+              : float2 (0.5 - CentreX, CentreY - 0.5);
 
-   float4 Crop = fn_FgParams (pos);
+   if (_FgOrientation > 90) { pos = -pos; }
 
-   float2 xy = uv1 + pos;
+   float2 xy = uv1 + (pos * abs (_FgExtents.xy - _FgExtents.zw));
    float2 scale = MasterScale * float2 (XScale, YScale);
 
    xy = ((xy - 0.5.xx) / scale) + 0.5.xx;
 
-   // Now the scaled, cropped and positioned foreground is recovered along with the
-   // background.  Any background transparency is preserved.
+   // That's all we need.  Now the scaled and positioned foreground is returned.
 
-   float4 Fgd, Bgd = HideBg ? BLACK : BrdrPixel (Bg, uv2);
+   return ReadPixel (Fg, xy);
+}
 
-   // The crop data is stored as a float4, ordered suc that W corresponds to the
-   // bottom edge of the foreground, X to the left, Y to the top, and Z to the right.
+//-----------------------------------------------------------------------------------------//
+// Main code
+//
+// Blends the resized and positioned foreground with the selected background.
+//-----------------------------------------------------------------------------------------//
 
-   if ((xy.x >= Crop.x) && (xy.x <= Crop.z) && (xy.y >= Crop.y) && (xy.y <= Crop.w)) {
-      Fgd = ReadPixel (Fg, xy);
-   }
-   else Fgd = kTransparentBlack;
+DeclareEntryPoint (LumakeyWithDVE)
+{
+   float4 Fgd = tex2D (FG, uv3);
+   float4 Bgd = (ShowAlpha || HideBg) ? BLACK : tex2D (BG, uv3);
 
-   // From now on is the lumakey.  We first set up the key clip and softness from the
-   // Fgd luminance.
+   // First set up the key clip and softness from the Fgd luminance.
 
    float luma  = dot (Fgd.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
    float edge  = max (0.00001, Softness);
@@ -184,6 +154,6 @@ DeclareEntryPoint (LumakeyWithDVE)
 
    Fgd = (ShowAlpha) ? alpha.xxxx : lerp (Bgd, Fgd, alpha * Opacity);
 
-   return lerp (Bgd, Fgd, tex2D (Mask, uv1));
+   return lerp (Bgd, Fgd, tex2D (Mask, uv3).x);
 }
 

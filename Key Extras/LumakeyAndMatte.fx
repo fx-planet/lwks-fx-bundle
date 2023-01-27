@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-27
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2023-01-27
 
 /**
  This effect is designed to generate a key from the foreground video and use that key
@@ -23,7 +23,7 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Built 2023-01-27 jwrl
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-01-27
 // @Author hugly
 // @Author schrauber
 // @Created 2019-08-09
@@ -23,13 +23,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-10 jwrl
+// Updated 2023-01-27 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Easy overlay 2022.2+", "Key", "Key Extras", "For overlays where luminance represents transparency", CanSize);
+DeclareLightworksEffect ("Easy overlay", "Key", "Key Extras", "For overlays where luminance represents transparency", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -78,9 +78,12 @@ float4 setFgLift (float4 x)
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (FG)
+{ return ReadPixel (fg, uv1); }
+
 DeclareEntryPoint (EasyOverlay)
 {
-   float4 Fgd  = ReadPixel (fg, uv1);
+   float4 Fgd  = ReadPixel (FG, uv3);
    float4 Bgd  = IsOutOfBounds (uv2) ? BLACK : tex2D (bg, uv2);
    float4 mask = Fgd;
 
@@ -92,6 +95,6 @@ DeclareEntryPoint (EasyOverlay)
 
    ret.a = 1.0;
 
-   return lerp (Bgd, ret, tex2D (Mask, uv1));
+   return lerp (Bgd, ret, tex2D (Mask, uv3).x);
 }
 

@@ -22,7 +22,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Polymask", "DVE", "Border and Crop", "Multi-sided adjustable mask", "ScaleAware|HasMinOutputSize");
+DeclareLightworksEffect ("Polymask", "DVE", "Border and Crop", "Multi-sided adjustable mask", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -44,10 +44,19 @@ DeclareColourParam (BgColour, "Bg colour", kNoGroup, kNoFlags, 0.0, 0.5, 0.0, 1.
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// These first 2 passes are done to optionally invert the inputs to the effect and map
+// their coordinates to the master sequence coordinates.
+
+DeclarePass (Fgd)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bgd)
+{ return ReadPixel (Bg, uv2); }
+
 DeclareEntryPoint ()
 {
-   float4 Bgd = Mode == 0 ? ReadPixel (Bg, uv2) : BgColour;
+   float4 Bgnd = Mode == 0 ? tex2D (Bgd, uv3) : BgColour;
 
-   return lerp (Bgd, ReadPixel (Fg, uv1), tex2D (Mask, uv1).x);
+   return lerp (Bgnd, tex2D (Fgd, uv3), tex2D (Mask, uv3).x);
 }
 

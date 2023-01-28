@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This is an extreme non-additive mix for alpha and delta (difference) keys.  The
@@ -12,6 +12,7 @@
  The result is extreme, but can be interesting.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -51,10 +52,18 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// technique NonAddUltra_Kx_F
+
+DeclarePass (Fg_F)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_F)
+{ return ReadPixel (Bg, uv2); }
+
 DeclareEntryPoint (NonAddUltra_Kx_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd = tex2D (Fg_F, uv3);
+   float4 Bgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Key = Bgnd; Bgnd = Fgnd;
@@ -78,10 +87,20 @@ DeclareEntryPoint (NonAddUltra_Kx_F)
    return CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
+
+// technique NonAddUltra_Kx_I
+
+DeclarePass (Fg_I)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclareEntryPoint (NonAddUltra_Kx_I)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd = tex2D (Fg_I, uv3);
+   float4 Bgnd = tex2D (Bg_I, uv3);
 
    if (Source == 0) {
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
@@ -103,10 +122,20 @@ DeclareEntryPoint (NonAddUltra_Kx_I)
    return CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
+
+// technique NonAddUltra_Kx_O
+
+DeclarePass (Fg_O)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
+
 DeclareEntryPoint (NonAddUltra_Kx_O)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd = tex2D (Fg_O, uv3);
+   float4 Bgnd = tex2D (Bg_O, uv3);
 
    if (Source == 0) {
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));

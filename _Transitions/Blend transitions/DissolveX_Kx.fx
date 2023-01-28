@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This alpha and delta dissolve allows blend modes to be applied during the transition
@@ -16,6 +16,7 @@
  replaced by "Normal" to better match the Photoshop model.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,12 +24,12 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("DissolveX (keyed)", "Mix", "Blend transitions", "Separates foreground from background and dissolves it while blending it during the transition", CanSize);
+DeclareLightworksEffect ("DissolveX (keyed)", "Mix", "Blend transitions", "Separates foreground from background and dissolves it while blending it during the transition", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

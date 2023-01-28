@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author khaver
 // @Created 2014-08-28
 
@@ -12,6 +12,7 @@
  methods are affected by which layer is on top or bottom), and a bypass option.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,13 +20,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-16 jwrl.
+// Updated 2023-01-28 jwrl.
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("DissolveX", "Mix", "Blend transitions", "Allows optional blend modes to be applied during the transition", CanSize);
+DeclareLightworksEffect ("DissolveX", "Mix", "Blend transitions", "Allows optional blend modes to be applied during the transition", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

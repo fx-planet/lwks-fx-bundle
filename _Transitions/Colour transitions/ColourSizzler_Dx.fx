@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect dissolves through a complex colour translation while performing what is
  essentially a non-additive mix.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -52,10 +53,16 @@ DeclareFloatParam (HueCycle, "Cycle rate", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Outgoing)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Incoming)
+{ return ReadPixel (Bg, uv2); }
+
 DeclareEntryPoint (ColourSizzler_Dx)
 {
-   float4 Fgnd   = ReadPixel (Fg, uv1);
-   float4 Bgnd   = ReadPixel (Bg, uv2);
+   float4 Fgnd   = tex2D (Outgoing, uv3);
+   float4 Bgnd   = tex2D (Incoming, uv3);
    float4 nonAdd = max (Fgnd * min (1.0, 2.0 * (1.0 - Amount)), Bgnd * min (1.0, 2.0 * Amount));
    float4 premix = max (Fgnd, Bgnd);
 

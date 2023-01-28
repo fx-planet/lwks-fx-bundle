@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This is a modified version of my "Dissolve through colour" but is very much simpler to
@@ -11,6 +11,7 @@
  black.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -45,6 +46,12 @@ DeclareColourParam (Colour, "Colour", "Colour setup", kNoFlags, 0.0, 0.0, 0.0, 1
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Outgoing)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Incoming)
+{ return ReadPixel (Bg, uv2); }
+
 DeclareEntryPoint (FlatColour_Dx)
 {
    float mix_bgd = min (1.0, (1.0 - Amount) * 2.0);
@@ -61,8 +68,11 @@ DeclareEntryPoint (FlatColour_Dx)
       mix_fgd = 1.0;
    }
 
-   float4 retval = lerp (ReadPixel (Fg, uv1), Colour, mix_fgd);
+   float4 Fgnd = tex2D (Outgoing, uv3);
+   float4 Bgnd = tex2D (Incoming, uv3);
 
-   return lerp (ReadPixel (Bg, uv2), retval, mix_bgd);
+   Fgnd = lerp (Fgnd, Colour, mix_fgd);
+
+   return lerp (Bgnd, retval, mix_bgd);
 }
 

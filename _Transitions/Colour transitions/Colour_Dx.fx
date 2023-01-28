@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect dissolves through a user-selected colour field from one clip to another.
@@ -16,6 +16,7 @@
  centre, opacity, transition curve, gradient centre and colour values.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,7 +24,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -71,6 +72,12 @@ DeclareColourParam (botRight, "Bottom right", "Colour setup", kNoFlags, 0.0, 0.8
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
+
+DeclarePass (Outgoing)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Incoming)
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Gradient)
 {
@@ -123,9 +130,9 @@ DeclareEntryPoint (Colour_Dx)
          (Mix >= 1.0) ? Amount / 2.0 :
          (Mix > Amount) ? Amount / (2.0 * Mix) : ((Amount - Mix) / (2.0 * (1.0 - Mix))) + 0.5;
 
-   float4 Fgnd   = ReadPixel (Fg, uv1);
-   float4 Bgnd   = ReadPixel (Bg, uv2);
-   float4 colour = ReadPixel (Gradient, uv0);
+   float4 Fgnd   = tex2D (Outgoing, uv3);
+   float4 Bgnd   = tex2D (Incoming, uv3);
+   float4 colour = tex2D (Gradient, uv3);
    float4 rawDx  = lerp (Fgnd, Bgnd, Mix);
    float4 colDx;
 

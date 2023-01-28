@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect fades a blended foreground such as a title or image key in or out through
@@ -10,6 +10,7 @@
  maximum strength half way through the transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -72,12 +73,12 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
    float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -139,9 +140,12 @@ float4 fn_colour (float2 uv)
 
 // technique Colour_Kx_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Super_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -163,8 +167,8 @@ DeclareEntryPoint (Colour_Fx_F)
 
    if (gradSetup) return gradient;
 
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv1) ? kTransparentBlack : ReadPixel (Super_F, uv3);
-   float4 Bgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = CropEdges && IsOutOfBounds (uv1) ? kTransparentBlack : tex2D (Super_F, uv3);
+   float4 Bgnd = tex2D (Bg_F, uv3);
 
    float level = min (1.0, cAmount * 2.0);
    float c_Amt = cos (saturate (level * Amount) * HALF_PI);
@@ -178,8 +182,11 @@ DeclareEntryPoint (Colour_Fx_F)
 
 // technique Colour_Kx_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclareEntryPoint (Colour_Fx_I)
 {
@@ -187,8 +194,8 @@ DeclareEntryPoint (Colour_Fx_I)
 
    if (gradSetup) return gradient;
 
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : ReadPixel (Super_I, uv3);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : tex2D (Super_I, uv3);
+   float4 Bgnd = tex2D (Bg_I, uv3);
 
    float level = min (1.0, cAmount * 2.0);
    float c_Amt = cos (saturate (level * Amount) * HALF_PI);
@@ -202,8 +209,11 @@ DeclareEntryPoint (Colour_Fx_I)
 
 // technique Colour_Kx_O
 
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclareEntryPoint (Colour_Fx_O)
 {
@@ -211,8 +221,8 @@ DeclareEntryPoint (Colour_Fx_O)
 
    if (gradSetup) return gradient;
 
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : ReadPixel (Super_O, uv3);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : tex2D (Super_O, uv3);
+   float4 Bgnd = tex2D (Bg_O, uv3);
 
    float level = min (1.0, cAmount * 2.0);
    float c_Amt = sin (saturate (level * Amount) * HALF_PI);

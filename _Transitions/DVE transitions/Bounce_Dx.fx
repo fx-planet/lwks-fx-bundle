@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  Enlarges the incoming image up to a preset size at the mid point then lets it fall
@@ -10,6 +10,7 @@
  is necessary to set the type to bounce out.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect pinches the outgoing video to a user-defined point to reveal the incoming
@@ -14,6 +14,7 @@
  acceleration smoother.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -21,7 +22,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -59,10 +60,13 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-// technique xPinch_Dx_0
+// technique xPinch_Dx (pinch to reveal)
 
 DeclarePass (Pinch_0)
 { return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+
+DeclarePass (Bg_0)
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Video_0)
 {
@@ -72,7 +76,7 @@ DeclarePass (Video_0)
 
    float2 xy1 = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   return ReadPixel (Pinch_0, xy1);
+   return tex2D (Pinch_0, xy1);
 }
 
 DeclareEntryPoint (xPinch_Dx_0)
@@ -84,11 +88,15 @@ DeclareEntryPoint (xPinch_Dx_0)
 
    float4 retval = tex2D (Video_0, xy1);
 
-   return lerp (ReadPixel (Bg, uv2), retval, retval.a);
+   return lerp (tex2D (Bg_0, uv3), retval, retval.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
-// technique xPinch_Dx_1
+// technique xPinch_Dx (expand to reveal)
+
+DeclarePass (Fg_1)
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (Pinch_1)
 { return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
@@ -101,7 +109,7 @@ DeclarePass (Video_1)
 
    float2 xy1 = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   return ReadPixel (Pinch_1, xy1);
+   return tex2D (Pinch_1, xy1);
 }
 
 DeclareEntryPoint (xPinch_Dx_1)
@@ -113,6 +121,6 @@ DeclareEntryPoint (xPinch_Dx_1)
 
    float4 retval = tex2D (Video_1, xy1);
 
-   return lerp (ReadPixel (Fg, uv1), retval, retval.a);
+   return lerp (tex2D (Fg_1, uv3), retval, retval.a);
 }
 

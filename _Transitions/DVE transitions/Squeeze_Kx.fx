@@ -45,16 +45,16 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   float4 Bgnd, Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
       if (Ttype == 0) {
          Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
+         Fgnd = tex2D (B, xy);
       }
-      else Bgnd = ReadPixel (B, xy2);
+      else Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -73,8 +73,14 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // SqueezeRight
 
+DeclarePass (Fg_R)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_R)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_R)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_R, Bg_R, uv3); }
 
 DeclareEntryPoint (SqueezeRight)
 {
@@ -89,12 +95,12 @@ DeclareEntryPoint (SqueezeRight)
    else xy = (Amount == 0.0) ? float2 (2.0, uv3.y) : float2 (uv3.x / Amount, uv3.y);
 
    if (Ttype == 0) {
-      Bgnd = ReadPixel (Fg, uv1);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_R, xy);
+      Bgnd = tex2D (Fg_R, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_R, xy);
    }
    else {
-      Bgnd = ReadPixel (Bg, uv2);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_R, xy);
+      Bgnd = tex2D (Bg_R, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_R, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
@@ -103,8 +109,14 @@ DeclareEntryPoint (SqueezeRight)
 
 // SqueezeDown
 
+DeclarePass (Fg_D)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_D)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_D)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_D, Bg_D, uv3); }
 
 DeclareEntryPoint (SqueezeDown)
 {
@@ -118,22 +130,29 @@ DeclareEntryPoint (SqueezeDown)
    else xy = (Amount == 0.0) ? float2 (uv3.x, 2.0) : float2 (uv3.x, uv3.y / Amount);
 
    if (Ttype == 0) {
-      Bgnd = ReadPixel (Fg, uv1);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_D, xy);
+      Bgnd = tex2D (Fg_D, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_D, xy);
    }
    else {
-      Bgnd = ReadPixel (Bg, uv2);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_D, xy);
+      Bgnd = tex2D (Bg_D, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_D, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // SqueezeLeft
 
+DeclarePass (Fg_L)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_L)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_L)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_L, Bg_L, uv3); }
 
 DeclareEntryPoint (SqueezeLeft)
 {
@@ -147,22 +166,29 @@ DeclareEntryPoint (SqueezeLeft)
    else xy = (Amount == 0.0) ? float2 (2.0, uv3.y) : float2 ((uv3.x - 1.0) / Amount + 1.0, uv3.y);
 
    if (Ttype == 0) {
-      Bgnd = ReadPixel (Fg, uv1);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_L, xy);
+      Bgnd = tex2D (Fg_L, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_L, xy);
    }
    else {
-      Bgnd = ReadPixel (Bg, uv2);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_L, xy);
+      Bgnd = tex2D (Bg_L, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_L, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // SqueezeUp
 
+DeclarePass (Fg_U)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_U)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_U)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_U, Bg_U, uv3); }
 
 DeclareEntryPoint (SqueezeUp)
 {
@@ -176,12 +202,12 @@ DeclareEntryPoint (SqueezeUp)
    else xy = (Amount == 0.0) ? float2 (uv3.x, 2.0) : float2 (uv3.x, (uv3.y - 1.0) / Amount + 1.0);
 
    if (Ttype == 0) {
-      Bgnd = ReadPixel (Fg, uv1);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_U, xy);
+      Bgnd = tex2D (Fg_U, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_U, xy);
    }
    else {
-      Bgnd = ReadPixel (Bg, uv2);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_U, xy);
+      Bgnd = tex2D (Bg_U, uv3);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_U, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);

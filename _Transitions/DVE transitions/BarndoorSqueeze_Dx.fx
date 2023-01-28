@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This is based on the barn door split effect, modified to squeeze or expand the divided
  section of the frame.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -47,23 +48,16 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 #define BLACK float2(0.0, 1.0).xxxy
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_out (sampler F, float2 uv)
-{ return IsOutOfBounds (uv) ? BLACK : tex2D (F, uv); }
-
-float4 fn_in (sampler B, float2 uv)
-{ return IsOutOfBounds (uv) ? BLACK : tex2D (B, uv); }
-
-//-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
 // Technique squeeze horizontally
 
 DeclarePass (Outgoing_H)
-{ return fn_out (Fg, uv1); }
+{ return IsOutOfBounds (uv) ? BLACK : tex2D (Fg, uv1); }
+
+DeclarePass (Bg_H)
+{ return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint (SqueezeH)
 {
@@ -76,14 +70,18 @@ DeclareEntryPoint (SqueezeH)
    negAmt /= 2.0;
 
    return (uv3.x > posAmt) ? tex2D (Outgoing_H, xy1) :
-          (uv3.x < negAmt) ? tex2D (Outgoing_H, xy2) : ReadPixel (Bg, uv2);
+          (uv3.x < negAmt) ? tex2D (Outgoing_H, xy2) : tex2D (Bg_H, uv3);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // Technique expand horizontally
 
+DeclarePass (Fg_H)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Incoming_H)
-{ return fn_out (Bg, uv2); }
+{ return IsOutOfBounds (uv) ? BLACK : tex2D (Bg, uv2); }
 
 DeclareEntryPoint (ExpandH)
 {
@@ -94,14 +92,18 @@ DeclareEntryPoint (ExpandH)
    float2 xy2 = float2 (uv3.x / Amount, uv3.y);
 
    return (uv3.x > posAmt) ? tex2D (Incoming_H, xy1) :
-          (uv3.x < negAmt) ? tex2D (Incoming_H, xy2) : ReadPixel (Fg, uv1);
+          (uv3.x < negAmt) ? tex2D (Incoming_H, xy2) : ReadPixel (Fg_H, uv3);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // Technique squeeze vertically
 
 DeclarePass (Outgoing_V)
-{ return fn_out (Fg, uv1); }
+{ return IsOutOfBounds (uv) ? BLACK : tex2D (Fg, uv1); }
+
+DeclarePass (Bg_V)
+{ return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint (SqueezeV)
 {
@@ -114,14 +116,18 @@ DeclareEntryPoint (SqueezeV)
    negAmt /= 2.0;
 
    return (uv3.y > posAmt) ? tex2D (Outgoing_V, xy1) :
-          (uv3.y < negAmt) ? tex2D (Outgoing_V, xy2) : ReadPixel (Bg, uv2);
+          (uv3.y < negAmt) ? tex2D (Outgoing_V, xy2) : ReadPixel (Bg_V, uv3);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // Technique expand vertically
 
+DeclarePass (Fg_V)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Incoming_V)
-{ return fn_out (Bg, uv2); }
+{ return IsOutOfBounds (uv) ? BLACK : tex2D (Bg, uv2); }
 
 DeclareEntryPoint (ExpandV)
 {
@@ -132,6 +138,6 @@ DeclareEntryPoint (ExpandV)
    float2 xy2 = float2 (uv3.x, uv3.y / Amount);
 
    return (uv3.y > posAmt) ? tex2D (Incoming_V, xy1)
-        : (uv3.y < negAmt) ? tex2D (Incoming_V, xy2) : ReadPixel (Fg, uv1);
+        : (uv3.y < negAmt) ? tex2D (Incoming_V, xy2) : ReadPixel (Fg_V, uv3);
 }
 

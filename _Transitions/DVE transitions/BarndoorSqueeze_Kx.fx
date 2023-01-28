@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This is similar to the split squeeze effect, customised to suit its use with blended
@@ -10,6 +10,7 @@
  vertically or horizontally depending on the user setting.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -49,12 +50,12 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen_F (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen_F (sampler F, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = tex2D (F, xy2);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = ReadPixel (Bg, xy1);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb = Bgnd.rgb * Fgnd.a;
@@ -67,12 +68,12 @@ float4 fn_keygen_F (sampler F, float2 xy1, sampler B, float2 xy2)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -91,8 +92,11 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique Expand_Hf
 
+DeclarePass (Bg_Hf)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Super_Hf)
-{ return fn_keygen_F (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Bg_Hf, uv2, uv3); }
 
 DeclareEntryPoint (Expand_Hf)
 {
@@ -105,14 +109,18 @@ DeclareEntryPoint (Expand_Hf)
 
    if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_Hf, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Expand_Vf
 
+DeclarePass (Bg_Vf)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Super_Vf)
-{ return fn_keygen_F (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Bg_Vf, uv2, uv3); }
 
 DeclareEntryPoint (Expand_Vf)
 {
@@ -125,14 +133,18 @@ DeclareEntryPoint (Expand_Vf)
 
    if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_Vf, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Expand_H
 
+DeclarePass (Bg_He)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_He)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_He, uv1, uv3); }
 
 DeclareEntryPoint (Expand_H)
 {
@@ -145,14 +157,18 @@ DeclareEntryPoint (Expand_H)
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_He, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Squeeze_H
 
+DeclarePass (Bg_Hs)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Hs)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_Hs, uv1, uv3); }
 
 DeclareEntryPoint (Squeeze_H)
 {
@@ -165,14 +181,18 @@ DeclareEntryPoint (Squeeze_H)
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_Hs, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Expand_V
 
+DeclarePass (Bg_Ve)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Ve)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_Ve, uv1, uv3); }
 
 DeclareEntryPoint (Expand_V)
 {
@@ -185,14 +205,18 @@ DeclareEntryPoint (Expand_V)
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_Ve, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Squeeze_V
 
+DeclarePass (Bg_Vs)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Vs)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_Vs, uv1, uv3); }
 
 DeclareEntryPoint (Squeeze_V)
 {
@@ -205,6 +229,6 @@ DeclareEntryPoint (Squeeze_V)
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_Vs, uv3), Fgnd, Fgnd.a);
 }
 

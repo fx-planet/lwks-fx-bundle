@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect pinches the outgoing video to a user-defined point to reveal the incoming
@@ -9,6 +9,7 @@
  this version compresses to the diagonal radii of the images.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -54,8 +55,13 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
+// technique Rpinch_Dx (pinch to reveal)
+
 DeclarePass (rPinch_0)
 { return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+
+DeclarePass (Bg_0)
+{ return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint (rPinch_Dx_0)
 {
@@ -68,10 +74,17 @@ DeclareEntryPoint (rPinch_Dx_0)
    xy1 *= scale;
    xy1 += MID_PT;
 
-   float4 retval = ReadPixel (rPinch_0, xy1);
+   float4 retval = tex2D (rPinch_0, xy1);
 
-   return lerp (ReadPixel (Bg, uv2), retval, retval.a);
+   return lerp (tex2D (Bg_0, uv3), retval, retval.a);
 }
+
+//-----------------------------------------------------------------------------------------//
+
+// technique Rpinch_Dx (expand to reveal)
+
+DeclarePass (Fg_1)
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (rPinch_1)
 { return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
@@ -87,7 +100,7 @@ DeclareEntryPoint (rPinch_Dx_1)
    xy1 *= scale;
    xy1 += MID_PT;
 
-   float4 retval = ReadPixel (rPinch_1, xy1);
+   float4 retval = tex2D (rPinch_1, xy1);
 
-   return lerp (ReadPixel (Fg, uv1), retval, retval.a);
+   return lerp (tex2D (Fg_1, uv3), retval, retval.a);
 }

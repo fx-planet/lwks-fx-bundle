@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect splits the outgoing video horizontally or vertically to reveal the incoming
@@ -11,6 +11,7 @@
  flexibility when using aspect ratios that don't match the sequence.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -51,6 +52,8 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// technique SpinAndZoom_Dx (pinch to reveal)
+
 DeclarePass (Outgoing_H)
 { return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
 
@@ -67,16 +70,20 @@ DeclareEntryPoint (SplitAndZoom_Dx_H)
    float4 retval;
 
    if ((uv3.x < pos + 0.5) && (uv3.x > 0.5 - pos))
-      retval = ReadPixel (Outgoing_H, xy2);
+      retval = tex2D (Outgoing_H, xy2);
    else {
       if (uv3.x > 0.5) xy1.x -= pos;
       else xy1.x += pos;
 
-      retval = ReadPixel (Incoming_H, xy1);
+      retval = tex2D (Incoming_H, xy1);
    }
 
    return retval;
 }
+
+//-----------------------------------------------------------------------------------------//
+
+// technique SpinAndZoom_Dx (expand to reveal)
 
 DeclarePass (Outgoing_V)
 { return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
@@ -94,12 +101,12 @@ DeclareEntryPoint (SplitAndZoom_Dx_V)
    float4 retval;
 
    if ((uv3.y < pos + 0.5) && (uv3.y > 0.5 - pos))
-      retval = ReadPixel (Outgoing_V, xy2);
+      retval = tex2D (Outgoing_V, xy2);
    else {
       if (uv3.y > 0.5) xy1.y -= pos;
       else xy1.y += pos;
 
-      retval = ReadPixel (Incoming_V, xy1);
+      retval = tex2D (Incoming_V, xy1);
    }
 
    return retval;

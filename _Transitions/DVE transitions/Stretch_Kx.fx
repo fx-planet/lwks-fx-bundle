@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect stretches the blended foreground horizontally or vertically to transition in
  or out.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -60,12 +61,12 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen_F (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen_F (sampler F, sampler B, float2 xy)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb = Bgnd.rgb * Fgnd.a;
@@ -78,12 +79,12 @@ float4 fn_keygen_F (sampler F, float2 xy1, sampler B, float2 xy2)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen_F (sampler F, sampler B, float2 xy)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -102,8 +103,14 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique Hstretch_Fx_F
 
+DeclarePass (Fg_Hf)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_Hf)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Hf)
-{ return fn_keygen_F (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_Hf, Bg_Hf, uv3); }
 
 DeclareEntryPoint (Horiz_F)
 {
@@ -118,16 +125,23 @@ DeclareEntryPoint (Horiz_F)
    xy.y = lerp (xy.y, distort, stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_Hf, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_Hf, xy);
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a * Amount);
+   return lerp (tex2D (Fg_Hf, uv3), Fgnd, Fgnd.a * Amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Vstretch_Fx_F
 
+DeclarePass (Fg_Vf)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_Vf)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Vf)
-{ return fn_keygen_F (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_Vf, Bg_Vf, uv3); }
 
 DeclareEntryPoint (Vert_F)
 {
@@ -142,16 +156,23 @@ DeclareEntryPoint (Vert_F)
    xy.y /= 1.0 + (5.0 * stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_Vf, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_Vf, xy);
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a * Amount);
+   return lerp (tex2D (Fg_Vf, uv3), Fgnd, Fgnd.a * Amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Hstretch_Fx_I
 
+DeclarePass (Fg_Hi)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_Hi)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Hi)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_Hi, Bg_Hi, uv3); }
 
 DeclareEntryPoint (Horiz_I)
 {
@@ -166,16 +187,23 @@ DeclareEntryPoint (Horiz_I)
    xy.y = lerp (xy.y, distort, stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_Hi, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Hi, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * Amount);
+   return lerp (tex2D (Bg_Hi, uv3), Fgnd, Fgnd.a * Amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Hstretch_Fx_O
 
+DeclarePass (Fg_Ho)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_Ho)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Ho)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_Ho, Bg_Ho, uv3); }
 
 DeclareEntryPoint (Horiz_O)
 {
@@ -190,16 +218,23 @@ DeclareEntryPoint (Horiz_O)
    xy.y  = lerp (xy.y, distort, stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_Ho, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Ho, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * (1.0 - Amount));
+   return lerp (tex2D (Bg_Ho, uv3), Fgnd, Fgnd.a * (1.0 - Amount));
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Vstretch_Fx_I
 
+DeclarePass (Fg_Vi)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_Vi)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Vi)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_Vi, Bg_Vi, uv3); }
 
 DeclareEntryPoint (Vert_I)
 {
@@ -214,16 +249,23 @@ DeclareEntryPoint (Vert_I)
    xy.y /= 1.0 + (5.0 * stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_Vi, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Vi, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * Amount);
+   return lerp (tex2D (Bg_Vi, uv3), Fgnd, Fgnd.a * Amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Vstretch_Fx_O
 
+DeclarePass (Fg_Vo)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_Vo)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_Vo)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_Vo, Bg_Vo, uv3); }
 
 DeclareEntryPoint (Vert_O)
 {
@@ -238,8 +280,8 @@ DeclareEntryPoint (Vert_O)
    xy.y /= 1.0 + (5.0 * stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_Vo, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Vo, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * (1.0 - Amount));
+   return lerp (tex2D (Bg_Vo, uv3), Fgnd, Fgnd.a * (1.0 - Amount));
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect performs a whip pan style transition to bring a foreground image onto or off
@@ -9,6 +9,7 @@
  is limited to producing vertical and horizontal whips only.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -70,12 +71,12 @@ DeclareFloatParam (_OutputAspectRatio);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -116,9 +117,12 @@ float4 fn_blur (sampler T, float2 uv)
 
 // technique WhipPan_Kx_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Title_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -147,14 +151,18 @@ DeclareEntryPoint (WhipPan_Kx_F)
 
    float4 Overlay = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Blur_F, xy);
 
-   return lerp (ReadPixel (Fg, uv1), Overlay, Overlay.a);
+   return lerp (tex2D (Bg_F, uv3), Overlay, Overlay.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique WhipPan_Kx_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Title_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclarePass (Blur_I)
 { return fn_blur (Title_I, uv3); }
@@ -169,14 +177,18 @@ DeclareEntryPoint (Blur_Kx_I)
 
    float4 Overlay = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Blur_I, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Overlay, Overlay.a);
+   return lerp (tex2D (Bg_I, uv3), Overlay, Overlay.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique WhipPan_Kx_O
 
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Title_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclarePass (Blur_O)
 {
@@ -210,6 +222,6 @@ DeclareEntryPoint (WhipPan_Kx_O)
 
    float4 Overlay = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Blur_O, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Overlay, Overlay.a);
+   return lerp (tex2D (Bg_O, uv3), Overlay, Overlay.a);
 }
 

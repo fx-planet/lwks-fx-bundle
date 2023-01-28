@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author schrauber
 // @Created 2017-11-13
 
@@ -26,6 +26,7 @@
     -Progress 0.78 to 0.95 : Mixing the inputs, starting in the center
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//

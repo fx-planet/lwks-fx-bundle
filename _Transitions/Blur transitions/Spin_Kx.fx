@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author rakusan
 // @Author jwrl
 // @Created 2022-06-01
@@ -10,6 +10,7 @@
  The direction, aspect ratio, centring and strength of the blur can all be adjusted.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +18,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-16 jwrl
+// Updated 2023-01-28 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
@@ -75,12 +76,12 @@ float redux_idx [] = { 1.0, 0.8125, 0.625, 0.4375, 0.25 };
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -134,7 +135,7 @@ float4 fn_main ( sampler B, float2 uv, float4 T, float amt)
 {
    float4 Title = CropEdges && IsOutOfBounds (uv) ? kTransparentBlack : T;
 
-   return lerp (ReadPixel (B, uv), Title, Title.a * amt);
+   return lerp (tex2D (B, uv), Title, Title.a * amt);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -143,9 +144,12 @@ float4 fn_main ( sampler B, float2 uv, float4 T, float amt)
 
 // technique Spin_Kx_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Title_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -177,14 +181,18 @@ DeclareEntryPoint (Spin_Kx_F)
 {
    float4 Title = fn_spin (Title_F, Spin_2_F, uv3, 4, CCW);
 
-   return fn_main (Fg, uv1, Title, Amount);
+   return fn_main (Bg_F, uv3, Title, Amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Spin_Kx_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Title_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclarePass (Super_1_I)
 { return fn_spin (Title_I, Title_I, uv3, 0, CCW); }
@@ -202,14 +210,18 @@ DeclareEntryPoint (Spin_Kx_I)
 {
    float4 Title = fn_spin (Title_I, Spin_2_I, uv3, 4, CCW);
 
-   return fn_main (Bg, uv2, Title, Amount);
+   return fn_main (Bg_I, uv3, Title, Amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Spin_Kx_O
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Title_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclarePass (Super_1_O)
 { return fn_spin (Title_O, Title_O, uv3, 0, CW); }
@@ -227,6 +239,6 @@ DeclareEntryPoint (Spin_Kx_O)
 {
    float4 Title = fn_spin (Title_O, Spin_2_O, uv3, 4, CW);
 
-   return fn_main (Bg, uv2, Title, 1.0 - Amount);
+   return fn_main (Bg_O, uv3, Title, 1.0 - Amount);
 }
 

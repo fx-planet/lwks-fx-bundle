@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect performs a blurred transition into or out of a blended foreground source.
@@ -9,6 +9,7 @@
  ratios.  It can be used with title effects, image keys or other blended video layer(s).
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -62,12 +63,12 @@ DeclareFloatParam (_OutputAspectRatio);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -108,9 +109,12 @@ float4 fn_blurX (sampler T, float2 uv)
 
 // technique Blur_Kx_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Title_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -152,14 +156,18 @@ DeclareEntryPoint (Blur_Kx_F)
 
    if (CropEdges && IsOutOfBounds (uv1)) retval = kTransparentBlack;
 
-   return lerp (ReadPixel (Fg, uv1), retval, retval.a);
+   return lerp (tex2D (Bg_F, uv3), retval, retval.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Blur_Kx_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Title_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclarePass (BlurX_I)
 { return fn_blurX (Title_I, uv3); }
@@ -187,14 +195,18 @@ DeclareEntryPoint (Blur_Kx_I)
 
    if (CropEdges && IsOutOfBounds (uv2)) retval = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), retval, retval.a);
+   return lerp (tex2D (Bg_I, uv3), retval, retval.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Blur_Kx_O
 
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Title_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclarePass (BlurX_O)
 {
@@ -241,6 +253,6 @@ DeclareEntryPoint (Blur_Kx_O)
 
    if (CropEdges && IsOutOfBounds (uv2)) retval = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), retval, retval.a);
+   return lerp (tex2D (Bg_O, uv3), retval, retval.a);
 }
 

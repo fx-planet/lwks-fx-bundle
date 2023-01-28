@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author khaver
 // @Created 2014-08-30
 
@@ -11,6 +11,7 @@
  best result.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +19,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-16 jwrl
+// Updated 2023-01-28 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 

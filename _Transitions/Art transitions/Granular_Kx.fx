@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect uses a granular noise driven pattern to transition into or out of an alpha
@@ -9,6 +9,7 @@
  radial gradient part is from an effect provided by LWKS Software Ltd.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -40,7 +41,6 @@ DeclareIntParam (Ttype, "Transition position", kNoGroup, 0, "At start if delta k
 DeclareIntParam (SetTechnique, "Transition type", kNoGroup, 1, "Top to bottom|Left to right|Radial|No gradient");
 
 DeclareBoolParam (TransDir, "Invert transition direction", kNoGroup, false);
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 DeclareFloatParam (gWidth, "Width", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
@@ -75,16 +75,16 @@ float _pascal [] = { 0.3125, 0.2344, 0.09375, 0.01563 };
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   float4 Bgnd, Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
       if (Ttype == 0) {
          Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
+         Fgnd = tex2D (B, xy);
       }
-      else Bgnd = ReadPixel (B, xy2);
+      else Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -145,26 +145,20 @@ float4 fn_blur_Y (sampler B, float2 uv)
    return retval;
 }
 
-float4 fn_main (sampler F, float2 xy1, sampler B, float2 xy2, sampler S, sampler B1, sampler B2, float2 xy3)
+float4 fn_main (sampler F, sampler B, sampler S, sampler B1, sampler B2, float2 xy)
 {
-   float grad   = tex2D (B1, xy3).x;
-   float noise  = tex2D (B2, ((xy3 - 0.5) / pSize) + 0.5).x;
+   float grad   = tex2D (B1, xy).x;
+   float noise  = tex2D (B2, ((xy - 0.5) / pSize) + 0.5).x;
    float amount = saturate (((0.5 - grad) * 2.0) + noise);
 
-   float2 uv;
-
-   float4 Fgnd = tex2D (S, xy3);
+   float4 Fgnd = tex2D (S, xy);
    float4 retval;
 
-   if (Ttype == 0) {
-      uv = xy1;
-      retval = lerp (ReadPixel (F, uv), Fgnd, Fgnd.a * amount);
-   }
+   if (Ttype == 0) { retval = lerp (tex2D (F, xy), Fgnd, Fgnd.a * amount); }
    else {
       float amt = Ttype == 1 ? amount : 1.0 - amount;
 
-      uv = xy2;
-      retval = lerp (ReadPixel (B, uv), Fgnd, Fgnd.a * amt);
+      retval = lerp (tex2D (B, xy), Fgnd, Fgnd.a * amt);
    }
 
    if (Sparkles) {
@@ -175,7 +169,7 @@ float4 fn_main (sampler F, float2 xy1, sampler B, float2 xy2, sampler S, sampler
       retval = lerp (retval, starColour, stars * Fgnd.a);
    }
 
-   return (CropEdges && IsOutOfBounds (uv)) ? kTransparentBlack : retval;
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -184,8 +178,14 @@ float4 fn_main (sampler F, float2 xy1, sampler B, float2 xy2, sampler S, sampler
 
 // technique Granulate Vertical
 
+DeclarePass (Fg_V)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_V)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_V)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_V, Bg_V, uv3); }
 
 DeclarePass (Noise_V)
 { return fn_noise (uv3); }
@@ -206,13 +206,20 @@ DeclarePass (Vertical)
 }
 
 DeclareEntryPoint (Granulate_V)
-{ return fn_main (Fg, uv1, Bg, uv2, Super_V, Vertical, Blur_V, uv3); }
+{ return fn_main (Fg_V, Bg_V, Super_V, Vertical, Blur_V, uv3); }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Granulate Horizontal
 
+DeclarePass (Fg_H)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_H)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_H)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_H, Bg_H, uv3); }
 
 DeclarePass (Noise_H)
 { return fn_noise (uv3); }
@@ -233,13 +240,20 @@ DeclarePass (Horizontal)
 }
 
 DeclareEntryPoint (Granulate_H)
-{ return fn_main (Fg, uv1, Bg, uv2, Super_H, Horizontal, Blur_H, uv3); }
+{ return fn_main (Fg_H, Bg_H, Super_H, Horizontal, Blur_H, uv3); }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Granulate Radial
 
+DeclarePass (Fg_R)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_R)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_R)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_R, Bg_R, uv3); }
 
 DeclarePass (Noise_R)
 { return fn_noise (uv3); }
@@ -262,13 +276,20 @@ DeclarePass (Radial)
 }
 
 DeclareEntryPoint (Granulate_R)
-{ return fn_main (Fg, uv1, Bg, uv2, Super_R, Radial, Blur_R, uv3); }
+{ return fn_main (Fg_R, Bg_R, Super_R, Radial, Blur_R, uv3); }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Granulate Flat
 
+DeclarePass (Fg_F)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_F)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_F)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_F, Bg_F, uv3); }
 
 DeclarePass (Noise_F)
 { return fn_noise (uv3); }
@@ -287,17 +308,11 @@ DeclareEntryPoint (Granulate_F)
    float4 Fgnd = tex2D (Super_F, uv3);
    float4 retval;
 
-   float2 uv;
-
-   if (Ttype == 0) {
-      uv = uv1;
-      retval = lerp (ReadPixel (Fg, uv), Fgnd, Fgnd.a * amount);
-   }
+   if (Ttype == 0) { retval = lerp (tex2D (Fg_F, uv3), Fgnd, Fgnd.a * amount); }
    else {
       float amt = Ttype == 1 ? amount : 1.0 - amount;
 
-      uv = uv2;
-      retval = lerp (ReadPixel (Bg, uv), Fgnd, Fgnd.a * amt);
+      retval = lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * amt);
    }
 
    if (Sparkles) {
@@ -308,6 +323,6 @@ DeclareEntryPoint (Granulate_F)
       retval = lerp (retval, starColour, stars * Fgnd.a);
    }
 
-   return (CropEdges && IsOutOfBounds (uv)) ? kTransparentBlack : retval;
+   return retval;
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  An effect transition that generates borders using a difference or delta key then uses
@@ -12,6 +12,7 @@
  will be necessary to adjust the delta key trim.  Normally you won't need to do this.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -89,12 +90,12 @@ DeclareFloatParam (_OutputHeight);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -184,9 +185,12 @@ float4 fn_border_2 (sampler S1, sampler S2, float2 uv)
 
 // technique Border_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Key_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -224,18 +228,18 @@ DeclareEntryPoint (BorderFolded)
    xy1  = uv3 - xy2;
    xy2 += uv3;
 
-   float4 border = ReadPixel (Super_F, xy1);
+   float4 border = tex2D (Super_F, xy1);
    float4 retval = kTransparentBlack;
 
    if (NotEqual (xy1, xy2)) {
-      retval = ReadPixel (Super_F, xy2); border = lerp (border, retval, retval.a);
-      retval = ReadPixel (Super_F, xy3); border = lerp (border, retval, retval.a);
-      retval = ReadPixel (Super_F, xy4); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_F, xy2); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_F, xy3); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_F, xy4); border = lerp (border, retval, retval.a);
 
-      retval = Colour_1 * ReadPixel (Border_2_F, xy1).a;
-      retval = lerp (retval, Colour_2, ReadPixel (Border_2_F, xy2).a);
-      retval = lerp (retval, Colour_3, ReadPixel (Border_2_F, xy3).a);
-      retval = lerp (retval, Colour_4, ReadPixel (Border_2_F, xy4).a);
+      retval = Colour_1 * tex2D (Border_2_F, xy1).a;
+      retval = lerp (retval, Colour_2, tex2D (Border_2_F, xy2).a);
+      retval = lerp (retval, Colour_3, tex2D (Border_2_F, xy3).a);
+      retval = lerp (retval, Colour_4, tex2D (Border_2_F, xy4).a);
 
       sincos ((Amount * HALF_PI), Outline, Opacity);
       Opacity = 1.0 - sin (Opacity * HALF_PI);
@@ -246,16 +250,20 @@ DeclareEntryPoint (BorderFolded)
       retval = kTransparentBlack;
    }
 
-   float4 Bgnd = lerp (ReadPixel (Fg, uv1), border, border.a * Opacity);
+   float4 Bgnd = lerp (tex2D (Bg_F, uv3), border, border.a * Opacity);
 
    return lerp (Bgnd, retval, retval.a * Outline);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Border_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Key_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclarePass (Super_I)
 { return fn_antialias (Key_I, uv3); }
@@ -279,18 +287,18 @@ DeclareEntryPoint (BorderInput)
    xy1  = uv3 - xy2;
    xy2 += uv3;
 
-   float4 border = ReadPixel (Super_I, xy1);
+   float4 border = tex2D (Super_I, xy1);
    float4 retval = kTransparentBlack;
 
    if (NotEqual (xy1, xy2)) {
-      retval = ReadPixel (Super_I, xy2); border = lerp (border, retval, retval.a);
-      retval = ReadPixel (Super_I, xy3); border = lerp (border, retval, retval.a);
-      retval = ReadPixel (Super_I, xy4); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_I, xy2); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_I, xy3); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_I, xy4); border = lerp (border, retval, retval.a);
 
-      retval = Colour_1 * ReadPixel (Border_2_I, xy1).a;
-      retval = lerp (retval, Colour_2, ReadPixel (Border_2_I, xy2).a);
-      retval = lerp (retval, Colour_3, ReadPixel (Border_2_I, xy3).a);
-      retval = lerp (retval, Colour_4, ReadPixel (Border_2_I, xy4).a);
+      retval = Colour_1 * tex2D (Border_2_I, xy1).a;
+      retval = lerp (retval, Colour_2, tex2D (Border_2_I, xy2).a);
+      retval = lerp (retval, Colour_3, tex2D (Border_2_I, xy3).a);
+      retval = lerp (retval, Colour_4, tex2D (Border_2_I, xy4).a);
 
       sincos ((Amount * HALF_PI), Outline, Opacity);
       Opacity = 1.0 - sin (Opacity * HALF_PI);
@@ -301,16 +309,20 @@ DeclareEntryPoint (BorderInput)
       retval = kTransparentBlack;
    }
 
-   float4 Bgnd = lerp (ReadPixel (Bg, uv2), border, border.a * Opacity);
+   float4 Bgnd = lerp (tex2D (Bg_I, uv3), border, border.a * Opacity);
 
    return lerp (Bgnd, retval, retval.a * Outline);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Border_O
 
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Key_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclarePass (Super_O)
 { return fn_antialias (Key_O, uv3); }
@@ -331,8 +343,8 @@ DeclarePass (Border_1_O)
       xy1 *= radius;
       xy2  = uv3 - xy1;
       xy1 += uv3;
-      retval = max (retval, ReadPixel (Super_O, xy1));
-      retval = max (retval, ReadPixel (Super_O, xy2));
+      retval = max (retval, tex2D (Super_O, xy1));
+      retval = max (retval, tex2D (Super_O, xy2));
    }
 
    return retval;
@@ -340,7 +352,7 @@ DeclarePass (Border_1_O)
 
 DeclarePass (Border_2_O)
 {
-   float4 retval = ReadPixel (Border_1_O, uv3);
+   float4 retval = tex2D (Border_1_O, uv3);
 
    if (Radius == 0.0) return retval;
 
@@ -355,8 +367,8 @@ DeclarePass (Border_2_O)
       xy1 *= radius;
       xy2  = uv3 - xy1;
       xy1 += uv3;
-      retval = max (retval, ReadPixel (Border_1_O, xy1));
-      retval = max (retval, ReadPixel (Border_1_O, xy2));
+      retval = max (retval, tex2D (Border_1_O, xy1));
+      retval = max (retval, tex2D (Border_1_O, xy2));
    }
 
    return lerp (retval, kTransparentBlack, alpha);
@@ -375,18 +387,18 @@ DeclareEntryPoint (BorderOutput)
    xy1  = uv3 - xy2;
    xy2 += uv3;
 
-   float4 border = ReadPixel (Super_O, xy1);
+   float4 border = tex2D (Super_O, xy1);
    float4 retval = kTransparentBlack;
 
    if (NotEqual (xy1, xy2)) {
-      retval = ReadPixel (Super_O, xy2); border = lerp (border, retval, retval.a);
-      retval = ReadPixel (Super_O, xy3); border = lerp (border, retval, retval.a);
-      retval = ReadPixel (Super_O, xy4); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_O, xy2); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_O, xy3); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super_O, xy4); border = lerp (border, retval, retval.a);
 
-      retval = Colour_1 * ReadPixel (Border_2_O, xy1).a;
-      retval = lerp (retval, Colour_2, ReadPixel (Border_2_O, xy2).a);
-      retval = lerp (retval, Colour_3, ReadPixel (Border_2_O, xy3).a);
-      retval = lerp (retval, Colour_4, ReadPixel (Border_2_O, xy4).a);
+      retval = Colour_1 * tex2D (Border_2_O, xy1).a;
+      retval = lerp (retval, Colour_2, tex2D (Border_2_O, xy2).a);
+      retval = lerp (retval, Colour_3, tex2D (Border_2_O, xy3).a);
+      retval = lerp (retval, Colour_4, tex2D (Border_2_O, xy4).a);
 
       sincos ((Amount * HALF_PI), Opacity, Outline);
       Opacity = 1.0 - sin (Opacity * HALF_PI);
@@ -397,7 +409,7 @@ DeclareEntryPoint (BorderOutput)
       retval = kTransparentBlack;
    }
 
-   float4 Bgnd = lerp (ReadPixel (Bg, uv2), border, border.a * Opacity);
+   float4 Bgnd = lerp (tex2D (Bg_O, uv3), border, border.a * Opacity);
 
    return lerp (Bgnd, retval, retval.a * Outline);
 }

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-17
+// @Created 2023-01-28
 
 /**
  This transition posterises a blended overlay and develops outlines from its edges as it
@@ -12,6 +12,7 @@
  this and a normal dissolve.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-17 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author Robert Schütze
 // @Author jwrl
 // @Created 2022-06-01
@@ -9,6 +9,7 @@
  titles and other blended effects.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,7 +21,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -57,12 +58,12 @@ DeclareFloatParam (_OutputAspectRatio);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -91,9 +92,14 @@ float4 fn_fractal (float2 uv)
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// technique Fractal_Kx_F
+
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Super_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = Bg_F (Fg, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -116,7 +122,7 @@ DeclareEntryPoint (Main_Folded)
 {
    float4 Ovly = tex2D (Fractal_F, uv3);
    float4 Fgnd = tex2D (Super_F, uv3);
-   float4 Bgnd = ReadPixel (Fg, uv1);
+   float4 Bgnd = tex2D (Bg_F, uv3);
 
    float amount  = (Amount + 3.0) / 4.0;
    float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));
@@ -135,8 +141,15 @@ DeclareEntryPoint (Main_Folded)
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
+
+// technique Fractal_Kx_I
+
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclarePass (Fractal_I)
 { return fn_fractal (uv0); }
@@ -145,7 +158,7 @@ DeclareEntryPoint (Main_In)
 {
    float4 Ovly = tex2D (Fractal_I, uv3);
    float4 Fgnd = tex2D (Super_I, uv3);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Bgnd = tex2D (Bg_I, uv3);
 
    float amount  = (Amount + 3.0) / 4.0;
    float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));
@@ -164,8 +177,15 @@ DeclareEntryPoint (Main_In)
    return lerp (Bgnd, retval, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
+
+// technique Fractal_Kx_I
+
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclarePass (Fractal_O)
 { return fn_fractal (uv0); }
@@ -174,7 +194,7 @@ DeclareEntryPoint (Main_Out)
 {
    float4 Ovly = tex2D (Fractal_O, uv3);
    float4 Fgnd = tex2D (Super_O, uv3);
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Bgnd = tex2D (Bg_O, uv3);
 
    float amount = (Amount + 3.0) / 4.0;
    float fractal = saturate (Ovly.a * ((amount * 0.666667) + 0.333333));

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author Robert Schütze
 // @Author jwrl
 // @Created 2022-06-01
@@ -9,6 +9,7 @@
  in the same way as a normal dissolve or wipe transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -49,10 +50,10 @@ DeclareFloatParam (_OutputAspectRatio);
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (Fgd)
+DeclarePass (Outgoing)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Bgd)
+DeclarePass (Incoming)
 { return ReadPixel (Bg, uv2); }
 
 DeclarePass (Fractal)
@@ -74,8 +75,8 @@ DeclareEntryPoint ()
    float amt_out  = max (0.0, (Amount * 5.0) - 4.0);
 
    float4 retval = tex2D (Fractal, uv3);
-   float4 Fgnd = tex2D (Fgd, uv3);
-   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 Fgnd   = tex2D (Outgoing, uv3);
+   float4 Bgnd   = tex2D (Incoming, uv3);
 
    float fractal = max (retval.g, max (retval.r, retval.b));
    float bdWidth = Border * 0.1;

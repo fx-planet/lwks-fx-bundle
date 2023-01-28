@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This effect transitions between two video sources using a mixed key.  The result is
  that one image appears to "erode" into the other as if being eaten away by acid.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -38,10 +39,10 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (Fgd)
+DeclarePass (Outgoing)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Bgd)
+DeclarePass (Incoming)
 { return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint ()
@@ -51,8 +52,8 @@ DeclareEntryPoint ()
 
    a_1 = min (a_1, 1.0);
 
-   float4 Fgnd = tex2D (Fgd, uv3);
-   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 Fgnd = tex2D (Outgoing, uv3);
+   float4 Bgnd = tex2D (Incoming, uv3);
    float4 m_1 = (Fgnd + Bgnd) * 0.5;
    float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= a_1 ? Fgnd : m_1;
 

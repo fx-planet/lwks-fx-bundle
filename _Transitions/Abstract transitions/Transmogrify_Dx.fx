@@ -1,12 +1,13 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This is is a truly bizarre transition.  Sort of a stripy blurry dissolve, I guess.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,7 +15,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -51,10 +52,10 @@ DeclareFloatParam (_Progress);
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (Fgd)
+DeclarePass (Outgoing)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Bgd)
+DeclarePass (Incoming)
 { return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint ()
@@ -67,8 +68,8 @@ DeclareEntryPoint ()
    float2 xy  = saturate (pxS + (sqrt (1.0 - _Progress) - 0.5).xx + (uv3 * rand));
    float2 xy2 = lerp (float2 (xy.x, 1.0 - xy.y), uv3, Amount);
 
-   float4 Fgnd = tex2D (Fgd, xy1);
-   float4 Bgnd = tex2D (Bgd, xy2);
+   float4 Fgnd = tex2D (Outgoing, xy1);
+   float4 Bgnd = tex2D (Incoming, xy2);
 
    return lerp (Fgnd, Bgnd, Amount);
 }

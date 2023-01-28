@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-28
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-28
 
 /**
  This is the second effect based on an earlier effect Abstraction #1.  It uses the
  same pattern but applies the second half symmetrically into and out of the effect.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-28 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -60,10 +61,10 @@ DeclareFloatParam (CentreY, "Mid position", kNoGroup, "SpecifiesPointY", 0.5, 0.
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (Fgd)
+DeclarePass (Outgoing)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Bgd)
+DeclarePass (Incoming)
 { return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint ()
@@ -86,8 +87,8 @@ DeclareEntryPoint ()
 
    progress = abs ((frac (length (xy2) * LOOP) - 0.5) * 2.0 + 0.5);
 
-   float4 Fgnd = tex2D (Fgd, uv3);
-   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 Fgnd = tex2D (Outgoing, uv3);
+   float4 Bgnd = tex2D (Incoming, uv3);
    float4 blnd = lerp (Fgnd, Bgnd, progress);
 
    progress = Amount * 3.0;

@@ -1,12 +1,13 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This effect ripples the outgoing or incoming blended foreground as it dissolves.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -14,7 +15,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -83,12 +84,12 @@ float2 fn_wave (float2 uv, float2 waves, float levels)
    return uv + (retXY * strength);
 }
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -107,7 +108,7 @@ float4 fn_dissolve (sampler S, float2 uv)
 
    float2 xy = fn_wave (uv, waves.xx, cos (Amount * HALF_PI));
 
-   return ReadPixel (S, xy) * Amount;
+   return tex2D (S, xy) * Amount;
 }
 
 float4 fn_blur (sampler B, float2 uv)
@@ -137,11 +138,14 @@ float4 fn_blur (sampler B, float2 uv)
 // Shaders
 //-----------------------------------------------------------------------------------------//
 
-// technique Dreams_F
+// technique Dreams_Kx_F
+
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (Super_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -187,14 +191,18 @@ DeclareEntryPoint (Dreams_F)
 
    if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
-// technique Dreams_I
+// technique Dreams_Kx_I
+
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclarePass (BlurX_I)
 { return fn_dissolve (Super_I, uv3); }
@@ -226,14 +234,18 @@ DeclareEntryPoint (Dreams_I)
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
-// technique Dreams_O
+// technique Dreams_Kx_O
+
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclarePass (BlurX_O)
 {
@@ -241,7 +253,7 @@ DeclarePass (BlurX_O)
 
    float2 xy = fn_wave (uv3, waves.xx, sin (Amount * HALF_PI));
 
-   return ReadPixel (Super_O, xy) * (1.0 - Amount);
+   return tex2D (Super_O, xy) * (1.0 - Amount);
 }
 
 DeclarePass (BlurY_O)
@@ -291,6 +303,6 @@ DeclareEntryPoint (Dreams_O)
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a);
 }
 

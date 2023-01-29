@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a wipe that uses a trig distortion to perform a single simple twist to transition
@@ -10,6 +10,7 @@
  Twister_Dx.fx instead.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -74,11 +75,10 @@ DeclareEntryPoint (Twistit_LR)
 
    float2 xy = float2 (uv3.x, ((uv3.y - 0.5) / twist) + 0.5);
 
-   if (twist > 0.0) return ReadPixel (Bg_LR, xy);
-
-   return ReadPixel (Fg_LR, float2 (xy.x, 1.0 - xy.y));
+   return twist > 0.0 ? tex2D (Bg_LR, xy) : tex2D (Fg_LR, float2 (xy.x, 1.0 - xy.y));
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Twistit_RL
 
@@ -98,11 +98,10 @@ DeclareEntryPoint (Twistit_RL)
 
    float2 xy = float2 (uv3.x, ((uv3.y - 0.5) / twist) + 0.5);
 
-   if (twist > 0.0) return ReadPixel (Bg_RL, xy);
-
-   return ReadPixel (Fg_RL, float2 (xy.x, 1.0 - xy.y));
+   return twist > 0.0 ? tex2D (Bg_RL, xy) : tex2D (Fg_RL, float2 (xy.x, 1.0 - xy.y));
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Twistit_TB
 
@@ -122,11 +121,10 @@ DeclareEntryPoint (Twistit_TB)
 
    float2 xy = float2 (((uv3.x - 0.5) / twist) + 0.5, uv3.y);
 
-   if (twist > 0.0) return ReadPixel (Bg_TB, xy);
-
-   return ReadPixel (Fg_TB, float2 (1.0 - xy.x, xy.y));
+   return twist > 0.0 ? tex2D (Bg_TB, xy) : tex2D (Fg_TB, float2 (1.0 - xy.x, xy.y));
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Twistit_BT
 
@@ -146,8 +144,6 @@ DeclareEntryPoint (Twistit_BT)
 
    float2 xy = float2 (((uv3.x - 0.5) / twist) + 0.5, uv3.y);
 
-   if (twist > 0.0) return ReadPixel (Bg_BT, xy);
-
-   return ReadPixel (Fg_BT, float2 (1.0 - xy.x, xy.y));
+   return twist > 0.0 ? tex2D (Bg_BT, xy) : tex2D (Fg_BT, float2 (1.0 - xy.x, xy.y));
 }
 

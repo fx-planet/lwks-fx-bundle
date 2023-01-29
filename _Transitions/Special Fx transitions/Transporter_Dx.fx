@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a difference (delta) key driving a Star Trek-like transporter transition.  It's
@@ -17,7 +17,8 @@
  transition progress.
 
  NOTE:  This effect breaks resolution independence.  It is only suitable for use with
- Lightworks version 2023 and higher.
+ Lightworks version 2023 and higher.  Unlike LW transitions there is no mask, because
+ I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -25,7 +26,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -159,7 +160,7 @@ DeclarePass (Sparkles)
 // sparkle transition as we go.
 //-----------------------------------------------------------------------------------------//
 
-DeclareEntryPoint (Transporter2)
+DeclareEntryPoint (Transporter)
 {
    float fader = FADER;
 

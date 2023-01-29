@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a dissolve/wipe that uses sine & cos distortions to perform a rippling twist to
  transition between two images.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -98,8 +99,8 @@ DeclareEntryPoint (Twister_Dx)
    float2 xy1 = float2 (uv3.x, twistAxis + (T_Axis / twst_1) - offs_1); // Foreground X is uv3.x, foreground Y is modulated uv3.y
    float2 xy2 = float2 (uv3.x, twistAxis + (T_Axis / twst_2) - offs_2);
 
-   float4 Bgnd = ReadPixel (Bgd, xy1);                                  // This version of the background has the modulation applied
-   float4 Fgnd = ReadPixel (Fgd, xy2);                                  // Get the second partial composite
+   float4 Bgnd = tex2D (Bgd, xy1);                                      // This version of the background has the modulation applied
+   float4 Fgnd = tex2D (Fgd, xy2);                                      // Get the second partial composite
    float4 retval = lerp (Fgnd, Bgnd, amount);                           // Dissolve between the halves
 
    if (Show_Axis) {

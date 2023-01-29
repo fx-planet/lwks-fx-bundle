@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a dissolve/wipe that uses sine distortion to perform a left-right or right-left
  transition into or out of the blended foreground.  Phase can be offset by 180 degrees.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -69,12 +70,12 @@ DeclareFloatParam (_OutputHeight);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -93,9 +94,12 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique Sine_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Super_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -128,16 +132,20 @@ DeclareEntryPoint (Sine__Kx_F)
 
    float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy);
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a * amount);
+   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Sine_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclareEntryPoint (Sine__Kx_I)
 {
@@ -156,16 +164,20 @@ DeclareEntryPoint (Sine__Kx_I)
 
    float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * amount);
+   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * amount);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Sine_O
 
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclareEntryPoint (Sine__Kx_O)
 {
@@ -184,8 +196,8 @@ DeclareEntryPoint (Sine__Kx_O)
 
    float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * amount);
+   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * amount);
 }
 

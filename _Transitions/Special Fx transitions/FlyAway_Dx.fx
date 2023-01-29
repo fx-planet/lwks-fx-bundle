@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author schrauber
 // @Released 2016-08-03
 
@@ -12,6 +12,7 @@
  final destination is possible, but the default is a destination outside of the screen.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,7 +20,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-16 jwrl
+// Updated 2023-01-29 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 

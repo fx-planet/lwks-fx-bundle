@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a transition that moves the strips of a blended foreground together from off-screen
@@ -9,6 +9,7 @@
  horizontally or vertically.  Useful for applying transitions to titles.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -61,16 +62,16 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
-   float4 Bgnd, Fgnd = tex2D (F, xy1);
+   float4 Bgnd, Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
       if (Ttype == 0) {
          Bgnd = Fgnd;
-         Fgnd = tex2D (B, xy2);
+         Fgnd = tex2D (B, xy);
       }
-      else Bgnd = tex2D (B, xy2);
+      else Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -89,57 +90,70 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique Bars_H
 
+DeclarePass (Fg_H)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_H)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_H)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_H, Bg_H, uv3); }
 
 DeclareEntryPoint (Bars_H)
 {
-   float4 Bgnd;
-
    float dsplc  = (OFFSET - Width) * WIDTH;
 
-   float2 bgd, offset = float2 (0.0, floor (uv1.y * dsplc));
+   float2 bg, offset = float2 (0.0, floor (uv3.y * dsplc));
    float2 xy = (Ttype == 2) ? uv3 + ((ceil (frac (offset / 2.0)) * 2.0) - 1.0.xx) * Amount
                             : uv3 + (1.0.xx - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
+   float4 Bgnd;
+
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_H, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_H, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_H, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_H, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Bars_V
 
+DeclarePass (Fg_V)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_V)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_V)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_V, Bg_V, uv3); }
 
 DeclareEntryPoint (Bars_V)
 {
-   float4 Bgnd;
-
    float dsplc  = (OFFSET - Width) * WIDTH;
 
-   float2 bgd, offset = float2 (floor (uv3.x * dsplc), 0.0);
+   float2 bg, offset = float2 (floor (uv3.x * dsplc), 0.0);
    float2 xy = (Ttype == 2) ? uv3 + ((ceil (frac (offset / 2.0)) * 2.0) - 1.0.xx) * Amount
                             : uv3 + (1.0.xx - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
+   float4 Bgnd;
+
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_V, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_V, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_V, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_V, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

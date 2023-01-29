@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This mimics the Lightworks push effect but supports titles, image keys and other blended
  effects.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -57,16 +58,16 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   float4 Bgnd, Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
       if (Ttype == 0) {
          Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
+         Fgnd = tex2D (B, xy);
       }
-      else Bgnd = ReadPixel (B, xy2);
+      else Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -85,107 +86,134 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique Push_right
 
+DeclarePass (Fg_R)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_R)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_R)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_R, Bg_R, uv3); }
 
 DeclareEntryPoint (Push_right)
 {
+   float2 bg;
+   float2 xy = Ttype == 2 ? float2 (saturate (uv3.x + cos (HALF_PI * Amount) - 1.0), uv3.y)
+                          : float2 (saturate (uv3.x - sin (HALF_PI * Amount) + 1.0), uv3.y);
    float4 Bgnd;
 
-   float2 bgd;
-   float2 xy = (Ttype == 2) ? float2 (saturate (uv3.x + cos (HALF_PI * Amount) - 1.0), uv3.y)
-                            : float2 (saturate (uv3.x - sin (HALF_PI * Amount) + 1.0), uv3.y);
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_R, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_R, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_R, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_R, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Push_down
 
+DeclarePass (Fg_D)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_D)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_D)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_D, Bg_D, uv3); }
 
 DeclareEntryPoint (Push_down)
 {
+   float2 bg;
+   float2 xy = Ttype == 2 ? float2 (uv3.x, saturate (uv3.y + cos (HALF_PI * Amount) - 1.0))
+                          : float2 (uv3.x, saturate (uv3.y - sin (HALF_PI * Amount) + 1.0));
    float4 Bgnd;
 
-   float2 bgd;
-   float2 xy = (Ttype == 2) ? float2 (uv3.x, saturate (uv3.y + cos (HALF_PI * Amount) - 1.0))
-                            : float2 (uv3.x, saturate (uv3.y - sin (HALF_PI * Amount) + 1.0));
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_D, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_D, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_D, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_D, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Push_left
 
+DeclarePass (Fg_L)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_L)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_L)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_L, Bg_L, uv3); }
 
 DeclareEntryPoint (Push_left)
 {
+   float2 bg;
+   float2 xy = Ttype == 2 ? float2 (saturate (uv3.x - cos (HALF_PI * Amount) + 1.0), uv3.y)
+                          : float2 (saturate (uv3.x + sin (HALF_PI * Amount) - 1.0), uv3.y);
    float4 Bgnd;
 
-   float2 bgd;
-   float2 xy = (Ttype == 2) ? float2 (saturate (uv3.x - cos (HALF_PI * Amount) + 1.0), uv3.y)
-                            : float2 (saturate (uv3.x + sin (HALF_PI * Amount) - 1.0), uv3.y);
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_L, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_L, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_L, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_L, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Push_up
 
+DeclarePass (Fg_U)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_U)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_U)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_U, Bg_U, uv3); }
 
 DeclareEntryPoint (Push_up)
 {
+   float2 bg;
+   float2 xy = Ttype == 2 ? float2 (uv3.x, saturate (uv3.y - cos (HALF_PI * Amount) + 1.0))
+                          : float2 (uv3.x, saturate (uv3.y + sin (HALF_PI * Amount) - 1.0));
    float4 Bgnd;
 
-   float2 bgd;
-   float2 xy = (Ttype == 2) ? float2 (uv3.x, saturate (uv3.y - cos (HALF_PI * Amount) + 1.0))
-                            : float2 (uv3.x, saturate (uv3.y + sin (HALF_PI * Amount) - 1.0));
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_U, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_U, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_U, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_U, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

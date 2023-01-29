@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a transition that sunders the central area of the outgoing image from the
@@ -14,6 +14,7 @@
  help separate it from the centre.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -21,7 +22,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -99,28 +100,28 @@ float4 OuterLeft (sampler F, sampler B, float2 xy)
 {
    xy.x += Amount;
 
-   return IsOutOfBounds (xy) ? ReadPixel (B, float2 (xy.x - 1.0, xy.y)) : ReadPixel (F, xy);
+   return IsOutOfBounds (xy) ? tex2D (B, float2 (xy.x - 1.0, xy.y)) : tex2D (F, xy);
 }
 
 float4 OuterRight (sampler F, sampler B, float2 xy)
 {
    xy.x -= Amount;
 
-   return IsOutOfBounds (xy) ? ReadPixel (B, float2 (xy.x + 1.0, xy.y)) : ReadPixel (F, xy);
+   return IsOutOfBounds (xy) ? tex2D (B, float2 (xy.x + 1.0, xy.y)) : tex2D (F, xy);
 }
 
 float4 OuterUp (sampler F, sampler B, float2 xy)
 {
    xy.y += Amount;
 
-   return IsOutOfBounds (xy) ? ReadPixel (B, float2 (xy.x, xy.y - 1.0)) : ReadPixel (F, xy);
+   return IsOutOfBounds (xy) ? tex2D (B, float2 (xy.x, xy.y - 1.0)) : tex2D (F, xy);
 }
 
 float4 OuterDown (sampler F, sampler B, float2 xy)
 {
    xy.y -= Amount;
 
-   return IsOutOfBounds (xy) ? ReadPixel (B, float2 (xy.x, xy.y + 1.0)) : ReadPixel (F, xy);
+   return IsOutOfBounds (xy) ? tex2D (B, float2 (xy.x, xy.y + 1.0)) : tex2D (F, xy);
 }
 
 //-----------------------------------------------------------------------------------------//

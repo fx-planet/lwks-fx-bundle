@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is really the classic barn door effect, but since a wipe with that name already exists
@@ -9,6 +9,7 @@
  halves apart rather than just wipes them off.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -48,12 +49,12 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen_F (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen_F (sampler F, sampler B, float2 xy)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb = Bgnd.rgb * Fgnd.a;
@@ -66,12 +67,12 @@ float4 fn_keygen_F (sampler F, float2 xy1, sampler B, float2 xy2)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -90,8 +91,14 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique Barndoor horizontal split start (folded)
 
+DeclarePass (Fg_HF)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_HF)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_HF)
-{ return fn_keygen_F (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_HF, Bg_HF, uv3); }
 
 DeclareEntryPoint (Hsplit_F)
 {
@@ -103,18 +110,25 @@ DeclareEntryPoint (Hsplit_F)
    xy2 += uv3;
 
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? kTransparentBlack
-              : (uv3.x > Split) ? ReadPixel (Super_HF, xy1) : ReadPixel (Super_HF, xy2);
+              : (uv3.x > Split) ? tex2D (Super_HF, xy1) : tex2D (Super_HF, xy2);
 
    if (CropEdges && IsOutOfBounds (uv1)) Fgd = kTransparentBlack;
 
-   return lerp (ReadPixel (Fg, uv1), Fgd, Fgd.a);
+   return lerp (tex2D (Fg_HF, uv3), Fgd, Fgd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Barndoor vertical split start (folded)
 
+DeclarePass (Fg_VF)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_VF)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_VF)
-{ return fn_keygen_F (Fg, uv1, Bg, uv2); }
+{ return fn_keygen_F (Fg_HF, Bg_HF, uv3); }
 
 DeclareEntryPoint (Hsplit_V)
 {
@@ -127,18 +141,25 @@ DeclareEntryPoint (Hsplit_V)
    xy2 += uv3;
 
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? kTransparentBlack
-              : (uv3.y > split) ? ReadPixel (Super_VF, xy1) : ReadPixel (Super_VF, xy2);
+              : (uv3.y > split) ? tex2D (Super_VF, xy1) : tex2D (Super_VF, xy2);
 
    if (CropEdges && IsOutOfBounds (uv1)) Fgd = kTransparentBlack;
 
-   return lerp (ReadPixel (Fg, uv1), Fgd, Fgd.a);
+   return lerp (tex2D (Fg_VF, uv3), Fgd, Fgd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Barndoor horizontal split start
 
+DeclarePass (Fg_HI)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_HI)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_HI)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_HI, Bg_HI, uv3); }
 
 DeclareEntryPoint (Hsplit_I)
 {
@@ -150,18 +171,25 @@ DeclareEntryPoint (Hsplit_I)
    xy2 += uv3;
 
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? kTransparentBlack
-              : (uv3.x > Split) ? ReadPixel (Super_HI, xy1) : ReadPixel (Super_HI, xy2);
+              : (uv3.x > Split) ? tex2D (Super_HI, xy1) : tex2D (Super_HI, xy2);
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgd, Fgd.a);
+   return lerp (tex2D (Bg_HI, uv3), Fgd, Fgd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Barndoor horizontal split end
 
+DeclarePass (Fg_HO)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_HO)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_HO)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_HO, Bg_HO, uv3); }
 
 DeclareEntryPoint (Hsplit_O)
 {
@@ -173,18 +201,25 @@ DeclareEntryPoint (Hsplit_O)
    xy2 += uv3;
 
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? kTransparentBlack
-              : (uv3.x > Split) ? ReadPixel (Super_HO, xy1) : ReadPixel (Super_HO, xy2);
+              : (uv3.x > Split) ? tex2D (Super_HO, xy1) : tex2D (Super_HO, xy2);
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgd, Fgd.a);
+   return lerp (tex2D (Bg_HO, uv3), Fgd, Fgd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Barndoor vertical split start
 
+DeclarePass (Fg_VI)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_VI)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_VI)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_VI, Bg_VI, uv3); }
 
 DeclareEntryPoint (Vsplit_I)
 {
@@ -197,18 +232,25 @@ DeclareEntryPoint (Vsplit_I)
    xy2 += uv3;
 
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? kTransparentBlack
-              : (uv3.y > split) ? ReadPixel (Super_VI, xy1) : ReadPixel (Super_VI, xy2);
+              : (uv3.y > split) ? tex2D (Super_VI, xy1) : tex2D (Super_VI, xy2);
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgd, Fgd.a);
+   return lerp (tex2D (Bg_VI, uv3), Fgd, Fgd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Barndoor vertical split end
 
+DeclarePass (Fg_VO)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_VO)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_VO)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_VO, Bg_VO, uv3); }
 
 DeclareEntryPoint (Vsplit_O)
 {
@@ -221,10 +263,10 @@ DeclareEntryPoint (Vsplit_O)
    xy2 += uv3;
 
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? kTransparentBlack
-              : (uv3.y > split) ? ReadPixel (Super_VO, xy1) : ReadPixel (Super_VO, xy2);
+              : (uv3.y > split) ? tex2D (Super_VO, xy1) : tex2D (Super_VO, xy2);
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgd, Fgd.a);
+   return lerp (tex2D (Bg_VO, uv3), Fgd, Fgd.a);
 }
 

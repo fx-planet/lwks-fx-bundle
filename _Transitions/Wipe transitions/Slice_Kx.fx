@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This transition splits a blended foreground image into strips which then move off
  either horizontally or vertically to reveal the incoming image.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -50,16 +51,16 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   float4 Bgnd, Fgnd = tex2D (F, xy);
 
    if (Source == 0) {
       if (Ttype == 0) {
          Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
+         Fgnd = tex2D (B, xy);
       }
-      else Bgnd = ReadPixel (B, xy2);
+      else Bgnd = tex2D (B, xy);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -78,16 +79,20 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique Slice left
 
+DeclarePass (Fg_L)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_L)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_L)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_L, Bg_L, uv3); }
 
 DeclareEntryPoint (Slice_Left)
 {
-   float4 Bgnd;
+   float2 bg, xy = uv3;
 
-   float2 bgd, xy = uv3;
-
-   float strips   = max (2.0, round (StripNumber));
+   float strips = max (2.0, round (StripNumber));
 
    if (Ttype == 2) {
       float amount_1 = pow (Amount, 3.0);
@@ -105,31 +110,38 @@ DeclareEntryPoint (Slice_Left)
                           : (ceil ((1.0 - xy.y) * strips) * amount_2) + amount_1;
    }
 
+   float4 Bgnd;
+
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_L, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_L, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_L, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_L, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Slice right
 
+DeclarePass (Fg_R)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_R)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_R)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_R, Bg_R, uv3); }
 
 DeclareEntryPoint (Slice_Right)
 {
-   float4 Bgnd;
-
-   float2 bgd, xy = uv3;
+   float2 bg, xy = uv3;
 
    float strips   = max (2.0, round (StripNumber));
 
@@ -139,7 +151,6 @@ DeclareEntryPoint (Slice_Right)
 
       xy.x -= (Mode == 1) ? (ceil (xy.y * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.y) * strips) * amount_2) + amount_1;
-      Bgnd = ReadPixel (Bg, uv2);
    }
    else {
       float amount_1 = 1.0 - Amount;
@@ -148,34 +159,40 @@ DeclareEntryPoint (Slice_Right)
       amount_1 = pow (amount_1, 3.0);
       xy.x += (Mode == 1) ? (ceil (xy.y * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.y) * strips) * amount_2) + amount_1;
-      Bgnd = (Ttype == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
    }
+
+   float4 Bgnd;
 
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_R, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_R, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_R, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_R, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Slice top
 
+DeclarePass (Fg_T)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_T)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_T)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_T, Bg_T, uv3); }
 
 DeclareEntryPoint (Slice_Top)
 {
-   float4 Bgnd;
-
-   float2 bgd, xy = uv3;
+   float2 bg, xy = uv3;
 
    float strips   = max (2.0, round (StripNumber));
 
@@ -185,7 +202,6 @@ DeclareEntryPoint (Slice_Top)
 
       xy.y -= (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = ReadPixel (Bg, uv2);
    }
    else {
       float amount_1 = 1.0 - Amount;
@@ -194,34 +210,40 @@ DeclareEntryPoint (Slice_Top)
       amount_1 = pow (amount_1, 3.0);
       xy.y += (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = (Ttype == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
    }
+
+   float4 Bgnd;
 
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_T, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_T, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_T, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_T, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Slice bottom
 
+DeclarePass (Fg_B)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bg_B)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Super_B)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Fg_B, Bg_B, uv3); }
 
 DeclareEntryPoint (Slice_Bottom)
 {
-   float4 Bgnd;
-
-   float2 bgd, xy = uv3;
+   float2 bg, xy = uv3;
 
    float strips   = max (2.0, round (StripNumber));
 
@@ -231,7 +253,6 @@ DeclareEntryPoint (Slice_Bottom)
 
       xy.y += (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = ReadPixel (Bg, uv2);
    }
    else {
       float amount_1 = 1.0 - Amount;
@@ -240,19 +261,20 @@ DeclareEntryPoint (Slice_Bottom)
       amount_1 = pow (amount_1, 3.0);
       xy.y -= (Mode == 1) ? (ceil (xy.x * strips) * amount_2) + amount_1
                           : (ceil ((1.0 - xy.x) * strips) * amount_2) + amount_1;
-      Bgnd = (Ttype == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
    }
+
+   float4 Bgnd;
 
    if (Ttype == 0) {
-      bgd = uv1;
-      Bgnd = ReadPixel (Fg, uv1);
+      bg = uv1;
+      Bgnd = tex2D (Fg_B, uv3);
    }
    else {
-      bgd = uv2;
-      Bgnd = ReadPixel (Bg, uv2);
+      bg = uv2;
+      Bgnd = tex2D (Bg_B, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_B, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_B, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

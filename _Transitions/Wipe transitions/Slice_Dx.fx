@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This transition splits the outgoing image into strips which then move off either
@@ -9,6 +9,7 @@
  the ability to choose whether to wipe the outgoing image out or the incoming image in.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -72,6 +73,7 @@ DeclareEntryPoint (Slice_Right)
    return (IsOutOfBounds (xy)) ? tex2D (Bgd_0, uv3) : tex2D (Fgd_0, xy);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Slice left to right
 
@@ -99,6 +101,7 @@ DeclareEntryPoint (Slice_Left)
    return (IsOutOfBounds (xy)) ? tex2D (Bgd_1, uv3) : tex2D (Fgd_1, xy);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Slice top to bottom
 
@@ -126,6 +129,7 @@ DeclareEntryPoint (Slice_top)
    return (IsOutOfBounds (xy)) ? tex2D (Bgd_2, uv3) : tex2D (Fgd_2, xy);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique Slice bottom to top
 

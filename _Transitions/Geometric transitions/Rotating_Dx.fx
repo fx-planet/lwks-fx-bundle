@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  Transitions between two sources by rotating them horizontally or vertically.  The maths
@@ -9,6 +9,7 @@
  were acceptable for that use were not for this.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Revision history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -89,6 +90,8 @@ bool fn_3Drotate (float2 tl, float2 tr, float2 bl, float2 br, inout float2 uv3)
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// technique Rotating_Dx_V
+
 DeclarePass (Premix_V)
 { return (Amount < 0.5) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
 
@@ -128,6 +131,10 @@ DeclareEntryPoint (Main_V)
 
    return InRange ? retval : kTransparentBlack;
 }
+
+//-----------------------------------------------------------------------------------------//
+
+// technique Rotating_Dx_H
 
 DeclarePass (Premix_H)
 { return (Amount < 0.5) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This obliterates the outgoing image with a mosaic pattern of highly coloured tiles that
@@ -13,6 +13,7 @@
  intermediate keyframes within the transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,7 +21,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -58,14 +59,23 @@ DeclareFloatParam (_OutputAspectRatio);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// These two passes map the outgoing and incoming video sources to sequence coordinates.
+// This makes handling the aspect ratio, size and rotation much simpler.
+
+DeclarePass (Outgoing)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Incoming)
+{ return ReadPixel (Bg, uv2); }
+
 // This sets up a mix between the two sources and uses it to generate a colour pseudo
 // random noise pattern which in turn is later used to generate the mosaic wipe.
 
 DeclarePass (Tiles)
 {
-   float4 retval = ReadPixel (Fg, uv1);
+   float4 retval = tex2D (Outgoing, uv3);
 
-   retval = lerp (retval, ReadPixel (Bg, uv2), Amount);
+   retval = lerp (retval, tex2D (Incoming, uv3), Amount);
 
    // This next section was produced empirically.  What I wanted was to produce colour
    // noise that was more than just RGB pixels, but more subtle mixes of those primaries.
@@ -74,7 +84,7 @@ DeclarePass (Tiles)
    float a, b;
 
    sincos (Amount * HALF_PI, a, b);
-   retval.rgb = min (abs (retval.rgb - float3 (a, b, frac ((uv1.x + uv1.y) * 1.2345 + Amount))), 1.0);
+   retval.rgb = min (abs (retval.rgb - float3 (a, b, frac ((uv3.x + uv3.y) * 1.2345 + Amount))), 1.0);
    retval.a   = 1.0;
 
    float3 x = retval.aga;
@@ -96,21 +106,21 @@ DeclareEntryPoint (ColourTile_Dx)
 
    // We perform a slight zoom which is dependent on the tile size.  This ensures that
    // we never run off the edges of the noise pattern when sampling the mosaic.  The
-   // mosaic address is generated for each of the three video sources, which are Fg,
-   // Bg and sequence.
+   // mosaic address is generated for each of the three video sources, which are
+   // Outgoing, Incoming and sequence.
 
    float2 Mscale = (1.0 - Tscale) / mosaic;
 
-   float2 xy1 = (round ((uv1 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
-   float2 xy2 = (round ((uv2 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
+   float2 xy1 = (round ((uv3 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
+   float2 xy2 = (round ((uv3 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
    float2 xy3 = (round ((uv3 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
 
    // This recovers the required input depending on whether the transition has passed the
    // halfway point or not.  It also recovers a gated version of the source to be used in
    // generating the coloured mosaic tiles.
 
-   float4 gating = lerp (ReadPixel (Fg, xy1), ReadPixel (Bg, xy2), Amount);
-   float4 retval = (Amount < 0.5) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
+   float4 gating = lerp (tex2D (Outgoing, xy1), tex2D (Incoming, xy2), Amount);
+   float4 retval = (Amount < 0.5) ? tex2D (Outgoing, uv3) : tex2D (Incoming, uv3);
 
    // The reference tile level depending on the luminance value of the gated source is now
    // calculated, and a range value that runs from 1.0 to 0.0 back to 1.0 again is produced.
@@ -120,6 +130,6 @@ DeclareEntryPoint (ColourTile_Dx)
 
    // Finally if the gating level exceeds the expected range we show the tile colour.
 
-   return (level >= range) ? ReadPixel (Tiles, xy3) : retval;
+   return (level >= range) ? tex2D (Tiles, xy3) : retval;
 }
 

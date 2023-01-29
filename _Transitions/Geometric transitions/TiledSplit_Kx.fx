@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a delta key and alpha transition that splits a keyed image into tiles then blows
@@ -9,6 +9,7 @@
  TileSplit_Ax and TileSplit_Adx.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -64,12 +65,12 @@ DeclareFloatParam (_Progress);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -99,9 +100,12 @@ float4 fn_horiz_split (sampler S, float2 uv)
 
 // technique TiledSplit_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1; }
+
 DeclarePass (Super_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -130,18 +134,22 @@ DeclareEntryPoint (TiledSplit_F)
    offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
    uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = ReadPixel (Tiles_F, uv);
+   float4 Fgnd = tex2D (Tiles_F, uv);
 
    if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique TiledSplit_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2; }
+
 DeclarePass (Super_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclarePass (Tiles_I)
 { return fn_horiz_split (Super_I, uv3); }
@@ -156,18 +164,22 @@ DeclareEntryPoint (TiledSplit_I)
    offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
    uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = ReadPixel (Tiles_I, uv);
+   float4 Fgnd = tex2D (Tiles_I, uv);
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique TiledSplit_O
 
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2; }
+
 DeclarePass (Super_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclarePass (Tiles_O)
 {
@@ -180,7 +192,7 @@ DeclarePass (Tiles_O)
    offset = (offset - 1.0) * Amount;
    uv.x += offset;
 
-   return ReadPixel (Super_O, uv);
+   return tex2D (Super_O, uv);
 }
 
 DeclareEntryPoint (TiledSplit_O)
@@ -193,10 +205,10 @@ DeclareEntryPoint (TiledSplit_O)
    offset = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
    uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = ReadPixel (Tiles_O, uv);
+   float4 Fgnd = tex2D (Tiles_O, uv);
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a);
 }
 

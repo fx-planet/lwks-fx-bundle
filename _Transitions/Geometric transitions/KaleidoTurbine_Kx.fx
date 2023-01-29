@@ -1,13 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is loosely based on the user effect Kaleido, converted to function as a transition
  into or out of a blended foreground effect, such as titles, image keys and the like.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -15,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -64,12 +65,12 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = ReadPixel (B, xy2);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -88,9 +89,12 @@ float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 
 // technique KaleidoTurbine_Kx_F
 
+DeclarePass (Bg_F)
+{ return ReadPixel (Fg, uv1; }
+
 DeclarePass (Super_F)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd = tex2D (Bg_F, uv3);
 
    if (Source == 0) {
       float4 Bgnd = ReadPixel (Bg, uv2);
@@ -126,16 +130,20 @@ DeclareEntryPoint (KaleidoTurbine_Kx_F)
    sincos (angle, xy2.y, xy2.x);
    xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy2);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy2);
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a * mixval);
+   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * mixval);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique KaleidoTurbine_Kx_I
 
+DeclarePass (Bg_I)
+{ return ReadPixel (Bg, uv2; }
+
 DeclarePass (Super_I)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_I, uv1, uv3); }
 
 DeclareEntryPoint (KaleidoTurbine_Kx_I)
 {
@@ -157,16 +165,20 @@ DeclareEntryPoint (KaleidoTurbine_Kx_I)
    sincos (angle, xy2.y, xy2.x);
    xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy2);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy2);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * mixval);
+   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * mixval);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique KaleidoTurbine_Kx_O
 
+DeclarePass (Bg_O)
+{ return ReadPixel (Bg, uv2; }
+
 DeclarePass (Super_O)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_keygen (Bg_O, uv1, uv3); }
 
 DeclareEntryPoint (KaleidoTurbine_Kx_O)
 {
@@ -187,8 +199,8 @@ DeclareEntryPoint (KaleidoTurbine_Kx_O)
    sincos (angle, xy2.y, xy2.x);
    xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy2);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy2);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a * mixval);
+   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * mixval);
 }
 

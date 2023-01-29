@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author schrauber
 // @Author baopao
 // @Author nouanda
@@ -9,6 +9,7 @@
  This effect is based on the user effect Kaleido, converted to function as a transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -23,7 +24,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-16 jwrl
+// Updated 2023-01-29 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
@@ -66,7 +67,7 @@ DeclareBoolParam (fan, "Fan", kNoGroup, true);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-// This function is necessary because at the moment we can't set addressing modes
+// This function is necessary because we can't set addressing modes
 
 float4 MirrorPixel (sampler S, float2 xy)
 {
@@ -85,6 +86,17 @@ float mod (float x, float y)
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
+
+// These two passes map the outgoing and incoming video sources to sequence coordinates.
+// This makes handling the aspect ratio, size and rotation much simpler.
+
+DeclarePass (Outgoing)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Incoming)
+{ return ReadPixel (Bg, uv2); }
+
+// These passes provide the edge mirroring necessary for this effect.
 
 DeclarePass (FgK)
 { return MirrorPixel (Fg, uv1); }
@@ -121,8 +133,11 @@ DeclareEntryPoint (KaleidoTurbine_Dx)
    if (r > amount_b) color = MirrorPixel (FgK, p);    // Kaleido phase 1 (FB outside & BG inside)
    else color = MirrorPixel (BgK, p);                 // Kaleido phase 2
 
-   if ((a > amount) && (amount < 0.5) && (fan)) color = ReadPixel (Fg, uv1);        // Fan phase 1
-   if ((a > 1.0 - amount) && (amount > 0.5) && (fan)) color = ReadPixel (Bg, uv2);  // Fan phase 2
+   // Fan phase 1
+   if ((a > amount) && (amount < 0.5) && (fan)) color = ReadPixel (Outgoing, uv3);
+
+   // Fan phase 2
+   if ((a > 1.0 - amount) && (amount > 0.5) && (fan)) color = ReadPixel (Incoming, uv3);
 
    return color;
 }

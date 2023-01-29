@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This is a transition that splits the outgoing image into tiles then blows them apart or
@@ -9,6 +9,7 @@
  "Tiled split (keyed)" (TiledSplit_Kx.fx).
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -63,6 +64,9 @@ DeclareFloatParam (_Progress);
 
 // technique TiledSplit_Dx_I
 
+DeclarePass (Outgoing)
+{ return ReadPixel (Fg, uv1); }
+
 DeclarePass (Overlay_I)
 { return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
 
@@ -77,7 +81,7 @@ DeclarePass (Tiles_I)
    offset = (1.0 - offset) * (1.0 - Amount);
    uv.x += offset;
 
-   return ReadPixel (Overlay_I, uv);
+   return tex2D (Overlay_I, uv);
 }
 
 DeclareEntryPoint (TiledSplit_Dx_I)
@@ -90,16 +94,20 @@ DeclareEntryPoint (TiledSplit_Dx_I)
    offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
    uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = ReadPixel (Tiles_I, uv);
+   float4 Fgnd = tex2D (Tiles_I, uv);
 
-   return lerp (ReadPixel (Fg, uv1), Fgnd, Fgnd.a);
+   return lerp (tex2D (Outgoing, uv3), Fgnd, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique TiledSplit_Dx_O
 
 DeclarePass (Overlay_O)
 { return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+
+DeclarePass (Incoming)
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Tiles_O)
 {
@@ -125,8 +133,8 @@ DeclareEntryPoint (TiledSplit_Dx_O)
    offset  = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
    uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = ReadPixel (Tiles_O, uv);
+   float4 Fgnd = tex2D (Tiles_O, uv);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (tex2D (Incoming, uv3), Fgnd, Fgnd.a);
 }
 

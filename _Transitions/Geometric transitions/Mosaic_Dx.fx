@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-01-29
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2023-01-29
 
 /**
  This obliterates the outgoing image with a mosaic pattern that progressively fills the
@@ -15,6 +15,7 @@
  keyframes within the transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -22,7 +23,7 @@
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Built 2023-01-29 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -49,10 +50,19 @@ DeclareFloatParam (_OutputAspectRatio);
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// These two passes map the outgoing and incoming video sources to sequence coordinates.
+// This makes handling the aspect ratio, size and rotation much simpler.
+
+DeclarePass (Outgoing)
+{ return ReadPixel (Fg, uv1); }
+
+DeclarePass (Incoming)
+{ return ReadPixel (Bg, uv2); }
+
 DeclarePass (Mixed)
 {
-    float4 Fgnd = ReadPixel (Fg, uv1);
-    float4 Bgnd = ReadPixel (Bg, uv2);
+    float4 Fgnd = tex2D (Outgoing, uv3);
+    float4 Bgnd = tex2D (Incoming, uv3);
 
    return (Fgnd + Bgnd) / (Fgnd.a + Bgnd.a);
 }
@@ -80,13 +90,13 @@ DeclareEntryPoint (Mosaic_Dx)
 
    range_1 = min (range_1, 1.0);
 
-   // This produces the 50% mixed mosaic then does a level dependant mix from Fg to
-   // the mosaic for the first half of the transition, followed by a level dependant
-   // mix from the mosaic to Bg for the second half of the transition.
+   // This produces the 50% mixed mosaic then does a level dependant mix from Outgoing
+   // to the mosaic for the first half of the transition, followed by a level dependant
+   // mix from the mosaic to Incoming for the second half of the transition.
 
-   float4 m_1 = ReadPixel (Mixed, xy);               // ReadPixel could really just be tex2D
-   float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= range_1 ? ReadPixel (Fg, uv1) : m_1;
+   float4 m_1 = tex2D (Mixed, xy);
+   float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= range_1 ? tex2D (Outgoing, uv3) : m_1;
 
-   return max (m_2.r, max (m_2.g, m_2.b)) >= range_2 ? m_2 : ReadPixel (Bg, uv2);
+   return max (m_2.r, max (m_2.g, m_2.b)) >= range_2 ? m_2 : tex2D (Incoming, uv3);
 }
 

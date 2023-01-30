@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-30
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-30
 
 /**
  This mimics the Photoshop angled brush stroke effect to reveal or remove a clip or
@@ -10,7 +10,9 @@
  make the effect more dynamic.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-30 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -101,7 +103,7 @@ DeclarePass (Super_F)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-DeclareEntryPoint (DryBrush_Folded)
+DeclareEntryPoint (DryBrush_Kx_F)
 {
    float stroke = (Length * 0.1) + 0.02;
    float angle  = radians (Angle + 135.0);
@@ -113,9 +115,18 @@ DeclareEntryPoint (DryBrush_Folded)
 
    xy1 = uv3 + float2 ((xy1.x * xy2.x) + (xy1.y * xy2.y), (xy1.y * xy2.x) - (xy1.x * xy2.y));
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy1);
+   float4 Fgnd = tex2D (Super_F, xy1);
+   float4 retval = lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * Amount);
 
-   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * Amount);
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv2)) retval = kTransparentBlack;
+
+      retval = lerp (Fgnd, retval, Amount);
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -128,7 +139,7 @@ DeclarePass (Bg_I)
 DeclarePass (Super_I)
 { return fn_keygen (Bg_I, uv1, uv3); }
 
-DeclareEntryPoint (DryBrush_In)
+DeclareEntryPoint (DryBrush_Kx_I)
 {
    float stroke = (Length * 0.1) + 0.02;
    float angle  = radians (Angle + 135.0);
@@ -140,9 +151,18 @@ DeclareEntryPoint (DryBrush_In)
 
    xy1 = uv3 + float2 ((xy1.x * xy2.x) + (xy1.y * xy2.y), (xy1.y * xy2.x) - (xy1.x * xy2.y));
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy1);
+   float4 Fgnd = tex2D (Super_I, xy1);
+   float4 retval = lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * Amount);
 
-   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * Amount);
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv2)) retval = kTransparentBlack;
+
+      retval = lerp (Fgnd, retval, Amount);
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -167,8 +187,17 @@ DeclareEntryPoint (DryBrush_Out)
 
    xy1 = uv3 + float2 ((xy1.x * xy2.x) + (xy1.y * xy2.y), (xy1.y * xy2.x) - (xy1.x * xy2.y));
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy1);
+   float4 Fgnd = tex2D (Super_O, xy1);
+   float4 retval = lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * (1.0 - Amount));
 
-   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * (1.0 - Amount));
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv2)) retval = kTransparentBlack;
+
+      retval = lerp (Fgnd, retval, 1.0 - Amount);
+   }
+
+   return retval;
 }
 

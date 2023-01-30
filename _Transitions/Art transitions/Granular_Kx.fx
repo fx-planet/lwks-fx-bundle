@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-30
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-30
 
 /**
  This effect uses a granular noise driven pattern to transition into or out of an alpha
@@ -9,7 +9,9 @@
  radial gradient part is from an effect provided by LWKS Software Ltd.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-30 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -38,6 +40,9 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
 DeclareIntParam (Ttype, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+
 DeclareIntParam (SetTechnique, "Transition type", kNoGroup, 1, "Top to bottom|Left to right|Radial|No gradient");
 
 DeclareBoolParam (TransDir, "Invert transition direction", kNoGroup, false);
@@ -145,20 +150,20 @@ float4 fn_blur_Y (sampler B, float2 uv)
    return retval;
 }
 
-float4 fn_main (sampler F, sampler B, sampler S, sampler B1, sampler B2, float2 xy)
+float4 fn_main (sampler F, sampler B, sampler S, sampler B1, sampler B2, float2 xy1, float2 xy2, float2 xy3)
 {
-   float grad   = tex2D (B1, xy).x;
-   float noise  = tex2D (B2, ((xy - 0.5) / pSize) + 0.5).x;
+   float grad   = tex2D (B1, xy3).x;
+   float noise  = tex2D (B2, ((xy3 - 0.5) / pSize) + 0.5).x;
    float amount = saturate (((0.5 - grad) * 2.0) + noise);
 
-   float4 Fgnd = tex2D (S, xy);
+   float4 Fgnd = tex2D (S, xy3);
    float4 retval;
 
-   if (Ttype == 0) { retval = lerp (tex2D (F, xy), Fgnd, Fgnd.a * amount); }
+   if (Ttype == 0) { retval = lerp (tex2D (F, xy3), Fgnd, Fgnd.a * amount); }
    else {
       float amt = Ttype == 1 ? amount : 1.0 - amount;
 
-      retval = lerp (tex2D (B, xy), Fgnd, Fgnd.a * amt);
+      retval = lerp (tex2D (B, xy3), Fgnd, Fgnd.a * amt);
    }
 
    if (Sparkles) {
@@ -167,6 +172,15 @@ float4 fn_main (sampler F, sampler B, sampler S, sampler B1, sampler B2, float2 
       float stars = saturate ((pow (amount, 3.0) * 4.0) + amount);
 
       retval = lerp (retval, starColour, stars * Fgnd.a);
+   }
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (xy1) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (xy2)) retval = kTransparentBlack;
+
+      amount = Ttype == 2 ? Amount : 1.0 - Amount;
+      retval = lerp (Fgnd, retval, amount);
    }
 
    return retval;
@@ -206,7 +220,7 @@ DeclarePass (Vertical)
 }
 
 DeclareEntryPoint (Granulate_V)
-{ return fn_main (Fg_V, Bg_V, Super_V, Vertical, Blur_V, uv3); }
+{ return fn_main (Fg_V, Bg_V, Super_V, Vertical, Blur_V, uv1, uv2, uv3); }
 
 //-----------------------------------------------------------------------------------------//
 
@@ -240,7 +254,7 @@ DeclarePass (Horizontal)
 }
 
 DeclareEntryPoint (Granulate_H)
-{ return fn_main (Fg_H, Bg_H, Super_H, Horizontal, Blur_H, uv3); }
+{ return fn_main (Fg_H, Bg_H, Super_H, Horizontal, Blur_H, uv1, uv2, uv3); }
 
 //-----------------------------------------------------------------------------------------//
 
@@ -276,7 +290,7 @@ DeclarePass (Radial)
 }
 
 DeclareEntryPoint (Granulate_R)
-{ return fn_main (Fg_R, Bg_R, Super_R, Radial, Blur_R, uv3); }
+{ return fn_main (Fg_R, Bg_R, Super_R, Radial, Blur_R, uv1, uv2, uv3); }
 
 //-----------------------------------------------------------------------------------------//
 
@@ -321,6 +335,15 @@ DeclareEntryPoint (Granulate_F)
       float stars = saturate ((pow (amount, 3.0) * 4.0) + amount);
 
       retval = lerp (retval, starColour, stars * Fgnd.a);
+   }
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv2)) retval = kTransparentBlack;
+
+      amount = Ttype == 2 ? Amount : 1.0 - Amount;
+      retval = lerp (Fgnd, retval, amount);
    }
 
    return retval;

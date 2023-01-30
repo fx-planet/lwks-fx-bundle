@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-30
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-30
 
 /**
  This effect was created to provide a granular noise driven dissolve.  The noise
@@ -9,7 +9,9 @@
  is from an effect provided by LWKS Software Ltd.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-30 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -48,6 +50,8 @@ DeclareBoolParam (TransVar, "Static particle pattern", "Particles", false);
 DeclareBoolParam (Sparkles, "Sparkle", "Particles", false);
 
 DeclareColourParam (starColour, "Colour", "Particles", kNoFlags, 0.9, 0.75, 0.0, 1.0);
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -125,13 +129,13 @@ float4 fn_blur_Y (sampler S, float2 uv)
    return retval;
 }
 
-float4 fn_main (sampler F, sampler B, sampler G, sampler S, float2 uv)
+float4 fn_main (sampler F, sampler B, sampler G, sampler S, float2 xy1, float2 xy2, float2 xy3)
 {
-   float4 Fgnd  = tex2D (F, uv);
-   float4 Bgnd  = tex2D (B, uv);
+   float4 Fgnd  = tex2D (F, xy3);
+   float4 Bgnd  = tex2D (B, xy3);
 
-   float4 grad  = tex2D (G, uv);
-   float4 noise = tex2D (S, ((uv - 0.5) / pSize) + 0.5);
+   float4 grad  = tex2D (G, xy3);
+   float4 noise = tex2D (S, ((xy3 - 0.5) / pSize) + 0.5);
 
    float level  = saturate (((0.5 - grad.x) * 2) + noise);
 
@@ -143,14 +147,23 @@ float4 fn_main (sampler F, sampler B, sampler G, sampler S, float2 uv)
 
    float stars = saturate ((pow (level, 3.0) * 4.0) + level);
 
-   return lerp (retval, starColour, stars);
+   retval = lerp (retval, starColour, stars);
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (xy1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (xy2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique TopToBottom
+// technique Granular_Dx (Vertical)
 
 DeclarePass (Fgd_V)
 { return ReadPixel (Fg, uv1); }
@@ -176,11 +189,12 @@ DeclarePass (Preblur_V)
 DeclarePass (Soft_V)
 { return fn_blur_Y (Preblur_V, uv3); }
 
-DeclareEntryPoint (TopToBottom)
-{ return fn_main (Fgd_V, Bgd_V, Gradient_V, Soft_V, uv3); }
+DeclareEntryPoint (Granular_Dx_V)
+{ return fn_main (Fgd_V, Bgd_V, Gradient_V, Soft_V, uv1, uv2, uv3); }
 
+//-----------------------------------------------------------------------------------------//
 
-// technique LeftToRight
+// technique Granular_Dx (Horizontal)
 
 DeclarePass (Fgd_H)
 { return ReadPixel (Fg, uv1); }
@@ -206,11 +220,12 @@ DeclarePass (Preblur_H)
 DeclarePass (Soft_H)
 { return fn_blur_Y (Preblur_H, uv3); }
 
-DeclareEntryPoint (LeftToRight)
-{ return fn_main (Fgd_H, Bgd_H, Gradient_H, Soft_H, uv3); }
+DeclareEntryPoint (Granular_Dx_H)
+{ return fn_main (Fgd_H, Bgd_H, Gradient_H, Soft_H, uv1, uv2, uv3); }
 
+//-----------------------------------------------------------------------------------------//
 
-// technique Radial
+// technique Granular_Dx (Radial)
 
 DeclarePass (Fgd_R)
 { return ReadPixel (Fg, uv1); }
@@ -245,11 +260,12 @@ DeclarePass (Preblur_R)
 DeclarePass (Soft_R)
 { return fn_blur_Y (Preblur_R, uv3); }
 
-DeclareEntryPoint (Radial)
-{ return fn_main (Fgd_R, Bgd_R, Gradient_R, Soft_R, uv3); }
+DeclareEntryPoint (Granular_Dx_R)
+{ return fn_main (Fgd_R, Bgd_R, Gradient_R, Soft_R, uv1, uv2, uv3); }
 
+//-----------------------------------------------------------------------------------------//
 
-// technique Flat
+// technique Granular_Dx (Flat)
 
 DeclarePass (Fgd_F)
 { return ReadPixel (Fg, uv1); }
@@ -266,7 +282,7 @@ DeclarePass (Preblur_F)
 DeclarePass (Soft_F)
 { return fn_blur_Y (Preblur_F, uv3); }
 
-DeclareEntryPoint (Flat)
+DeclareEntryPoint (Granular_Dx_F)
 {
    float4 Fgnd = tex2D (Fgd_F, uv3);
    float4 Bgnd = tex2D (Bgd_F, uv3);
@@ -283,7 +299,15 @@ DeclareEntryPoint (Flat)
 
    float stars = saturate ((pow (level, 3.0) * 4.0) + level);
 
-   return lerp (retval, starColour, stars);
-}
+   retval = lerp (retval, starColour, stars);
 
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
+}
 

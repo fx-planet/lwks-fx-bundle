@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-30
 // @Author khaver
 // @Created 2014-08-30
 
@@ -11,7 +11,9 @@
  best result.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,7 +21,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-28 jwrl
+// Updated 2023-01-30 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
@@ -48,6 +50,8 @@ DeclareFloatParam (Timing, "Timing", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareFloatParamAnimated (adjust, "Progress", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+
 DeclareFloatParam (_OutputWidth);
 DeclareFloatParam (_OutputHeight);
 
@@ -74,7 +78,7 @@ DeclarePass (Flare)
    return Color;
 }
 
-DeclareEntryPoint ()
+DeclareEntryPoint (FlareTran_Dx)
 {
    float2 xy0 = float2 (CentreX, 1.0 - CentreY);
    float2 xy1 = uv3 - xy0;
@@ -99,8 +103,17 @@ DeclareEntryPoint ()
    }
 
    ret /= 17.0;
-   ret = ret + source;
+   ret = saturate (ret + source);
+   ret.a = 1.0;
 
-   return saturate (float4 (ret.rgb, 1.0));
+   if (CropEdges) {
+      source = IsOutOfBounds (uv1) ? kTransparentBlack : ret;
+
+      if (IsOutOfBounds (uv2)) ret = kTransparentBlack;
+
+      ret = lerp (source, ret, adjust);
+   }
+
+   return ret;
 }
 

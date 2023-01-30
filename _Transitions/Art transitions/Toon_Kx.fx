@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-30
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-30
 
 /**
  This transition posterises a blended overlay and develops outlines from its edges as it
@@ -12,7 +12,9 @@
  this and a normal dissolve.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,7 +22,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-30 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -316,12 +318,31 @@ DeclareEntryPoint (Toon_Kx)
    if (Ttype == 0) {
       Bgnd = ReadPixel (Fg, uv1);
       uv = uv1;
+      Amt = Amount;
    }
    else {
-      Bgnd = Ttype == 2 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
+      if (Ttype == 2) {
+         Bgnd = ReadPixel (Fg, uv1);
+         Amt = 1.0 - Amount;
+      }
+      else {
+         Bgnd = ReadPixel (Bg, uv2);
+         Amt = Amount;
+      }
+
       uv = uv2;
    }
 
-   return CropEdges && IsOutOfBounds (uv) ? kTransparentBlack : lerp (Bgnd, retval, alpha);
+   retval = lerp (Bgnd, retval, alpha);
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv2)) retval = kTransparentBlack;
+
+      retval = lerp (Fgnd, retval, Amt);
+   }
+
+   return retval;
 }
 

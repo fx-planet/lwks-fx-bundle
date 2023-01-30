@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-30
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-30
 
 /**
  An effect transition that generates borders using a difference or delta key then uses
@@ -12,7 +12,9 @@
  will be necessary to adjust the delta key trim.  Normally you won't need to do this.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,7 +22,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-30 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -215,7 +217,7 @@ DeclarePass (Border_1_F)
 DeclarePass (Border_2_F)
 { return fn_border_2 (Super_F, Border_1_F, uv3); }
 
-DeclareEntryPoint (BorderFolded)
+DeclareEntryPoint (Border_F)
 {
    float Offset = (1.0 - Amount) * Displace * OFFSET;
    float Outline = 0.0, Opacity = 1.0;
@@ -245,14 +247,19 @@ DeclareEntryPoint (BorderFolded)
       Opacity = 1.0 - sin (Opacity * HALF_PI);
    }
 
-   if (CropEdges && IsOutOfBounds (uv1)) {
-      border = kTransparentBlack;
-      retval = kTransparentBlack;
-   }
-
    float4 Bgnd = lerp (tex2D (Bg_F, uv3), border, border.a * Opacity);
 
-   return lerp (Bgnd, retval, retval.a * Outline);
+   retval = lerp (Bgnd, retval, retval.a * Outline);
+
+   if (CropEdges) {
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv1)) retval = kTransparentBlack;
+
+      retval = lerp (retval, Bgnd, Amount);
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -274,7 +281,7 @@ DeclarePass (Border_1_I)
 DeclarePass (Border_2_I)
 { return fn_border_2 (Super_I, Border_1_I, uv3); }
 
-DeclareEntryPoint (BorderInput)
+DeclareEntryPoint (Border_I)
 {
    float Offset = (1.0 - Amount) * Displace * OFFSET;
    float Outline = 0.0, Opacity = 1.0;
@@ -304,14 +311,19 @@ DeclareEntryPoint (BorderInput)
       Opacity = 1.0 - sin (Opacity * HALF_PI);
    }
 
-   if (CropEdges && IsOutOfBounds (uv2)) {
-      border = kTransparentBlack;
-      retval = kTransparentBlack;
-   }
-
    float4 Bgnd = lerp (tex2D (Bg_I, uv3), border, border.a * Opacity);
 
-   return lerp (Bgnd, retval, retval.a * Outline);
+   retval = lerp (Bgnd, retval, retval.a * Outline);
+
+   if (CropEdges) {
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv1)) retval = kTransparentBlack;
+
+      retval = lerp (Bgnd, retval, Amount);
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -374,7 +386,7 @@ DeclarePass (Border_2_O)
    return lerp (retval, kTransparentBlack, alpha);
 }
 
-DeclareEntryPoint (BorderOutput)
+DeclareEntryPoint (Border_O)
 {
    float Offset = Amount * Displace * OFFSET;
    float Outline = 0.0, Opacity = 1.0;
@@ -411,6 +423,16 @@ DeclareEntryPoint (BorderOutput)
 
    float4 Bgnd = lerp (tex2D (Bg_O, uv3), border, border.a * Opacity);
 
-   return lerp (Bgnd, retval, retval.a * Outline);
+   retval = lerp (Bgnd, retval, retval.a * Outline);
+
+   if (CropEdges) {
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      if (IsOutOfBounds (uv1)) retval = kTransparentBlack;
+
+      retval = lerp (Bgnd, retval, 1.0 - Amount);
+   }
+
+   return retval;
 }
 

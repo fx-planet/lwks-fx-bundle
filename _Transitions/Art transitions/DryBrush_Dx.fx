@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-30
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-30
 
 /**
  This mimics the Photoshop angled brush stroke effect to transition between two shots.
@@ -10,7 +10,9 @@
  problems mirror addressing has been used for processing.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-30 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -40,6 +42,8 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (Length, "Stroke length", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (Angle, "Stroke angle", kNoGroup, kNoFlags, 45.0, -180.0, 180.0);
 
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
@@ -59,7 +63,7 @@ DeclarePass (Fgd)
 DeclarePass (Bgd)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint (DryBrush)
+DeclareEntryPoint (DryBrush_Dx)
 {
    float stroke = (Length * 0.1) + 0.02;
    float angle  = radians (Angle + 135.0);
@@ -80,6 +84,15 @@ DeclareEntryPoint (DryBrush)
    float4 Fgnd = tex2D (Fgd, uv3 + xy1);
    float4 Bgnd = tex2D (Bgd, uv3 + xy2);
 
-   return lerp (Fgnd, Bgnd, Amount);
+   float4 retval = lerp (Fgnd, Bgnd, Amount);
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 

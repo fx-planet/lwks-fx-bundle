@@ -39,7 +39,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
 DeclareIntParam (CW_CCW, "Rotation direction", kNoGroup, 1, "Anticlockwise|Clockwise");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);

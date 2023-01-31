@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This effect pinches the outgoing video to a user-defined point to reveal the incoming
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -74,7 +74,7 @@ DeclareEntryPoint (rPinch_Dx_0)
    xy1 *= scale;
    xy1 += MID_PT;
 
-   float4 retval = tex2D (rPinch_0, xy1);
+   float4 retval = ReadPixel (rPinch_0, xy1);
 
    return lerp (tex2D (Bg_0, uv3), retval, retval.a);
 }
@@ -100,7 +100,7 @@ DeclareEntryPoint (rPinch_Dx_1)
    xy1 *= scale;
    xy1 += MID_PT;
 
-   float4 retval = tex2D (rPinch_1, xy1);
+   float4 retval = ReadPixel (rPinch_1, xy1);
 
    return lerp (tex2D (Fg_1, uv3), retval, retval.a);
 }

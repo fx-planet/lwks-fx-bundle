@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This effect splits the outgoing video horizontally or vertically to reveal the incoming
@@ -19,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -70,12 +70,12 @@ DeclareEntryPoint (SplitAndZoom_Dx_H)
    float4 retval;
 
    if ((uv3.x < pos + 0.5) && (uv3.x > 0.5 - pos))
-      retval = tex2D (Outgoing_H, xy2);
+      retval = ReadPixel (Outgoing_H, xy2);
    else {
       if (uv3.x > 0.5) xy1.x -= pos;
       else xy1.x += pos;
 
-      retval = tex2D (Incoming_H, xy1);
+      retval = ReadPixel (Incoming_H, xy1);
    }
 
    return retval;
@@ -101,12 +101,12 @@ DeclareEntryPoint (SplitAndZoom_Dx_V)
    float4 retval;
 
    if ((uv3.y < pos + 0.5) && (uv3.y > 0.5 - pos))
-      retval = tex2D (Outgoing_V, xy2);
+      retval = ReadPixel (Outgoing_V, xy2);
    else {
       if (uv3.y > 0.5) xy1.y -= pos;
       else xy1.y += pos;
 
-      retval = tex2D (Incoming_V, xy1);
+      retval = ReadPixel (Incoming_V, xy1);
    }
 
    return retval;

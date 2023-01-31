@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This effect dissolves a blended foreground image in or out through a complex colour
@@ -19,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -39,7 +39,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -146,6 +146,7 @@ DeclareEntryPoint (ColourSizzler_Kx_F)
    return lerp (Bgnd, Temp, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique ColourSizzler_Kx_I
 
@@ -190,6 +191,7 @@ DeclareEntryPoint (ColourSizzler_Kx_I)
    return lerp (Bgnd, Temp, Fgnd.a);
 }
 
+//-----------------------------------------------------------------------------------------//
 
 // technique ColourSizzler_Kx_O
 

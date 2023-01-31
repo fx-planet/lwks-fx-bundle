@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This is a modified version of my "Dissolve through colour" but is very much simpler to
@@ -19,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -41,6 +41,8 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (cDuration, "Duration", "Colour setup", kNoFlags, 0.1, 0.0, 1.0);
 
 DeclareColourParam (Colour, "Colour", "Colour setup", kNoFlags, 0.0, 0.0, 0.0, 1.0);
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 //-----------------------------------------------------------------------------------------//
 // Code
@@ -73,6 +75,14 @@ DeclareEntryPoint (FlatColour_Dx)
 
    Fgnd = lerp (Fgnd, Colour, mix_fgd);
 
-   return lerp (Bgnd, retval, mix_bgd);
+   float4 retval = lerp (Bgnd, Fgnd, mix_bgd);
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 

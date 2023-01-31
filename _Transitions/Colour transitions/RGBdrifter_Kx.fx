@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This transitions a blended foreground image in or out using different curves for each of
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -37,7 +37,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -63,13 +63,10 @@ float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
    float4 Bgnd, Fgnd = tex2D (F, xy);
 
-   float2 uv = xy2;
-
    if (Source == 0) {
       if (Ttype == 0) {
          Bgnd = Fgnd;
          Fgnd = tex2D (B, xy);
-         uv = xy1;
       }
       else Bgnd = tex2D (B, xy);
 
@@ -81,7 +78,7 @@ float4 fn_keygen (sampler F, sampler B, float2 xy)
       Fgnd.rgb /= Fgnd.a;
    }
 
-   if (CropEdges && IsOutOfBounds (uv)) Fgnd.a = 0.0;
+   if (CropEdges && IsOutOfBounds (xy)) Fgnd.a = 0.0;
 
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }

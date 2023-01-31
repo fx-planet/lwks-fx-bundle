@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This effect dissolves through a user-selected colour field from one clip to another.
@@ -24,7 +24,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -57,6 +57,8 @@ DeclareColourParam (topLeft, "Top left", "Colour setup", kNoFlags, 0.0, 0.0, 0.0
 DeclareColourParam (topRight, "Top right", "Colour setup", kNoFlags, 0.5, 0.0, 0.8, 1.0);
 DeclareColourParam (botLeft, "Bottom left", "Colour setup", kNoFlags, 0.0, 0.0, 1.0, 1.0);
 DeclareColourParam (botRight, "Bottom right", "Colour setup", kNoFlags, 0.0, 0.8, 0.5, 1.0);
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -149,6 +151,14 @@ DeclareEntryPoint (Colour_Dx)
       colDx = lerp (Fgnd, colour, Mix);
    }
 
-   return lerp (rawDx, colDx, cAmount);
+   colour = lerp (rawDx, colDx, cAmount);
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : colour;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : colour;
+      colour = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return colour;
 }
 

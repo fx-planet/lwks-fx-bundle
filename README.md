@@ -1,4 +1,4 @@
-# Lightworks user Fx library, January 19, 2023.
+# Lightworks user Fx library, January 31, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -313,8 +313,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
 |:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
 |DissolveX                 |DissolveX_Dx.fx         |DissolveX_Kx.fx         |Allows blend modes to be used in a dissolve          |
-|Non-additive mix          |NonAdd_Dx.fx            |NonAdd_Kx.fx            |Emulates the classic analog vision mixer non-add mix |
-|Non-add mix ultra         |NonAddUltra_Dx.fx       |NonAddUltra_Kx.fx       |A more extreme version of a non-add mix              |
+|Non-linear dissolve       |Ndissolve_Dx.fx         |Ndissolve_Kx.fx         |A series of four non-linear dissolves                |
 |Optical dissolve          |Optical_Dx.fx           |Optical_Kx.fx           |Simulates the burn effect of a film optical dissolve |
 |S dissolve                |Sdissolve_Dx.fx         |Sdissolve_Kx.fx         |Dissolve using a trigonometric or a quadratic curve  |
 

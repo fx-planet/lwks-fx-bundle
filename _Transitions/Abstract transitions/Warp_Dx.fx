@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This is a dissolve that warps.  The warp is driven by the background image, and so will be
@@ -9,7 +9,9 @@
  other blended effects.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -17,7 +19,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -37,6 +39,8 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareFloatParam (Distortion, "Distortion", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -58,7 +62,7 @@ DeclarePass (Outgoing)
 DeclarePass (Incoming)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint ()
+DeclareEntryPoint (Warp_Dx)
 {
    float4 Warp = tex2D (Outgoing, uv3);
 
@@ -71,6 +75,15 @@ DeclareEntryPoint ()
    Warp = tex2D (Incoming, uv3);
    xy1 = uv3 - float2 (Warp.b - Warp.r, Warp.g) * warpFactor;
 
-   return lerp (Fgnd, tex2D (Incoming, xy1), Amount);
+   float4 retval = lerp (Fgnd, tex2D (Incoming, xy1), Amount);
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Warp = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Warp, Amount);
+   }
+
+   return retval;
 }
 

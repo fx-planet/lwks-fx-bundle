@@ -1,14 +1,16 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This is the second effect based on an earlier effect Abstraction #1.  It uses the
  same pattern but applies the second half symmetrically into and out of the effect.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -37,6 +39,8 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareFloatParam (CentreX, "Mid position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (CentreY, "Mid position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -67,7 +71,7 @@ DeclarePass (Outgoing)
 DeclarePass (Incoming)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint ()
+DeclareEntryPoint (Abstract_3_Dx)
 {
    float amount   = (Amount < 0.5) ? 1.0 - Amount : Amount;
    float progress = pow ((amount * PROGRESS) + P_OFFSET, P_SCALE);
@@ -95,6 +99,15 @@ DeclareEntryPoint ()
 
    blnd = lerp (Fgnd, blnd, saturate (progress));
 
-   return lerp (blnd, Bgnd, saturate (progress - 2.0));
+   float4 retval = lerp (blnd, Bgnd, saturate (progress - 2.0));
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 

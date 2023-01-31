@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author Robert Schütze
 // @Author jwrl
 // @Created 2022-06-01
@@ -9,7 +9,9 @@
  in the same way as a normal dissolve or wipe transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -20,7 +22,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -43,6 +45,8 @@ DeclareFloatParam (fractalOffset, "Offset", "Fractal settings", kNoGroup, 0.5, 0
 DeclareFloatParam (Rate, "Rate", "Fractal settings", kNoGroup, 0.5, 0.0, 1.0);
 DeclareFloatParam (Border, "Edge size", "Fractal settings", kNoGroup, 0.1, 0.0, 1.0);
 DeclareFloatParam (Feather, "Feather", "Fractal settings", kNoGroup, 0.1, 0.0, 1.0);
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -68,7 +72,7 @@ DeclarePass (Fractal)
    return float4 (saturate (fractal), 1.0);
 }
 
-DeclareEntryPoint ()
+DeclareEntryPoint (Fractal_Dx)
 {
    float amt_in   = min (1.0, Amount * 5.0);
    float amt_body = (Amount * 0.5) + 0.5;
@@ -91,6 +95,15 @@ DeclareEntryPoint ()
    }
    else retval = Fgnd;
 
-   return lerp (lerp (Fgnd, retval, amt_in), Bgnd, amt_out);
+   retval = lerp (lerp (Fgnd, retval, amt_in), Bgnd, amt_out);
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 

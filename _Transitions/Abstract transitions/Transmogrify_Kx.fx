@@ -1,14 +1,16 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This is is a truly bizarre transition.  Sort of a stripy blurry dissolve, I guess.  It
  supports titles and other blended effects.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -16,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -36,7 +38,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "At start if delta key folded|At start of effect|At end of effect");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -105,7 +107,7 @@ DeclarePass (Super_F)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-DeclareEntryPoint (Main_Folded)
+DeclareEntryPoint (Transmogrify_Kx_F)
 {
    float2 pixSize = uv3 * float2 (1.0, _OutputAspectRatio) * SCALE;
 
@@ -116,10 +118,18 @@ DeclareEntryPoint (Main_Folded)
    xy.y = 1.0 - xy.x;
    xy = lerp (xy, uv3, Amount);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy);
+   float4 Fgnd = tex2D (Super_F, xy);
    float4 Bgnd = tex2D (Bg_F, uv3);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -132,7 +142,7 @@ DeclarePass (Bg_I)
 DeclarePass (Super_I)
 { return fn_keygen (Bg_I, uv1, uv3); }
 
-DeclareEntryPoint (Main_In)
+DeclareEntryPoint (Transmogrify_Kx_I)
 {
    float2 pixSize = uv3 * float2 (1.0, _OutputAspectRatio) * SCALE;
 
@@ -143,10 +153,18 @@ DeclareEntryPoint (Main_In)
    xy.y = 1.0 - xy.x;
    xy = lerp (xy, uv3, Amount);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy);
+   float4 Fgnd = tex2D (Super_I, xy);
    float4 Bgnd = tex2D (Bg_I, uv3);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a * Amount);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -159,7 +177,7 @@ DeclarePass (Bg_O)
 DeclarePass (Super_O)
 { return fn_keygen (Bg_O, uv1, uv3); }
 
-DeclareEntryPoint (Main_Out)
+DeclareEntryPoint (Transmogrify_Kx_O)
 {
    float2 pixSize = uv3 * float2 (1.0, _OutputAspectRatio) * SCALE;
 
@@ -171,9 +189,17 @@ DeclareEntryPoint (Main_Out)
 
    xy = lerp (xy, uv3, amount);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy);
+   float4 Fgnd = tex2D (Super_O, xy);
    float4 Bgnd = tex2D (Bg_O, uv3);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - Amount));
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - Amount));
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, 1.0 - Amount);
+   }
+
+   return retval;
 }
 

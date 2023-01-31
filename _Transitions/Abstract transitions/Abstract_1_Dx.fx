@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  Abstraction #1 uses a pattern that developed from my attempt to create a series of
@@ -10,7 +10,9 @@
  to try and track down the error, stumbled across this.  I liked it so I kept it.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
+ Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
+ to the background is provided, which dissolves between the cropped areas during the
+ transition.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +20,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -41,6 +43,8 @@ DeclareIntParam (SetTechnique, "Wipe direction", kNoGroup, 0, "Forward|Reverse")
 
 DeclareFloatParam (CentreX, "Mid position", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (CentreY, "Mid position", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -65,13 +69,15 @@ DeclareFloatParam (CentreY, "Mid position", kNoGroup, "SpecifiesPointY", 0.5, 0.
 // Code
 //-----------------------------------------------------------------------------------------//
 
+// technique Abstract_1_Dx_F
+
 DeclarePass (Fwd_A)
 { return ReadPixel (Fg, uv1); }
 
 DeclarePass (Fwd_B)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint (Forward)
+DeclareEntryPoint (Abstract_1_Dx_F)
 {
    float2 xy1 = lerp (0.5.xx, float2 (CentreX, 1.0 - CentreY), saturate (Amount * 2.0));
    float2 xy2 = abs (uv3 - xy1) * XY_SCALE;
@@ -98,8 +104,21 @@ DeclareEntryPoint (Forward)
 
    blnd = lerp (Fgnd, blnd, saturate (progress));
 
-   return lerp (blnd, Bgnd, saturate (progress - 1.0));
+   float4 retval = lerp (blnd, Bgnd, saturate (progress - 1.0));
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
+
+//-----------------------------------------------------------------------------------------//
+
+// technique Abstract_1_Dx_R
 
 DeclarePass (Rev_A)
 { return ReadPixel (Fg, uv1); }
@@ -107,7 +126,7 @@ DeclarePass (Rev_A)
 DeclarePass (Rev_B)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint (Reverse)
+DeclareEntryPoint (Abstract_1_Dx_R)
 {
    float2 xy1 = lerp (0.5.xx, float2 (CentreX, 1.0 - CentreY), saturate ((1.0 - Amount) * 2.0));
    float2 xy2 = abs (uv3 - xy1) * XY_SCALE;
@@ -134,6 +153,15 @@ DeclareEntryPoint (Reverse)
 
    blnd = lerp (Fgnd, blnd, saturate (progress));
 
-   return lerp (blnd, Bgnd, saturate (progress - 2.0));
+   float4 retval = lerp (blnd, Bgnd, saturate (progress - 2.0));
+
+   if (CropEdges) {
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
+   }
+
+   return retval;
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This is based on the barn door split effect, modified to squeeze or expand the divided
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -54,7 +54,7 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 // Technique squeeze horizontally
 
 DeclarePass (Outgoing_H)
-{ return IsOutOfBounds (uv) ? BLACK : tex2D (Fg, uv1); }
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
 
 DeclarePass (Bg_H)
 { return ReadPixel (Bg, uv2); }
@@ -81,7 +81,7 @@ DeclarePass (Fg_H)
 { return ReadPixel (Fg, uv1); }
 
 DeclarePass (Incoming_H)
-{ return IsOutOfBounds (uv) ? BLACK : tex2D (Bg, uv2); }
+{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
 
 DeclareEntryPoint (ExpandH)
 {
@@ -100,7 +100,7 @@ DeclareEntryPoint (ExpandH)
 // Technique squeeze vertically
 
 DeclarePass (Outgoing_V)
-{ return IsOutOfBounds (uv) ? BLACK : tex2D (Fg, uv1); }
+{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
 
 DeclarePass (Bg_V)
 { return ReadPixel (Bg, uv2); }
@@ -127,7 +127,7 @@ DeclarePass (Fg_V)
 { return ReadPixel (Fg, uv1); }
 
 DeclarePass (Incoming_V)
-{ return IsOutOfBounds (uv) ? BLACK : tex2D (Bg, uv2); }
+{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
 
 DeclareEntryPoint (ExpandV)
 {

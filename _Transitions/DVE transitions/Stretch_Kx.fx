@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This effect stretches the blended foreground horizontally or vertically to transition in
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -36,7 +36,8 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "H start (delta folded)|V start (delta folded)|At start (horizontal)|At end (horizontal)|At start (vertical)|At end (vertical)");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition direction", kNoGroup, 0, "Stretch horizontal|Stretch vertical");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -79,7 +80,7 @@ float4 fn_keygen_F (sampler F, sampler B, float2 xy)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 fn_keygen_F (sampler F, sampler B, float2 xy)
+float4 fn_keygen (sampler F, sampler B, float2 xy)
 {
    float4 Fgnd = tex2D (F, xy);
 
@@ -101,115 +102,34 @@ float4 fn_keygen_F (sampler F, sampler B, float2 xy)
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique Hstretch_Fx_F
+// technique Stretch_Fx_H
 
-DeclarePass (Fg_Hf)
+DeclarePass (Fg_H)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Bg_Hf)
+DeclarePass (Bg_H)
 { return ReadPixel (Bg, uv2); }
 
-DeclarePass (Super_Hf)
-{ return fn_keygen_F (Fg_Hf, Bg_Hf, uv3); }
+DeclarePass (Super_H)
+{ return Ttype == 0 ? fn_keygen_F (Fg_H, Bg_H, uv3) : fn_keygen (Fg_H, Bg_H, uv3); }
 
-DeclareEntryPoint (Horiz_F)
+DeclareEntryPoint (Stretch_Fx_H)
 {
-   float2 xy = uv3 - CENTRE;
+   float2 uv, xy = uv3 - CENTRE;
 
-   float stretch = Stretch * (1.0 - Amount);
-   float distort = sin (xy.y * PI) * HALF_PI;
+   float4 Bgnd;
 
-   distort = sin (distort) / 2.0;
+   if (Ttype == 0) {
+      uv = uv1;
+      Bgnd = tex2D (Fg_H, uv3);
+   }
+   else {
+      uv = uv2;
+      Bgnd = tex2D (Bg_H, uv3);
+   }
 
-   xy.x /= 1.0 + (5.0 * stretch);
-   xy.y = lerp (xy.y, distort, stretch);
-   xy += CENTRE;
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_Hf, xy);
-
-   return lerp (tex2D (Fg_Hf, uv3), Fgnd, Fgnd.a * Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Vstretch_Fx_F
-
-DeclarePass (Fg_Vf)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_Vf)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_Vf)
-{ return fn_keygen_F (Fg_Vf, Bg_Vf, uv3); }
-
-DeclareEntryPoint (Vert_F)
-{
-   float2 xy = uv3 - CENTRE;
-
-   float stretch = Stretch * (1.0 - Amount);
-   float distort = sin (xy.x * PI) * HALF_PI;
-
-   distort = sin (distort) / 2.0;
-
-   xy.x = lerp (xy.x, distort, stretch);
-   xy.y /= 1.0 + (5.0 * stretch);
-   xy += CENTRE;
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_Vf, xy);
-
-   return lerp (tex2D (Fg_Vf, uv3), Fgnd, Fgnd.a * Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Hstretch_Fx_I
-
-DeclarePass (Fg_Hi)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_Hi)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_Hi)
-{ return fn_keygen_F (Fg_Hi, Bg_Hi, uv3); }
-
-DeclareEntryPoint (Horiz_I)
-{
-   float2 xy = uv3 - CENTRE;
-
-   float stretch = Stretch * (1.0 - Amount);
-   float distort = sin (xy.y * PI) * HALF_PI;
-
-   distort = sin (distort) / 2.0;
-
-   xy.x /= 1.0 + (5.0 * stretch);
-   xy.y = lerp (xy.y, distort, stretch);
-   xy += CENTRE;
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Hi, xy);
-
-   return lerp (tex2D (Bg_Hi, uv3), Fgnd, Fgnd.a * Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Hstretch_Fx_O
-
-DeclarePass (Fg_Ho)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_Ho)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_Ho)
-{ return fn_keygen_F (Fg_Ho, Bg_Ho, uv3); }
-
-DeclareEntryPoint (Horiz_O)
-{
-   float2 xy = uv3 - CENTRE;
-
-   float stretch = Stretch * Amount;
+   float amount  = Ttype == 2 ? Amount : 1.0 - Amount;
+   float stretch = Stretch * amount;
    float distort = sin (xy.y * PI) * HALF_PI;
 
    distort = sin (distort) / 2.0;
@@ -218,29 +138,41 @@ DeclareEntryPoint (Horiz_O)
    xy.y  = lerp (xy.y, distort, stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Ho, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv)) ? kTransparentBlack : tex2D (Super_H, xy);
 
-   return lerp (tex2D (Bg_Ho, uv3), Fgnd, Fgnd.a * (1.0 - Amount));
+   return lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - amount));
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Vstretch_Fx_I
+// technique Stretch_Fx_V
 
-DeclarePass (Fg_Vi)
+DeclarePass (Fg_V)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Bg_Vi)
+DeclarePass (Bg_V)
 { return ReadPixel (Bg, uv2); }
 
-DeclarePass (Super_Vi)
-{ return fn_keygen_F (Fg_Vi, Bg_Vi, uv3); }
+DeclarePass (Super_V)
+{ return Ttype == 0 ? fn_keygen_F (Fg_V, Bg_V, uv3) : fn_keygen (Fg_V, Bg_V, uv3); }
 
-DeclareEntryPoint (Vert_I)
+DeclareEntryPoint (Stretch_Fx_V)
 {
-   float2 xy = uv3 - CENTRE;
+   float2 uv, xy = uv3 - CENTRE;
 
-   float stretch = Stretch * (1.0 - Amount);
+   float4 Bgnd;
+
+   if (Ttype == 0) {
+      uv = uv1;
+      Bgnd = tex2D (Fg_V, uv3);
+   }
+   else {
+      uv = uv2;
+      Bgnd = tex2D (Bg_V, uv3);
+   }
+
+   float amount  = Ttype == 2 ? Amount : 1.0 - Amount;
+   float stretch = Stretch * amount;
    float distort = sin (xy.x * PI) * HALF_PI;
 
    distort = sin (distort) / 2.0;
@@ -249,39 +181,8 @@ DeclareEntryPoint (Vert_I)
    xy.y /= 1.0 + (5.0 * stretch);
    xy += CENTRE;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Vi, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv)) ? kTransparentBlack : tex2D (Super_V, xy);
 
-   return lerp (tex2D (Bg_Vi, uv3), Fgnd, Fgnd.a * Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Vstretch_Fx_O
-
-DeclarePass (Fg_Vo)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_Vo)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_Vo)
-{ return fn_keygen_F (Fg_Vo, Bg_Vo, uv3); }
-
-DeclareEntryPoint (Vert_O)
-{
-   float2 xy = uv3 - CENTRE;
-
-   float stretch = Stretch * Amount;
-   float distort = sin (xy.x * PI) * HALF_PI;
-
-   distort = sin (distort) / 2.0;
-
-   xy.x  = lerp (xy.x, distort, stretch);
-   xy.y /= 1.0 + (5.0 * stretch);
-   xy += CENTRE;
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_Vo, xy);
-
-   return lerp (tex2D (Bg_Vo, uv3), Fgnd, Fgnd.a * (1.0 - Amount));
+   return lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - amount));
 }
 

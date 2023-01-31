@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  Bounces a key, title or blended image up to a preset size at the mid point then lets it
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -39,7 +39,7 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 DeclareFloatParam (Mid, "Midpoint", kNoGroup, "DisplayAsPercentage", 0.5, 0.1, 0.9);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 1, "At start if delta key folded|At start of effect|At end of effect");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
 DeclareIntParam (Curve, "Transition curve", kNoGroup, 0, "Linear|Curve 1|Curve 2");
 
 DeclareFloatParam (CentreX, "Centre point", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);

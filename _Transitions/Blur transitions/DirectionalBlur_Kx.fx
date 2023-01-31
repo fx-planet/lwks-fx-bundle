@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2023-01-31
 
 /**
  This effect applies a directional (motion) blur to a blended foreground, the angle
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Built 2023-01-31 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -178,7 +178,7 @@ DeclareEntryPoint (DirectionalBlur_Kx_I)
 
    if (CropEdges && IsOutOfBounds (uv2)) retval = kTransparentBlack;
 
-   return lerp (tex2D (Bg_!, uv3), retval, retval.a);
+   return lerp (tex2D (Bg_I, uv3), retval, retval.a);
 }
 
 //-----------------------------------------------------------------------------------------//

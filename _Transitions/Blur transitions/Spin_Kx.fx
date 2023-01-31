@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-01-31
 // @Author rakusan
 // @Author jwrl
 // @Created 2022-06-01
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-28 jwrl
+// Updated 2023-01-31 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
@@ -217,7 +217,7 @@ DeclareEntryPoint (Spin_Kx_I)
 
 // technique Spin_Kx_O
 
-DeclarePass (Bg_I)
+DeclarePass (Bg_O)
 { return ReadPixel (Bg, uv2); }
 
 DeclarePass (Title_O)

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-02-01
 // @Author schrauber
 // @Released 2016-08-03
 
@@ -20,13 +20,13 @@
 //
 // Version history:
 //
-// Updated 2023-01-29 jwrl
+// Updated 2023-02-01 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Fly away B", "Mix", "Special Fx transitions", "Flies the outgoing image out to reveal the incoming", CanSize);
+DeclareLightworksEffect ("Fly away", "Mix", "Special Fx transitions", "Flies the outgoing image out to reveal the incoming", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

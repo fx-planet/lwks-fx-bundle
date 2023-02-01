@@ -94,7 +94,7 @@ DeclareEntryPoint (TiledSplit_Dx_I)
    offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
    uv.y += offset / _OutputAspectRatio;
 
-   float4 ReadPixel = tex2D (Tiles_I, uv);
+   float4 Fgnd = ReadPixel (Tiles_I, uv);
 
    return lerp (tex2D (Outgoing, uv3), Fgnd, Fgnd.a);
 }
@@ -133,7 +133,7 @@ DeclareEntryPoint (TiledSplit_Dx_O)
    offset  = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
    uv.y += offset / _OutputAspectRatio;
 
-   float4 ReadPixel = tex2D (Tiles_O, uv);
+   float4 Fgnd = ReadPixel (Tiles_O, uv);
 
    return lerp (tex2D (Incoming, uv3), Fgnd, Fgnd.a);
 }

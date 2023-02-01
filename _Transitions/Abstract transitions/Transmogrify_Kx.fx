@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-31
+// @Released 2023-02-01
 // @Author jwrl
-// @Created 2023-01-31
+// @Created 2023-02-01
 
 /**
  This is is a truly bizarre transition.  Sort of a stripy blurry dissolve, I guess.  It
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-31 jwrl.
+// Built 2023-02-01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -38,7 +38,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 

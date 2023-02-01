@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This mimics the Lightworks squeeze effect but transitions alpha and delta keys in or out.
@@ -14,7 +14,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -96,11 +96,11 @@ DeclareEntryPoint (SqueezeRight)
 
    if (Ttype == 0) {
       Bgnd = tex2D (Fg_R, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_R, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_R, xy);
    }
    else {
       Bgnd = tex2D (Bg_R, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_R, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_R, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
@@ -132,11 +132,11 @@ DeclareEntryPoint (SqueezeDown)
 
    if (Ttype == 0) {
       Bgnd = tex2D (Fg_D, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_D, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_D, xy);
    }
    else {
       Bgnd = tex2D (Bg_D, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_D, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_D, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
@@ -168,11 +168,11 @@ DeclareEntryPoint (SqueezeLeft)
 
    if (Ttype == 0) {
       Bgnd = tex2D (Fg_L, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_L, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_L, xy);
    }
    else {
       Bgnd = tex2D (Bg_L, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_L, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_L, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
@@ -204,11 +204,11 @@ DeclareEntryPoint (SqueezeUp)
 
    if (Ttype == 0) {
       Bgnd = tex2D (Fg_U, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_U, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_U, xy);
    }
    else {
       Bgnd = tex2D (Bg_U, uv3);
-      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_U, xy);
+      Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_U, xy);
    }
 
    return lerp (Bgnd, Fgnd, Fgnd.a);

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This effect pinches the outgoing blended foreground to a user-defined point to reveal
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -114,7 +114,7 @@ DeclareEntryPoint (rPinch_Fx_F)
    xy *= scale;
    xy += MID_PT;
 
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv1) ? kTransparentBlack : tex2D (Super_F, xy);
+   float4 Fgnd = CropEdges && IsOutOfBounds (uv1) ? kTransparentBlack : ReadPixel (Super_F, xy);
 
    return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a);
 }
@@ -140,7 +140,7 @@ DeclareEntryPoint (rPinch_Fx_I)
    xy *= scale;
    xy += MID_PT;
 
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : tex2D (Super_I, xy);
+   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : ReadPixel (Super_I, xy);
 
    return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a);
 }
@@ -166,7 +166,7 @@ DeclareEntryPoint (rPinch_Fx_O)
    xy *= scale;
    xy += MID_PT;
 
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : tex2D (Super_O, xy);
+   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : ReadPixel (Super_O, xy);
 
    return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a);
 }

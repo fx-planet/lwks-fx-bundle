@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This effect pinches the blended foreground to a point to clear the background shot,
@@ -22,7 +22,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -129,7 +129,7 @@ DeclareEntryPoint (xPinch_Fx_F)
 
    float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Pinch_F, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Pinch_F, xy);
 
    return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a);
 }
@@ -154,7 +154,7 @@ DeclareEntryPoint (xPinch_Fx_I)
 
    float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Pinch_I, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Pinch_I, xy);
 
    return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a);
 }
@@ -177,7 +177,7 @@ DeclarePass (Pinch_O)
 
    float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   return tex2D (Super_O, xy);
+   return ReadPixel (Super_O, xy);
 }
 
 DeclareEntryPoint (xPinch_Fx_O)
@@ -187,7 +187,7 @@ DeclareEntryPoint (xPinch_Fx_O)
 
    float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Pinch_O, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Pinch_O, xy);
 
    return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a);
 }

@@ -140,7 +140,7 @@ DeclareEntryPoint (BarnDoorSplit_Kx_V)
 
    xy2 += uv3;
 
-   float4 Bgd = Ttype == 0 ? ReadPixel (Fg, uv1) : tex2D (Bg_H, uv3);
+   float4 Bgd = Ttype == 0 ? ReadPixel (Fg, uv1) : tex2D (Bg_V, uv3);
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? kTransparentBlack
               : (uv3.y > split) ? tex2D (Super_V, xy1) : tex2D (Super_V, xy2);
 

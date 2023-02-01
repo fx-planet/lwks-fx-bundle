@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-02_01
 // @Author jwrl
-// @Created 2023-01-29
+// @Created 2023-02_01
 
 /**
  This is a wipe that uses a trig distortion to perform a single simple twist to transition
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-01-29 jwrl.
+// Built 2023-02_01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -75,7 +75,7 @@ DeclareEntryPoint (Twistit_LR)
 
    float2 xy = float2 (uv3.x, ((uv3.y - 0.5) / twist) + 0.5);
 
-   return twist > 0.0 ? tex2D (Bg_LR, xy) : tex2D (Fg_LR, float2 (xy.x, 1.0 - xy.y));
+   return twist > 0.0 ? ReadPixel (Bg_LR, xy) : ReadPixel (Fg_LR, float2 (xy.x, 1.0 - xy.y));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -98,7 +98,7 @@ DeclareEntryPoint (Twistit_RL)
 
    float2 xy = float2 (uv3.x, ((uv3.y - 0.5) / twist) + 0.5);
 
-   return twist > 0.0 ? tex2D (Bg_RL, xy) : tex2D (Fg_RL, float2 (xy.x, 1.0 - xy.y));
+   return twist > 0.0 ? ReadPixel (Bg_RL, xy) : ReadPixel (Fg_RL, float2 (xy.x, 1.0 - xy.y));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -121,7 +121,7 @@ DeclareEntryPoint (Twistit_TB)
 
    float2 xy = float2 (((uv3.x - 0.5) / twist) + 0.5, uv3.y);
 
-   return twist > 0.0 ? tex2D (Bg_TB, xy) : tex2D (Fg_TB, float2 (1.0 - xy.x, xy.y));
+   return twist > 0.0 ? ReadPixel (Bg_TB, xy) : ReadPixel (Fg_TB, float2 (1.0 - xy.x, xy.y));
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -144,6 +144,6 @@ DeclareEntryPoint (Twistit_BT)
 
    float2 xy = float2 (((uv3.x - 0.5) / twist) + 0.5, uv3.y);
 
-   return twist > 0.0 ? tex2D (Bg_BT, xy) : tex2D (Fg_BT, float2 (1.0 - xy.x, xy.y));
+   return twist > 0.0 ? ReadPixel (Bg_BT, xy) : ReadPixel (Fg_BT, float2 (1.0 - xy.x, xy.y));
 }
 

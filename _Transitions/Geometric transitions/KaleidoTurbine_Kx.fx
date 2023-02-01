@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This is loosely based on the user effect Kaleido, converted to function as a transition
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -36,7 +36,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -130,7 +130,7 @@ DeclareEntryPoint (KaleidoTurbine_Kx_F)
    sincos (angle, xy2.y, xy2.x);
    xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy2);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy2);
 
    return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * mixval);
 }
@@ -165,7 +165,7 @@ DeclareEntryPoint (KaleidoTurbine_Kx_I)
    sincos (angle, xy2.y, xy2.x);
    xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy2);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy2);
 
    return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * mixval);
 }
@@ -199,7 +199,7 @@ DeclareEntryPoint (KaleidoTurbine_Kx_O)
    sincos (angle, xy2.y, xy2.x);
    xy2 = ((xy2 * radius) / Scale) + xy1;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy2);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy2);
 
    return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * mixval);
 }

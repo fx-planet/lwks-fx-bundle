@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This rotates a blended foreground such as a title or image key out or in.  It's a
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -36,7 +36,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -121,7 +121,7 @@ DeclareEntryPoint (Rotate_Right)
       }
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : tex2D (Super_R, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_R, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -165,7 +165,7 @@ DeclareEntryPoint (Rotate_Down)
       }
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : tex2D (Super_D, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_D, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -209,7 +209,7 @@ DeclareEntryPoint (Rotate_Left)
       }
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : tex2D (Super_L, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_L, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -253,7 +253,7 @@ DeclareEntryPoint (Rotate_Up)
       }
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : tex2D (Super_U, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bgd)) ? kTransparentBlack : ReadPixel (Super_U, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

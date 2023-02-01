@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-31
+// @Released 2023-02-01
 // @Author rakusan
 // @Author jwrl
 // @Created 2022-06-01
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Updated 2023-01-31 jwrl
+// Updated 2023-02-01 jwrl
 // Updated to provide LW 2022 revised cross platform support.
 //-----------------------------------------------------------------------------------------//
 
@@ -39,7 +39,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
 DeclareIntParam (CW_CCW, "Rotation direction", kNoGroup, 1, "Anticlockwise|Clockwise");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);

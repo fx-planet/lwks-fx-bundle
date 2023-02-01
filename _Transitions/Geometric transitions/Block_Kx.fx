@@ -37,7 +37,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -173,6 +173,6 @@ DeclareEntryPoint (Block_Kx_O)
 
    if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
 
-   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * Amount);
+   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * (1.0 - Amount));
 }
 

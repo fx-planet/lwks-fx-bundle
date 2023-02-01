@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  A transition that splits a blended foreground image into strips and compresses it to zero
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -131,7 +131,7 @@ DeclareEntryPoint (Strips_F)
    offset *= 2.0 * Spread;
    xy.y = (xy.y * Height) + offset + centre_Y;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy);
 
    return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * Amount);
 }
@@ -164,7 +164,7 @@ DeclareEntryPoint (Strips_I)
    offset *= 2.0 * Spread;
    xy.y = (xy.y * Height) + offset + centre_Y;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy);
 
    return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * Amount);
 }
@@ -197,7 +197,7 @@ DeclareEntryPoint (Strips_O)
    offset *= 2.0 * Spread;
    xy.y = (xy.y * Height) + offset + centre_Y;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy);
 
    return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * amount);
 }

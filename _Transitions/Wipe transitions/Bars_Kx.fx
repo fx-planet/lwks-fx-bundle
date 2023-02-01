@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This is a transition that moves the strips of a blended foreground together from off-screen
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -117,7 +117,7 @@ DeclareEntryPoint (Bars_H)
       Bgnd = tex2D (Bg_H, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_H, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_H, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -153,7 +153,7 @@ DeclareEntryPoint (Bars_V)
       Bgnd = tex2D (Bg_V, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_V, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_V, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

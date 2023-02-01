@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This mimics the Lightworks push effect but supports titles, image keys and other blended
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -111,7 +111,7 @@ DeclareEntryPoint (Push_right)
       Bgnd = tex2D (Bg_R, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_R, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_R, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -145,7 +145,7 @@ DeclareEntryPoint (Push_down)
       Bgnd = tex2D (Bg_D, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_D, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_D, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -179,7 +179,7 @@ DeclareEntryPoint (Push_left)
       Bgnd = tex2D (Bg_L, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_L, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_L, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -213,7 +213,7 @@ DeclareEntryPoint (Push_up)
       Bgnd = tex2D (Bg_U, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_U, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_U, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

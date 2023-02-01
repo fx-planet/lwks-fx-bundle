@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This transition splits a blended foreground image into strips which then move off
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -121,7 +121,7 @@ DeclareEntryPoint (Slice_Left)
       Bgnd = tex2D (Bg_L, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_L, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_L, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -172,7 +172,7 @@ DeclareEntryPoint (Slice_Right)
       Bgnd = tex2D (Bg_R, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_R, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_R, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -223,7 +223,7 @@ DeclareEntryPoint (Slice_Top)
       Bgnd = tex2D (Bg_T, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_T, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_T, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
@@ -274,7 +274,7 @@ DeclareEntryPoint (Slice_Bottom)
       Bgnd = tex2D (Bg_B, uv3);
    }
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : tex2D (Super_B, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_B, xy);
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }

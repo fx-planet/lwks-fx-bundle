@@ -44,7 +44,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
 DeclareIntParam (SetTechnique, "Method", kNoGroup, 0, "Normal|Darken|Multiply|Colour Burn|Linear Burn|Darker Colour|Lighten|Screen|Colour Dodge|Linear Dodge (Add)|Lighter Colour|Overlay|Soft Light|Hard Light|Vivid Light|Linear Light|Pin Light|Hard Mix|Difference|Exclusion|Subtract|Divide|Hue|Saturation|Colour|Luminosity");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);

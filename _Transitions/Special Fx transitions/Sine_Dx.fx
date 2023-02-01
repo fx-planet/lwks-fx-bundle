@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-02-01
 // @Author jwrl
-// @Created 2023-01-29
+// @Created 2023-02-01
 
 /**
  This is a dissolve/wipe that uses a sine distortion to do a left-right or right-left
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-01-29 jwrl.
+// Built 2023-02-01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -83,8 +83,8 @@ DeclareEntryPoint (Sine_Dx)
 
    float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
 
-   float4 Fgnd = tex2D (Fgd, uv3);
-   float4 Bgnd = tex2D (Bgd, xy);
+   float4 Fgnd = ReadPixel (Fgd, uv3);
+   float4 Bgnd = ReadPixel (Bgd, xy);
 
    return lerp (Fgnd, Bgnd, amount);
 }

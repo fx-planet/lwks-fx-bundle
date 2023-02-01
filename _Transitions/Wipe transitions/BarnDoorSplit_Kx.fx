@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-02-01
 // @Author jwrl
-// @Created 2023-01-29
+// @Created 2023-02-01
 
 /**
  This is really the classic barn door effect, but since a wipe with that name already exists
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-29 jwrl.
+// Built 2023-02-01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -37,7 +37,8 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 0, "H start (delta folded)|V start (delta folded)|At start (horizontal)|At end (horizontal)|At start (vertical)|At end (vertical)");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key folded|At start if non-delta unfolded|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition direction", kNoGroup, 0, "Horizontal|Vertical");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -49,12 +50,12 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen_F (sampler F, sampler B, float2 xy)
+float4 fn_keygen_F (sampler F, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = tex2D (F, xy);
+   float4 Fgnd = tex2D (F, xy2);
 
    if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy);
+      float4 Bgnd = ReadPixel (Bg, xy1);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb = Bgnd.rgb * Fgnd.a;
@@ -67,12 +68,12 @@ float4 fn_keygen_F (sampler F, sampler B, float2 xy)
    return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
 }
 
-float4 fn_keygen (sampler F, sampler B, float2 xy)
+float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 {
-   float4 Fgnd = tex2D (F, xy);
+   float4 Fgnd = ReadPixel (Fg, xy1);
 
    if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy);
+      float4 Bgnd = tex2D (B, xy2);
 
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
@@ -89,184 +90,62 @@ float4 fn_keygen (sampler F, sampler B, float2 xy)
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique Barndoor horizontal split start (folded)
+// technique BarnDoorSplit_Kx_H
 
-DeclarePass (Fg_HF)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Bg_H)
+{ return Ttype == 0 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
 
-DeclarePass (Bg_HF)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Super_H)
+{ return Ttype == 0 ? fn_keygen_F (Bg_H, uv2, uv3) : fn_keygen (Bg_H, uv1, uv3); }
 
-DeclarePass (Super_HF)
-{ return fn_keygen_F (Fg_HF, Bg_HF, uv3); }
-
-DeclareEntryPoint (Hsplit_F)
+DeclareEntryPoint (BarnDoorSplit_Kx_H)
 {
-   float range = (1.0 - Amount) * max (Split, 1.0 - Split);
+   float amount = Ttype == 2 ? Amount : 1.0 - Amount;
+   float range  = amount * max (Split, 1.0 - Split);
 
+   float2 xy3 = Ttype == 0 ? uv1 : uv2;
    float2 xy2 = float2 (range, 0.0);
    float2 xy1 = uv3 - xy2;
 
    xy2 += uv3;
 
+   float4 Bgd = Ttype == 0 ? ReadPixel (Fg, uv1) : tex2D (Bg_H, uv3);
    float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? kTransparentBlack
-              : (uv3.x > Split) ? tex2D (Super_HF, xy1) : tex2D (Super_HF, xy2);
+              : (uv3.x > Split) ? tex2D (Super_H, xy1) : tex2D (Super_H, xy2);
 
-   if (CropEdges && IsOutOfBounds (uv1)) Fgd = kTransparentBlack;
+   if (CropEdges && IsOutOfBounds (xy3)) Fgd = kTransparentBlack;
 
-   return lerp (tex2D (Fg_HF, uv3), Fgd, Fgd.a);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Barndoor vertical split start (folded)
+// technique BarnDoorSplit_Kx_V
 
-DeclarePass (Fg_VF)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Bg_V)
+{ return Ttype == 0 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
 
-DeclarePass (Bg_VF)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Super_V)
+{ return Ttype == 0 ? fn_keygen_F (Bg_V, uv2, uv3) : fn_keygen (Bg_V, uv1, uv3); }
 
-DeclarePass (Super_VF)
-{ return fn_keygen_F (Fg_HF, Bg_HF, uv3); }
-
-DeclareEntryPoint (Hsplit_V)
+DeclareEntryPoint (BarnDoorSplit_Kx_V)
 {
+   float amount = Ttype == 2 ? Amount : 1.0 - Amount;
    float split = 1.0 - Split;
-   float range = (1.0 - Amount) * max (Split, split);
+   float range = amount * max (Split, split);
 
+   float2 xy3 = Ttype == 0 ? uv1 : uv2;
    float2 xy2 = float2 (0.0, range);
    float2 xy1 = uv3 - xy2;
 
    xy2 += uv3;
 
+   float4 Bgd = Ttype == 0 ? ReadPixel (Fg, uv1) : tex2D (Bg_H, uv3);
    float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? kTransparentBlack
-              : (uv3.y > split) ? tex2D (Super_VF, xy1) : tex2D (Super_VF, xy2);
+              : (uv3.y > split) ? tex2D (Super_V, xy1) : tex2D (Super_V, xy2);
 
-   if (CropEdges && IsOutOfBounds (uv1)) Fgd = kTransparentBlack;
+   if (CropEdges && IsOutOfBounds (xy3)) Fgd = kTransparentBlack;
 
-   return lerp (tex2D (Fg_VF, uv3), Fgd, Fgd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Barndoor horizontal split start
-
-DeclarePass (Fg_HI)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_HI)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_HI)
-{ return fn_keygen (Fg_HI, Bg_HI, uv3); }
-
-DeclareEntryPoint (Hsplit_I)
-{
-   float range = (1.0 - Amount) * max (Split, 1.0 - Split);
-
-   float2 xy2 = float2 (range, 0.0);
-   float2 xy1 = uv3 - xy2;
-
-   xy2 += uv3;
-
-   float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? kTransparentBlack
-              : (uv3.x > Split) ? tex2D (Super_HI, xy1) : tex2D (Super_HI, xy2);
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_HI, uv3), Fgd, Fgd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Barndoor horizontal split end
-
-DeclarePass (Fg_HO)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_HO)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_HO)
-{ return fn_keygen (Fg_HO, Bg_HO, uv3); }
-
-DeclareEntryPoint (Hsplit_O)
-{
-   float range = Amount * max (Split, 1.0 - Split);
-
-   float2 xy2 = float2 (range, 0.0);
-   float2 xy1 = uv3 - xy2;
-
-   xy2 += uv3;
-
-   float4 Fgd = ((xy1.x < Split) && (xy2.x > Split)) ? kTransparentBlack
-              : (uv3.x > Split) ? tex2D (Super_HO, xy1) : tex2D (Super_HO, xy2);
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_HO, uv3), Fgd, Fgd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Barndoor vertical split start
-
-DeclarePass (Fg_VI)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_VI)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_VI)
-{ return fn_keygen (Fg_VI, Bg_VI, uv3); }
-
-DeclareEntryPoint (Vsplit_I)
-{
-   float split = 1.0 - Split;
-   float range = (1.0 - Amount) * max (Split, split);
-
-   float2 xy2 = float2 (0.0, range);
-   float2 xy1 = uv3 - xy2;
-
-   xy2 += uv3;
-
-   float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? kTransparentBlack
-              : (uv3.y > split) ? tex2D (Super_VI, xy1) : tex2D (Super_VI, xy2);
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_VI, uv3), Fgd, Fgd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Barndoor vertical split end
-
-DeclarePass (Fg_VO)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_VO)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_VO)
-{ return fn_keygen (Fg_VO, Bg_VO, uv3); }
-
-DeclareEntryPoint (Vsplit_O)
-{
-   float split = 1.0 - Split;
-   float range = Amount * max (Split, split);
-
-   float2 xy2 = float2 (0.0, range);
-   float2 xy1 = uv3 - xy2;
-
-   xy2 += uv3;
-
-   float4 Fgd = ((xy1.y < split) && (xy2.y > split)) ? kTransparentBlack
-              : (uv3.y > split) ? tex2D (Super_VO, xy1) : tex2D (Super_VO, xy2);
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_VO, uv3), Fgd, Fgd.a);
+   return lerp (Bgd, Fgd, Fgd.a);
 }
 

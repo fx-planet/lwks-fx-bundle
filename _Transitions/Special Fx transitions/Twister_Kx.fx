@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This is a dissolve/wipe that uses sine & cosine distortions to perform a rippling twist to
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -141,7 +141,7 @@ DeclareEntryPoint (Twister_F)
 
    xy.y += offset * float (Mode * 2);
 
-   float4 Fgd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy);
+   float4 Fgd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy);
    float4 Bgd = lerp (tex2D (Bg_F, uv3), Fgd, Fgd.a * amount);
 
    if (Show_Axis) {
@@ -186,7 +186,7 @@ DeclareEntryPoint (Twister_I)
 
    xy.y += offset * float (Mode * 2);
 
-   float4 Fgd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy);
+   float4 Fgd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy);
    float4 Bgd = lerp (tex2D (Bg_I, uv3), Fgd, Fgd.a * amount);
 
    if (Show_Axis) {
@@ -231,7 +231,7 @@ DeclareEntryPoint (Twister_O)
 
    xy.y += offset * float (Mode * 2);
 
-   float4 Fgd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy);
+   float4 Fgd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy);
    float4 Bgd = lerp (tex2D (Bg_O, uv3), Fgd, Fgd.a * amount);
 
    if (Show_Axis) {

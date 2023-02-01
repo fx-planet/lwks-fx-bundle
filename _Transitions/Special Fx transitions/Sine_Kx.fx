@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This is a dissolve/wipe that uses sine distortion to perform a left-right or right-left
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -132,7 +132,7 @@ DeclareEntryPoint (Sine__Kx_F)
 
    float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : tex2D (Super_F, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy);
 
    return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * amount);
 }
@@ -164,7 +164,7 @@ DeclareEntryPoint (Sine__Kx_I)
 
    float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_I, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy);
 
    return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * amount);
 }
@@ -196,7 +196,7 @@ DeclareEntryPoint (Sine__Kx_O)
 
    float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : tex2D (Super_O, xy);
+   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy);
 
    return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * amount);
 }

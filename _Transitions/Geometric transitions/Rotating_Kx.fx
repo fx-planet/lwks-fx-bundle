@@ -36,7 +36,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
+DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -87,10 +87,10 @@ float4 fn_keygen (sampler F, sampler B, float2 xy)
 // technique Rotate_Right
 
 DeclarePass (Fg_R)
-{ return ReadPixel (Fg, uv1; }
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (Bg_R)
-{ return ReadPixel (Bg, uv2; }
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_R)
 { return fn_keygen (Fg_R, Bg_R, uv3); }
@@ -131,10 +131,10 @@ DeclareEntryPoint (Rotate_Right)
 // technique Rotate_Down
 
 DeclarePass (Fg_D)
-{ return ReadPixel (Fg, uv1; }
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (Bg_D)
-{ return ReadPixel (Bg, uv2; }
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_D)
 { return fn_keygen (Fg_D, Bg_D, uv3); }
@@ -175,10 +175,10 @@ DeclareEntryPoint (Rotate_Down)
 // technique Rotate_Left
 
 DeclarePass (Fg_L)
-{ return ReadPixel (Fg, uv1; }
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (Bg_L)
-{ return ReadPixel (Bg, uv2; }
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_L)
 { return fn_keygen (Fg_L, Bg_L, uv3); }
@@ -219,10 +219,10 @@ DeclareEntryPoint (Rotate_Left)
 // technique Rotate_Up
 
 DeclarePass (Fg_U)
-{ return ReadPixel (Fg, uv1; }
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (Bg_U)
-{ return ReadPixel (Bg, uv2; }
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_U)
 { return fn_keygen (Fg_U, Bg_U, uv3); }

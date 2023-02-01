@@ -37,7 +37,7 @@ DeclareInputs (Fg, Bg);
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta unfolded|Standard transitions");
 
 DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
@@ -101,7 +101,7 @@ float4 fn_horiz_split (sampler S, float2 uv)
 // technique TiledSplit_F
 
 DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1; }
+{ return ReadPixel (Fg, uv1); }
 
 DeclarePass (Super_F)
 {
@@ -146,7 +146,7 @@ DeclareEntryPoint (TiledSplit_F)
 // technique TiledSplit_I
 
 DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2; }
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_I)
 { return fn_keygen (Bg_I, uv1, uv3); }
@@ -176,7 +176,7 @@ DeclareEntryPoint (TiledSplit_I)
 // technique TiledSplit_O
 
 DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2; }
+{ return ReadPixel (Bg, uv2); }
 
 DeclarePass (Super_O)
 { return fn_keygen (Bg_O, uv1, uv3); }

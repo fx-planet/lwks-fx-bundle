@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-02_01
 // @Author jwrl
-// @Created 2023-01-29
+// @Created 2023-02_01
 
 /**
  This is a transition that splits the outgoing image into tiles then blows them apart or
@@ -17,7 +17,7 @@
 //
 // Version history:
 //
-// Built 2023-01-29 jwrl.
+// Built 2023-02_01 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -81,7 +81,7 @@ DeclarePass (Tiles_I)
    offset = (1.0 - offset) * (1.0 - Amount);
    uv.x += offset;
 
-   return tex2D (Overlay_I, uv);
+   return ReadPixel (Overlay_I, uv);
 }
 
 DeclareEntryPoint (TiledSplit_Dx_I)
@@ -94,7 +94,7 @@ DeclareEntryPoint (TiledSplit_Dx_I)
    offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
    uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = tex2D (Tiles_I, uv);
+   float4 ReadPixel = tex2D (Tiles_I, uv);
 
    return lerp (tex2D (Outgoing, uv3), Fgnd, Fgnd.a);
 }
@@ -133,7 +133,7 @@ DeclareEntryPoint (TiledSplit_Dx_O)
    offset  = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
    uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = tex2D (Tiles_O, uv);
+   float4 ReadPixel = tex2D (Tiles_O, uv);
 
    return lerp (tex2D (Incoming, uv3), Fgnd, Fgnd.a);
 }

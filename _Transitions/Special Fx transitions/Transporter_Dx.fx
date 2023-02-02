@@ -22,7 +22,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect TransporterDx.fx
+// Lightworks user effect Transporter_Dx.fx
 //
 // Version history:
 //

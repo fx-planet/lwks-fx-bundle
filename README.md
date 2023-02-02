@@ -1,4 +1,4 @@
-# Lightworks user Fx library, January 31, 2023.
+# Lightworks user Fx library, February 2, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -315,7 +315,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |DissolveX                 |DissolveX_Dx.fx         |DissolveX_Kx.fx         |Allows blend modes to be used in a dissolve          |
 |Non-linear dissolve       |Ndissolve_Dx.fx         |Ndissolve_Kx.fx         |A series of four non-linear dissolves                |
 |Optical dissolve          |Optical_Dx.fx           |Optical_Kx.fx           |Simulates the burn effect of a film optical dissolve |
-|S dissolve                |Sdissolve_Dx.fx         |Sdissolve_Kx.fx         |Dissolve using a trigonometric or a quadratic curve  |
 
 ## CATEGORY FOLDER: Blur transitions
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
@@ -341,12 +340,10 @@ If you need to use two effects that have the same name, simply open one of them 
 |Barn door squeeze         |BarndoorSqueeze_Dx.fx   |BarndoorSqueeze_Kx.fx   |A barn door squeeze to/from the edge of frame        |
 |Bounce transition         |Bounce_Dx.fx            |Bounce_Kx.fx            |Bounces the foreground up then falls back            |
 |Corner squeeze            |CornerSqueeze_Dx.fx     |CornerSqueeze_Kx.fx     |Corner wipe effect that squeezes or expands images   |
-|Pinch transition          |Pinch_Dx.fx             |Pinch_Kx.fx             |Pinches the outgoing video to a user-defined point   |
-|Radial pinch              |Rpinch_Dx.fx            |Rpinch_Kx.fx            |Radially pinches the outgoing video                  |
+|Pinch transitions         |Pinches_Dx.fx           |Pinches_Kx.fx           |Pinches the outgoing video to a user-defined point   |
 |Split and zoom            |SplitAndZoom_Dx.fx      |                        |Splits outgoing video to reveal incoming zoom shot   |
 |Squeeze transition        |                        |Squeeze_Kx.fx           |A squeeze effect for blended images                  |
 |Stretch transition        |Stretch_Dx.fx           |Stretch_Kx.fx           |Stretches the image horizontally through dissolve    |
-|X-pinch                   |Xpinch_Dx.fx            |Xpinch_Kx.fx            |Pinches outgoing video to an X-shape then a point    |
 
 ## CATEGORY FOLDER: Fades and non mixes
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
@@ -358,10 +355,9 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: Geometric transitions
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
 |:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Block dissolve            |Block_Dx.fx             |Block_Kx.fx             |Builds the outgoing image into growing blocks        |
 |Coloured tiles            |ColourTile_Dx.fx        |                        |Transition using a highly coloured mosaic pattern    |
 |Kaleido turbine mix       |KaleidoTurbine_Dx.fx    |KaleidoTurbine_Kx.fx    |A kaleidoscope transitions between two clips         |
-|Mosaic transfer           |Mosaic_Dx.fx            |                        |Obliterates the outgoing image into expanding blocks |
+|Mosaic blocks             |MosaicBlocks_Dx.fx      |MosaicBlocks_Kx.fx      |Obliterates the outgoing image into expanding blocks |
 |Rotating transition       |Rotating_Dx.fx          |Rotating_Kx.fx          |X or Y axis rotating transition                      |
 |Tiled split               |TiledSplit_Dx.fx        |TiledSplit_Kx.fx        |Splits the video into tiles and blows them apart     |
 
@@ -369,11 +365,11 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
 |:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
 |Dream sequence            |Dream_Dx.fx             |Dream_Kx.fx             |Ripples the images as it dissolves between them      |
-|Fireball transition       |Fireballs_Dx.fx         |                        |Uses a hot fireball to transition between sources    |
-|Fireball transition B     |Fireballs_B_Dx.fx       |                        |A varaiant of the previous fireball effect           |
+|Fireball transition       |Fireball_Dx.fx          |                        |Uses a hot fireball to transition between sources    |
 |Fly away                  |FlyAway_Dx.fx           |                        |Flies the outgoing image out to reveal the incoming  |
 |Page Roll                 |PageRoll_Dx.fx          |                        |The classic page turn transition                     |
 |Sinusoidal mix            |Sine_Dx.fx              |Sine_Kx.fx              |Uses a sine distortion to transition between inputs  |
+|Transporter mix           |Transporter_Dx.fx       |                        |A Star Trek-like transporter fade in or out          |
 |The twister               |Twister_Dx.fx           |Twister_Kx.fx           |Performs a rippling twist transition between images  |
 |Twist it                  |TwistIt_Dx.fx           |                        |Twists one image to another vertically/horizontally  |
 |Wave collapse             |                        |WaveCollapse_Kx.fx      |Compresses the foreground to sinue strips or waves   |

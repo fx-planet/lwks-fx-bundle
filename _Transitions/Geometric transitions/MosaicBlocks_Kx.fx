@@ -20,7 +20,7 @@
 // Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
-DeclareLightworksEffect ("Mosaics and blocks (keyed)", "Mix", "Geometric transitions", "Builds a blended foreground into larger and larger blocks as it fades in or out", CanSize);
+DeclareLightworksEffect ("Mosaic blocks (keyed)", "Mix", "Geometric transitions", "Builds a blended foreground into larger and larger blocks as it fades in or out", CanSize);
 
 DeclareInputs (Fg, Bg);
 

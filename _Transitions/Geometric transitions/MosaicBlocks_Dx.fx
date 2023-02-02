@@ -28,7 +28,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Mosaics and blocks", "Mix", "Geometric transitions", "Obliterates the outgoing image into expanding blocks as it fades to the incoming image", CanSize);
+DeclareLightworksEffect ("Mosaic blocks", "Mix", "Geometric transitions", "Obliterates the outgoing image into expanding blocks as it fades to the incoming image", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

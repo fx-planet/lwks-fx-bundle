@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-02
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-02
 
 /**
  This is similar to the split squeeze effect, customised to suit its use with blended
@@ -18,7 +18,7 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Built 2023-02-02 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -157,8 +157,8 @@ DeclareEntryPoint (BarndoorSqueeze_Sh)
 {
    float2 xy = Ttype == 0 ? uv1 : uv2;
 
-   float Amt = Ttype == 2 ? 1.0 - Amount : Amount;
-   float amount = 1.0 - Amount;
+   float Amt = Ttype == 2 ? Amount : 1.0 - Amount;
+   float amount = 1.0 - Amt;
    float negAmt = amount * Split;
    float posAmt = 1.0 - (amount * (1.0 - Split));
 
@@ -184,7 +184,7 @@ DeclareEntryPoint (BarndoorSqueeze_Sv)
 {
    float2 xy = Ttype == 0 ? uv1 : uv2;
 
-   float Amt = Ttype == 2 ? 1.0 - Amount : Amount;
+   float Amt = Ttype == 2 ? Amount : 1.0 - Amount;
    float amount = 1.0 - Amt;
    float negAmt = amount * (1.0 - Split);
    float posAmt = 1.0 - (amount * Split);

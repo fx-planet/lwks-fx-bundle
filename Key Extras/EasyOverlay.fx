@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-27
+// @Released 2023-02-03
 // @Author hugly
 // @Author schrauber
 // @Created 2019-08-09
@@ -19,11 +19,11 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect EasyOverlay_2022.fx
+// Lightworks user effect EasyOverlay.fx
 //
 // Version history:
 //
-// Updated 2023-01-27 jwrl
+// Updated 2023-02-03 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.
 //-----------------------------------------------------------------------------------------//
 

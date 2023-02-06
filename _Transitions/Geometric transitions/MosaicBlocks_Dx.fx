@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-02
+// @Released 2023-02-06
 // @Author jwrl
-// @Created 2023-02-02
+// @Created 2023-02-06
 
 /**
  This obliterates the outgoing image with a mosaic pattern that progressively fills the
@@ -23,7 +23,7 @@
 //
 // Version history:
 //
-// Built 2023-02-02 jwrl.
+// Built 2023-02-06 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -111,7 +111,12 @@ DeclareEntryPoint (Mosaics)
    float4 m_1 = ReadPixel (Mix_M, xy);
    float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= range_1 ? tex2D (Outgoing, uv3) : m_1;
 
-   return max (m_2.r, max (m_2.g, m_2.b)) >= range_2 ? m_2 : tex2D (Incoming, uv3);
+   m_1 = max (m_2.r, max (m_2.g, m_2.b)) >= range_2 ? m_2 : tex2D (Incoming, uv3);
+   m_2 = IsOutOfBounds (uv2) ? kTransparentBlack : m_1;
+
+   if (IsOutOfBounds (uv1)) m_1 = kTransparentBlack;
+
+   return lerp (m_1, m_2, Amount);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -141,6 +146,6 @@ DeclareEntryPoint (Blocks)
       xy.y = (floor ((xy.y - 0.5) / Ysize) * Ysize) + 0.5;
    }
 
-   return ReadPixel (Mix_B, xy);
+   return tex2D (Mix_B, xy);
 }
 

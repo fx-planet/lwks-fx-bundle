@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-02-14
 // @Author jwrl
-// @Released 2023-01-23
+// @Released 2023-02-14
 
 /**
  This effect is a flexible vignette with the ability to apply a range of masks using
@@ -27,7 +27,8 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-02-14 jwrl.
+// Corrected bug that caused a potential edge of frame repeat when the mask was inverted.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -186,7 +187,7 @@ DeclareEntryPoint (Flexicrop)
 
    // Recover the scaled and repositioned masked foreground and the background video
 
-   float4 Fgnd = tex2D (Msk, xy1);
+   float4 Fgnd = ReadPixel (Msk, xy1);
    float4 Bgnd = tex2D (Bgd, uv3);
 
    // Mix everything and get out.

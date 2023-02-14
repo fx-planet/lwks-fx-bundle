@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-22
+// @Released 2023-02-14
 // @Author jwrl
-// @Released 2023-01-22
+// @Released 2023-02-14
 
 /**
  This is a Lightworks 2023 replacement for all of khaver's original Polymask effects,
@@ -17,7 +17,8 @@
 //
 // Version history:
 //
-// Built 2023-01-22 jwrl.
+// Updated 2023-02-14 jwrl.
+// Corrected descriptive comment at head of code.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -44,8 +45,8 @@ DeclareColourParam (BgColour, "Bg colour", kNoGroup, kNoFlags, 0.0, 0.5, 0.0, 1.
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// These first 2 passes are done to optionally invert the inputs to the effect and map
-// their coordinates to the master sequence coordinates.
+// These first 2 passes map the input video addresses to the sequence coordinates.  This
+// way the foreground, background and mask coordinates can all be the in the same space.
 
 DeclarePass (Fgd)
 { return ReadPixel (Fg, uv1); }

@@ -1,4 +1,4 @@
-# Lightworks user Fx library, February 2, 2023.
+# Lightworks user Fx library, February 15, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -52,9 +52,7 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: Backgrounds
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
-|Fractal matte 1               |FractalMatte1.fx        |Produces fractal patterns for background generation                           |
-|Fractal matte 2               |FractalMatte2.fx        |Produces more fractal patterns for background generation                      |
-|Fractal matte 3               |FractalMatte3.fx        |Produces still more fractal patterns for background generation                |
+|Fractal mattes                |FractalMattes.fx        |Produces fractal patterns for background generation                           |
 |Multicolour gradient          |MultiGradient.fx        |Creates a colour field with a wide range of possible gradients                |
 |Plasma matte                  |PlasmaMatte.fx          |Generates moving soft plasma-like cloud patterns                              |
 |Sinusoidal lights             |SinusoidalLights.fx     |A pattern generator that creates stars in Lissajou curves over a flat colour  |

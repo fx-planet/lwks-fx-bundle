@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-02-17
 // @Author khaver
 // @Created 2012-01-19
-// @see https://www.lwks.com/media/kunena/attachments/6375/Rays_640.png
 
 /**
  This effect radiates rays away from the highlights in the image.
@@ -14,6 +13,9 @@
 // Lightworks user effect Rays.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-10 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

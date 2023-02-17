@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-02-17
 // @Author schrauber
 // @Created 2016-03-25
-// @see https://www.lwks.com/media/kunena/attachments/6375/Ripples_automatic_expansion_640.png
+
 
 /**
  This is one of two related effects, "Ripples (manual expansion)" and this version "Ripples
@@ -15,6 +15,9 @@
 // Lightworks user effect RipplesAuto.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-08 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-22
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-01-22
+// @Created 2023-01-22
 
 /**
  This is a crop tool that provides a 3D bevelled border.  As the bevel width is adjusted
@@ -28,12 +28,13 @@
 //
 // Version history:
 //
-// Built 2023-01-22 jwrl.
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("3D bevelled crop", "DVE", "Border and crop", "This provides a simple crop with an inner 3D bevelled edge and a flat coloured outer border", CanSize);
+DeclareLightworksEffect ("3D bevelled crop", "DVE", "Border and Crop", "This provides a simple crop with an inner 3D bevelled edge and a flat coloured outer border", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

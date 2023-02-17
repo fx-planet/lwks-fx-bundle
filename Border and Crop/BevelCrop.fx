@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-01-23
+// @Created 2023-01-23
 
 /**
  This is a crop tool that provides a bevelled border.  The lighting of the bevel can be
@@ -26,12 +26,13 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Bevel edged crop", "DVE", "Border and crop", "This provides a simple crop with a bevelled border and a hard-edged drop shadow", CanSize);
+DeclareLightworksEffect ("Bevel edged crop", "DVE", "Border and Crop", "This provides a simple crop with a bevelled border and a hard-edged drop shadow", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

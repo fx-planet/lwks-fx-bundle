@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-06
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-01-06
+// @Created 2023-01-06
 
 /**
  This is a bordered crop that produces rounding at the corners of the crop shape.  The
@@ -15,12 +15,13 @@
 //
 // Version history:
 //
-// Built 2023-01-06 jwrl.
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Rounded crop", "DVE", "Border and crop", "A bordered, drop shadowed crop with rounded corners", kNoFlags);
+DeclareLightworksEffect ("Rounded crop", "DVE", "Border and Crop", "A bordered, drop shadowed crop with rounded corners", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

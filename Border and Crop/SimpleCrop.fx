@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-01-23
+// @Created 2023-01-23
 
 /**
  This is a quick simple cropping tool.  You can also use it to blend images without
@@ -23,12 +23,13 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Simple crop", "DVE", "Border and crop", "A simple crop tool with blend", CanSize);
+DeclareLightworksEffect ("Simple crop", "DVE", "Border and Crop", "A simple crop tool with blend", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

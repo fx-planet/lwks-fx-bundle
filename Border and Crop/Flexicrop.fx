@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-14
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-02-14
+// @Created 2023-02-14
 
 /**
  This effect is a flexible vignette with the ability to apply a range of masks using
@@ -26,6 +26,9 @@
 // Lightworks user effect Flexicrop.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-02-14 jwrl.
 // Corrected bug that caused a potential edge of frame repeat when the mask was inverted.

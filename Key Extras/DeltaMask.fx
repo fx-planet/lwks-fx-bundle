@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-02-17
 // @Author khaver
-// @Released 2016-10-19
+// @Created 2016-10-19
 
 /**
  This is a delta mask or difference matte effect which  subtracts the background from the
@@ -15,6 +15,9 @@
 // Lightworks user effect DeltaMask.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-10 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-02-17
 // @Author baopao
-// @Released 2014-02-01
+// @Created 2014-02-01
 
 /**
  Key despill is a background-based effect for removing the key colour spill in a chromakey
@@ -17,6 +17,9 @@
 // Despill Background Based http://www.alessandrodallafontana.com/ (baopao)
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-10 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

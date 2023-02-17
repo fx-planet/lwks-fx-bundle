@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-02-17
 // @Author windsturm
 // @Created 2012-08-02
-// @see https://www.lwks.com/media/kunena/attachments/6375/FxNoise_640.png
 
 /**
  This does exactly what it says - generates both monochrome and colour video noise.
@@ -18,6 +17,9 @@
 // Lightworks user effect VideoNoise.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-12 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

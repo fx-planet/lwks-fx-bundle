@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-01-24
+// @Created 2023-01-24
 
 /**
  This is an Art Deco take on the classic DVE effect.  It produces two independently
@@ -28,7 +28,8 @@
 //
 // Version history:
 //
-// Built 2023-01-24 jwrl
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

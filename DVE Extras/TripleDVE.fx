@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-01-09
+// @Created 2023-01-09
 
 /**
  This is a a combination of three DVEs.  The foreground DVE and bacground DVE 2 operate
@@ -29,7 +29,8 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

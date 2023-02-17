@@ -1,4 +1,4 @@
-# Lightworks user Fx library, February 15, 2023.
+# Lightworks user Fx library, February 17, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -129,7 +129,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
 |2D DVE with repeats           |2dDVErepeats.fx         |A 2D DVE that can duplicate the foreground image as you zoom out              |
 |Art Deco DVE                  |ArtDecoDVE.fx           |Art Deco flash lines are included in the 2D DVE borders                       |
-|2D DVE (enhanced)             |DVEenhanced.fx          |An enhanced 2D DVE for the 21st century with Z-axis rotation                  |
+|Flexible 2D DVE               |FlexiDVE.fx             |A flexible masked 2D DVE with Z-axis rotation                                 |
 |DVE with vignette             |DVEvignette.fx          |A simple DVE with circular, diamond or square shaped masking                  |
 |Framed DVE                    |FramedDVE.fx            |Creates a textured frame around the foreground and resizes and positions it   |
 |Rosehaven                     |Rosehaven.fx            |Creates mirrored top/bottom or left/right images                              |

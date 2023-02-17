@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-02-17
 // @Author jMovie
 // @Created 2011-05-27
-// @see https://www.lwks.com/media/kunena/attachments/6375/SCurve_640.png
 
 /**
  The effect adjusts RGB or HSV levels to give a smooth S-curve by means of fader controls.
@@ -16,6 +15,9 @@
 // Lightworks user effect Scurve.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.

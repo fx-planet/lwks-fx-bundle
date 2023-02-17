@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-17
+// @Released 2023-02-17
 // @Author baopao
 // @Created 2013-06-03
-// @see https://www.lwks.com/media/kunena/attachments/6375/ALE_SmoothChroma_640.png
 
 /**
  This smooths the colour component of video media.  Its most appropriate use is probably
@@ -18,6 +17,9 @@
 // Lightworks user effect ALEsmoothChroma.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Update 2023-01-17 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.

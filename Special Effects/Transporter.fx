@@ -3,7 +3,6 @@
 // @Author jwrl
 // @Author LWKS Software Ltd
 // @Created 2023-01-11
-// @Licence LWKS Software Ltd.  All Rights Reserved
 
 /**
  This is a customised version of the Lightworks Chromakey effect with a transitional
@@ -30,9 +29,12 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect Transporter.fx
 //
+// Licenced LWKS Software Ltd.  All Rights Reserved
+//
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

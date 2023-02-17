@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-02-17
 // @Author khaver
 // @Created 2012-04-12
-// @see https://www.lwks.com/media/kunena/attachments/6375/IrisBokeh_640.png
 
 /**
  Iris Bokeh is the well-known bokeh effect, and provides control of the iris (5 to 8
@@ -29,6 +28,9 @@
 //-----------------------------------------------------------------------------------------//
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-14
+// @Released 2023-02_17
 // @Author jwrl
-// @Released 2023-02-14
+// @Created 2023-02-14
 
 /**
  This is a Lightworks 2023 replacement for all of khaver's original Polymask effects,
@@ -16,6 +16,9 @@
 // Lightworks user effect Polymask.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Added the ability to fade the background.
 //
 // Updated 2023-02-14 jwrl.
 // Corrected descriptive comment at head of code.
@@ -41,23 +44,21 @@ DeclareIntParam (Mode, "Mask background", kNoGroup, 1, "Bg input|Colour");
 
 DeclareColourParam (BgColour, "Bg colour", kNoGroup, kNoFlags, 0.0, 0.5, 0.0, 1.0);
 
+DeclareFloatParam (FadeBg, "Fade background", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// These first 2 passes map the input video addresses to the sequence coordinates.  This
-// way the foreground, background and mask coordinates can all be the in the same space.
-
-DeclarePass (Fgd)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bgd)
-{ return ReadPixel (Bg, uv2); }
-
-DeclareEntryPoint ()
+DeclareEntryPoint (PolyMask)
 {
-   float4 Bgnd = Mode == 0 ? tex2D (Bgd, uv3) : BgColour;
+   float4 Fgnd = ReadPixel (Fg, uv1);
+   float4 Bgnd = Mode == 0 ? ReadPixel (Bg, uv2) : BgColour;
 
-   return lerp (Bgnd, tex2D (Fgd, uv3), tex2D (Mask, uv3).x);
+   Bgnd = lerp (Fgnd, Bgnd, FadeBg);
+
+   // We derive the mask from sequence coordinates, not from foreground nor background.
+
+   return lerp (Bgnd, Fgnd, tex2D (Mask, uv3).x);
 }
 

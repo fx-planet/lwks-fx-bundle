@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-02_17
 // @Author baopao
 // @Created 2015-11-30
-// @see https://www.lwks.com/media/kunena/attachments/6375/Unpremultiply_640.png
 
 /**
  Unpremultiply does just that.  It removes the hard outline you can get with premultiplied
@@ -15,6 +14,9 @@
 // Lightworks user effect Unpremultiply.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Update 2023-01-23 jwrl.
 // Updated to meet the needs of the revised Lightworks effects library code.

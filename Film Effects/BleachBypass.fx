@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-02-17
 // @Author msi
 // @Created 2011-05-27
-// @License "CC BY-NC-SA"
 
 /**
  This effect emulates the altered contrast and saturation obtained by skipping the bleach
@@ -14,9 +13,12 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BleachBypass.fx
 //
-// [CC BY-NC-SA]
+// Licensed Creative Commons [BY-NC-SA]
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

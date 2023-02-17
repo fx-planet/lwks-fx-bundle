@@ -1,8 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-02-17
 // @Author khaver
 // @Created 2011-04-20
-// @see https://www.lwks.com/media/kunena/attachments/6375/Technicolor_640.png
 
 /**
  Simulates the look of the classic 2-strip and 3-strip Technicolor film processes.
@@ -12,6 +11,9 @@
 // Lightworks user effect Technicolor.fx
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

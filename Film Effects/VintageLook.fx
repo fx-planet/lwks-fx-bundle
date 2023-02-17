@@ -1,9 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-02_17
 // @Author msi
 // @OriginalAuthor "Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)"
 // @Created 2011-05-27
-// @License "CC BY-NC-SA"
 
 /**
  Vintage look simulates what happens when the dye layers of old colour film stock start
@@ -15,10 +14,13 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect VintageLook.fx
 //
-// 2011 msi [CC BY-NC-SA] - Uses Vintage Look routine by Wojciech
-// Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)
+// 2011 msi, licensed Creative Commons [BY-NC-SA] - Uses Vintage Look routine by
+// Wojciech Toman (http://wtomandev.blogspot.com/2011/04/vintage-look.html)
 //
 // Version history:
+//
+// Updated 2023-02-17 jwrl
+// Corrected header.
 //
 // Updated 2023-01-24 jwrl
 // Updated to meet the needs of the revised Lightworks effects library code.

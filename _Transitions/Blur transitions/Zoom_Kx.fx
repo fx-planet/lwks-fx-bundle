@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-02-20
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2023-02-20
 
 /**
  This effect is a user-selectable zoom in or zoom out that transitions into or out of
@@ -16,7 +16,8 @@
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Updated 2023-02-20 jwrl.
+// Corrected a zoom direction bug.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -216,11 +217,11 @@ DeclarePass (Title_I)
 { return fn_keygen (Fg_I, Bg_I, uv3, false); }
 
 DeclarePass (Super_I)
-{ return Direction ? fn_zoom_A (Title_I, uv3) : fn_zoom_B (Title_I, uv3); }
+{ return Direction ? fn_zoom_A (Title_I, uv3) : fn_zoom_C (Title_I, uv3); }
 
 DeclareEntryPoint (Zoom_Kx_I)
 {
-   float4 Title = Direction ? fn_zoom_A (Super_I, uv3) : fn_zoom_B (Super_I, uv3);
+   float4 Title = Direction ? fn_zoom_A (Super_I, uv3) : fn_zoom_C (Super_I, uv3);
 
    return fn_main (Bg_I, uv3, Title, Amount);
 }
@@ -239,11 +240,11 @@ DeclarePass (Title_O)
 { return fn_keygen (Fg_O, Bg_O, uv3, false); }
 
 DeclarePass (Super_O)
-{ return Direction ? fn_zoom_C (Title_O, uv3) : fn_zoom_D (Title_O, uv3); }
+{ return Direction ? fn_zoom_B (Title_O, uv3) : fn_zoom_D (Title_O, uv3); }
 
 DeclareEntryPoint (Zoom_Kx_O)
 {
-   float4 Title = Direction ? fn_zoom_C (Super_O, uv3) : fn_zoom_D (Super_O, uv3);
+   float4 Title = Direction ? fn_zoom_B (Super_O, uv3) : fn_zoom_D (Super_O, uv3);
 
    return fn_main (Bg_O, uv3, Title, 1.0 - Amount);
 }

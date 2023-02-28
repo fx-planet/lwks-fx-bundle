@@ -1,4 +1,4 @@
-# Lightworks user Fx library, February 17, 2023.
+# Lightworks user Fx library, February 28, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -173,6 +173,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Analogue lumakey              |AnalogLumakey.fx        |A digital keyer which behaves in a very similar way to a vision mixer keyer   |
 |Chromakey and background      |ChromakeyAndBg.fx       |A chromakey effect with a simple DVE and cyclorama background generation      |
 |Chromakey with DVE            |ChromakeyWithDVE.fx     |A version of the Lightworks Chromakey effect with cropping and a simple DVE   |
+|Delta blend                   |DeltaBlend.fx           |Masks the foreground into the background using a video reference input        |
 |Delta mask                    |DeltaMask.fx            |This delta mask effect removes the background from the foreground             |
 |Easy overlay                  |EasyOverlay.fx          |Used with overlays where luminance represents transparency                    |
 |INK                           |Ink.fx                  |INK is a quick, simple and effective proportionate colour difference keyer    |

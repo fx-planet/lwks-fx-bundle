@@ -1,4 +1,4 @@
-# Lightworks user Fx library, February 28, 2023.
+# Lightworks user Fx library, March 11, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -212,6 +212,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Auto fill                     |Autofill.fx             |Fills the blank edges of clips which differ in aspect ratio from the sequence |
 |Flip flop                     |FlipFlop.fx             |Rotates video by 180 degrees, similar to a combination of LW flip and flop    |
 |Highlight widgets             |HighlightWidgets.fx     |Used to highlight sections of video that you want to emphasize                |
+|Progress bar                  |ProgressBar.fx          |A simple progress bar generator with border                                   |
 |RGB registration              |RGBregistration.fx      |Adjusts the X-Y registration of the RGB channels of a video stream            |
 |Simple S curve                |SimpleS.fx              |This applies an S curve to the video levels to give an image that extra zing  |
 |Simple star                   |SimpleStar.fx           |Creates a single rotatable star glint, with 4, 5, 6, 7 or 8 arms              |

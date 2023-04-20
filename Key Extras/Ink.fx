@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-04-18
+// @Released 2023-04-20
 // @Author Nicholas Carroll
 // @Created 2016-21-02
 
@@ -30,8 +30,9 @@
 // Updated to meet the needs of the revised Lightworks effects library code.
 //
 // Updated 2023-04-18 jwrl
-// Added alpha detection to foreground to bypass the effect if the image is already
-// transparent.
+// Added alpha detection to fg to bypass the effect if the image is already transparent.
+//
+// Updated 2023-04-20 jwrl:  Cleaned up code after above update.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -63,100 +64,106 @@ DeclarePass (FG)
 { return ReadPixel (fg, uv1); }           // Color FG
 
 DeclarePass (BG)
-{ return ReadPixel (bg, uv2); }           // Color BG
+// Color BG - opaque
+{
+   float4 Input = ReadPixel (bg, uv2);
+
+   return float4 (lerp (0.0.xxx, Input.rgb, Input.a), 1.0);
+}
 
 DeclareEntryPoint (Ink)
 {
    float4 foreground = tex2D (FG, uv3);
    float4 background = tex2D (BG, uv3);
+   float4 Ckey;
 
-   if (IsOutOfBounds (uv1) || (foreground.a == 0.0)) return background;
+   if (IsOutOfBounds (uv1) || (foreground.a == 0.0)) { Ckey = background; }
+   else {
+      float3 chan, P = foreground.rgb;
+      float3 K = keyColor.rgb;
 
-   float3 chan, P = foreground.rgb;
-   float3 K = keyColor.rgb;
+      float nbal = 1 - bal;
 
-   float nbal = 1 - bal;
+      int minKey = 0;
+      int midKey = 1;
+      int maxKey = 2;
 
-   int minKey = 0;
-   int midKey = 1;
-   int maxKey = 2;
+      if (keyColor.b <= keyColor.r && keyColor.r <= keyColor.g) {
+         minKey = 2;
+         midKey = 0;
+         maxKey = 1;
+         P = foreground.brg;
+         K = keyColor.brg;
+      }
+      else if (keyColor.r <= keyColor.b && keyColor.b <= keyColor.g) {
+         minKey = 0;
+         midKey = 2;
+         maxKey = 1;
+         P = foreground.rbg;
+         K = keyColor.rbg;
+      }
+      else if (keyColor.g <= keyColor.b && keyColor.b <= keyColor.r) {
+         minKey = 1;
+         midKey = 2;
+         maxKey = 0;
+         P = foreground.gbr;
+         K = keyColor.gbr;
+      }
+      else if (keyColor.g <= keyColor.r && keyColor.r <= keyColor.b) {
+         minKey = 1;
+         midKey = 0;
+         maxKey = 2;
+         P = foreground.grb;
+         K = keyColor.grb;
+      }
+      else if (keyColor.b <= keyColor.g && keyColor.g <= keyColor.r) {
+         minKey = 2;
+         midKey = 1;
+         maxKey = 0;
+         P = foreground.bgr;
+         K = keyColor.bgr;
+      }
 
-   if (keyColor.b <= keyColor.r && keyColor.r <= keyColor.g) {
-      minKey = 2;
-      midKey = 0;
-      maxKey = 1;
-      P = foreground.brg;
-      K = keyColor.brg;
+      // solve minKey
+
+      float min1 = (P.x / (P.z - bal * P.y) - K.x / (K.z - bal * K.y))
+                 / (1 + P.x / (P.z - bal * P.y) - (2 - bal) * K.x / (K.z - bal * K.y));
+      float min2 = min (P.x, (P.z - bal * P.y) * min1 / (1 - min1));
+
+      if (minKey == 0) chan.r = saturate (min2);
+      else if (minKey == 1) chan.g = saturate (min2);
+      else chan.b = saturate (min2);
+
+      // solve midKey
+
+      float mid1 = (P.y / (P.z - nbal * P.x) - K.y / (K.z - nbal * K.x)) 
+                 / (1 + P.y / (P.z - nbal * P.x) - (1 + bal) * K.y / (K.z - nbal * K.x));
+      float mid2 = min (P.y, (P.z - nbal * P.x) * mid1 / (1 - mid1));
+
+      if (midKey == 0) chan.r = saturate (mid2);
+      else if (midKey == 1) chan.g = saturate (mid2);
+      else chan.b = saturate (mid2);
+
+      // solve chan.z (chan [maxKey])
+
+      float max1 = min (P.z, (bal * min (P.y, (P.z - nbal * P.x) * mid1 / (1 - mid1))
+                 + nbal * min (P.x, (P.z - bal * P.y) * min1 / (1 - min1))));
+
+      if (maxKey == 0) chan.r = saturate (max1);
+      else if (maxKey == 1) chan.g = saturate (max1);
+      else chan.b = saturate (max1);
+
+      // solve alpha
+
+      float a1 = (1.0 - K.z) + (bal * K.y + (1.0 - bal) * K.x);
+      float a2 = 1.0 + a1 / abs (1.0 - a1);
+      float a3 = (1.0 - P.z) - P.z * (a2 - (1.0 + (bal * P.y + (1.0 - bal) * P.x) / P.z * a2));
+      float a4 = max (chan.g, max (a3, chan.b));
+
+      float matte = saturate (((a4 - 0.5) * KeyGain) + 0.5);    // alpha
+
+      Ckey = float4 (lerp (background.rgb, chan, matte), max (background.a, matte));
    }
-   else if (keyColor.r <= keyColor.b && keyColor.b <= keyColor.g) {
-      minKey = 0;
-      midKey = 2;
-      maxKey = 1;
-      P = foreground.rbg;
-      K = keyColor.rbg;
-   }
-   else if (keyColor.g <= keyColor.b && keyColor.b <= keyColor.r) {
-      minKey = 1;
-      midKey = 2;
-      maxKey = 0;
-      P = foreground.gbr;
-      K = keyColor.gbr;
-   }
-   else if (keyColor.g <= keyColor.r && keyColor.r <= keyColor.b) {
-      minKey = 1;
-      midKey = 0;
-      maxKey = 2;
-      P = foreground.grb;
-      K = keyColor.grb;
-   }
-   else if (keyColor.b <= keyColor.g && keyColor.g <= keyColor.r) {
-      minKey = 2;
-      midKey = 1;
-      maxKey = 0;
-      P = foreground.bgr;
-      K = keyColor.bgr;
-   }
-
-   // solve minKey
-
-   float min1 = (P.x / (P.z - bal * P.y) - K.x / (K.z - bal * K.y))
-              / (1 + P.x / (P.z - bal * P.y) - (2 - bal) * K.x / (K.z - bal * K.y));
-   float min2 = min (P.x, (P.z - bal * P.y) * min1 / (1 - min1));
-
-   if (minKey == 0) chan.r = saturate (min2);
-   else if (minKey == 1) chan.g = saturate (min2);
-   else chan.b = saturate (min2);
-
-   // solve midKey
-
-   float mid1 = (P.y / (P.z - nbal * P.x) - K.y / (K.z - nbal * K.x)) 
-              / (1 + P.y / (P.z - nbal * P.x) - (1 + bal) * K.y / (K.z - nbal * K.x));
-   float mid2 = min (P.y, (P.z - nbal * P.x) * mid1 / (1 - mid1));
-
-   if (midKey == 0) chan.r = saturate (mid2);
-   else if (midKey == 1) chan.g = saturate (mid2);
-   else chan.b = saturate (mid2);
-
-   // solve chan.z (chan [maxKey])
-
-   float max1 = min (P.z, (bal * min (P.y, (P.z - nbal * P.x) * mid1 / (1 - mid1))
-              + nbal * min (P.x, (P.z - bal * P.y) * min1 / (1 - min1))));
-
-   if (maxKey == 0) chan.r = saturate (max1);
-   else if (maxKey == 1) chan.g = saturate (max1);
-   else chan.b = saturate (max1);
-
-   // solve alpha
-
-   float a1 = (1.0 - K.z) + (bal * K.y + (1.0 - bal) * K.x);
-   float a2 = 1.0 + a1 / abs (1.0 - a1);
-   float a3 = (1.0 - P.z) - P.z * (a2 - (1.0 + (bal * P.y + (1.0 - bal) * P.x) / P.z * a2));
-   float a4 = max (chan.g, max (a3, chan.b));
-
-   float matte = saturate (((a4 - 0.5) * KeyGain) + 0.5);    // alpha
-
-   float4 Ckey = float4 (lerp (background.rgb, chan, matte), max (background.a, matte));
 
    return lerp (background, Ckey, tex2D (Mask, uv3).x);
 }
-

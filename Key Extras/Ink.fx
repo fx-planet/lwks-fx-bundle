@@ -64,12 +64,7 @@ DeclarePass (FG)
 { return ReadPixel (fg, uv1); }           // Color FG
 
 DeclarePass (BG)
-// Color BG - opaque
-{
-   float4 Input = ReadPixel (bg, uv2);
-
-   return float4 (lerp (0.0.xxx, Input.rgb, Input.a), 1.0);
-}
+{ return ReadPixel (bg, uv2); }           // Color BG
 
 DeclareEntryPoint (Ink)
 {

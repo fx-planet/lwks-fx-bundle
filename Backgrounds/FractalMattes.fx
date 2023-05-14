@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-02-15
+// @Released 2023-05-14
 // @Author jwrl
 // @Author trirop
-// @Created 2023-02-15
+// @Created 2016-05-08
 
 /**
  Fractal mattes produce backgrounds generated from fractal patterns.  The rate of
@@ -15,13 +15,16 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect FractalMattes.fx
 //
-// The fractal generation components were posted by Robert Schütze (trirop) in GLSL
+// The fractal generation components were posted by Robert Schï¿½tze (trirop) in GLSL
 // sandbox (http://glslsandbox.com/e#29611.0).  They have been somewhat modified to
 // better suit their use in this effect.
 //
 // Version history:
 //
-// Built 2023-02-15 jwrl.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-02-15 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -295,4 +298,3 @@ DeclareEntryPoint (Pattern_3)
 
    return lerp (Fgd, retval, tex2D (Mask, uv2).x);
 }
-

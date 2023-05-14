@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2018-09-01
 
 /**
  This effect generates soft plasma-like cloud patterns.  Hue, level, saturation, and rate
@@ -15,7 +15,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -126,4 +129,3 @@ DeclareEntryPoint (PlasmaMatte)
 
    return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
-

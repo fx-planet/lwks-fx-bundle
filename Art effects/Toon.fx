@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author khaver
 // @Created 2011-04-18
 
@@ -16,8 +16,10 @@
 //
 // Version history:
 //
-// Update 2023-01-23 jwrl.
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -96,4 +98,3 @@ DeclareEntryPoint (Toon)
 
    return lerp (src1, color, tex2D (Mask, uv1).x);
 }
-

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2016-06-30
 
 /**
  Edge glow (EdgeGlowFx.fx) is an effect that can use image levels or the edges of the
@@ -19,7 +19,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2022-12-28 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -350,4 +353,3 @@ DeclareEntryPoint (EdgeGlowVividLight)
 
    return lerp (Fgnd, Glow, tex2D (Mask, uv2).x);
 }
-

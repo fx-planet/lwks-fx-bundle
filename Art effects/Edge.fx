@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author khaver
 // @Created 2011-07-08
 
@@ -21,8 +21,10 @@
 //
 // Version history:
 //
-// Update 2023-01-23 jwrl.
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2022-12-28 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -108,4 +110,3 @@ DeclareEntryPoint (Edge)
 
    return lerp (org, edge, tex2D (Mask, uv1).x);
 }
-

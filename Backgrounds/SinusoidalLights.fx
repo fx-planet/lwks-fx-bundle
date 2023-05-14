@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author baopao
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2016-05-12
 
 /**
  This is an enhanced version of Sinusoidal lights, a semi-abstract pattern generator
@@ -22,7 +22,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -121,4 +124,3 @@ DeclareEntryPoint (SinusoidalLights)
 
    return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
-

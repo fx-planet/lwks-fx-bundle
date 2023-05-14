@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2016-05-11
 
 /**
  70s Psychedelia (70sPsychedelia.fx) creates a wide range of contouring effects from your
@@ -19,7 +19,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2022-12-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -181,4 +184,3 @@ DeclareEntryPoint (SeventiesPsychedelia)
 
    return lerp (source, retval, tex2D (Mask, uv2).x);
 }
-

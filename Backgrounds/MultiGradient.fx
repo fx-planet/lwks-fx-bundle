@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2016-07-31
 
 /**
  This effect creates a colour field which can be set up to be just a flat colour or a wide
@@ -19,7 +19,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -320,4 +323,3 @@ DeclareEntryPoint (MultiGradientRadial)
 
    return lerp (Fgd, retval, tex2D (Mask, uv1).x);
 }
-

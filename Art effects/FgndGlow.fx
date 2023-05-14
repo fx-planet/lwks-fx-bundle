@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2020-10-16
 
 /**
  This effect uses a glow based on the Lightworks Glow effect, with the blur section
@@ -27,7 +27,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2022-12-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -295,4 +298,3 @@ DeclareEntryPoint (FgndGlowKeySetup)
 
    return lerp (kTransparentBlack, retval, tex2D (Mask, uv1).x);
 }
-

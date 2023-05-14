@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-14
 // @Author idealsceneprod (Val Gameiro)
 // @Created 2014-12-24
 
@@ -16,8 +16,10 @@
 //
 // Version history:
 //
-// Update 2023-01-23 jwrl.
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-14 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -125,4 +127,3 @@ DeclareEntryPoint (FourTone)
 
    return lerp (source, result, tex2D (Mask, uv1).x);
 }
-

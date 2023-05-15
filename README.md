@@ -1,4 +1,4 @@
-# Lightworks user Fx library, March 11, 2023.
+# Lightworks user Fx library, May 15, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -41,7 +41,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Edge                          |Edge.fx                 |Detects edges to give a similar result to the well known art program effect   |
 |Edge glow                     |EdgeGlow.fx             |Adds a level-based or edge-based glow to an image                             |
 |Five tone                     |FiveTone.fx             |Extends the existing Two Tone and Tri-Tone effects to five tonal values       |
-|Foreground glow               |FgndGlow.fx             |Applies a Lightworks-style glow to the foreground of a keyed or blended image |
+|Foreground glow               |FgndGlow.fx             |Applies a glow to the foreground of a keyed or blended image                  |
 |Four tone                     |FourTone.fx             |Extends the existing Two Tone and Tri-Tone effects to four tonal values       |
 |Pencil Sketch                 |PencilSketch.fx         |Pencil sketch effect with sat/gamma/cont/bright/gain/overlay/alpha controls   |
 |Poster paint                  |PosterPaint.fx          |A fully adjustable posterize effect                                           |
@@ -71,7 +71,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Glittery edges                |GlitteryEdges.fx        |Sparkly edges, best over darker backgrounds                                   |
 |Light ray blend               |LightRayBlend.fx        |Adds directional blurs to a key or any image with an alpha channel            |
 |Magical edges                 |MagicalEdges.fx         |Fractal edges with star-shaped radiating blurs                                |
-|Unpremultiply                 |UnpremultiplyFx.fx      |Removes the hard outline you can get with some blend effects                  |
+|Unpremultiply                 |Unpremultiply.fx        |Removes the hard outline you can get with some blend effects                  |
 
 ## CATEGORY FOLDER: Blurs and Sharpens
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
@@ -81,10 +81,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Focal blur                    |FocalBlur.fx            |Uses a depth map to create a faux depth of field                              |
 |Ghostly blur                  |GhostlyBlur.fx          |The sort of effect that you get when looking through a fogged window          |
 |Iris bokeh                    |IrisBokeh.fx            |Similar to Bokeh.fx, provides control of the iris (5 to 8 segments or round)  |
-|Soft foggy blur               |SoftFoggyBlur.fx        |This blur effect mimics the classic 'petroleum jelly on the lens' look        |
-|Soft motion blur              |SoftMotionBlur.fx       |This effect gives a very smooth, soft directional blur                        |
-|Soft spin blur                |SoftSpinBlur.fx         |This effect uses a bidirectional blur to give an extremely smooth spin blur   |
-|Soft zoom blur                |SoftZoomBlur.fx         |Similar to the Lightworks radial blur effect but very much softer             |
+|Soft blurs                    |SoftBlurs.fx            |A selection of very smooth, soft blurs                                        |
 |Tilt shift                    |TiltShift.fx            |Simulates the shallow depth of field encountered in close-up photography      |
 |Visual motion blur            |VisualMblur.fx          |Directional blur that can be set up by visually dragging a central pin point  |
 |Yet another sharpen           |YAsharpen.fx            |A sharpen utility that can give extremely clean results                       |
@@ -94,7 +91,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
 |3D bevelled crop              |3Dbevel.fx              |A simple crop with an inner 3D bevelled edge and a flat coloured outer border |
 |Bevel edged crop              |BevelCrop.fx            |This provides a crop with a bevelled border and a hard-edged drop shadow      |
-|Bordered crop                 |BorderedCrop.fx         |A crop tool with border, feathering and drop shadow                           |
 |Flexible crop                 |Flexicrop.fx            |A flexible bordered crop with drop shadow based on LW masking                 |
 |Polymask                      |Polymask.fx             |A multi-sided mask with feathered edges and optional background colour        |
 |Rounded crop                  |RoundedCrop.fx          |A bordered, drop shadowed crop with rounded corners                           |

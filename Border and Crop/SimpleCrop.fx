@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2017-03-23
 
 /**
  This is a quick simple cropping tool.  You can also use it to blend images without
@@ -23,8 +23,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -103,4 +105,3 @@ DeclareEntryPoint (SimpleCrop)
 
    return float4 (lerp (Bgnd, Fgnd, Fgnd.a).rgb, alpha);
 }
-

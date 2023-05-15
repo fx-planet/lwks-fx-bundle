@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author khaver
 // @Created 2015-12-08
 
@@ -16,8 +16,10 @@
 //
 // Version history:
 //
-// Update 2023-01-23 jwrl.
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -275,4 +277,3 @@ DeclarePass (Yes)
 
 DeclareEntryPoint (FocalBlur_Y)
 { return Combine (MaskY, Yes, Vid1_Y, Vid2_Y, uv3); }
-

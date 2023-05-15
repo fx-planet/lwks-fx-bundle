@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2018-07-02
 
 /**
  Blend tools is an effect that is designed to help if the alpha channel may not be quite
@@ -29,7 +29,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -144,4 +147,3 @@ DeclareEntryPoint (BlendTools)
 
    return lerp (Bgd, Fgd, tex2D (Mask, uv3).x);
 }
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05-15
 // @Author jwrl
 // @Created 2023-02-14
 
@@ -27,11 +27,8 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
-//
-// Updated 2023-02-14 jwrl.
-// Corrected bug that caused a potential edge of frame repeat when the mask was inverted.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -197,4 +194,3 @@ DeclareEntryPoint (Flexicrop)
 
    return ((Fgnd - Bgnd) * Fgnd.a * Opacity) + Bgnd;
 }
-

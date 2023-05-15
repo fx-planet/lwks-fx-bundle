@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05_15
 // @Author baopao
 // @Created 2015-11-30
 
@@ -15,11 +15,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
 //
-// Update 2023-01-23 jwrl.
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -44,4 +43,3 @@ DeclareEntryPoint (Unpremultiply)
 
    return float4 (color.rgb /= color.a, color.a);
 }
-

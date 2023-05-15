@@ -104,6 +104,8 @@ If you need to use two effects that have the same name, simply open one of them 
 |Peak desaturate               |PeakDesaturate.fx       |Desaturate whites and blacks contaminated during other grading operations     |
 |RGB-CMY correction            |RGBCMYcorrect.fx        |A colorgrade tool based on red, green, blue, cyan, magenta and yellow colours |
 |S-Curve                       |Scurve.fx               |Adjusts RGB and/or HSV levels to give a smooth S-curve                        |
+|Vibrance                      |Vibrance.fx             |Adjusts the video vibrance                                                    |
+|White and black balance       |WhiteBlackBalance.fx    |A simple black and white balance utility                                      |
 
 ## CATEGORY FOLDER: Distortion
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
@@ -212,8 +214,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |RGB registration              |RGBregistration.fx      |Adjusts the X-Y registration of the RGB channels of a video stream            |
 |Simple S curve                |SimpleS.fx              |This applies an S curve to the video levels to give an image that extra zing  |
 |Simple star                   |SimpleStar.fx           |Creates a single rotatable star glint, with 4, 5, 6, 7 or 8 arms              |
-|Vibrance                      |Vibrance.fx             |Adjusts the video vibrance                                                    |
-|White and black balance       |WhiteBalance.fx         |A simple black and white balance utility                                      |
 
 ## CATEGORY FOLDER: Special Effects
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |

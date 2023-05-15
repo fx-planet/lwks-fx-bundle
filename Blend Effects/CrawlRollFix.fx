@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2020-07-19
 
 /**
  This effect provides a simple means of smoothing the movement of a credit roll or crawl.
@@ -21,7 +21,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -139,4 +142,3 @@ DeclareEntryPoint (SmoothCrawl)
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
-

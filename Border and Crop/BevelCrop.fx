@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2019-11-06
 
 /**
  This is a crop tool that provides a bevelled border.  The lighting of the bevel can be
@@ -26,8 +26,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -280,4 +282,3 @@ DeclareEntryPoint (BevelCrop)
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
-

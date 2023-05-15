@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2016-03-04
 
 /**
  This effect adds directional blurs to a key or any image with an alpha channel.  The
@@ -26,7 +26,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -247,4 +250,3 @@ DeclareEntryPoint (LightRayBlendLinear)
 
    return main (Fg, uv1, Bg, uv2, retval);
 }
-

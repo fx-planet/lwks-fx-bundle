@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author jwrl
-// @Author Robert Schütze
-// @Created 2023-01-23
+// @Author Robert Schuetze
+// @Created 2016-05-08
 
 /**
  This effect generates a border from a title or graphic with an alpha channel.  It then adds
@@ -20,7 +20,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 DeclareLightworksEffect ("Magical edges", "Mix", "Blend Effects", "Fractal edges with star-shaped radiating blurs", CanSize);
@@ -285,4 +288,3 @@ DeclareEntryPoint (MagicalEdges)
 
    return lerp (Bgd, retval, tex2D (Mask, uv1).x);
 }
-

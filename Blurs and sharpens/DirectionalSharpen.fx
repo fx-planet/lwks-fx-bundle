@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2019-01-10
 
 /**
  A directional unsharp mask.  Useful where directional stretching and motion blur must be
@@ -17,7 +17,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -107,4 +110,3 @@ DeclareEntryPoint (DirectionalSharpen)
 
    return lerp (retval, unblur, tex2D (Mask, uv1).x);
 }
-

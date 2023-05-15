@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2016-05-10
 
 /**
  This effect generates a border from a title or graphic with an alpha channel.  It then
@@ -24,7 +24,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -262,4 +265,3 @@ DeclareEntryPoint (GlitteryEdges)
 
    return lerp (Bgd, retval, tex2D (Mask, uv1).x);
 }
-

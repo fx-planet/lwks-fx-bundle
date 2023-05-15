@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author Evan Wallace (evanw/glfx.js https://github.com/evanw/glfx.js)
 // @Created 2012-07-30
 
@@ -43,8 +43,10 @@
 //
 // Version history:
 //
-// Updated 2023-01-23 jwrl.
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -56,6 +58,8 @@ DeclareLightworksEffect ("Tilt shift", "Stylize", "Blurs and sharpens", "Simulat
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Inp);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -83,7 +87,7 @@ DeclareFloatParam (_OutputHeight);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_TiltShift (sampler tS, float2 uv, uniform int mode) : COLOR
+float4 fn_TiltShift (sampler tS, float2 uv, uniform bool mode) : COLOR
 {
    float2 start = float2 (_OutputWidth * StartX, (_OutputHeight) * (1.0 - StartY));
    float2 end   = float2 (_OutputWidth * EndX,   (_OutputHeight) * (1.0 - EndY));
@@ -94,7 +98,7 @@ float4 fn_TiltShift (sampler tS, float2 uv, uniform int mode) : COLOR
    float total = 0.0;
 
    float2 texSize = float2 (_OutputWidth, _OutputHeight);
-   float2 delta = mode == 0 ? float2 (dx, dy) / d : float2 (-dy, dx) / d;
+   float2 delta = mode ? float2 (dx, dy) / d : float2 (-dy, dx) / d;
 
    float4 retval = kTransparentBlack;
    float4 color = kTransparentBlack;
@@ -134,8 +138,12 @@ float4 fn_TiltShift (sampler tS, float2 uv, uniform int mode) : COLOR
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (Pass1)
-{ return IsOutOfBounds (uv1) ? kTransparentBlack : fn_TiltShift (Inp, uv1, 0); }
+{ return IsOutOfBounds (uv1) ? kTransparentBlack : fn_TiltShift (Inp, uv1, true); }
 
 DeclareEntryPoint (TiltShift)
-{ return IsOutOfBounds (uv1) ? kTransparentBlack : fn_TiltShift (Pass1, uv1, 1); }
+{
+   float4 video  = ReadPixel (Inp, uv1);
+   float4 retval = IsOutOfBounds (uv1) ? kTransparentBlack : fn_TiltShift (Pass1, uv1, false);
 
+   return lerp (video, retval, tex2D (Mask, uv1).x);
+}

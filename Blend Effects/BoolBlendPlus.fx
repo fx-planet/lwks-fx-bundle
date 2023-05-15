@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-23
+// @Created 2020-02-29
 
 /**
  This is is the analogue equivalent of a digital logic gate.  AND, OR, NAND, NOR
@@ -34,7 +34,10 @@
 //
 // Version history:
 //
-// Built 2023-01-23 jwrl.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -614,4 +617,3 @@ DeclareEntryPoint (Luminosity)
 
    return lerp (Fgnd, retval, tex2D (Mask, uv1).x);
 }
-

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05-15
 // @Author jwrl
 // @Created 2023-02-14
 
@@ -17,11 +17,8 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Added the ability to fade the background.
-//
-// Updated 2023-02-14 jwrl.
-// Corrected descriptive comment at head of code.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -61,4 +58,3 @@ DeclareEntryPoint (PolyMask)
 
    return lerp (Bgnd, Fgnd, tex2D (Mask, uv3).x);
 }
-

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-06
+// @Created 2020-05-16
 
 /**
  This is a bordered crop that produces rounding at the corners of the crop shape.  The
@@ -15,8 +15,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -149,4 +151,3 @@ DeclareEntryPoint (RoundedCrop)
 
    return lerp (retval, Fgnd, Mask.x);
 }
-

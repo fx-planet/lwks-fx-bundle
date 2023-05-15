@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-23
+// @Released 2023-05-15
 // @Author baopao
 // @Created 2015-09-23
 
@@ -16,8 +16,10 @@
 //
 // Version history:
 //
-// Updated 2023-01-23 jwrl.
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-15 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-23 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

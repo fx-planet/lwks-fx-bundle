@@ -230,7 +230,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Spotlight effect              |Spotlight.fx            |Creates a spotlight highlight over a slightly blurred darkened background     |
 |String theory                 |stringTheory.fx         |You really have to try this to see what it does                               |
 |Transporter                   |Transporter.fx          |A modified chromakey to provide a Star Trek-like transporter effect           |
-|Video glitch                  |VideoGlitch.fx          |Applies a glitch effect to video                                              |
 
 ## CATEGORY FOLDER: Switches
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |

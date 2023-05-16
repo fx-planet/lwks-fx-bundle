@@ -129,13 +129,12 @@ If you need to use two effects that have the same name, simply open one of them 
 |2D DVE with repeats           |2dDVErepeats.fx         |A 2D DVE that can duplicate the foreground image as you zoom out              |
 |Art Deco DVE                  |ArtDecoDVE.fx           |Art Deco flash lines are included in the 2D DVE borders                       |
 |Flexible 2D DVE               |FlexiDVE.fx             |A flexible masked 2D DVE with Z-axis rotation                                 |
-|DVE with vignette             |DVEvignette.fx          |A simple DVE with circular, diamond or square shaped masking                  |
 |Framed DVE                    |FramedDVE.fx            |Creates a textured frame around the foreground and resizes and positions it   |
 |Rosehaven                     |Rosehaven.fx            |Creates mirrored top/bottom or left/right images                              |
+|Simple zoom in                |SimpleZoomIn.fx         |Designed for simple zooming in (not recommended for negative zoom values)     |
 |Spin zoom                     |SpinZoom.fx             |Similar to the 3D DVE, but the settings are much easier to use                |
 |Tiled images                  |TiledImages.fx          |Creates tile patterns from the image, which can be rotated                    |
 |Triple DVE                    |TripleDVE.fx            |Foreground, background and the overall effect have independent DVE adjustment |
-|Zoom in, simple, 2021         |ZoomInSimple.fx         |Designed for simple zooming in (not recommended for negative zoom values)     |
 
 ## CATEGORY FOLDER: Film Effects
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |

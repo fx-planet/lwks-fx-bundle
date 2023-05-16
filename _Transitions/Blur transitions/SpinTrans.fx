@@ -1,41 +1,40 @@
 // @Maintainer jwrl
-// @Released 2023-01-16
+// @Released 2023-05-17
+// @Author rakusan
 // @Author jwrl
-// @Created 2023-01-16
+// @Created 2016-02-15
 
 /**
- This effect performs a transition between two sources.  During the process it applies a
- rotational blur, the direction, aspect ratio, centring and strength of which can be
- adjusted.
-
- To better handle varying aspect ratios code has been included to allow the blur to
- exceed the input frame boundaries.  The subjective effect of this changes as the effect
- progresses, thus allowing for differing incoming and outgoing media aspect ratios.
-
- The blur section is based on a rotational blur converted by Lightworks user windsturm
- from original code created by rakusan - http://kuramo.ch/webgl/videoeffects/
+ The effect applies a rotary blur to transition into and out of aan image, and is
+ based on original shader code by rakusan (http://kuramo.ch/webgl/videoeffects/).
+ The direction, aspect ratio, centring and strength of the blur can all be adjusted.
+ It can also be used with titles and other blended images.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Spin_Dx.fx
+// Lightworks user effect SpinTrans.fx
 //
 // Version history:
 //
-// Built 2023-01-16 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Spin dissolve", "Mix", "Blur transitions", "Uses a rotational blur to transition between two sources", CanSize);
+DeclareLightworksEffect ("Spin transition", "Mix", "Blur transitions", "Dissolves the images through a blurred spin", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -46,12 +45,21 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareIntParam (CW_CCW, "Rotation direction", "Spin", 1, "Anticlockwise|Clockwise");
 
 DeclareFloatParam (blurLen, "Arc (degrees)", "Spin", kNoFlags, 90.0, 0.0, 180.0);
-DeclareFloatParam (aspectRatio, "Aspect 1:x", "Spin", kNoFlags, 1.0, 0.0, 10.0);
+DeclareFloatParam (aspectRatio, "Aspect ratio 1:x", "Spin", kNoFlags, 1.0, 0.01, 10.0);
 
-DeclareFloatParam (CentreX, "Centre", kNoGroup, "SpecifiesPointX|DisplayAsPercentage", 0.5, -0.5, 1.5);
-DeclareFloatParam (CentreY, "Centre", kNoGroup, "SpecifiesPointY|DisplayAsPercentage", 0.5, -0.5, 1.5);
+DeclareFloatParam (CentreX, "Centre", "Spin", "SpecifiesPointX", 0.5, -0.5, 1.5);
+DeclareFloatParam (CentreY, "Centre", "Spin", "SpecifiesPointY", 0.5, -0.5, 1.5);
+
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_OutputAspectRatio);
+DeclareFloatParam (_LengthFrames);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -138,62 +146,110 @@ float4 fn_BgBlur (sampler B, float2 uv, int base)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Code
+// Techniques
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (Fgd)
-{ return ReadPixel (Fg, uv1); }
+{
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
 
-DeclarePass (Rot_1)
-{ return fn_FgBlur (Fgd, uv3, 0); }
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (Bg, uv2);
+      }
+      else Bgnd = ReadPixel (Bg, uv2);
 
-DeclarePass (Rot_2)
-{ return fn_FgBlur (Fgd, uv3, RANGE_1); }
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
 
-DeclarePass (Rot_3)
-{ return fn_FgBlur (Fgd, uv3, RANGE_2); }
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   }
+   else Fgnd.a = 1.0;
 
-DeclarePass (Rot_4)
-{ return fn_FgBlur (Fgd, uv3, RANGE_3); }
-
-DeclarePass (Fblur)
-{ return fn_FgBlur (Fgd, uv3, RANGE_4); }
+   return Fgnd;
+}
 
 DeclarePass (Bgd)
-{ return ReadPixel (Bg, uv2); }
+{
+   float4 retval;
+
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
+   else retval = ReadPixel (Bg, uv2);
+
+   if (!Blended) retval.a = 1.0;
+
+   return retval;
+}
+
+DeclarePass (Rot_1)
+{ return Blended && SwapDir ? fn_BgBlur (Fgd, uv3, RANGE_5) : fn_FgBlur (Fgd, uv3, 0); }
+
+DeclarePass (Rot_2)
+{ return Blended && SwapDir ? fn_BgBlur (Fgd, uv3, RANGE_4) : fn_FgBlur (Fgd, uv3, RANGE_1); }
+
+DeclarePass (Rot_3)
+{ return Blended && SwapDir ? fn_BgBlur (Fgd, uv3, RANGE_3) : fn_FgBlur (Fgd, uv3, RANGE_2); }
+
+DeclarePass (Rot_4)
+{ return Blended && SwapDir ? fn_BgBlur (Fgd, uv3, RANGE_2) : fn_FgBlur (Fgd, uv3, RANGE_3); }
+
+DeclarePass (Fblur)
+{ return Blended && SwapDir ? fn_BgBlur (Fgd, uv3, RANGE_1) : fn_FgBlur (Fgd, uv3, RANGE_4); }
 
 DeclarePass (Spin1)
-{ return fn_BgBlur (Bgd, uv3, RANGE_5); }
+{ return Blended ? tex2D (Bgd, uv3) : fn_BgBlur (Bgd, uv3, RANGE_5); }
 
 DeclarePass (Spin2)
-{ return fn_BgBlur (Bgd, uv3, RANGE_4); }
+{ return Blended ? tex2D (Bgd, uv3) : fn_BgBlur (Bgd, uv3, RANGE_4); }
 
 DeclarePass (Spin3)
-{ return fn_BgBlur (Bgd, uv3, RANGE_3); }
+{ return Blended ? tex2D (Bgd, uv3) : fn_BgBlur (Bgd, uv3, RANGE_3); }
 
 DeclarePass (Spin4)
-{ return fn_BgBlur (Bgd, uv3, RANGE_2); }
+{ return Blended ? tex2D (Bgd, uv3) : fn_BgBlur (Bgd, uv3, RANGE_2); }
 
 DeclarePass (Bblur)
-{ return fn_BgBlur (Bgd, uv3, RANGE_1); }
+{ return Blended ? tex2D (Bgd, uv3) : fn_BgBlur (Bgd, uv3, RANGE_1); }
 
-DeclareEntryPoint (Spin_Dx)
+DeclareEntryPoint (SpinTrans)
 {
-   float4 outgoing = tex2D (Fblur, uv3);
-   float4 incoming = tex2D (Bblur, uv3);
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 Fg_vid = tex2D (Fblur, uv3);
+   float4 maskBg, retval;
 
-   outgoing += tex2D (Rot_1, uv3) + tex2D (Rot_2, uv3);
-   outgoing += tex2D (Rot_3, uv3) + tex2D (Rot_4, uv3);
-   outgoing = lerp (tex2D (Fgd, uv3), outgoing, saturate (Amount * 8.0));
+   Fg_vid += tex2D (Rot_1, uv3) + tex2D (Rot_2, uv3);
+   Fg_vid += tex2D (Rot_3, uv3) + tex2D (Rot_4, uv3);
 
-   incoming += tex2D (Spin1, uv3) + tex2D (Spin2, uv3);
-   incoming += tex2D (Spin3, uv3) + tex2D (Spin4, uv3);
-   incoming = lerp (tex2D (Bgd, uv3), incoming, saturate ((1.0 - Amount) * 8.0));
+   if (Blended) {
+      float amount = SwapDir ? Amount * _LengthFrames / (_LengthFrames - 1.0) : 1.0 - Amount;
 
-   float mix = (Amount - 0.5) * 2.0;
+      maskBg = Bgnd;
+      Fg_vid = lerp (Fgnd, Fg_vid, saturate ((1.0 - amount) * 8.0));
+      retval = lerp (Bgnd, Fg_vid, Fg_vid.a * amount);
+   }
+   else {
+      maskBg = Fgnd;
 
-   mix = (1.0 + (abs (mix) * mix)) / 2.0;
+      retval  = tex2D (Bblur, uv3);
+      retval += tex2D (Spin1, uv3) + tex2D (Spin2, uv3);
+      retval += tex2D (Spin3, uv3) + tex2D (Spin4, uv3);
+      retval  = lerp (Bgnd, retval, saturate ((1.0 - Amount) * 8.0));
+      Fg_vid  = lerp (Fgnd, Fg_vid, saturate (Amount * 8.0));
 
-   return lerp (outgoing, incoming, mix);
+      float mix = (Amount - 0.5) * 2.0;
+
+      mix = (1.0 + (abs (mix) * mix)) / 2.0;
+      retval = lerp (Fg_vid, retval, mix);
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

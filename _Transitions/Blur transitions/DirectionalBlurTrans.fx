@@ -1,28 +1,30 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2021-06-20
 
 /**
- This effect applies a directional (motion) blur to a blended foreground, the angle
- and strength of which can be adjusted.  It then progressively reduces the blur to
- reveal the blended foreground or increases it as it fades the blend out.
+ This effect applies a directional (motion) blur to the components, the angle and
+ strength of which can be adjusted.  It then progressively reduces the blur to
+ reveal the incoming image.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect DirectionalBlur_Kx.fx
+// Lightworks user effect DirectionalBlurTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Directional blur dissolve (keyed)", "Mix", "Blur transitions", "Directionally blurs the foreground as it fades in or out", CanSize);
+DeclareLightworksEffect ("Directional blur transition", "Mix", "Blur transitions", "Directionally blurs the foreground as it fades in or out", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -30,22 +32,24 @@ DeclareLightworksEffect ("Directional blur dissolve (keyed)", "Mix", "Blur trans
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
-
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
-
-DeclareFloatParam (Spread, "Spread", "Blur settings", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Blurriness, "Blurriness", "Blur settings", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (Angle, "Angle", "Blur settings", kNoFlags, 0.0, -180.00, 180.0);
-DeclareFloatParam (Strength, "Strength", "Blur settings", kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -65,158 +69,122 @@ DeclareFloatParam (_OutputAspectRatio);
 #define STRENGTH  0.005
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
-{
-   float4 Fgnd = ReadPixel (Fg, xy1);
-
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-//-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique DirectionalBlur_Kx_F
-
-DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Title_F)
+DeclarePass (Fgd)
 {
-   float4 Fgnd = tex2D (Bg_F, uv3);
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (Bg, uv2);
+      }
+      else Bgnd = ReadPixel (Bg, uv2);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-DeclareEntryPoint (DirectionalBlur_Kx_F)
-{
-   float4 retval = tex2D (Title_F, uv3);
-
-   if (Spread > 0.0) {
-
-      float2 blur, xy1 = uv3, xy2 = uv3;
-
-      sincos (radians (Angle), blur.y, blur.x);
-      blur   *= (1.0 - saturate (Amount)) * Spread * STRENGTH;
-      blur.y *= _OutputAspectRatio;
-
-      for (int i = 0; i < SAMPLES; i++) {
-         xy1 += blur;
-         xy2 -= blur;
-         retval += tex2D (Title_F, xy1);
-         retval += tex2D (Title_F, xy2);
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
       }
 
-   retval /= SAMPSCALE;
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
    }
+   else Fgnd.a = 1.0;
 
-   retval.a *= saturate (((Amount - 0.5) * ((Strength * 3.0) + 1.5)) + 0.5);
-
-   if (CropEdges && IsOutOfBounds (uv1)) retval = kTransparentBlack;
-
-   return lerp (tex2D (Bg_F, uv3), retval, retval.a);
+   return Fgnd;
 }
 
-//-----------------------------------------------------------------------------------------//
-
-// technique DirectionalBlur_Kx_I
-
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Title_I)
-{ return fn_keygen (Bg_I, uv1, uv3); }
-
-DeclareEntryPoint (DirectionalBlur_Kx_I)
+DeclarePass (Bgd)
 {
-   float4 retval = tex2D (Title_I, uv3);
+   float4 retval;
 
-   if (Spread > 0.0) {
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
+   else retval = ReadPixel (Bg, uv2);
 
-      float2 blur, xy1 = uv3, xy2 = uv3;
+   if (!Blended) retval.a = 1.0;
 
-      sincos (radians (Angle), blur.y, blur.x);
-      blur   *= (1.0 - saturate (Amount)) * Spread * STRENGTH;
-      blur.y *= _OutputAspectRatio;
-
-      for (int i = 0; i < SAMPLES; i++) {
-         xy1 += blur;
-         xy2 -= blur;
-         retval += tex2D (Title_I, xy1);
-         retval += tex2D (Title_I, xy2);
-      }
-
-   retval /= SAMPSCALE;
-   }
-
-   retval.a *= saturate (((Amount - 0.5) * ((Strength * 3.0) + 1.5)) + 0.5);
-
-   if (CropEdges && IsOutOfBounds (uv2)) retval = kTransparentBlack;
-
-   return lerp (tex2D (Bg_I, uv3), retval, retval.a);
+   return retval;
 }
 
-//-----------------------------------------------------------------------------------------//
-
-// technique DirectionalBlur_Kx_O
-
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Title_O)
-{ return fn_keygen (Bg_O, uv1, uv3); }
-
-DeclareEntryPoint (DirectionalBlur_Kx_O)
+DeclarePass (Mixed)
 {
-   float4 retval = tex2D (Title_O, uv3);
+   float4 Fgnd = tex2D (Fgd, uv3);
 
-   if (Spread > 0.0) {
+   if (!Blended ) {
+      float4 Bgnd = tex2D (Bgd, uv3);
 
-      float2 blur, xy1 = uv3, xy2 = uv3;
+      float amount = pow (1.0 - (abs (Amount - 0.5) * 2.0), 5.0) / 2.0;
 
-      sincos (radians (Angle + 180.0), blur.y, blur.x);
-      blur   *= saturate (Amount) * Spread * STRENGTH;
-      blur.y *= _OutputAspectRatio;
-
-      for (int i = 0; i < SAMPLES; i++) {
-         xy1 += blur;
-         xy2 -= blur;
-         retval += tex2D (Title_O, xy1);
-         retval += tex2D (Title_O, xy2);
-      }
-
-   retval /= SAMPSCALE;
+      if (Amount > 0.5) amount = 1.0 - amount;
+      Fgnd = lerp (Fgnd, Bgnd, amount);
    }
 
-   retval.a *= 1.0 - saturate (((Amount - 0.5) * ((Strength * 3.0) + 1.5)) + 0.5);
+   return Fgnd;
+}
 
-   if (CropEdges && IsOutOfBounds (uv2)) retval = kTransparentBlack;
+DeclareEntryPoint (DirectionalBlurTrans)
+{
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 retval = tex2D (Mixed, uv3);
+   float4 maskBg;
 
-   return lerp (tex2D (Bg_O, uv3), retval, retval.a);
+   float2 blur, xy1 = uv3, xy2 = uv3;
+
+   if (Blended) {
+      maskBg = Bgnd;
+
+      if (Blurriness > 0.0) {
+         if (SwapDir) {
+            sincos (radians (Angle), blur.y, blur.x);
+            blur *= (1.0 - saturate (Amount)) * Blurriness * STRENGTH;
+         }
+         else {
+            sincos (radians (Angle + 180.0), blur.y, blur.x);
+            blur *= saturate (Amount) * Blurriness * STRENGTH;
+         }
+
+         blur.y *= _OutputAspectRatio;
+
+         for (int i = 0; i < SAMPLES; i++) {
+            xy1 += blur;
+            xy2 -= blur;
+            retval += tex2D (Mixed, xy1);
+            retval += tex2D (Mixed, xy2);
+         }
+
+         retval /= SAMPSCALE;
+      }
+
+      retval.a *= SwapDir ? saturate (((Amount - 0.5) * 3.0) + 0.5)
+                          : 1.0 - saturate (((Amount - 0.5) * 3.0) + 0.5);
+      retval = lerp (Bgnd, retval, retval.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      if (Blurriness > 0.0) {
+         sincos (radians (Angle), blur.y, blur.x);
+
+         blur   *= sin (saturate (Amount) * PI) * Blurriness * STRENGTH;
+         blur.y *= _OutputAspectRatio;
+
+         for (int i = 0; i < SAMPLES; i++) {
+            xy1 += blur;
+            xy2 -= blur;
+            retval += tex2D (Mixed, xy1);
+            retval += tex2D (Mixed, xy2);
+         }
+
+         retval /= SAMPSCALE;
+      }
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

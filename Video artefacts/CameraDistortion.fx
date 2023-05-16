@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-18
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-18
+// @Created 2016-03-12
 
 /**
  Camera distortions adds colour fringing effects, pincushion distortion, scaling and
@@ -62,7 +62,10 @@
 //
 // Version history:
 //
-// Built 2023-01-18 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-18 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

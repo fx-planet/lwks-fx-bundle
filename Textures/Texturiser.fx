@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-12
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-12
+// @Created 2016-04-22
 
 /**
  This effect is designed to modulate the input with a texture from an external piece of
@@ -17,7 +17,10 @@
 //
 // Version history:
 //
-// Built 2023-01-12 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-12 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

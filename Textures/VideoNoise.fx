@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-02-17
+// @Released 2023-05-16
 // @Author windsturm
 // @Created 2012-08-02
 
@@ -18,11 +18,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
 //
-// Updated 2023-01-12 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

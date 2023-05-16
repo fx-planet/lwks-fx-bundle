@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-25
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-25
+// @Created 2016-05-14
 
 /**
  I was going to call this LSD, but this name will do.  Original effect.
@@ -15,7 +15,10 @@
 //
 // Version history:
 //
-// Built 2023-01-12 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-12 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

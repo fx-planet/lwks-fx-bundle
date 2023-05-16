@@ -1,32 +1,46 @@
 // @Maintainer jwrl
-// @Released 2023-01-31
+// @Released 2023-05-17
 // @Author khaver
-// @Created 2014-08-28
+// @Author jwrl
+// @Created 2023-03-07
 
 /**
- This expanded dissolve allows optional blend modes to be applied during the transition
- by adding a drop down menu to select different dissolve methods.  A timing slider has
- also been added that adjusts where the 50% mix point happens in the dissolve (slider
- to the left and the 50% mix point happens before the mid-point of the dissolve, slider
- to the right and it happens after the mid-point), a layer swap option (some dissolve
- methods are affected by which layer is on top or bottom), and a bypass option.
+ This dissolve allows blend modes to be applied during the transition using a drop down
+ menu to select different dissolve methods.  The intention behind this effect was to get
+ as close as possible visually to the standard Photoshop blend modes.  Apart from its
+ use as a standard dissolve, titles or other keyed components can be separated from the
+ background with an alpha or delta key before executing the transition.
+
+ In addition to the Lightworks blends, this effect provides Linear burn, Darker colour,
+ Vivid light, Linear light, Pin light, Hard mix, Divide, Hue and Saturation.  The
+ Lightworks effect Add has been replaced by Linear Dodge which is functionally identical,
+ Burn has been replaced by Colour burn, and Dodge by Colour dodge.  "In Front" has been
+ replaced by "Normal" to better match the Photoshop model.
+
+ One final point.  This efffect does NOT have the same dissolve profile as the Lightworks
+ dissolve, and should not be used as a direct replacement for it.  The profile has been
+ set up so that it smoothly ramps in and out of the centre point, an inverse S if you
+ will.  This produces a noticeable hold in the middle of the dissolve.  While it would
+ be possible to make the normal blend mode completely smooth it would mean bypassing the
+ centre point adjustment for that blend mode.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect DissolveX_Dx.fx
+// User effect DissolveXTrans.fx
 //
 // Version history:
 //
-// Updated 2023-01-31 jwrl.
-// Updated to provide LW 2022 revised cross platform support.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-07 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("DissolveX", "Mix", "Blend transitions", "Allows optional blend modes to be applied during the transition", kNoFlags);
+DeclareLightworksEffect ("Dissolve X transitions", "Mix", "Blend transitions", "Transitions using layer blending profiles", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -34,18 +48,25 @@ DeclareLightworksEffect ("DissolveX", "Mix", "Blend transitions", "Allows option
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareIntParam (SetTechnique, "Method", kNoGroup, 0, "Default|Add|Subtract|Multiply|Screen|Overlay|Soft Light|Hard Light|Vivid Light|Linear Light|Pin Light|Exclusion|Lighten|Darken|Average|Difference|Negation|Colour|Luminosity|Dodge|Color Burn|Linear Burn|Light Meld|Dark Meld|Reflect");
-
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareFloatParam (Ease, "Timing", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
+DeclareIntParam (SetTechnique, "Method", kNoGroup, 0, "Normal|Darken|Multiply|Colour Burn|Linear Burn|Darker Colour|Lighten|Screen|Colour Dodge|Linear Dodge (Add)|Lighter Colour|Overlay|Soft Light|Hard Light|Vivid Light|Linear Light|Pin Light|Hard Mix|Difference|Exclusion|Subtract|Divide|Hue|Saturation|Colour|Luminosity");
 
-DeclareBoolParam (Swap, "Swap layers", kNoGroup, false);
-DeclareBoolParam (Bypass, "Bypass", kNoGroup, false);
+DeclareFloatParam (Midpoint, "Midpoint", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -55,779 +76,590 @@ DeclareBoolParam (Bypass, "Bypass", kNoGroup, false);
 #define PROFILE ps_3_0
 #endif
 
+#define CrR     0.439
+#define CrG     0.368
+#define CrB     0.071
+
+#define CbR     0.148
+#define CbG     0.291
+#define CbB     0.439
+
+#define Rr_R    1.596
+#define Rg_R    0.813
+#define Rg_B    0.391
+#define Rb_B    2.018
+
+#define WHITE   (1.0).xxxx
+
+#define LUMA    float4(0.2989, 0.5866, 0.1145, 0.0)
+
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float BlendLinearLightf (float base, float blend)
+float4 fn_rgb2hsv (float4 rgb)
 {
-   float blendmix = base + (2.0 * blend) - 1.0;
+   float Cmin  = min (rgb.r, min (rgb.g, rgb.b));
+   float Cmax  = max (rgb.r, max (rgb.g, rgb.b));
+   float delta = Cmax - Cmin;
 
-   return blend < 0.5 ? max (blendmix, 0.0) : min (blendmix, 1.0);
-}
+   float4 hsv  = float3 (0.0, Cmax, rgb.a).xxyz;
 
-float BlendOverlayf (float base, float blend)
-{ return base < 0.5 ? 2.0 * base * blend : 1.0 - (2.0 * (1.0 - base) * (1.0 - blend)); }
-
-float BlendSoftLightf (float base, float blend)
-{ return blend < 0.5 ? (2.0 * base * blend) + (base * base * (1.0 - 2.0 * blend))
-                     : (sqrt(base) * (2.0 * blend - 1.0)) + (2.0 * base * (1.0 - blend)); }
-
-float BlendColorDodgef (float base, float blend)
-{ return blend == 1.0 ? blend : min (base / (1.0 - blend), 1.0); }
-
-float  BlendColorBurnf (float base, float blend)
-{ return blend == 0.0 ? blend : max (1.0 - ((1.0 - base) / blend), 0.0); }
-
-float BlendVividLightf (float base, float blend)
-{ return blend < 0.5 ? BlendColorBurnf (base, 2.0 * blend) : BlendColorDodgef (base, 2.0 * (blend - 0.5)); }
-
-float BlendPinLightf (float base, float blend)
-{ return blend < 0.5 ? min (base, 2.0 * blend) : max (base, 2.0 * (blend - 0.5)); }
-
-float BlendHardMixf (float base, float blend)
-{ return BlendVividLightf (base, blend) < 0.5 ? 0.0 : 1.0; }
-
-float BlendReflectf (float base, float blend)
-{ return blend == 1.0 ? blend : min (base * base / (1.0 - blend), 1.0); }
-
-float EaseAmountf (float ease)
-{
-   float easy;
-
-   if (ease >= 0.0) {
-      easy = (ease + 0.5) * 2.0;
-      return pow (Amount, easy);
+   if (Cmax != 0.0) {
+      hsv.x = (rgb.r == Cmax) ? (rgb.g - rgb.b) / delta
+            : (rgb.g == Cmax) ? 2.0 + (rgb.b - rgb.r) / delta
+                              : 4.0 + (rgb.r - rgb.g) / delta;
+      hsv.x = frac (hsv.x / 6.0);
+      hsv.y = 1.0 - (Cmin / Cmax);
    }
 
-   easy = abs (ease - 0.5) * 2.0;
+   return hsv;
+}
 
-   return (1.0 - pow (1.0 - Amount, easy)) * 2.0;
+float4 fn_hsv2rgb (float4 hsv)
+{
+   if (hsv.y == 0.0) return hsv.zzzw;
+
+   hsv.x *= 6.0;
+
+   int i = (int) floor (hsv.x);
+
+   float f = hsv.x - (float) i;
+   float p = hsv.z * (1.0 - hsv.y);
+   float q = hsv.z * (1.0 - hsv.y * f);
+   float r = hsv.z * (1.0 - hsv.y * (1.0 - f));
+
+   if (i == 0) return float4 (hsv.z, r, p, hsv.w);
+   if (i == 1) return float4 (q, hsv.z, p, hsv.w);
+   if (i == 2) return float4 (p, hsv.z, r, hsv.w);
+   if (i == 3) return float4 (p, q, hsv.zw);
+   if (i == 4) return float4 (r, p, hsv.zw);
+
+   return float4 (hsv.z, p, q, hsv.w);
+}
+
+float2 fn_init (sampler F, float2 xy1, out float4 fgd, sampler B, float2 xy2, out float4 bgd)
+{
+   float4 Fgnd = ReadPixel (F, xy1);
+   float4 Bgnd = ReadPixel (B, xy2);
+
+   float2 retval;
+
+   float timeRef = (saturate (Midpoint) * 0.5) + 0.25;   // Set adjustment range from 0.25 to 0.75
+   float amount = saturate (Amount / timeRef);
+
+   retval.x = pow (amount, 0.5);
+
+   amount = saturate ((Amount - timeRef) / (1.0 - timeRef));
+
+   retval.y = pow (amount, 2.0);
+
+   bgd = Fgnd;
+   fgd = Bgnd;
+
+   if (Blended) {
+      if (!SwapDir || (Source > 0)) {
+         fgd = Fgnd;
+         bgd = Bgnd;
+      }
+
+      if (Source == 0) {
+         fgd.a = smoothstep (0.0, KeyGain, distance (bgd.rgb, fgd.rgb));
+         fgd.rgb *= fgd.a;
+      }
+      else if (Source == 1) {
+         fgd.a = pow (fgd.a, 0.375 + (KeyGain / 2.0));
+         fgd.rgb /= fgd.a;
+      }
+
+      if (fgd.a == 0.0) fgd.rgb = fgd.aaa;
+
+      if (!SwapDir) {
+         amount = 1.0 - retval.x;
+         retval.x = 1.0 - retval.y;
+         retval.y = amount;
+      }
+   }
+   else fgd.a = 1.0;
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclareEntryPoint (Default)
+DeclareEntryPoint (Normal)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   Fgnd = lerp (Bgnd, Fgnd, Fgnd.a * (amount.x + amount.y) / 2.0);
 
-   float amo, easy;
-
-   if (Ease >= 0.0) {
-      easy = (Ease + 0.5) * 2.0;
-      amo = pow (Amount, easy);
-   }
-   else {
-      easy = abs (Ease - 0.5) * 2.0;
-      amo = 1.0 - pow (1.0 - Amount, easy);
-   }
-
-   return lerp (Fgd, Bgd, amo);
+   return lerp (Bgnd, Fgnd, tex2D (Mask, uv3).x);
 }
 
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Add)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret = min (Fgd + Bgd, 1.0.xxxx);
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Subtract)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret = max (Fgd + Bgd - 1.0.xxxx, 0.0.xxxx);
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Multiply)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret = Bgd * Fgd;
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Screen)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret = Fgd + Bgd - (Fgd * Bgd);
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Overlay)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendOverlayf (Bgd.r, Fgd.r);
-      ret.g = BlendOverlayf (Bgd.g, Fgd.g);
-      ret.b = BlendOverlayf (Bgd.b, Fgd.b);
-      ret.a = BlendOverlayf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendOverlayf (Fgd.r, Bgd.r);
-      ret.g = BlendOverlayf (Fgd.g, Bgd.g);
-      ret.b = BlendOverlayf (Fgd.b, Bgd.b);
-      ret.a = BlendOverlayf (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (SoftLight)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendSoftLightf (Bgd.r, Fgd.r);
-      ret.g = BlendSoftLightf (Bgd.g, Fgd.g);
-      ret.b = BlendSoftLightf (Bgd.b, Fgd.b);
-      ret.a = BlendSoftLightf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendSoftLightf (Fgd.r, Bgd.r);
-      ret.g = BlendSoftLightf (Fgd.g, Bgd.g);
-      ret.b = BlendSoftLightf (Fgd.b, Bgd.b);
-      ret.a = BlendSoftLightf (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Hardlight)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendOverlayf (Bgd.r, Fgd.r);
-      ret.g = BlendOverlayf (Bgd.g, Fgd.g);
-      ret.b = BlendOverlayf (Bgd.b, Fgd.b);
-      ret.a = BlendOverlayf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendOverlayf (Fgd.r, Bgd.r);
-      ret.g = BlendOverlayf (Fgd.g, Bgd.g);
-      ret.b = BlendOverlayf (Fgd.b, Bgd.b);
-      ret.a = BlendOverlayf (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Vividlight)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendVividLightf (Bgd.r, Fgd.r);
-      ret.g = BlendVividLightf (Bgd.g, Fgd.g);
-      ret.b = BlendVividLightf (Bgd.b, Fgd.b);
-      ret.a = BlendVividLightf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendVividLightf (Fgd.r, Bgd.r);
-      ret.g = BlendVividLightf (Fgd.g, Bgd.g);
-      ret.b = BlendVividLightf (Fgd.b, Bgd.b);
-      ret.a = BlendVividLightf (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Linearlight)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendLinearLightf (Bgd.r, Fgd.r);
-      ret.g = BlendLinearLightf (Bgd.g, Fgd.g);
-      ret.b = BlendLinearLightf (Bgd.b, Fgd.b);
-      ret.a = BlendLinearLightf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendLinearLightf (Fgd.r, Bgd.r);
-      ret.g = BlendLinearLightf (Fgd.g, Bgd.g);
-      ret.b = BlendLinearLightf (Fgd.b, Bgd.b);
-      ret.a = BlendLinearLightf (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Pinlight)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendPinLightf (Bgd.r, Fgd.r);
-      ret.g = BlendPinLightf (Bgd.g, Fgd.g);
-      ret.b = BlendPinLightf (Bgd.b, Fgd.b);
-      ret.a = BlendPinLightf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendPinLightf (Fgd.r, Bgd.r);
-      ret.g = BlendPinLightf (Fgd.g, Bgd.g);
-      ret.b = BlendPinLightf (Fgd.b, Bgd.b);
-      ret.a = BlendPinLightf (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Exclusion)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret = Fgd + Bgd - (2.0 * Fgd * Bgd);
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Lighten)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret = max (Fgd, Bgd);
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------- GROUP 1 -----------------------------------------//
 
 DeclareEntryPoint (Darken)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   float4 blnd = lerp (Bgnd, min (Fgnd, Bgnd), amount.x);
 
-   float4 ret = min (Fgd, Bgd);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
 
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
 }
 
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Average)
+DeclareEntryPoint (Multiply)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   float4 blnd = lerp (Bgnd, Bgnd * Fgnd, amount.x);
 
-   float4 ret = (Fgd + Bgd) / 2.0;
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
 
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
 }
 
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Difference)
+DeclareEntryPoint (ColourBurn)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   float4 blnd = Fgnd;
 
-   float4 ret = abs (Fgd - Bgd);
+   blnd.r = (Fgnd.r == 0.0) ? Fgnd.r : max (1.0 - ((1.0 - Bgnd.r) / Fgnd.r), 0.0);
+   blnd.g = (Fgnd.g == 0.0) ? Fgnd.g : max (1.0 - ((1.0 - Bgnd.g) / Fgnd.g), 0.0);
+   blnd.b = (Fgnd.b == 0.0) ? Fgnd.b : max (1.0 - ((1.0 - Bgnd.b) / Fgnd.b), 0.0);
 
-   float amo = EaseAmountf (Ease);
+   blnd = lerp (Bgnd, min (blnd, WHITE), amount.x);
 
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
 }
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Negation)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret = 1.0.xxxx - abs (1.0.xxxx - Fgd - Bgd);
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Color)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   float dstY, srcCr, srcCb, YBit;
-   float amo = EaseAmountf (Ease);
-
-   // Calc source luminance but use dest colour..
-
-   if (Swap) {
-      dstY  = (0.257 * Fgd.r) + (0.504 * Fgd.g) + (0.098 * Fgd.b) + 0.0625;
-      srcCr = (0.439 * Bgd.r) - (0.368 * Bgd.g) - (0.071 * Bgd.b) + 0.5;
-      srcCb = (-0.148 * Bgd.r) - (0.291 * Bgd.g) + (0.439 * Bgd.b) + 0.5;
-   }
-   else {
-      dstY  = (0.257 * Bgd.r) + (0.504 * Bgd.g) + (0.098 * Bgd.b) + 0.0625;
-      srcCr = (0.439 * Fgd.r) - (0.368 * Fgd.g) - (0.071 * Fgd.b) + 0.5;
-      srcCb = (-0.148 * Fgd.r) - (0.291 * Fgd.g) + (0.439 * Fgd.b) + 0.5;
-   }
-
-   // Convert to RGB..
-
-   YBit = 1.164 * (dstY - 0.0625);
-   ret.r = YBit + (1.596 * (srcCr - 0.5));
-   ret.g = YBit - (0.813 * (srcCr - 0.5)) - (0.391 * (srcCb - 0.5));
-   ret.b = YBit + (2.018 * (srcCb - 0.5));
-   ret.a = 1.0;
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Luminosity)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   float amo = EaseAmountf (Ease);
-   float srcY, dstCr, dstCb, YBit;
-
-   // Calc source luminance but use dest colour..
-
-   if (Swap) {
-      srcY  = (0.257 * Bgd.r) + (0.504 * Bgd.g) + (0.098 * Bgd.b) + 0.0625;
-      dstCr = (0.439 * Fgd.r) - (0.368 * Fgd.g) - (0.071 * Fgd.b) + 0.5;
-      dstCb = (-0.148 * Fgd.r) - (0.291 * Fgd.g) + (0.439 * Fgd.b) + 0.5;
-   }
-   else {
-      srcY  = (0.257 * Fgd.r) + (0.504 * Fgd.g) + (0.098 * Fgd.b) + 0.0625;
-      dstCr = (0.439 * Bgd.r) - (0.368 * Bgd.g) - (0.071 * Bgd.b) + 0.5;
-      dstCb = (-0.148 * Bgd.r) - (0.291 * Bgd.g) + (0.439 * Bgd.b) + 0.5;
-   }
-
-   // Convert to RGB..
-
-   YBit = 1.164 * (srcY - 0.0625);
-   ret.r = YBit + (1.596 * (dstCr - 0.5));
-   ret.g = YBit - (0.813 * (dstCr - 0.5)) - (0.391 * (dstCb - 0.5));
-   ret.b = YBit + (2.018 * (dstCb - 0.5));
-   ret.a = 1.0;
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Dodge)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendColorDodgef (Bgd.r, Fgd.r);
-      ret.g = BlendColorDodgef (Bgd.g, Fgd.g);
-      ret.b = BlendColorDodgef (Bgd.b, Fgd.b);
-      ret.a = BlendColorDodgef (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendColorDodgef (Fgd.r, Bgd.r);
-      ret.g = BlendColorDodgef (Fgd.g, Bgd.g);
-      ret.b = BlendColorDodgef (Fgd.b, Bgd.b);
-      ret.a = BlendColorDodgef (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (ColorBurn)
-{
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
-
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
-
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
-
-   float4 ret;
-
-   if (Swap) {
-      ret.r = BlendColorBurnf (Bgd.r, Fgd.r);
-      ret.g = BlendColorBurnf (Bgd.g, Fgd.g);
-      ret.b = BlendColorBurnf (Bgd.b, Fgd.b);
-      ret.a = BlendColorBurnf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendColorBurnf (Fgd.r, Bgd.r);
-      ret.g = BlendColorBurnf (Fgd.g, Bgd.g);
-      ret.b = BlendColorBurnf (Fgd.b, Bgd.b);
-      ret.a = BlendColorBurnf (Fgd.a, Bgd.a);
-   }
-
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
-}
-
-//-----------------------------------------------------------------------------------------//
 
 DeclareEntryPoint (LinearBurn)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   float4 blnd = lerp (Bgnd, max (Fgnd + Bgnd - WHITE, kTransparentBlack), amount.x);
 
-   float4 ret = max (Fgd + Bgd - 1.0.xxxx, 0.0.xxxx);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
 
-   float amo = EaseAmountf (Ease);
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
 }
 
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (LightMeld)
+DeclareEntryPoint (DarkerColour)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   float  luma = dot (Bgnd, LUMA);
 
-   float4 ret;
+   float4 blnd = (dot (Fgnd, LUMA) < luma) ? Fgnd : Bgnd;
 
-   float amo = EaseAmountf (Ease);
+   blnd = lerp (Bgnd, blnd, amount.x);
 
-   if (Swap) ret = (((Bgd.r + Bgd.g + Bgd.b) / 3.0) + (amo / 2.0)) > 1.0 ? Bgd : Fgd;
-   else ret = (((Fgd.r + Fgd.g + Fgd.b) / 3.0) + (amo / 2.0)) > 1.0 ? Bgd : Fgd;
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
 
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
 }
 
-//-----------------------------------------------------------------------------------------//
+//--------------------------------------- GROUP 2 -----------------------------------------//
 
-DeclareEntryPoint (DarkMeld)
+DeclareEntryPoint (Lighten)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   float4 blnd = lerp (Bgnd, max (Fgnd, Bgnd), amount.x);
 
-   float4 ret;
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
 
-   float amo = EaseAmountf (Ease);
-
-   if (Swap) ret = (1.0 - ((Bgd.r + Bgd.g + Bgd.b) / 3.0) + (amo / 2.0)) > 1.0 ? Bgd : Fgd;
-   else ret = (1.0 - ((Fgd.r + Fgd.g + Fgd.b) / 3.0) + (amo / 2.0)) > 1.0 ? Bgd : Fgd;
-
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
 }
 
-//-----------------------------------------------------------------------------------------//
-
-DeclareEntryPoint (Reflect)
+DeclareEntryPoint (Screen)
 {
-   float4 Fgd = ReadPixel (Fg, uv1);
-   float4 Bgd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-   if (Bypass) {
-      if (Amount < 0.5) return Fgd;
-      else return Bgd;
-   }
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
 
-   if (Amount == 0.0) return Fgd;
-   if (Amount == 1.0) return Bgd;
+   float4 blnd = lerp (Bgnd, saturate (Fgnd + Bgnd - (Fgnd * Bgnd)), amount.x);
 
-   float4 ret;
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
 
-   float amo = EaseAmountf (Ease);
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
 
-   if (Swap) {
-      ret.r = BlendReflectf (Bgd.r, Fgd.r);
-      ret.g = BlendReflectf (Bgd.g, Fgd.g);
-      ret.b = BlendReflectf (Bgd.b, Fgd.b);
-      ret.a = BlendReflectf (Bgd.a, Fgd.a);
-   }
-   else {
-      ret.r = BlendReflectf (Fgd.r, Bgd.r);
-      ret.g = BlendReflectf (Fgd.g, Bgd.g);
-      ret.b = BlendReflectf (Fgd.b, Bgd.b);
-      ret.a = BlendReflectf (Fgd.a, Bgd.a);
-   }
+DeclareEntryPoint (ColourDodge)
+{
+   float4 Fgnd, Bgnd;
 
-   return amo <= 1.0 ? lerp (Fgd, ret, amo) : lerp (ret, Bgd, amo - 1.0);
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   blnd.r = (Fgnd.r == 1.0) ? 1.0 : Bgnd.r / (1.0 - Fgnd.r);
+   blnd.g = (Fgnd.g == 1.0) ? 1.0 : Bgnd.g / (1.0 - Fgnd.g);
+   blnd.b = (Fgnd.b == 1.0) ? 1.0 : Bgnd.b / (1.0 - Fgnd.b);
+
+   blnd = lerp (Bgnd, min (blnd, WHITE), amount.x);
+
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (LinearDodge)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = lerp (Bgnd, min (Fgnd + Bgnd, WHITE), amount.x);
+
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (LighterColour)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float  luma = dot (Bgnd, LUMA);
+
+   float4 blnd = (dot (Fgnd, LUMA) > luma) ? Fgnd : Bgnd;
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+//--------------------------------------- GROUP 3 -----------------------------------------//
+
+DeclareEntryPoint (Overlay)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   float3 retMin = 2.0 * Bgnd.rgb * Fgnd.rgb;
+   float3 retMax = 1.0.xxx - 2.0 * (1.0.xxx - Fgnd.rgb) * (1.0.xxx - Bgnd.rgb);
+
+   blnd.r = (Bgnd.r <= 0.5) ? retMin.r : retMax.r;
+   blnd.g = (Bgnd.g <= 0.5) ? retMin.g : retMax.g;
+   blnd.b = (Bgnd.b <= 0.5) ? retMin.b : retMax.b;
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (SoftLight)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   float3 retMax = (2.0 * Fgnd.rgb) - 1.0.xxx;
+   float3 retMin = Bgnd.rgb * (retMax * (1.0.xxx - Bgnd.rgb) + 1.0.xxx);
+
+   retMax *= sqrt (Bgnd.rgb) - Bgnd.rgb;
+   retMax += Bgnd.rgb;
+
+   blnd.r = (Fgnd.r <= 0.5) ? retMin.r : retMax.r;
+   blnd.g = (Fgnd.g <= 0.5) ? retMin.g : retMax.g;
+   blnd.b = (Fgnd.b <= 0.5) ? retMin.b : retMax.b;
+
+   blnd = lerp (Bgnd, saturate (blnd), amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (HardLight)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   float3 retMin = saturate (2.0 * Bgnd.rgb * Fgnd.rgb);
+   float3 retMax = saturate (1.0.xxx - 2.0 * (1.0.xxx - Bgnd.rgb) * (1.0.xxx - Fgnd.rgb));
+
+   blnd.r = (Fgnd.r < 0.5) ? retMin.r : retMax.r;
+   blnd.g = (Fgnd.g < 0.5) ? retMin.g : retMax.g;
+   blnd.b = (Fgnd.b < 0.5) ? retMin.b : retMax.b;
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (VividLight)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   float3 retMax, retMin;
+
+   retMin.r = (Fgnd.r == 0.0) ? 0.0 : max (1.0 - ((1.0 - Bgnd.r) / (2.0 * Fgnd.r)), 0.0);
+   retMin.g = (Fgnd.g == 0.0) ? 0.0 : max (1.0 - ((1.0 - Bgnd.g) / (2.0 * Fgnd.g)), 0.0);
+   retMin.b = (Fgnd.b == 0.0) ? 0.0 : max (1.0 - ((1.0 - Bgnd.b) / (2.0 * Fgnd.b)), 0.0);
+
+   retMax.r = (Fgnd.r == 1.0) ? 1.0 : Bgnd.r / (2.0 * (1.0 - Fgnd.r));
+   retMax.g = (Fgnd.g == 1.0) ? 1.0 : Bgnd.g / (2.0 * (1.0 - Fgnd.g));
+   retMax.b = (Fgnd.b == 1.0) ? 1.0 : Bgnd.b / (2.0 * (1.0 - Fgnd.b));
+
+   retMin = min (retMin, (1.0).xxx);
+   retMax = min (retMax, (1.0).xxx);
+
+   blnd.r = (Fgnd.r < 0.5) ? retMin.r : retMax.r;
+   blnd.g = (Fgnd.g < 0.5) ? retMin.g : retMax.g;
+   blnd.b = (Fgnd.b < 0.5) ? retMin.b : retMax.b;
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (LinearLight)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 retMin = max ((2.0 * Fgnd) + Bgnd - WHITE, kTransparentBlack);
+   float4 retMax = min ((2.0 * Fgnd) + Bgnd - WHITE, WHITE);
+   float4 blnd = Fgnd;
+
+   blnd.r = (Fgnd.r < 0.5) ? retMin.r : retMax.r;
+   blnd.g = (Fgnd.g < 0.5) ? retMin.g : retMax.g;
+   blnd.b = (Fgnd.b < 0.5) ? retMin.b : retMax.b;
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (PinLight)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   float3 retMax = 2.0 * Fgnd.rgb;
+   float3 retMin = retMax - 1.0.xxx;
+
+   blnd.r = (Bgnd.r > retMax.r) ? retMax.r : (Bgnd.r < retMin.r) ? retMin.r : Bgnd.r;
+   blnd.g = (Bgnd.g > retMax.g) ? retMax.g : (Bgnd.g < retMin.g) ? retMin.g : Bgnd.g;
+   blnd.b = (Bgnd.b > retMax.b) ? retMax.b : (Bgnd.b < retMin.b) ? retMin.b : Bgnd.b;
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (HardMix)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   float3 ref = 1.0.xxx - Bgnd.rgb;
+
+   blnd.r = (Fgnd.r < ref.r) ? 0.0 : 1.0;
+   blnd.g = (Fgnd.g < ref.g) ? 0.0 : 1.0;
+   blnd.b = (Fgnd.b < ref.b) ? 0.0 : 1.0;
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+//--------------------------------------- GROUP 4 -----------------------------------------//
+
+DeclareEntryPoint (Difference)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = lerp (Bgnd, abs (Fgnd - Bgnd), amount.x);
+
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (Exclusion)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = lerp (Bgnd, saturate (Fgnd + Bgnd - (2.0 * Fgnd * Bgnd)), amount.x);
+
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (Subtract)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = lerp (Bgnd, max (Bgnd - Fgnd, kTransparentBlack), amount.x);
+
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (Divide)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = Fgnd;
+
+   blnd.r = (Fgnd.r == 0.0) ? 1.0 : min (Bgnd.r / Fgnd.r, 1.0);
+   blnd.g = (Fgnd.g == 0.0) ? 1.0 : min (Bgnd.g / Fgnd.g, 1.0);
+   blnd.b = (Fgnd.b == 0.0) ? 1.0 : min (Bgnd.b / Fgnd.b, 1.0);
+
+   blnd = lerp (Bgnd, blnd, amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+//--------------------------------------- GROUP 5 -----------------------------------------//
+
+DeclareEntryPoint (Hue)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = fn_rgb2hsv (Bgnd);
+
+   blnd.xw = (fn_rgb2hsv (Fgnd)).xw;
+
+   blnd = lerp (Bgnd, fn_hsv2rgb (blnd), amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (Saturation)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = fn_rgb2hsv (Bgnd);
+
+   blnd.yw = fn_rgb2hsv (Fgnd).yw;
+
+   blnd = lerp (Bgnd, fn_hsv2rgb (blnd), amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (Colour)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = fn_rgb2hsv (Fgnd);
+
+   blnd.x = (fn_rgb2hsv (Bgnd)).x;
+
+   blnd = lerp (Bgnd, fn_hsv2rgb (blnd), amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
+}
+
+DeclareEntryPoint (Luminosity)
+{
+   float4 Fgnd, Bgnd;
+
+   float2 amount = fn_init (Fg, uv1, Fgnd, Bg, uv2, Bgnd);
+
+   float4 blnd = fn_rgb2hsv (Bgnd);
+
+   blnd.zw = (fn_rgb2hsv (Fgnd)).zw;
+
+   blnd = lerp (Bgnd, fn_hsv2rgb (blnd), amount.x);
+   blnd = lerp (blnd, Fgnd, amount.y);
+   blnd = lerp (Bgnd, blnd, Fgnd.a);
+
+   return lerp (Bgnd, blnd, tex2D (Mask, uv3).x);
 }
 

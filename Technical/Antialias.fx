@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-11
+// @Created 2016-05-09
 
 /**
  A two pass rotary anti-alias tool that samples first at 6 degree intervals then at 7.5
@@ -16,7 +16,10 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-11 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

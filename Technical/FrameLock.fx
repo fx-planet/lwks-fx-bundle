@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-11
+// @Created 2022-06-23
 
 /**
  Frame lock locks the frame size and aspect ratio of the image to that of the sequence.
@@ -12,7 +12,10 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-11 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

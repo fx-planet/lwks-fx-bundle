@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-05-16
 // @Author khaver
 // @Created 2011-12-05
 
@@ -11,17 +11,19 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Colorbars.fx
+// Lightworks user effect SMPTEcolorbars.fx
 //
 // Version history:
 //
-// Updated 2023-01-11 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-05-05 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Color bars", "User", "Technical", "Provides SMPTE-standard colour bars as an alternative to the Lightworks-supplied EBU version", kNoFlags);
+DeclareLightworksEffect ("SMPTE color bars", "User", "Technical", "Provides SMPTE-standard colour bars as an alternative to the Lightworks-supplied EBU version", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

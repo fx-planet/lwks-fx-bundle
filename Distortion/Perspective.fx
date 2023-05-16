@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-05-16
 // @Author windsturm
 // @OriginalAuthor "Evan Wallace"
 // @Created 2017-05-03
@@ -52,8 +52,10 @@ THE SOFTWARE.
 //
 // Version history:
 //
-// Updated 2023-01-08 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-24 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -65,6 +67,8 @@ DeclareLightworksEffect ("Perspective", "DVE", "Distortion", "Warps one rectangl
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Input);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -169,7 +173,9 @@ DeclarePass (Inp)
 
 DeclareEntryPoint (PerspectiveFx)
 {
-   if (viewSsource) return ReadPixel (Inp, uv2);
+   float4 Fgnd = tex2D (Inp, uv2);
+
+   if (viewSsource) return Fgnd;
 
    float3x3 a = getSquareToQuad (aTLX, 1-aTLY, aTRX, 1-aTRY, aBLX, 1-aBLY, aBRX, 1-aBRY);    // after
    float3x3 b = getSquareToQuad (bTLX, 1-bTLY, bTRX, 1-bTRY, bBLX, 1-bBLY, bBRX, 1-bBRY);    // before
@@ -180,6 +186,8 @@ DeclareEntryPoint (PerspectiveFx)
 
    // return Wrap or Border mode - Border mode simulated by blanking coord overflow
 
-   return modeWrap ? tex2D (Inp, coord) : any (xy - coord) ? kTransparentBlack : tex2D (Inp, xy);
+   float4 retval = modeWrap ? tex2D (Inp, coord) : any (xy - coord) ? kTransparentBlack : tex2D (Inp, xy);
+
+   return lerp (Fgnd, retval, tex2D (Mask, uv2).x);
 }
 

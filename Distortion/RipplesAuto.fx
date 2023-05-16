@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-02-17
+// @Released 2023-05-16
 // @Author schrauber
 // @Created 2016-03-25
 
@@ -16,11 +16,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
 //
-// Updated 2023-01-08 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -32,6 +31,8 @@ DeclareLightworksEffect ("Ripples (automatic expansion)", "DVE", "Distortion", "
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Input);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -124,8 +125,8 @@ DeclareEntryPoint (RipplesAuto)
 
    xy1 = distortion * xy1 + uv1;
 
-   if (!Flip_edge && IsOutOfBounds (xy1)) return kTransparentBlack;
+   float4 retval = (!Flip_edge && IsOutOfBounds (xy1)) ? kTransparentBlack : MirrorEdge (Input, xy1);
 
-   return MirrorEdge (Input, xy1); 
+   return lerp (ReadPixel (Input, uv1), retval, tex2D (Mask, uv1).x);
 }
 

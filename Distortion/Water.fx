@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-08
+// @Released 2023-05-16
 // @Author khaver
 // @Created 2014-11-20
 
@@ -15,8 +15,10 @@
 //
 // Version history:
 //
-// Updated 2023-01-08 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-08 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -28,6 +30,8 @@ DeclareLightworksEffect ("Water", "Stylize", "Distortion", "This makes waves as 
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Input);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -66,7 +70,8 @@ DeclareEntryPoint (Water)
    }
 
    float4 Color = tex2D (Input, xy);
+   float4 Fgnd  = tex2D (Input, uv1);
 
-   return Color;
+   return lerp (Fgnd, Color, tex2D (Mask, uv1).x);
 }
 

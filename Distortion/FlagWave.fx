@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-24
+// @Created 2018-07-27
 
 /**
  This effect simulates a flag waving.  It incorporates a 3D DVE to allow the flag to be
@@ -20,7 +20,10 @@
 //
 // Version history:
 //
-// Built 2023-01-24 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-24 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-24
+// @Created 2018-04-19
 
 /**
  This effect simulates a filmic curve with exposure adjustment and controllable halation
@@ -40,7 +40,10 @@
 //
 // Version history:
 //
-// Built 2023-01-24 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-24 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

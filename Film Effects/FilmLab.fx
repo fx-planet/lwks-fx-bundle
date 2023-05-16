@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-24
+// @Created 2020-07-27
 
 /**
  This applies a range of tweaks to simulate the look of various colour film laboratory
@@ -46,7 +46,10 @@
 //
 // Version history:
 //
-// Built 2023-01-24 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-24 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

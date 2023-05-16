@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-24
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-24
+// @Created 2020-08-03
 
 /**
  Multiple toner aims to produce the effect of a range of chemical processes that
@@ -33,7 +33,10 @@
 //
 // Version history:
 //
-// Built 2023-01-24 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-24 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

@@ -1,4 +1,4 @@
-# Lightworks user Fx library, May 15, 2023.
+# Lightworks user Fx library, May 16, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -119,6 +119,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Regional zoom                 |RegionalZoom.fx         |This allows you to apply localised distortion to any region of the frame      |
 |Ripples (automatic expansion) |RipplesAuto.fx          |Radiating ripples are produced under semi-automatic control                   |
 |Ripples (manual expansion)    |RipplesManual.fx        |Radiating ripples are produced under full user control                        |
+|Skew                          |Skew.fx                 |A neat, simple effect for adding a perspective illusion to a flat plane       |
 |Water                         |Water.fx                |Makes waves as well as refraction, and provides X and Y adjustment            |
 |Whirl                         |Whirl.fx                |Simulates what happens when water empties out of a sink                       |
 

@@ -284,24 +284,20 @@ If you need to use two effects that have the same name, simply open one of them 
 ## TRANSITIONS
 
 ## CATEGORY FOLDER: Abstract transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Abstraction #1            |Abstract_1_Dx.fx        |                        |Abstract geometric transition #1 between two sources |
-|Abstraction #2            |Abstract_2_Dx.fx        |                        |Abstract geometric transition #2 between two sources |
-|Abstraction #3            |Abstract_3_Dx.fx        |                        |Abstract geometric transition #3 between two sources |
-|Erosion                   |Erosion_Dx.fx           |                        |Transitions between two sources using a mixed key    |
-|Fractal dissolve          |Fractal_Dx.fx           |Fractal_Kx.fx           |Uses a fractal-like pattern as a transition          |
-|Transmogrify              |Transmogrify_Dx.fx      |Transmogrify_Kx.fx      |Explodes an image into a cloud of particles          |
-|Warped dissolve           |Warp_Dx.fx              |Warp_Kx.fx              |Warps between two shots                              |
+|EFFECT                    |DIRECT      |KEYED      |FILE NAME               |DESCRIPTION                                          |
+|:------------------------ |:--------- |:---------- |:---------------------- |:--------------------------------------------------- |
+|Erosion transition        |Yes        |Yes         |ErodeTrans.fx           |Transitions between two sources using a mixed key    |
+|Fractal transition        |Yes        |Yes         |FractalTrans.fx         |Uses a fractal-like pattern as a transition          |
+|Warp transition           |Yes        |Yes         |WarpTrans.fx            |Warps between two shots                              |
 
 ## CATEGORY FOLDER: Art transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Border transition         |                        |Border_Kx.fx            |Key materialises / dematerialises in four directions |
-|Dry brush mix             |DryBrush_Dx.fx          |DryBrush_Kx.fx          |Angled brush stroke transitions between shots        |
-|FlareTran                 |FlareTran_Dx.fx         |                        |Dissolves between images using a burnout flare       |
-|Granular dissolve         |Granular_Dx.fx          |Granular_Kx.fx          |A granular noise driven dissolve between shots       |
-|Toon transition           |Toon_Dx                 |Toon_Kx                 |A stylised cartoon transition between images         |
+|EFFECT                    |DIRECT      |KEYED      |FILE NAME               |DESCRIPTION                                          |
+|:------------------------ |:--------- |:---------- |:---------------------- |:--------------------------------------------------- |
+|Border transition         |No         |Yes         |BorderTrans.fx          |Key materialises / dematerialises in four directions |
+|Dry brush transition      |Yes        |Yes         |DryBrushTrans.fx        |Angled brush stroke transitions between shots        |
+|Flare transition          |Yes        |No          |FlareTran.fx            |Dissolves between images using a burnout flare       |
+|Granular transition       |Yes        |Yes         |GranularTrans.fx        |A granular noise driven dissolve between shots       |
+|Toon transition           |Yes        |Yes         |ToonTrans.fx            |A stylised cartoon transition between images         |
 
 ## CATEGORY FOLDER: Blend transitions
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |

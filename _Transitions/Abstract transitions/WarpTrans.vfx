@@ -1,0 +1,34 @@
+[CENTER][B][COLOR=#88ccff]_____________________________________________[/COLOR][/B][/CENTER]
+[TABLE]
+[TR]
+[TD][B]Effect[/B][/TD]
+[TD][B]Category[/B][/TD]
+[TD][B]Subcategory[/B][/TD]
+[TD][B]Current version[/B][/TD]
+[TD][B]Created[/B][/TD]
+[TD][B]Author[/B][/TD]
+[/TR]
+[TR]
+[TD]Warp transition[/TD]
+[TD]Mix[/TD]
+[TD]Abstract transitions[/TD]
+[TD]May 16 2023[/TD]
+[TD]May 10 2016[/TD]
+[TD]jwrl[/TD]
+[/TR]
+[/TABLE]
+[CENTER]
+[ATTACH type="full" alt="Dx_Warp_480.png"]38254[/ATTACH][/CENTER]
+
+This is a dissolve that warps.  The warp is driven by the background image, and so will be different each time that it's used.  It supports titles and other blended effects.
+
+The standard (default) dissolve setting is shown in the upper video, and the blend setting is in the lower.
+[CENTER]
+[ATTACH type="full"]38256[/ATTACH]
+[ATTACH type="full"]38257[/ATTACH]
+[B][COLOR=#88ccff]_____________________________________________[/COLOR][/B][/CENTER]
+
+NOTE:  This version of this effect is not suitable for use with versions of Lightworks earlier than 2023.1.
+
+To install this effect initiate VFX mode in Lightworks version 2023.1 or better and open the effects menu.  Click on "Install community effects.." and open "Abstract transitions" then navigate to the effect you want.  If you need further clarification on how to install effects in current Lightworks versions you will find that [URL='https://forum.lwks.com/threads/standard-and-user-effects-faq.188603/post-188982']here[/URL].
+

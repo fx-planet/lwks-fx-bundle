@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2021-11-15
 
 /**
  This is an effect that is used to highlight sections of the input video, using circles,
@@ -21,7 +21,10 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-10 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

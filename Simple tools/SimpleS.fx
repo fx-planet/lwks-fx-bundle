@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-25
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-25
+// @Created 2020-04-29
 
 /**
  This effect allows the user to apply an S-curve correction to red, green and blue video
@@ -16,7 +16,10 @@
 //
 // Version history:
 //
-// Built 2023-01-25 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-25 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

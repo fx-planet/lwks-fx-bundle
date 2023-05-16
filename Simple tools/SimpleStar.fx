@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-10
+// @Released 2023-05-15
 // @Author jwrl
-// @Created 2023-01-10
+// @Created 2025-04-11
 
 /**
  Simple star is a glint effect which creates star filter-like highlights, with 4, 5,
@@ -43,7 +43,10 @@
 //
 // Version history:
 //
-// Built 2023-01-10 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-10 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

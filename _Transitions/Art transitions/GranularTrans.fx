@@ -1,30 +1,30 @@
 // @Maintainer jwrl
-// @Released 2023-01-30
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-30
+// @Created 2016-02-08
 
 /**
- This effect was created to provide a granular noise driven dissolve.  The noise
- component is based on work by users khaver and windsturm.  The radial gradient part
- is from an effect provided by LWKS Software Ltd.
+ This effect uses a granular noise driven pattern to transition into or out of an image
+ The noise component is based on work by users khaver and windsturm.  The radial gradient
+ part is from an effect provided by LWKS Software Ltd.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
- Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
- to the background is provided, which dissolves between the cropped areas during the
- transition.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Granular_Dx.fx
+// Lightworks user effect GranularTrans.fx
 //
 // Version history:
 //
-// Built 2023-01-30 jwrl.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-06 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Granular dissolve", "Mix", "Art transitions", "This effect provides a granular noise driven dissolve between shots", "CanSize");
+DeclareLightworksEffect ("Granular transition", "Mix", "Art transitions", "Uses a granular noise driven pattern to transition between clips", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -32,15 +32,18 @@ DeclareLightworksEffect ("Granular dissolve", "Mix", "Art transitions", "This ef
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareIntParam (SetTechnique, "Type", "Particles", 1, "Top to bottom|Left to right|Radial|No gradient");
+DeclareIntParam (SetTechnique, "Transition type", kNoGroup, 1, "Top to bottom|Left to right|Radial|No gradient");
 
 DeclareBoolParam (TransDir, "Invert transition direction", kNoGroup, false);
+
 DeclareFloatParam (gWidth, "Width", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareFloatParam (pSize, "Size", "Particles", kNoFlags, 5.5, 1.0, 10.0);
@@ -51,11 +54,15 @@ DeclareBoolParam (Sparkles, "Sparkle", "Particles", false);
 
 DeclareColourParam (starColour, "Colour", "Particles", kNoFlags, 0.9, 0.75, 0.0, 1.0);
 
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_OutputAspectRatio);
-
-DeclareFloatParam (_Progress);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -65,25 +72,60 @@ DeclareFloatParam (_Progress);
 #define PROFILE ps_3_0
 #endif
 
+#define B_SCALE 0.000545
+#define SQRT_2  1.4142135624
+
 // Pascal's triangle magic numbers for blur
 
-#define BLUR_0  0.3125
-#define BLUR_1  0.2344
-#define BLUR_2  0.09375
-#define BLUR_3  0.01563
-
-#define B_SCALE 0.000545
+float _pascal [] = { 0.3125, 0.2344, 0.09375, 0.01563 };
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
+
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+{
+   float4 Fgnd = ReadPixel (F, xy1);
+
+   if (Blended) {
+      float4 Bgnd = ReadPixel (B, xy2);
+
+      if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+      else {
+         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+         Fgnd.rgb = SwapDir ? Bgnd.rgb : lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a);
+      }
+      Fgnd.a = pow (Fgnd.a, 0.1);
+   }
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
+}
+
+float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
+{
+   float4 Bgnd = ReadPixel (B, xy2);
+
+   if (Blended && SwapDir) {
+
+      if (Source > 0) {
+         float4 Fgnd = ReadPixel (F, xy1);
+
+         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+         Bgnd = lerp (Bgnd, Fgnd, Fgnd.a);
+      }
+   }
+
+   return Bgnd;
+}
 
 float4 fn_noise (float2 uv)
 {
    float2 xy = saturate (uv + float2 (0.00013, 0.00123));
 
    float seed = (TransVar) ? 0.0 : Amount;
-
    float rndval = frac (sin (dot (xy, float2 (12.9898, 78.233)) + xy.x + xy.y + seed) * (43758.5453));
 
    rndval = sin (xy.x) + cos (xy.y) + rndval * 1000.0;
@@ -91,87 +133,90 @@ float4 fn_noise (float2 uv)
    return saturate (frac (fmod (rndval, 17.0) * fmod (rndval, 94.0)) * 3.0).xxxx;
 }
 
-float4 fn_blur_X (sampler S, float2 uv)
+float4 fn_blur_X (sampler B, float2 uv)
 {
-   float4 retval = tex2D (S, uv);
-
    float2 offset_X1 = float2 (pSoftness * B_SCALE, 0.0);
    float2 offset_X2 = offset_X1 * 2.0;
    float2 offset_X3 = offset_X1 * 3.0;
 
-   retval *= BLUR_0;
-   retval += tex2D (S, uv + offset_X1) * BLUR_1;
-   retval += tex2D (S, uv - offset_X1) * BLUR_1;
-   retval += tex2D (S, uv + offset_X2) * BLUR_2;
-   retval += tex2D (S, uv - offset_X2) * BLUR_2;
-   retval += tex2D (S, uv + offset_X3) * BLUR_3;
-   retval += tex2D (S, uv - offset_X3) * BLUR_3;
+   float4 retval = tex2D (B, uv) * _pascal [0];
+
+   retval += tex2D (B, uv + offset_X1) * _pascal [1];
+   retval += tex2D (B, uv - offset_X1) * _pascal [1];
+   retval += tex2D (B, uv + offset_X2) * _pascal [2];
+   retval += tex2D (B, uv - offset_X2) * _pascal [2];
+   retval += tex2D (B, uv + offset_X3) * _pascal [3];
+   retval += tex2D (B, uv - offset_X3) * _pascal [3];
 
    return retval;
 }
 
-float4 fn_blur_Y (sampler S, float2 uv)
+float4 fn_blur_Y (sampler B, float2 uv)
 {
-   float4 retval = tex2D (S, uv);
-
    float2 offset_Y1 = float2 (0.0, pSoftness * _OutputAspectRatio * B_SCALE);
    float2 offset_Y2 = offset_Y1 * 2.0;
    float2 offset_Y3 = offset_Y1 * 3.0;
 
-   retval *= BLUR_0;
-   retval += tex2D (S, uv + offset_Y1) * BLUR_1;
-   retval += tex2D (S, uv - offset_Y1) * BLUR_1;
-   retval += tex2D (S, uv + offset_Y2) * BLUR_2;
-   retval += tex2D (S, uv - offset_Y2) * BLUR_2;
-   retval += tex2D (S, uv + offset_Y3) * BLUR_3;
-   retval += tex2D (S, uv - offset_Y3) * BLUR_3;
+   float4 retval = tex2D (B, uv) * _pascal [0];
+
+   retval += tex2D (B, uv + offset_Y1) * _pascal [1];
+   retval += tex2D (B, uv - offset_Y1) * _pascal [1];
+   retval += tex2D (B, uv + offset_Y2) * _pascal [2];
+   retval += tex2D (B, uv - offset_Y2) * _pascal [2];
+   retval += tex2D (B, uv + offset_Y3) * _pascal [3];
+   retval += tex2D (B, uv - offset_Y3) * _pascal [3];
 
    return retval;
 }
 
-float4 fn_main (sampler F, sampler B, sampler G, sampler S, float2 xy1, float2 xy2, float2 xy3)
+float4 fn_main (sampler F, sampler B, sampler G, sampler S, float2 xy)
 {
-   float4 Fgnd  = tex2D (F, xy3);
-   float4 Bgnd  = tex2D (B, xy3);
+   float4 Fgnd = tex2D (F, xy);     // Outgoing
+   float4 Bgnd = tex2D (B, xy);     // Incoming
+   float4 maskBg, retval;
 
-   float4 grad  = tex2D (G, xy3);
-   float4 noise = tex2D (S, ((xy3 - 0.5) / pSize) + 0.5);
-
-   float level  = saturate (((0.5 - grad.x) * 2) + noise);
-
-   float4 retval = lerp (Fgnd, Bgnd, level);
-
-   if (!Sparkles) return retval;
-
-   if (level > 0.5) level = 0.5 - level;
-
-   float stars = saturate ((pow (level, 3.0) * 4.0) + level);
-
-   retval = lerp (retval, starColour, stars);
-
-   if (CropEdges) {
-      Fgnd = IsOutOfBounds (xy1) ? kTransparentBlack : retval;
-      Bgnd = IsOutOfBounds (xy2) ? kTransparentBlack : retval;
-
-      retval = lerp (Fgnd, Bgnd, Amount);
+   if (Blended) {
+      retval = Fgnd;
+      maskBg = SwapDir ? Fgnd : Bgnd;
+   }
+   else {
+      maskBg = Fgnd;
+      retval = Bgnd;
    }
 
-   return retval;
+   if (Fgnd.a > 0.0) {
+      float4 grad  = tex2D (G, xy);                          // Gradient
+      float4 noise = tex2D (S, ((xy - 0.5) / pSize) + 0.5);  // Soft
+
+      float level = saturate (((0.5 - grad.x) * 2) + noise);
+
+      retval = lerp (Fgnd, Bgnd, level);
+
+      if (Sparkles) {
+         if (level > 0.5) level = 0.5 - level;
+
+         float stars = saturate ((pow (level, 3.0) * 4.0) + level);
+
+         retval = lerp (retval, starColour, stars);
+      }
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, xy).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique Granular_Dx (Vertical)
+// technique Granulate Vertical
 
-DeclarePass (Fgd_V)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Fg_V)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bgd_V)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Bg_V)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Gradient_V)
+DeclarePass (Gradient_V)                  // Buffer_0
 {
    float retval = lerp (0.0, 1.0, uv3.y);
 
@@ -180,134 +225,126 @@ DeclarePass (Gradient_V)
    return saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0)).xxxx;
 }
 
-DeclarePass (Noise_V)
+DeclarePass (Noise_V)                     // Buffer_1
 { return fn_noise (uv3); }
 
-DeclarePass (Preblur_V)
+DeclarePass (Preblur_V)                   // Buffer_2
 { return fn_blur_X (Noise_V, uv3); }
 
-DeclarePass (Soft_V)
+DeclarePass (Soft_V)                      // Buffer_3
 { return fn_blur_Y (Preblur_V, uv3); }
 
-DeclareEntryPoint (Granular_Dx_V)
-{ return fn_main (Fgd_V, Bgd_V, Gradient_V, Soft_V, uv1, uv2, uv3); }
+DeclareEntryPoint (Granulate_V)
+{ return fn_main (Fg_V, Bg_V, Gradient_V, Soft_V, uv3); }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Granular_Dx (Horizontal)
+// technique Granulate Horizontal
 
-DeclarePass (Fgd_H)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Fg_H)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bgd_H)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Bg_H)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Gradient_H)
 {
-   float retval = lerp (0.0, 1.0, uv3.x);
+   float retval = TransDir ? smoothstep (0.0, 1.0, 1.0 - uv3.x) : smoothstep (0.0, 1.0, uv3.x);
 
-   if (TransDir) retval = 1.0 - retval;
+   retval = saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0));
 
-   return saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0)).xxxx;
+   return retval.xxxx;
 }
 
-DeclarePass (Noise_H)
+DeclarePass (Noise_H)                     // Buffer_1
 { return fn_noise (uv3); }
 
-DeclarePass (Preblur_H)
+DeclarePass (Preblur_H)                   // Buffer_2
 { return fn_blur_X (Noise_H, uv3); }
 
-DeclarePass (Soft_H)
+DeclarePass (Soft_H)                      // Buffer_3
 { return fn_blur_Y (Preblur_H, uv3); }
 
-DeclareEntryPoint (Granular_Dx_H)
-{ return fn_main (Fgd_H, Bgd_H, Gradient_H, Soft_H, uv1, uv2, uv3); }
+DeclareEntryPoint (Granulate_H)
+{ return fn_main (Fg_H, Bg_H, Gradient_H, Soft_H, uv3); }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Granular_Dx (Radial)
+// technique Granulate Radial
 
-DeclarePass (Fgd_R)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Fg_R)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bgd_R)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Bg_R)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Gradient_R)
 {
-   float progress = abs (distance (uv3, float2 (0.5, 0.5))) * 1.414;
-
-   float4 pixel = tex2D (Fgd_R, uv3);
-
-   float colOneAmt = 1.0 - progress;
-   float colTwoAmt = progress;
-
-   float retval = (lerp (pixel, 0.0, 1.0) * colOneAmt) +
-                  (lerp (pixel, 1.0, 1.0) * colTwoAmt) +
-                  (pixel * (1.0 - (colOneAmt + colTwoAmt)));
+   float retval = abs (distance (uv3, 0.5.xx)) * SQRT_2;
 
    if (TransDir) retval = 1.0 - retval;
 
-   return saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0)).xxxx;
+   retval = saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0));
+
+   return retval.xxxx;
 }
 
-DeclarePass (Noise_R)
+DeclarePass (Noise_R)                     // Buffer_1
 { return fn_noise (uv3); }
 
-DeclarePass (Preblur_R)
+DeclarePass (Preblur_R)                   // Buffer_2
 { return fn_blur_X (Noise_R, uv3); }
 
-DeclarePass (Soft_R)
+DeclarePass (Soft_R)                      // Buffer_3
 { return fn_blur_Y (Preblur_R, uv3); }
 
-DeclareEntryPoint (Granular_Dx_R)
-{ return fn_main (Fgd_R, Bgd_R, Gradient_R, Soft_R, uv1, uv2, uv3); }
+DeclareEntryPoint (Granulate_R)
+{ return fn_main (Fg_R, Bg_R, Gradient_R, Soft_R, uv3); }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Granular_Dx (Flat)
+// technique Granulate Flat
 
-DeclarePass (Fgd_F)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Fg_F)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bgd_F)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Bg_F)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Noise_F)
 { return fn_noise (uv3); }
 
-DeclarePass (Preblur_F)
+DeclarePass (Blur_1_F)
 { return fn_blur_X (Noise_F, uv3); }
 
-DeclarePass (Soft_F)
-{ return fn_blur_Y (Preblur_F, uv3); }
+DeclarePass (Blur_F)
+{ return fn_blur_Y (Blur_1_F, uv3); }
 
-DeclareEntryPoint (Granular_Dx_F)
+DeclareEntryPoint (Granulate_F)
 {
-   float4 Fgnd = tex2D (Fgd_F, uv3);
-   float4 Bgnd = tex2D (Bgd_F, uv3);
+   float4 Fgnd = tex2D (Fg_F, uv3);
+   float4 Bgnd = tex2D (Bg_F, uv3);
+   float4 MaskBg, retval;
 
-   float4 noise = tex2D (Soft_F, ((uv3 - 0.5) / pSize) + 0.5);
+   if (Blended && !SwapDir) { MaskBg = Bgnd; }
+   else MaskBg = Fgnd;
 
-   float level = saturate (((Amount - 0.5) * 2) + noise);
+   if (Fgnd.a > 0.0 ) {
+      float noise  = tex2D (Blur_F, ((uv3 - 0.5) / pSize) + 0.5).x;
+      float amount = saturate (((Amount - 0.5) * 2.0) + noise);
+      float stars;
 
-   float4 retval = lerp (Fgnd, Bgnd, level);
+      retval = lerp (Fgnd, Bgnd, amount);
 
-   if (!Sparkles) return retval;
+      if (amount > 0.5) amount = 0.5 - amount;
 
-   if (level > 0.5) level = 0.5 - level;
-
-   float stars = saturate ((pow (level, 3.0) * 4.0) + level);
-
-   retval = lerp (retval, starColour, stars);
-
-   if (CropEdges) {
-      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
-      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
-
-      retval = lerp (Fgnd, Bgnd, Amount);
+      if (Sparkles) {
+         stars = saturate ((pow (amount, 3.0) * 4.0) + amount);
+         retval = lerp (retval, starColour, stars);
+      }
    }
+   else retval = Bgnd;
 
-   return retval;
+   return lerp (MaskBg, retval, tex2D (Mask, uv3).x);
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2018-06-11
 
 /**
  An effect transition that generates borders using a difference or delta key then uses
@@ -12,22 +12,22 @@
  will be necessary to adjust the delta key trim.  Normally you won't need to do this.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
- Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
- to the background is provided, which dissolves between the cropped areas during the
- transition.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Border_Kx.fx
+// Lightworks user effect BorderTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-06 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Border transition (keyed)", "Mix", "Art transitions", "The foreground materialises from four directions or dematerialises to four directions", "CanSize");
+DeclareLightworksEffect ("Border transition", "Mix", "Art transitions", "The foreground materialises from four directions or dematerialises to four directions", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -35,16 +35,13 @@ DeclareLightworksEffect ("Border transition (keyed)", "Mix", "Art transitions", 
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
-
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
-
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 DeclareFloatParam (Radius, "Thickness", "Borders", kNoFlags, 0.3, 0.0, 1.0);
 DeclareFloatParam (Displace, "Displacement", "Borders", kNoFlags, 0.5, 0.0, 1.0);
@@ -54,12 +51,14 @@ DeclareColourParam (Colour_2, "Outline 2", "Colours", kNoFlags, 0.3, 0.6, 1.0, 1
 DeclareColourParam (Colour_3, "Outline 3", "Colours", kNoFlags, 0.9, 0.6, 1.0, 1.0);
 DeclareColourParam (Colour_4, "Outline 4", "Colours", kNoFlags, 0.6, 0.3, 1.0, 1.0);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
 
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+
+DeclareFloatParam (_OutputAspectRatio);
 DeclareFloatParam (_Progress);
-
-DeclareFloatParam (_OutputWidth);
-DeclareFloatParam (_OutputHeight);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -71,34 +70,31 @@ DeclareFloatParam (_OutputHeight);
 
 #define NotEqual(XY_1,XY_2) (any ((XY_1 - XY_2) != 0.0))
 
-#define RADIUS_0 (float2 (1.0, _OutputWidth / _OutputHeight) * 0.00125)
 #define DIVISOR  61.0
 
 #define LOOP_1   30
-#define RADIUS_1 (float2 (1.0, _OutputWidth / _OutputHeight) * 0.018)
-#define ANGLE_1  0.1047
+#define ANGLE_1  0.10472   // 6 degrees in radians
 
 #define LOOP_2   24
-#define RADIUS_2 (float2 (1.0, _OutputWidth / _OutputHeight) * 0.012)
-#define ANGLE_2  0.1309
-
-#define OFFSET   0.5
-#define X_OFFSET 0.5625
-#define Y_OFFSET 1.7777777778
+#define ANGLE_2  0.1309    // 7.5 degrees
 
 #define HALF_PI  1.5707963268
 
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
+DeclarePass (Fgd)
 {
-   float4 Fgnd = ReadPixel (Fg, xy1);
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+
+   if ((Source == 0) && SwapDir) {
+      Bgnd = Fgnd;
+      Fgnd = ReadPixel (Bg, uv2);
+   }
+   else Bgnd = ReadPixel (Bg, uv2);
 
    if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
-
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
    }
@@ -107,15 +103,20 @@ float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
       Fgnd.rgb /= Fgnd.a;
    }
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+
+   return Fgnd;
 }
 
-float4 fn_antialias (sampler S, float2 uv)
+DeclarePass (Bgd)
+{ return SwapDir && (Source == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+
+DeclarePass (Super)
 {
-   float2 radius = RADIUS_0;
+   float2 radius = float2 (1.0, _OutputAspectRatio) * 0.00125;
    float2 xy1, xy2;
 
-   float4 retval = ReadPixel (S, uv);
+   float4 retval = ReadPixel (Fgd, uv3);
    float4 input  = retval;
 
    float amount = saturate (_Progress * 15.0);
@@ -125,314 +126,108 @@ float4 fn_antialias (sampler S, float2 uv)
    for (int i = 0; i < LOOP_1; i++) {
       sincos ((i * ANGLE_1), xy1.x, xy1.y);
       xy1 *= radius;
-      xy2  = uv - xy1;
-      xy1 += uv;
-      retval += ReadPixel (S, xy1);
-      retval += ReadPixel (S, xy2);
+      xy2  = uv3 - xy1;
+      xy1 += uv3;
+      retval += ReadPixel (Fgd, xy1);
+      retval += ReadPixel (Fgd, xy2);
    }
 
    return lerp (input, retval / DIVISOR, amount);
 }
 
-float4 fn_border_1 (sampler S, float2 uv)
+DeclarePass (Border_1)
 {
    float4 retval = kTransparentBlack;
 
-   if (Radius == 0.0) return retval;
+   if (Radius != 0.0) {
+      float radScale = SwapDir ? cos (Amount * HALF_PI) : sin (Amount * HALF_PI);
 
-   float radScale = cos (Amount * HALF_PI);
+      float2 radius = float2 (1.0, _OutputAspectRatio) * Radius * radScale * 0.018;
+      float2 xy1, xy2;
 
-   float2 radius = Radius * radScale * RADIUS_1;
-   float2 xy1, xy2;
-
-   for (int i = 0; i < LOOP_1; i++) {
-      sincos ((i * ANGLE_1), xy1.x, xy1.y);
-      xy1 *= radius;
-      xy2  = uv - xy1;
-      xy1 += uv;
-      retval = max (retval, ReadPixel (S, xy1));
-      retval = max (retval, ReadPixel (S, xy2));
+      for (int i = 0; i < LOOP_1; i++) {
+         sincos ((i * ANGLE_1), xy1.x, xy1.y);
+         xy1 *= radius;
+         xy2  = uv3 - xy1;
+         xy1 += uv3;
+         retval = max (retval, ReadPixel (Super, xy1));
+         retval = max (retval, ReadPixel (Super, xy2));
+      }
    }
 
    return retval;
 }
 
-float4 fn_border_2 (sampler S1, sampler S2, float2 uv)
+DeclarePass (Border_2)
 {
-   float4 retval = ReadPixel (S2, uv);
+   float4 retval = ReadPixel (Border_1, uv3);
 
-   if (Radius == 0.0) return retval;
+   if (Radius != 0.0) {
+      float radScale = SwapDir ? cos (Amount * HALF_PI) : sin (Amount * HALF_PI);
+      float alpha = saturate (ReadPixel (Super, uv3).a * 2.0);
 
-   float radScale = cos (Amount * HALF_PI);
-   float alpha = saturate (ReadPixel (S1, uv).a * 2.0);
+      float2 radius = float2 (1.0, _OutputAspectRatio) * Radius * radScale * 0.012;
+      float2 xy1, xy2;
 
-   float2 radius = Radius * radScale * RADIUS_2;
-   float2 xy1, xy2;
+      for (int i = 0; i < LOOP_2; i++) {
+         sincos ((i * ANGLE_2), xy1.x, xy1.y);
+         xy1 *= radius;
+         xy2  = uv3 - xy1;
+         xy1 += uv3;
+         retval = max (retval, ReadPixel (Border_1, xy1));
+         retval = max (retval, ReadPixel (Border_1, xy2));
+      }
 
-   for (int i = 0; i < LOOP_2; i++) {
-      sincos ((i * ANGLE_2), xy1.x, xy1.y);
-      xy1 *= radius;
-      xy2  = uv - xy1;
-      xy1 += uv;
-      retval = max (retval, ReadPixel (S2, xy1));
-      retval = max (retval, ReadPixel (S2, xy2));
+      retval = lerp (retval, kTransparentBlack, alpha);
    }
 
-   return lerp (retval, kTransparentBlack, alpha);
+   return retval;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Code
-//-----------------------------------------------------------------------------------------//
-
-// technique Border_F
-
-DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Key_F)
+DeclareEntryPoint (BorderTrans)
 {
-   float4 Fgnd = tex2D (Bg_F, uv3);
+   float2 xy1 = (Displace / 2.0).xx;
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
+   if (SwapDir) { xy1 *= 1.0 - Amount; }
+   else {
+      xy1 *= Amount;
+      xy1.x = -xy1.x;
    }
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-DeclarePass (Super_F)
-{ return fn_antialias (Key_F, uv3); }
-
-DeclarePass (Border_1_F)
-{ return fn_border_1 (Super_F, uv3); }
-
-DeclarePass (Border_2_F)
-{ return fn_border_2 (Super_F, Border_1_F, uv3); }
-
-DeclareEntryPoint (Border_F)
-{
-   float Offset = (1.0 - Amount) * Displace * OFFSET;
-   float Outline = 0.0, Opacity = 1.0;
-
-   float2 xy1 = Offset.xx;
-   float2 xy2 = float2 (xy1.x * X_OFFSET, (-xy1.y) * Y_OFFSET);
+   float2 xy2 = float2 (xy1.x / _OutputAspectRatio, -(xy1.y * _OutputAspectRatio));
    float2 xy3 = uv3 - xy1;
    float2 xy4 = uv3 + xy1;
 
    xy1  = uv3 - xy2;
    xy2 += uv3;
 
-   float4 border = tex2D (Super_F, xy1);
+   float4 border = tex2D (Super, xy1);
    float4 retval = kTransparentBlack;
+   float4 Bgnd = tex2D (Bgd, uv3);
 
    if (NotEqual (xy1, xy2)) {
-      retval = tex2D (Super_F, xy2); border = lerp (border, retval, retval.a);
-      retval = tex2D (Super_F, xy3); border = lerp (border, retval, retval.a);
-      retval = tex2D (Super_F, xy4); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super, xy2); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super, xy3); border = lerp (border, retval, retval.a);
+      retval = tex2D (Super, xy4); border = lerp (border, retval, retval.a);
 
-      retval = Colour_1 * tex2D (Border_2_F, xy1).a;
-      retval = lerp (retval, Colour_2, tex2D (Border_2_F, xy2).a);
-      retval = lerp (retval, Colour_3, tex2D (Border_2_F, xy3).a);
-      retval = lerp (retval, Colour_4, tex2D (Border_2_F, xy4).a);
+      retval = Colour_1 * tex2D (Border_2, xy1).a;
+      retval = lerp (retval, Colour_2, tex2D (Border_2, xy2).a);
+      retval = lerp (retval, Colour_3, tex2D (Border_2, xy3).a);
+      retval = lerp (retval, Colour_4, tex2D (Border_2, xy4).a);
 
-      sincos ((Amount * HALF_PI), Outline, Opacity);
+      float Outline, Opacity;
+
+      if (SwapDir) { sincos ((Amount * HALF_PI), Outline, Opacity); }
+      else sincos ((Amount * HALF_PI), Opacity, Outline);
+
       Opacity = 1.0 - sin (Opacity * HALF_PI);
+
+      float4 Fgnd = lerp (Bgnd, border, border.a * Opacity);
+
+      retval = lerp (Fgnd, retval, retval.a * Outline);
    }
+   else retval = lerp (Bgnd, border, border.a);
 
-   float4 Bgnd = lerp (tex2D (Bg_F, uv3), border, border.a * Opacity);
-
-   retval = lerp (Bgnd, retval, retval.a * Outline);
-
-   if (CropEdges) {
-      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
-
-      if (IsOutOfBounds (uv1)) retval = kTransparentBlack;
-
-      retval = lerp (retval, Bgnd, Amount);
-   }
-
-   return retval;
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Border_I
-
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Key_I)
-{ return fn_keygen (Bg_I, uv1, uv3); }
-
-DeclarePass (Super_I)
-{ return fn_antialias (Key_I, uv3); }
-
-DeclarePass (Border_1_I)
-{ return fn_border_1 (Super_I, uv3); }
-
-DeclarePass (Border_2_I)
-{ return fn_border_2 (Super_I, Border_1_I, uv3); }
-
-DeclareEntryPoint (Border_I)
-{
-   float Offset = (1.0 - Amount) * Displace * OFFSET;
-   float Outline = 0.0, Opacity = 1.0;
-
-   float2 xy1 = Offset.xx;
-   float2 xy2 = float2 (xy1.x * X_OFFSET, (-xy1.y) * Y_OFFSET);
-   float2 xy3 = uv3 - xy1;
-   float2 xy4 = uv3 + xy1;
-
-   xy1  = uv3 - xy2;
-   xy2 += uv3;
-
-   float4 border = tex2D (Super_I, xy1);
-   float4 retval = kTransparentBlack;
-
-   if (NotEqual (xy1, xy2)) {
-      retval = tex2D (Super_I, xy2); border = lerp (border, retval, retval.a);
-      retval = tex2D (Super_I, xy3); border = lerp (border, retval, retval.a);
-      retval = tex2D (Super_I, xy4); border = lerp (border, retval, retval.a);
-
-      retval = Colour_1 * tex2D (Border_2_I, xy1).a;
-      retval = lerp (retval, Colour_2, tex2D (Border_2_I, xy2).a);
-      retval = lerp (retval, Colour_3, tex2D (Border_2_I, xy3).a);
-      retval = lerp (retval, Colour_4, tex2D (Border_2_I, xy4).a);
-
-      sincos ((Amount * HALF_PI), Outline, Opacity);
-      Opacity = 1.0 - sin (Opacity * HALF_PI);
-   }
-
-   float4 Bgnd = lerp (tex2D (Bg_I, uv3), border, border.a * Opacity);
-
-   retval = lerp (Bgnd, retval, retval.a * Outline);
-
-   if (CropEdges) {
-      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
-
-      if (IsOutOfBounds (uv1)) retval = kTransparentBlack;
-
-      retval = lerp (Bgnd, retval, Amount);
-   }
-
-   return retval;
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Border_O
-
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Key_O)
-{ return fn_keygen (Bg_O, uv1, uv3); }
-
-DeclarePass (Super_O)
-{ return fn_antialias (Key_O, uv3); }
-
-DeclarePass (Border_1_O)
-{
-   float4 retval = kTransparentBlack;
-
-   if (Radius == 0.0) return retval;
-
-   float radScale = sin (Amount * HALF_PI);
-
-   float2 radius = Radius * radScale * RADIUS_1;
-   float2 xy1, xy2;
-
-   for (int i = 0; i < LOOP_1; i++) {
-      sincos ((i * ANGLE_1), xy1.x, xy1.y);
-      xy1 *= radius;
-      xy2  = uv3 - xy1;
-      xy1 += uv3;
-      retval = max (retval, tex2D (Super_O, xy1));
-      retval = max (retval, tex2D (Super_O, xy2));
-   }
-
-   return retval;
-}
-
-DeclarePass (Border_2_O)
-{
-   float4 retval = tex2D (Border_1_O, uv3);
-
-   if (Radius == 0.0) return retval;
-
-   float radScale = sin (Amount * HALF_PI);
-   float alpha = saturate (tex2D (Super_O, uv3).a * 2.0);
-
-   float2 radius = Radius * radScale * RADIUS_2;
-   float2 xy1, xy2;
-
-   for (int i = 0; i < LOOP_2; i++) {
-      sincos ((i * ANGLE_2), xy1.x, xy1.y);
-      xy1 *= radius;
-      xy2  = uv3 - xy1;
-      xy1 += uv3;
-      retval = max (retval, tex2D (Border_1_O, xy1));
-      retval = max (retval, tex2D (Border_1_O, xy2));
-   }
-
-   return lerp (retval, kTransparentBlack, alpha);
-}
-
-DeclareEntryPoint (Border_O)
-{
-   float Offset = Amount * Displace * OFFSET;
-   float Outline = 0.0, Opacity = 1.0;
-
-   float2 xy1 = float2 (-Offset, Offset);
-   float2 xy2 = float2 (xy1.x * X_OFFSET, (-xy1.y) * Y_OFFSET);
-   float2 xy3 = uv3 - xy1;
-   float2 xy4 = uv3 + xy1;
-
-   xy1  = uv3 - xy2;
-   xy2 += uv3;
-
-   float4 border = tex2D (Super_O, xy1);
-   float4 retval = kTransparentBlack;
-
-   if (NotEqual (xy1, xy2)) {
-      retval = tex2D (Super_O, xy2); border = lerp (border, retval, retval.a);
-      retval = tex2D (Super_O, xy3); border = lerp (border, retval, retval.a);
-      retval = tex2D (Super_O, xy4); border = lerp (border, retval, retval.a);
-
-      retval = Colour_1 * tex2D (Border_2_O, xy1).a;
-      retval = lerp (retval, Colour_2, tex2D (Border_2_O, xy2).a);
-      retval = lerp (retval, Colour_3, tex2D (Border_2_O, xy3).a);
-      retval = lerp (retval, Colour_4, tex2D (Border_2_O, xy4).a);
-
-      sincos ((Amount * HALF_PI), Opacity, Outline);
-      Opacity = 1.0 - sin (Opacity * HALF_PI);
-   }
-
-   if (CropEdges && IsOutOfBounds (uv2)) {
-      border = kTransparentBlack;
-      retval = kTransparentBlack;
-   }
-
-   float4 Bgnd = lerp (tex2D (Bg_O, uv3), border, border.a * Opacity);
-
-   retval = lerp (Bgnd, retval, retval.a * Outline);
-
-   if (CropEdges) {
-      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
-
-      if (IsOutOfBounds (uv1)) retval = kTransparentBlack;
-
-      retval = lerp (Bgnd, retval, 1.0 - Amount);
-   }
-
-   return retval;
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 

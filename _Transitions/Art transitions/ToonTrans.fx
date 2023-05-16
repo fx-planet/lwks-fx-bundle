@@ -1,10 +1,10 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2022-06-01
 
 /**
- This transition posterises a blended overlay and develops outlines from its edges as it
+ This transition posterises the mixed video and develops outlines from its edges as it
  transitions the blend in or out.  The intention is to mimic khaver's Toon effect, but
  apply it to a keyed transition.  While it's similar, there's an extra parameter provided
  that allows adjustment of the white levels of the posterised colours.  If you're using
@@ -12,22 +12,22 @@
  this and a normal dissolve.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
- Unlike with LW transitions there is no mask.  Instead the ability to crop the effect
- to the background is provided, which dissolves between the cropped areas during the
- transition.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Toon_Kx.fx
+// Lightworks user effect ToonTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-06 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Toon transition (keyed)", "Mix", "Art transitions", "A stylised cartoon transition for supers and blends", "CanSize");
+DeclareLightworksEffect ("Toon transition", "Mix", "Art transitions", "A stylised cartoon transition", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -35,16 +35,13 @@ DeclareLightworksEffect ("Toon transition (keyed)", "Mix", "Art transitions", "A
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
-
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
-
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
 
 DeclareFloatParam (Threshold, "Threshold", "Edge detection", "DisplayAsPercentage", 0.3, 0.0, 2.0);
 DeclareFloatParam (LineWeightX, "Line weight X", "Edge detection", kNoFlags, 0.5, 0.0, 1.0);
@@ -61,7 +58,13 @@ DeclareFloatParam (Contrast, "Contrast", "Posterize postprocess", "DisplayAsPerc
 DeclareFloatParam (Gain, "Gain", "Posterize postprocess", "DisplayAsPercentage", 1.0, 0.0, 4.0);
 DeclareFloatParam (HueAngle, "Hue (degrees)", "Posterize postprocess", kNoFlags, 0.0, -180.0, 180.0);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_OutputWidth);
 DeclareFloatParam (_OutputHeight);
@@ -139,35 +142,55 @@ float3 fn_RGBtoHSL (float3 RGB)
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Fgd)
+{
+   float4 Fgnd = ReadPixel (Fg, uv1);
+
+   if (Blended) {
+      float4 Bgnd = ReadPixel (Bg, uv2);
+
+      if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+      else {
+         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+         Fgnd.rgb = SwapDir ? Bgnd.rgb : lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a);
+      }
+      Fgnd.a = pow (Fgnd.a, 0.1);
+   }
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
+}
+
+DeclarePass (Bgd)
+{
+   float4 Bgnd = ReadPixel (Bg, uv2);
+
+   if (Blended && SwapDir) {
+
+      if (Source > 0) {
+         float4 Fgnd = ReadPixel (Fg, uv1);
+
+         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+         Bgnd = lerp (Bgnd, Fgnd, Fgnd.a);
+      }
+   }
+
+   return Bgnd;
+}
+
 DeclarePass (Mixed)
 {
-   // Unlike most of my other key transitions, this ensures that we produce a mix in or
-   // out of the title with the alpha channel of the key used as the mix alpha.  This
-   // makes it slightly more complex, but it's the simplest way to handle it.
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
 
-   float4 Fgnd = ReadPixel (Fg, uv1);
-   float4 Bgnd = ReadPixel (Bg, uv2);
-   float4 temp;
+   float amt;
 
-   float alpha;
+   if (Blended && SwapDir && (Source > 0)) { saturate ((1.25 - Amount) * 2.0); }
+   else amt = saturate ((Amount - 0.25) * 2.0);
 
-   if (Source == 0) {
-      if (Ttype == 0) {
-         temp = Bgnd;
-         Bgnd = Fgnd;
-         Fgnd = temp;
-      }
-      alpha = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-   }
-   else {
-      alpha = (Source == 1) ? pow (Fgnd.a, 0.375 + (KeyGain / 2.0)) : Fgnd.a;
-      Fgnd = lerp (Bgnd, Fgnd, alpha);
-   }
-
-   float amt = Ttype == 2 ? saturate ((0.7 - Amount) * 2.0)
-                          : saturate ((Amount - 0.3) * 2.0);
-
-   return float4 (lerp (Bgnd.rgb, Fgnd.rgb, amt), alpha);
+   return lerp (Fgnd, Bgnd, amt);
 }
 
 DeclarePass (Blur_X)
@@ -259,90 +282,75 @@ DeclarePass (Blur_Y)
    return float4 (fn_HSLtoRGB (HSL), 1.0);
 }
 
-DeclareEntryPoint (Toon_Kx)
+DeclareEntryPoint (ToonTrans)
 {
-   float Amt = max ((abs (Amount - 0.5) * 2.0) - 0.5, 0.0) * 2.0;
-   float Thr = Threshold * Threshold;
-   float W_X = 100.0 + ((1.0 - LineWeightX) * 2048.0);
-   float W_Y = 100.0 + ((1.0 - LineWeightY) * 2048.0);
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 maskBg, retval;
 
-   Thr *= Thr;
-
-   float2 LwX = float2 (1.0 / W_X, 0.0);
-   float2 LwY = float2 (0.0, 1.0 / W_Y);
-   float2 xy1 = uv3 - LwY;
-   float2 xy2 = uv3 + LwY;
-
-   // Convolution
-
-   float4 vidX = ReadPixel (Mixed, xy1 - LwX);
-   float4 vidY = vidX;
-   float4 conv = ReadPixel (Mixed, xy1 + LwX);
-
-   vidX += conv - (ReadPixel (Mixed, xy1));
-   vidY -= (conv - ReadPixel (Mixed, uv3 - LwX) + ReadPixel (Mixed, uv3 + LwX));
-
-   conv  = ReadPixel (Mixed, xy2 - LwX);
-   vidX -= (conv - ReadPixel (Mixed, xy2));
-   vidY += conv;
-   conv  = ReadPixel (Mixed, xy2 + LwX);
-   vidX -= conv;
-   vidY -= conv;
-   conv  = (vidX * vidX) + (vidY * vidY);
-
-   // Add and apply threshold
-
-   float outlines = ((conv.x <= Thr) + (conv.y <= Thr) + (conv.z <= Thr)) / 3.0;
-   float sinAmt = sin (Amount * PI);
-
-   float4 Bgnd = ReadPixel (Mixed, uv3);
-   float4 retval = lerp (float4 (outlines.xxx, 1.0), Bgnd, Amt);
-   float4 Fgnd = ReadPixel (Blur_Y, uv3);
-
-   float3 pp = fn_RGBtoHSL (Fgnd.rgb);
-
-   float alpha = Bgnd.a;
-
-   pp.x  = pp.x > 0.5 ? pp.x - 0.5 : pp.x + 0.5;
-   pp.yz = 1.0.xx - pp.yz;
-   pp    = lerp (fn_HSLtoRGB (pp), 1.0.xxx, sinAmt * 0.5);
-   Fgnd  = lerp (Fgnd, float4 (pp, Fgnd.a), sinAmt);
-
-   Amt = saturate (1.0 - Amt);
-   Bgnd = lerp (Bgnd, saturate (Fgnd), Amt);
-
-   retval.rgb = min (retval.rgb, Bgnd.rgb);
-
-   float2 uv;
-
-   if (Ttype == 0) {
-      Bgnd = ReadPixel (Fg, uv1);
-      uv = uv1;
-      Amt = Amount;
+   if (Blended) {
+      retval = Fgnd;
+      maskBg = SwapDir ? Fgnd : Bgnd;
    }
    else {
-      if (Ttype == 2) {
-         Bgnd = ReadPixel (Fg, uv1);
-         Amt = 1.0 - Amount;
-      }
-      else {
-         Bgnd = ReadPixel (Bg, uv2);
-         Amt = Amount;
-      }
-
-      uv = uv2;
+      maskBg = Fgnd;
+      retval = Bgnd;
    }
 
-   retval = lerp (Bgnd, retval, alpha);
+   float alpha = Fgnd.a;
 
-   if (CropEdges) {
-      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+   if (alpha > 0.0) {
+      float Amt = max ((abs (Amount - 0.5) * 2.0) - 0.5, 0.0) * 2.0;
+      float Thr = Threshold * Threshold;
+      float W_X = 100.0 + ((1.0 - LineWeightX) * 2048.0);
+      float W_Y = 100.0 + ((1.0 - LineWeightY) * 2048.0);
 
-      if (IsOutOfBounds (uv2)) retval = kTransparentBlack;
+      Thr *= Thr;
 
-      retval = lerp (Fgnd, retval, Amt);
+      float2 LwX = float2 (1.0 / W_X, 0.0);
+      float2 LwY = float2 (0.0, 1.0 / W_Y);
+      float2 xy1 = uv3 - LwY;
+      float2 xy2 = uv3 + LwY;
+
+      // Convolution
+
+      float4 vidX = ReadPixel (Mixed, xy1 - LwX);
+      float4 vidY = vidX;
+      float4 conv = ReadPixel (Mixed, xy1 + LwX);
+
+      vidX += conv - (ReadPixel (Mixed, xy1));
+      vidY -= (conv - ReadPixel (Mixed, uv3 - LwX) + ReadPixel (Mixed, uv3 + LwX));
+
+      conv  = ReadPixel (Mixed, xy2 - LwX);
+      vidX -= (conv - ReadPixel (Mixed, xy2));
+      vidY += conv;
+      conv  = ReadPixel (Mixed, xy2 + LwX);
+      vidX -= conv;
+      vidY -= conv;
+      conv  = (vidX * vidX) + (vidY * vidY);
+
+      // Add and apply threshold
+
+      float outlines = ((conv.x <= Thr) + (conv.y <= Thr) + (conv.z <= Thr)) / 3.0;
+      float sinAmt = sin (Amount * PI);
+
+      Bgnd = tex2D (Mixed, uv3);
+      Fgnd = tex2D (Blur_Y, uv3);
+
+      float3 pp = fn_RGBtoHSL (Fgnd.rgb);
+
+      retval = lerp (float4 (outlines.xxx, 1.0), Bgnd, Amt);
+
+      pp.x  = pp.x > 0.5 ? pp.x - 0.5 : pp.x + 0.5;
+      pp.yz = 1.0.xx - pp.yz;
+      pp    = lerp (fn_HSLtoRGB (pp), 1.0.xxx, sinAmt * 0.5);
+      Fgnd  = lerp (Fgnd, float4 (pp, Fgnd.a), sinAmt);
+
+      Amt = 1.0 - max ((Amt - 0.5) * 2.0, 0.0);
+      Bgnd = lerp (Bgnd, saturate (Fgnd), Amt);
+      retval.rgb = min (retval.rgb, Bgnd.rgb) * alpha;
    }
 
-   return retval;
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

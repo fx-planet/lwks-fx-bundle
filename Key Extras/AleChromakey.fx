@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-04-20
+// @Released 2023-05-16
 // @Author baopao
 // @Created 2013-06-07
 
@@ -17,14 +17,10 @@
 //
 // Version history:
 //
-// Updated 2023-01-26 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
 //
-// Updated 2023-04-18 jwrl
-// Added alpha detection to fg to bypass the effect if the image is already transparent.
-// Removed external blur input and built it internally instead.
-//
-// Updated 2023-04-20 jwrl:  Cleaned up code after above update.
+// Conversion 2023-01-26 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

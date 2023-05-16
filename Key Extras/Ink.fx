@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-04-20
+// @Released 2023-05-16
 // @Author Nicholas Carroll
-// @Created 2016-21-02
+// @Created 2016-05-02
 
 /**
  INK is an extremely good proportionate colour difference keyer.
@@ -26,13 +26,10 @@
 //
 // Version history:
 //
-// Updated 2023-01-26 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
 //
-// Updated 2023-04-18 jwrl
-// Added alpha detection to fg to bypass the effect if the image is already transparent.
-//
-// Updated 2023-04-20 jwrl:  Cleaned up code after above update.
+// Conversion 2023-01-26 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -162,3 +159,4 @@ DeclareEntryPoint (Ink)
 
    return lerp (background, Ckey, tex2D (Mask, uv3).x);
 }
+

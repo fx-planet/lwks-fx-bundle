@@ -1,13 +1,12 @@
 // @Maintainer jwrl
-// @Released 2023-01-27
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-27
+// @Created 2018-03-20
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
- some simple DVE adjustments added.
-
- The ChromaKey sections are copyright (c) LWKS Software Ltd.
+ some simple DVE adjustments added.  The ChromaKey section is copyright (c) LWKS Software
+ Ltd., modified to improve keying over transparent backgrounds.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -17,7 +16,10 @@
 //
 // Version history:
 //
-// Built 2023-01-27 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-27 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -136,7 +138,7 @@ DeclarePass (RawKey)
 
    if (hsva [SAT_IDX] != 0.0) {
       if (Fgnd.r == maxComponentVal) { hsva [HUE_IDX] = (Fgnd.g - Fgnd.b) / componentRange; }
-      else if (Fgnd.g == maxComponentVal) { hsva [HUE_IDX] = 2.0 + ((Fgnd.b - Fgnd.r) / componentRange ); }
+      else if (Fgnd.g == maxComponentVal) { hsva [HUE_IDX] = 2.0 + ((Fgnd.b - Fgnd.r) / componentRange); }
       else hsva [HUE_IDX] = 4.0 + ((Fgnd.r - Fgnd.g) / componentRange);
 
       hsva [HUE_IDX] *= _oneSixth;
@@ -176,7 +178,7 @@ DeclarePass (RawKey)
 //-----------------------------------------------------------------------------------------//
 // Blur 1
 //
-// Blurs the image horizontally using Pascal's triangle
+// Blurs the key horizontally using Pascal's triangle
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (BlurKey)
@@ -187,13 +189,13 @@ DeclarePass (BlurKey)
 
    float4 retval = tex2D (RawKey, uv3);
 
-   retval.r *= blur [0];
-   retval.r += tex2D (RawKey, uv3 + onePixel).r * blur [1];
-   retval.r += tex2D (RawKey, uv3 - onePixel).r * blur [1];
-   retval.r += tex2D (RawKey, uv3 + twoPixel).r * blur [2];
-   retval.r += tex2D (RawKey, uv3 - twoPixel).r * blur [2];
-   retval.r += tex2D (RawKey, uv3 + threePix).r * blur [3];
-   retval.r += tex2D (RawKey, uv3 - threePix).r * blur [3];
+   retval.x *= blur [0];
+   retval.x += tex2D (RawKey, uv3 + onePixel).x * blur [1];
+   retval.x += tex2D (RawKey, uv3 - onePixel).x * blur [1];
+   retval.x += tex2D (RawKey, uv3 + twoPixel).x * blur [2];
+   retval.x += tex2D (RawKey, uv3 - twoPixel).x * blur [2];
+   retval.x += tex2D (RawKey, uv3 + threePix).x * blur [3];
+   retval.x += tex2D (RawKey, uv3 - threePix).x * blur [3];
 
    return retval;
 }
@@ -201,7 +203,7 @@ DeclarePass (BlurKey)
 //-----------------------------------------------------------------------------------------//
 // Blur 2
 //
-// Blurs the image vertically
+// Blurs the key vertically
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (FullKey)
@@ -212,13 +214,13 @@ DeclarePass (FullKey)
 
    float4 retval = tex2D (BlurKey, uv3);
 
-   retval.r *= blur [0];
-   retval.r += tex2D (BlurKey, uv3 + onePixel).r * blur [1];
-   retval.r += tex2D (BlurKey, uv3 - onePixel).r * blur [1];
-   retval.r += tex2D (BlurKey, uv3 + twoPixel).r * blur [2];
-   retval.r += tex2D (BlurKey, uv3 - twoPixel).r * blur [2];
-   retval.r += tex2D (BlurKey, uv3 + threePix).r * blur [3];
-   retval.r += tex2D (BlurKey, uv3 - threePix).r * blur [3];
+   retval.x *= blur [0];
+   retval.x += tex2D (BlurKey, uv3 + onePixel).x * blur [1];
+   retval.x += tex2D (BlurKey, uv3 - onePixel).x * blur [1];
+   retval.x += tex2D (BlurKey, uv3 + twoPixel).x * blur [2];
+   retval.x += tex2D (BlurKey, uv3 - twoPixel).x * blur [2];
+   retval.x += tex2D (BlurKey, uv3 + threePix).x * blur [3];
+   retval.x += tex2D (BlurKey, uv3 - threePix).x * blur [3];
 
    return retval;
 }
@@ -227,7 +229,7 @@ DeclarePass (FullKey)
 // Main code
 //
 // Blends the cropped, resized and positioned foreground with the background using the
-// key that was built in ps_keygen.   Apply spill-suppression as we go.
+// key that was built in the key generation pass.   Applies spill suppression as we go.
 //-----------------------------------------------------------------------------------------//
 
 DeclareEntryPoint (ChromakeyWithDVE)
@@ -237,41 +239,32 @@ DeclareEntryPoint (ChromakeyWithDVE)
    float4 bg  = ReadPixel (Bg, uv2);
    float4 retval;
 
-   // This next is done to ensure that the backgroound is completely opaque.  While
-   // this may corrupt backgrounds that have transparency, it definitely will protect
-   // keys over a background with a differing background aspect ratio to the sequence.
+   // key.w = spill removal amount
+   // key.x = blurred key
+   // key.y = raw, unblurred key
 
-   bg.a = 1.0;
-
-   // key.r = blurred key
-   // key.g = raw, unblurred key
-   // key.a = spill removal amount
-
-   // Using min (key.r, key.g) means that any softness around the key causes the foreground
+   // Using min (key.x, key.y) means that any softness around the key causes the foreground
    // to shrink in from the edges.
 
-   float mix = saturate ((1.0 - min (key.r, key.g) * fg.a) * 2.0);
+   float mix = saturate ((1.0 - min (key.x, key.y) * fg.a) * 2.0);
 
-   if (Reveal) {
-      retval = lerp (mix, 1.0 - mix, Invert);
-      retval.a = 1.0;
-      }
+   // This section of the Lightworks key process previously took into account the presence
+   // of transparency in the background video, and killed the foreground key if so.  That
+   // has now been corrected and doesn't appear to have had any adverse effect on the result.
+   // I believe that it was done mistakenly when what was intended was simply to pass any
+   // alpha in the background video on for further use, which this version still does.
+
+   if (Reveal) { retval = float4 ((Invert ? 1.0 - mix : mix).xxx, 1.0); }
    else {
-      if (Invert) {
-         retval = lerp (bg, fg, mix * bg.a);
-         retval.a = max (bg.a, mix);
-      }
+      if (Invert) { retval = float4 (lerp (bg.rgb, fg.rgb, mix), max (bg.a, mix)); }
       else {
-         if (key.a > 0.8) {
-            float4 fgLum = (fg.r + fg.g + fg.b) / 3.0;
+         if (key.w > 0.8) {
+            float4 fgLum = (fg.x + fg.g + fg.b) / 3.0;
 
-            // Remove spill.
-
-            fg = lerp (fg, fgLum, ((key.a - 0.8) / 0.2) * RemoveSpill);
+            fg = lerp (fg, fgLum, ((key.w - 0.8) / 0.2) * RemoveSpill);
          }
 
-         retval = lerp (fg, bg, mix * bg.a);
-         retval.a = max (bg.a, 1.0 - mix);
+         retval = float4 (lerp (fg.rgb, bg.rgb, mix), max (bg.a, 1.0 - mix));
       }
 
       retval = lerp (bg, retval, Opacity);

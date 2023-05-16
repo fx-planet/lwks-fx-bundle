@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-02-17
+// @Released 2023-05-16
 // @Author khaver
 // @Created 2016-10-19
 
@@ -16,11 +16,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
 //
-// Updated 2023-01-10 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Conversion 2023-01-10 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -32,6 +31,8 @@ DeclareLightworksEffect ("Delta mask", "Key", "Key Extras", "This delta mask eff
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (fg, bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -53,7 +54,7 @@ DeclareFloatParam (BlueThreshold, "Blue Threshold", kNoGroup, kNoFlags, 0.0, 0.0
 DeclareFloatParam (MasterThreshold, "Master Threshold", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 DeclareFloatParam (BackgroundGain, "Background Gain", kNoGroup, "DisplayAsPercentage", 1.0, 0.0, 2.0);
 
-DeclareBoolParam (InvertMask, "Invert Mask", kNoGroup, false);
+DeclareBoolParam (InvertKey, "Invert Key", kNoGroup, false);
 
 //-----------------------------------------------------------------------------------------//
 // Code
@@ -63,15 +64,19 @@ DeclareEntryPoint (DeltaMask)
 {
    float4 Fgd, Bgd;
 
+   float2 xy;
+
    float ralph, galph, balph, alpha;
 
    if (SwapTracks) {
       Bgd = ReadPixel (fg, uv1);
       Fgd = ReadPixel (bg, uv2);
+      xy = uv2;
    }
    else {
       Bgd = ReadPixel (bg, uv2);
       Fgd = ReadPixel (fg, uv1);
+      xy = uv1;
    }
 
    Bgd *= BackgroundGain;
@@ -90,7 +95,11 @@ DeclareEntryPoint (DeltaMask)
         && (galph <= (GreenThreshold + MasterThreshold))
         && (balph <= (BlueThreshold + MasterThreshold)) ? 0.0 : 1.0;
 
-   if (InvertMask) alpha = 1.0 - alpha;
+   if (InvertKey) alpha = 1.0 - alpha;
+
+   alpha *= tex2D (Mask, xy).x;
+
+   if (!alpha) Fgd.rgb = kTransparentBlack;
 
    return (Show) ? float4 (alpha.xxx, 1.0) : float4 (Fgd.rgb, alpha);
 }

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-27
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-27
+// @Created 2018-06-08
 
 /**
  This effect is designed to generate a key from the foreground video and use that key
@@ -23,7 +23,10 @@
 //
 // Version history:
 //
-// Built 2023-01-27 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-05-08 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -35,6 +38,8 @@ DeclareLightworksEffect ("Lumakey and matte", "Key", "Key Extras", "Generates a 
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Key, V_1, V_2);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -126,7 +131,7 @@ DeclarePass (KeyFgd)
 
    if (K_invert) retval.a = 1.0 - retval.a;
 
-   return IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+   return IsOutOfBounds (uv1) ? kTransparentBlack : lerp (kTransparentBlack, retval, tex2D (Mask, uv1).x);
 }
 
 DeclarePass (Border_A)

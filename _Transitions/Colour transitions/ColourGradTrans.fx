@@ -1,30 +1,33 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2016-07-31
 
 /**
- This effect dissolves a blended foreground image in or out through a complex colour
- translation while performing what is essentially a non-additive mix.
+ This effect fades two images or a blended foreground such as a title or image key in
+ or out through a user-selected colour gradient.  The gradient can be a single flat
+ colour, a vertical gradient, a horizontal gradient, a four corner gradient or even
+ a monochrome mix of the two components.  The timing of the maximum colour strength is
+ adjustable using the transition centre setting, and the dwell time can be controlled
+ by means of the transition curve setting.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect ColourSizzler_Kx.fx
-//
-// This effect is a combination of two previous effects, ColourSizzler_Ax and
-// ColourSizzler_Adx.
+// Lightworks user effect ColourGradTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-05-05 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Colour sizzler (keyed)", "Mix", "Colour transitions", "Transitions the blended foreground in or out using a complex colour translation", CanSize);
+DeclareLightworksEffect ("Colour gradient transition", "Mix", "Colour transitions", "Transitions in or out through monochrome or a colour gradient", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -32,21 +35,36 @@ DeclareLightworksEffect ("Colour sizzler (keyed)", "Mix", "Colour transitions", 
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
+DeclareFloatParam (FxCentre, "Transition centre", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareFloatParam (cAmount, "Opacity", "Colour setup", kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (cCurve, "Transition curve", "Colour setup", kNoFlags, 0.0, 0.0, 1.0);
 
-DeclareFloatParam (Saturation, "Saturation", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
-DeclareFloatParam (HueCycle, "Cycle rate", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareIntParam (cGradient, "Gradient", "Colour setup", 5, "Flat (uses only the top left colour)|Horizontal blend (top left > top right)|Horizontal blend to centre (TL > TR > TL)|Vertical blend (top left > bottom left)|Vertical blend to centre (TL > BL > TL)|Four way gradient|Four way gradient to centre|Four way gradient to centre (horizontal)|Four way gradient to centre (vertical)|Radial (TL outer > TR centre)|Black and white");
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (OffsX, "Grad. midpoint", "Colour setup", "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (OffsY, "Grad. midpoint", "Colour setup", "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareColourParam (topLeft, "Top left", "Colour setup", kNoFlags, 0.0, 0.0, 0.0, 1.0);
+DeclareColourParam (topRight, "Top right", "Colour setup", kNoFlags, 0.5, 0.0, 0.8, 1.0);
+DeclareColourParam (botLeft, "Bottom left", "Colour setup", kNoFlags, 0.0, 0.0, 1.0, 1.0);
+DeclareColourParam (botRight, "Bottom right", "Colour setup", kNoFlags, 0.0, 0.8, 0.5, 1.0);
+
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -56,181 +74,145 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 #define PROFILE ps_3_0
 #endif
 
-#define SQRT_3  1.7320508076
-#define TWO_PI  6.2831853072
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen_F (sampler F, sampler B, float2 xy)
+float4 fn_setFg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = tex2D (F, xy);
+   float4 Fgnd = ReadPixel (F, xy1);
 
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy);
+   if (Blended) {
+      float4 Bgnd = ReadPixel (B, xy2);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+      if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+      else {
+         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+         Fgnd.rgb = SwapDir ? Bgnd.rgb : lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a);
+      }
+      Fgnd.a = pow (Fgnd.a, 0.1);
    }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
+   else Fgnd.a = 1.0;
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   return Fgnd;
 }
 
-float4 fn_keygen (sampler F, sampler B, float2 xy)
+float4 fn_setBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = tex2D (F, xy);
+   float4 Bgnd = ReadPixel (B, xy2);
 
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy);
+   if (Blended && SwapDir) {
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
+      if (Source > 0) {
+         float4 Fgnd = ReadPixel (F, xy1);
+
+         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+         Bgnd = lerp (Bgnd, Fgnd, Fgnd.a);
+      }
    }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
+
+   return Bgnd;
+}
+
+float4 fn_colour (float2 uv, float4 Fgd, float4 Bgd)
+{
+   if (cGradient == 0) return topLeft;
+
+   float4 retval;
+
+   if (cGradient > 9) {
+      float4 Vsub = saturate (Fgd + Bgd);
+
+      Vsub.a = max (Fgd.a, Bgd.a);
+      return float4 (dot (Vsub.rgb, float3 (0.299, 0.587, 0.114)).xxx, Vsub.a);
    }
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   float buff_1, buff_2, horiz, vert = 1.0 - OffsY;
+   float buff_0 = (OffsX <= 0.0)  ? (uv.x / 2.0) + 0.5 :
+                  (OffsX >= 1.0)  ? uv.x / 2.0 :
+                  (OffsX > uv.x) ? uv.x / (2.0 * OffsX) : ((uv.x - OffsX) / (2.0 * (1.0 - OffsX))) + 0.5;
+
+   if ((cGradient == 2) || (cGradient == 6) || (cGradient == 8) || (cGradient == 9)) horiz = sin (PI * buff_0);
+   else {
+      sincos (HALF_PI * buff_0, buff_1, buff_2);
+      buff_2 = 1.0 - buff_2;
+      horiz = lerp (buff_1, buff_2, buff_0);
+   }
+
+   buff_0 = (vert <= 0.0) ? (uv.y / 2.0) + 0.5 :
+            (vert >= 1.0) ? uv.y / 2.0 :
+            (vert > uv.y) ? uv.y / (2.0 * vert) : ((uv.y - vert) / (2.0 * (1.0 - vert))) + 0.5;
+
+   if ((cGradient == 4) || (cGradient == 6) || (cGradient == 7) || (cGradient == 9)) vert = sin (PI * buff_0);
+   else {
+      sincos (HALF_PI * buff_0, buff_1, buff_2);
+      buff_2 = 1.0 - buff_2;
+      vert = lerp (buff_1, buff_2, buff_0);
+   }
+
+   if ((cGradient == 3) || (cGradient == 4)) { retval = lerp (topLeft, botLeft, vert); }
+   else {
+      retval = lerp (topLeft, topRight, horiz);
+   
+      if (cGradient == 9) retval = lerp (topLeft, retval, vert);
+      else if (cGradient > 4) {
+         float4 botRow = lerp (botLeft, botRight, horiz);
+         retval = lerp (retval, botRow, vert);
+      }
+   }
+
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique ColourSizzler_Kx_F
+DeclarePass (Fgd)
+{ return fn_setFg (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Fg_F)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Bgd)
+{ return fn_setBg (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bg_F)
-{ return ReadPixel (Bg, uv2); }
-
-DeclareEntryPoint (ColourSizzler_Kx_F)
+DeclareEntryPoint (ColourMixTrans)
 {
-   float amount = 1.0 - Amount;
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 maskBg = Blended && !SwapDir ? Bgnd : Fgnd;
+   float4 retval = Bgnd;
 
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv1) ? kTransparentBlack : fn_keygen_F (Fg_F, Bg_F, uv3);
-   float4 Bgnd = tex2D (Bg_F, uv3);
-   float4 Svid = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 Temp = max (Svid * min (1.0, 2.0 * (1.0 - amount)), Bgnd * min (1.0, 2.0 * amount));
+   if (Fgnd.a > 0.0) {
+      float Mix = (FxCentre + 1.0) / 2.0;
 
-   Svid = max (Svid, Bgnd);
+      Mix = (Mix <= 0.0) ? (Amount / 2.0) + 0.5 :
+            (Mix >= 1.0) ? Amount / 2.0 :
+            (Mix > Amount) ? Amount / (2.0 * Mix) : ((Amount - Mix) / (2.0 * (1.0 - Mix))) + 0.5;
 
-   float Luma  = 0.1 + (0.5 * Svid.x);
-   float Satn  = Svid.y * Saturation;
-   float Hue   = frac (Svid.z + (amount * HueCycle));
-   float HueX3 = 3.0 * Hue;
+      retval = fn_colour (uv0, Fgnd, Bgnd);
 
-   Hue = SQRT_3 * tan ((Hue - ((floor (HueX3) + 0.5) / 3.0)) * TWO_PI);
+      float4 colDx, rawDx = lerp (Fgnd, Bgnd, Mix);
 
-   float Red   = (1.0 - Satn) * Luma;
-   float Blue  = ((3.0 + Hue) * Luma - (1.0 + Hue) * Red) / 2.0;
-   float Green = 3.0 * Luma - Blue - Red;
+      float nonLin = sin (Mix * PI);
 
-   Svid.rgb = (HueX3 < 1.0) ? float3 (Green, Blue, Red)
-            : (HueX3 < 2.0) ? float3 (Red, Green, Blue)
-                            : float3 (Blue, Red, Green);
+      Mix *= 2.0;
 
-   float mixval = abs (2.0 * (0.5 - amount));
+      if (Mix > 1.0) {
+         Mix = lerp (2.0 - Mix, nonLin, cCurve);
+         colDx = lerp (Bgnd, retval, Mix);
+      }
+      else {
+         Mix = lerp (Mix, nonLin, cCurve);
+         colDx = lerp (Fgnd, retval, Mix);
+      }
 
-   mixval *= mixval;
-   Temp    = lerp (Svid, Temp, mixval);
-   Fgnd.a  = Fgnd.a > 0.0 ? lerp (1.0, Fgnd.a, amount) : 0.0;
+      retval = lerp (rawDx, colDx, cAmount);
+   }
 
-   return lerp (Bgnd, Temp, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique ColourSizzler_Kx_I
-
-DeclarePass (Fg_I)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
-
-DeclareEntryPoint (ColourSizzler_Kx_I)
-{
-   float amount = 1.0 - Amount;
-
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : fn_keygen (Fg_I, Bg_I, uv3);
-   float4 Bgnd = tex2D (Bg_I, uv3);
-   float4 Svid = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 Temp = max (Svid * min (1.0, 2.0 * (1.0 - amount)), Bgnd * min (1.0, 2.0 * amount));
-
-   Svid = max (Svid, Bgnd);
-
-   float Luma  = 0.1 + (0.5 * Svid.x);
-   float Satn  = Svid.y * Saturation;
-   float Hue   = frac (Svid.z + (amount * HueCycle));
-   float HueX3 = 3.0 * Hue;
-
-   Hue = SQRT_3 * tan ((Hue - ((floor (HueX3) + 0.5) / 3.0)) * TWO_PI);
-
-   float Red   = (1.0 - Satn) * Luma;
-   float Blue  = ((3.0 + Hue) * Luma - (1.0 + Hue) * Red) / 2.0;
-   float Green = 3.0 * Luma - Blue - Red;
-
-   Svid.rgb = (HueX3 < 1.0) ? float3 (Green, Blue, Red)
-            : (HueX3 < 2.0) ? float3 (Red, Green, Blue)
-                            : float3 (Blue, Red, Green);
-
-   float mixval = abs (2.0 * (0.5 - amount));
-
-   mixval *= mixval;
-   Temp    = lerp (Svid, Temp, mixval);
-   Fgnd.a  = Fgnd.a > 0.0 ? lerp (1.0, Fgnd.a, amount) : 0.0;
-
-   return lerp (Bgnd, Temp, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique ColourSizzler_Kx_O
-
-DeclarePass (Fg_O)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
-
-DeclareEntryPoint (ColourSizzler_Kx_O)
-{
-   float4 Fgnd = CropEdges && IsOutOfBounds (uv2) ? kTransparentBlack : fn_keygen (Fg_O, Bg_O, uv3);
-   float4 Bgnd = tex2D (Bg_O, uv3);
-   float4 Svid = lerp (Bgnd, Fgnd, Fgnd.a);
-   float4 Temp = max (Svid * min (1.0, 2.0 * (1.0 - Amount)), Bgnd * min (1.0, 2.0 * Amount));
-
-   Svid = max (Svid, Bgnd);
-
-   float Luma  = 0.1 + (0.5 * Svid.x);
-   float Satn  = Svid.y * Saturation;
-   float Hue   = frac (Svid.z + (Amount * HueCycle));
-   float HueX3 = 3.0 * Hue;
-
-   Hue = SQRT_3 * tan ((Hue - ((floor (HueX3) + 0.5) / 3.0)) * TWO_PI);
-
-   float Red   = (1.0 - Satn) * Luma;
-   float Blue  = ((3.0 + Hue) * Luma - (1.0 + Hue) * Red) / 2.0;
-   float Green = 3.0 * Luma - Blue - Red;
-
-   Svid.rgb = (HueX3 < 1.0) ? float3 (Green, Blue, Red)
-            : (HueX3 < 2.0) ? float3 (Red, Green, Blue)
-                            : float3 (Blue, Red, Green);
-
-   float mixval = abs (2.0 * (0.5 - Amount));
-
-   mixval *= mixval;
-   Temp    = lerp (Svid, Temp, mixval);
-   Fgnd.a  = Fgnd.a > 0.0 ? lerp (1.0, Fgnd.a, Amount) : 0.0;
-
-   return lerp (Bgnd, Temp, Fgnd.a);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

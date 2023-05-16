@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05-16
 // @Author jwrl
 // @Created 2023-02-17
 
@@ -32,7 +32,8 @@
 //
 // Version history:
 //
-// Built 2023-02-17 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

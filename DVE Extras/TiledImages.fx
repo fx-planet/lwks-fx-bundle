@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-05-16
 // @Author windsturm
 // @Created 2012-05-12
 
@@ -27,8 +27,10 @@
 //
 // Version history:
 //
-// Updated 2023-01-09 jwrl
-// Updated to meet the needs of the revised Lightworks effects library code.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-09 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 DeclareLightworksEffect ("Tiled images", "DVE", "DVE Extras", "Creates tile patterns from the image, which can be rotated", kNoFlags);

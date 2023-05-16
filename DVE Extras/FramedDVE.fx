@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02_17
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-09
+// @Created 2018-11-14
 
 /**
  This is a combination of two 2D DVEs designed to provide a drop shadow and vignette
@@ -24,8 +24,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

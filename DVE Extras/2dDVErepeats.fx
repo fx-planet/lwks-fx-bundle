@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-09
+// @Released 2023-05-16
 // @Author jwrl
-// @Created 2023-01-09
+// @Created 2020-11-29
 
 /**
  This 2D DVE performs in the same way as the Lightworks version does, but with some
@@ -34,7 +34,10 @@
 //
 // Version history:
 //
-// Built 2023-01-09 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-09 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

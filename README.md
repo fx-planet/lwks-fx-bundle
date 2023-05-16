@@ -114,7 +114,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |Flag wave                     |FlagWave.fx             |Simulates a waving flag (what a surprise)                                     |
 |Liquify                       |Liquify.fx              |Distorts the image in a soft liquid manner                                    |
 |Magnifying glass              |Magnify.fx              |Similar in operation to a bulge effect, but performs a flat linear zoom       |
-|Perspective                   |Perspective.fx          |A neat, simple effect for adding a perspective illusion to a flat plane       |
+|Perspective                   |Perspective.fx          |Warps one rectangle to another using a perspective transform                  |
 |Refraction                    |Refraction.fx           |Simulates the distortion effect of an image seen through textured glass       |
 |Regional zoom                 |RegionalZoom.fx         |This allows you to apply localised distortion to any region of the frame      |
 |Ripples (automatic expansion) |RipplesAuto.fx          |Radiating ripples are produced under semi-automatic control                   |

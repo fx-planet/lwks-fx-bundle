@@ -1,6 +1,6 @@
 // @Maintainer jwrl
 // @Released 2023-01-31
-// @Author Robert Schütze
+// @Author Robert SchÃ¼tze
 // @Author jwrl
 // @Created 2022-06-01
 
@@ -18,7 +18,7 @@
 // Lightworks user effect Fractal_Dx.fx
 //
 // The fractal component is a conversion of GLSL sandbox effect #308888 created by Robert
-// Schütze (trirop) 07.12.2015.
+// SchÃ¼tze (trirop) 07.12.2015.
 //
 // Version history:
 //

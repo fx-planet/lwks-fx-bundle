@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-05-16
 // @Author jwrl
 // @Author Unknown
-// @Created 2023-01-11
+// @Created 2020-06-28
 
 /**
  This is a fireball effect that can be scaled and positioned to simulate explosions and
@@ -33,7 +33,10 @@
 //
 // Version history:
 //
-// Built 2023-01-11 jwrl
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-01-11 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

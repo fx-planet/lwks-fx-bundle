@@ -1,8 +1,8 @@
 // @Maintainer jwrl
-// @Released 2023-01-11
+// @Released 2023-05-16
 // @Author jwrl
 // @Author LWKS Software Ltd
-// @Created 2023-01-11
+// @Created 2018-04-02
 
 /**
  This is a customised version of the Lightworks Chromakey effect with a transitional
@@ -33,8 +33,10 @@
 //
 // Version history:
 //
-// Updated 2023-02-17 jwrl
-// Corrected header.
+// Updated 2023-05-16 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"

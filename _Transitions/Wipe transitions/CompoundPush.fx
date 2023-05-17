@@ -4,7 +4,7 @@
 // @Created 2021-06-12
 
 /**
- This is a transition that sunders the central area of the outgoing image from the
+ This is a transition that sseparates the central area of the outgoing image from the
  background and pushes it to reveal the incoming media.  At the same time the whole
  background also pushes to reveal the incoming media.  Each can be pushed left, right,
  up or down, and the centre area of the background can optionally be blanked.  The
@@ -17,19 +17,19 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect SunderTrans.fx
+// Lightworks user effect CompoundPush.fx
 //
 // Version history:
 //
 // Updated 2023-05-17 jwrl.
-// Header reformatted.
+// Effect renamed from "Sunder transition".
 //
 // Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Sunder transition", "Mix", "Wipe transitions", kNoNotes, CanSize);
+DeclareLightworksEffect ("Compound push", "Mix", "Wipe transitions", kNoNotes, CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

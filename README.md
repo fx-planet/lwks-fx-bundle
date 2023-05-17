@@ -363,13 +363,13 @@ If you need to use two effects that have the same name, simply open one of them 
 |Wave fall transition         |Yes      |Yes      |WaveFallTrans.fx        |Compresses the foreground to sinue strips or waves     |
 
 ## CATEGORY FOLDER: Wipe transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Bar wipe                  |                        |Bars_Kx.fx              |Splits a foreground image into strips which separate |
-|Barn door split           |BarnDoorSplit_Dx.fx     |BarnDoorSplit_Kx.fx     |Splits the image in half and separates the halves    |
-|Corner split              |CornerSplit_Dx.fx       |CornerSplit_Kx.fx       |Splits an image four ways to or from the corners     |
-|Push transition           |                        |Push_Kx.fx              |Pushes the foreground on or off screen               |
-|Slice transition          |Slice_Dx.fx             |Slice_Kx.fx             |Separates and splits the image into strips           |
-|Strips                    |                        |Strips_Kx.fx            |Splits the foreground into compressed strips         |
-|Sunder                    |Sunder_Dx.fx            |                        |Pushes inner and outer image sections separately     |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Barn door transition         |Yes      |Yes      |BarnDoorTrans.fx        |Splits the image in half and separates the halves      |
+|Bar transition               |No       |Yes      |BarTrans.fx             |Splits a foreground image into strips which separate   |
+|Compound push                |Yes      |No       |CompoundPush.fx         |Pushes inner and outer image sections separately       |
+|Corner split transition      |Yes      |Yes      |CornerTrans.fx          |Splits an image four ways to or from the corners       |
+|Push transition              |No       |Yes      |PushTrans.fx            |Pushes the foreground on or off screen                 |
+|Sliced transition            |Yes      |Yes      |SliceTrans.fx           |Separates and splits the image into strips             |
+|Strips transition            |No       |Yes      |StripsTrans.fx          |Splits the foreground into compressed strips           |
 

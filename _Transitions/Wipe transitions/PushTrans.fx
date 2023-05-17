@@ -1,27 +1,29 @@
 // @Maintainer jwrl
-// @Released 2023-02-02
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-02
+// @Created 2018-06-12
 
 /**
- This mimics the Lightworks push effect but supports titles, image keys and other blended
- effects.
+ This mimics the Lightworks push effect but is designed to support titles, image keys
+ and other blended effects.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Push_Kx.fx
+// Lightworks user effect PushTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-02 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Push transition (keyed)", "Mix", "Wipe transitions", "Pushes the foreground on or off screen horizontally or vertically", CanSize);
+DeclareLightworksEffect ("Push transition", "Mix", "Wipe transitions", "Pushes the foreground on or off screen horizontally or vertically", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -29,20 +31,21 @@ DeclareLightworksEffect ("Push transition (keyed)", "Mix", "Wipe transitions", "
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
-
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
-
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (SetTechnique, "Type", kNoGroup, 0, "Push Right|Push Down|Push Left|Push Up");
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -58,17 +61,17 @@ DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, sampler B, float2 xy)
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Bgnd, Fgnd = tex2D (F, xy);
+   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+
+   if ((Source == 0) && SwapDir) {
+      Bgnd = Fgnd;
+      Fgnd = ReadPixel (B, xy2);
+   }
+   else Bgnd = ReadPixel (B, xy2);
 
    if (Source == 0) {
-      if (Ttype == 0) {
-         Bgnd = Fgnd;
-         Fgnd = tex2D (B, xy);
-      }
-      else Bgnd = tex2D (B, xy);
-
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
    }
@@ -77,8 +80,13 @@ float4 fn_keygen (sampler F, sampler B, float2 xy)
       Fgnd.rgb /= Fgnd.a;
    }
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+
+   return Fgnd;
 }
+
+float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
+{ return SwapDir && (Source == 0) ? ReadPixel (F, xy1) : ReadPixel (B, xy2); }
 
 //-----------------------------------------------------------------------------------------//
 // Code
@@ -87,33 +95,21 @@ float4 fn_keygen (sampler F, sampler B, float2 xy)
 // technique Push_right
 
 DeclarePass (Fg_R)
-{ return ReadPixel (Fg, uv1); }
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_R)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_R)
-{ return fn_keygen (Fg_R, Bg_R, uv3); }
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (Push_right)
 {
-   float2 bg;
-   float2 xy = Ttype == 2 ? float2 (saturate (uv3.x + cos (HALF_PI * Amount) - 1.0), uv3.y)
-                          : float2 (saturate (uv3.x - sin (HALF_PI * Amount) + 1.0), uv3.y);
-   float4 Bgnd;
+   float2 xy = SwapDir ? float2 (saturate (uv3.x - sin (HALF_PI * Amount) + 1.0), uv3.y)
+                       : float2 (saturate (uv3.x + cos (HALF_PI * Amount) - 1.0), uv3.y);
 
-   if (Ttype == 0) {
-      bg = uv1;
-      Bgnd = tex2D (Fg_R, uv3);
-   }
-   else {
-      bg = uv2;
-      Bgnd = tex2D (Bg_R, uv3);
-   }
+   float4 Bgnd = tex2D (Bg_R, uv3);
+   float4 Fgnd = ReadPixel (Fg_R, xy);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_R, xy);
-
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -121,33 +117,21 @@ DeclareEntryPoint (Push_right)
 // technique Push_down
 
 DeclarePass (Fg_D)
-{ return ReadPixel (Fg, uv1); }
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_D)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_D)
-{ return fn_keygen (Fg_D, Bg_D, uv3); }
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (Push_down)
 {
-   float2 bg;
-   float2 xy = Ttype == 2 ? float2 (uv3.x, saturate (uv3.y + cos (HALF_PI * Amount) - 1.0))
-                          : float2 (uv3.x, saturate (uv3.y - sin (HALF_PI * Amount) + 1.0));
-   float4 Bgnd;
+   float2 xy = SwapDir ? float2 (uv3.x, saturate (uv3.y - sin (HALF_PI * Amount) + 1.0))
+                       : float2 (uv3.x, saturate (uv3.y + cos (HALF_PI * Amount) - 1.0));
 
-   if (Ttype == 0) {
-      bg = uv1;
-      Bgnd = tex2D (Fg_D, uv3);
-   }
-   else {
-      bg = uv2;
-      Bgnd = tex2D (Bg_D, uv3);
-   }
+   float4 Bgnd = tex2D (Bg_D, uv3);
+   float4 Fgnd = ReadPixel (Fg_D, xy);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_D, xy);
-
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -155,33 +139,21 @@ DeclareEntryPoint (Push_down)
 // technique Push_left
 
 DeclarePass (Fg_L)
-{ return ReadPixel (Fg, uv1); }
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_L)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_L)
-{ return fn_keygen (Fg_L, Bg_L, uv3); }
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (Push_left)
 {
-   float2 bg;
-   float2 xy = Ttype == 2 ? float2 (saturate (uv3.x - cos (HALF_PI * Amount) + 1.0), uv3.y)
-                          : float2 (saturate (uv3.x + sin (HALF_PI * Amount) - 1.0), uv3.y);
-   float4 Bgnd;
+   float2 xy = SwapDir ? float2 (saturate (uv3.x + sin (HALF_PI * Amount) - 1.0), uv3.y)
+                       : float2 (saturate (uv3.x - cos (HALF_PI * Amount) + 1.0), uv3.y);
 
-   if (Ttype == 0) {
-      bg = uv1;
-      Bgnd = tex2D (Fg_L, uv3);
-   }
-   else {
-      bg = uv2;
-      Bgnd = tex2D (Bg_L, uv3);
-   }
+   float4 Bgnd = tex2D (Bg_L, uv3);
+   float4 Fgnd = ReadPixel (Fg_L, xy);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_L, xy);
-
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -189,32 +161,20 @@ DeclareEntryPoint (Push_left)
 // technique Push_up
 
 DeclarePass (Fg_U)
-{ return ReadPixel (Fg, uv1); }
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_U)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_U)
-{ return fn_keygen (Fg_U, Bg_U, uv3); }
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (Push_up)
 {
-   float2 bg;
-   float2 xy = Ttype == 2 ? float2 (uv3.x, saturate (uv3.y - cos (HALF_PI * Amount) + 1.0))
-                          : float2 (uv3.x, saturate (uv3.y + sin (HALF_PI * Amount) - 1.0));
-   float4 Bgnd;
+   float2 xy = SwapDir ? float2 (uv3.x, saturate (uv3.y + sin (HALF_PI * Amount) - 1.0))
+                       : float2 (uv3.x, saturate (uv3.y - cos (HALF_PI * Amount) + 1.0));
 
-   if (Ttype == 0) {
-      bg = uv1;
-      Bgnd = tex2D (Fg_U, uv3);
-   }
-   else {
-      bg = uv2;
-      Bgnd = tex2D (Bg_U, uv3);
-   }
+   float4 Bgnd = tex2D (Bg_U, uv3);
+   float4 Fgnd = ReadPixel (Fg_U, xy);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (bg)) ? kTransparentBlack : ReadPixel (Super_U, xy);
-
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 

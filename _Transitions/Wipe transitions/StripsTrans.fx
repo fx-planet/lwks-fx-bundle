@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-02
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-02
+// @Created 2018-06-13
 
 /**
  A transition that splits a blended foreground image into strips and compresses it to zero
@@ -9,20 +9,22 @@
  asymmetrical.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Strips_Kx.fx
+// Lightworks user effect StripsTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-02 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Strips (keyed)", "Mix", "Wipe transitions", "Splits the foreground into strips and compresses it to zero height", CanSize);
+DeclareLightworksEffect ("Strips transition", "Mix", "Wipe transitions", "Splits the foreground into strips and compresses it to zero height", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -30,16 +32,13 @@ DeclareLightworksEffect ("Strips (keyed)", "Mix", "Wipe transitions", "Splits th
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
-
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
-
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareFloatParam (Spacing, "Spacing", "Strips", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (Spread, "Spread", "Strips", kNoFlags, 0.5, 0.0, 1.0);
@@ -47,7 +46,11 @@ DeclareFloatParam (Spread, "Spread", "Strips", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (centreX, "Centre", "Strips", "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (centreY, "Centre", "Strips", "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_Progress);
 
@@ -65,16 +68,20 @@ DeclareFloatParam (_Progress);
 #define HALF_PI  1.5707963268
 
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Code
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
+DeclarePass (Fgd)
 {
-   float4 Fgnd = ReadPixel (Fg, xy1);
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+
+   if ((Source == 0) && SwapDir) {
+      Bgnd = Fgnd;
+      Fgnd = ReadPixel (Bg, uv2);
+   }
+   else Bgnd = ReadPixel (Bg, uv2);
 
    if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
-
       Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
       Fgnd.rgb *= Fgnd.a;
    }
@@ -83,39 +90,21 @@ float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
       Fgnd.rgb /= Fgnd.a;
    }
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+
+   return Fgnd;
 }
 
-//-----------------------------------------------------------------------------------------//
-// Code
-//-----------------------------------------------------------------------------------------//
+DeclarePass (Bgd)
+{ return SwapDir && (Source == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
 
-// technique Strips_F
-
-DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Super_F)
+DeclareEntryPoint (StripsTrans)
 {
-   float4 Fgnd = tex2D (Bg_F, uv3);
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 retval, maskBg = Bgnd;
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-DeclareEntryPoint (Strips_F)
-{
-   float amount   = 1.0 - Amount;
+   float amount   = SwapDir ? 1.0 - Amount : Amount;
    float Width    = 10.0 + (Spacing * 40.0);
    float centre_X = 1.0 - (2.0 * centreX);
    float centre_Y = 1.0 - centreY;
@@ -125,80 +114,16 @@ DeclareEntryPoint (Strips_F)
    if (abs (offset) > 0.5) offset = -offset;
 
    offset = ((floor (offset * 5.2) / 5.0) + centre_X) * amount;
+   amount = 1.0 - amount;
 
    float2 xy = uv3 + float2 (offset, -centre_Y);
 
    offset *= 2.0 * Spread;
    xy.y = (xy.y * Height) + offset + centre_Y;
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy);
+   Fgnd = ReadPixel (Fgd, xy);
+   retval = lerp (Bgnd, Fgnd, Fgnd.a * amount);
 
-   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Strips_I
-
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_I)
-{ return fn_keygen (Bg_I, uv1, uv3); }
-
-DeclareEntryPoint (Strips_I)
-{
-   float amount   = 1.0 - Amount;
-   float Width    = 10.0 + (Spacing * 40.0);
-   float centre_X = 1.0 - (2.0 * centreX);
-   float centre_Y = 1.0 - centreY;
-   float offset   = sin (Width * uv3.y * PI);
-   float Height   = 1.0 + ((1.0 - cos (amount * HALF_PI)) * HEIGHT);
-
-   if (abs (offset) > 0.5) offset = -offset;
-
-   offset = ((floor (offset * 5.2) / 5.0) + centre_X) * amount;
-
-   float2 xy = uv3 + float2 (offset, -centre_Y);
-
-   offset *= 2.0 * Spread;
-   xy.y = (xy.y * Height) + offset + centre_Y;
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy);
-
-   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * Amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Strips_O
-
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_O)
-{ return fn_keygen (Bg_O, uv1, uv3); }
-
-DeclareEntryPoint (Strips_O)
-{
-   float amount   = 1.0 - Amount;
-   float Width    = 10.0 + (Spacing * 40.0);
-   float centre_X = 1.0 - (2.0 * centreX);
-   float centre_Y = 1.0 - centreY;
-   float offset   = sin (Width * uv3.y * PI);
-   float Height   = 1.0 + ((1.0 - cos (Amount * HALF_PI)) * HEIGHT);
-
-   if (abs (offset) > 0.5) offset = -offset;
-
-   offset = ((floor (offset * 5.2) / 5.0) + centre_X) * Amount;
-
-   float2 xy = uv3 + float2 (offset, -centre_Y);
-
-   offset *= 2.0 * Spread;
-   xy.y = (xy.y * Height) + offset + centre_Y;
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy);
-
-   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * amount);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

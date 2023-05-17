@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-01-29
+// @Created 2021-06-12
 
 /**
  This is a transition that sunders the central area of the outgoing image from the
@@ -14,20 +14,22 @@
  help separate it from the centre.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Sunder_Dx.fx
+// Lightworks user effect SunderTrans.fx
 //
 // Version history:
 //
-// Built 2023-01-29 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Sunder", "Mix", "Wipe transitions", kNoNotes, CanSize);
+DeclareLightworksEffect ("Sunder transition", "Mix", "Wipe transitions", kNoNotes, CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -35,11 +37,13 @@ DeclareLightworksEffect ("Sunder", "Mix", "Wipe transitions", kNoNotes, CanSize)
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareBoolParam (BlankCentre, "Blank centre area in outer", kNoGroup, false);
 
@@ -158,13 +162,19 @@ DeclarePass (Bg_O)
 
 DeclareEntryPoint (Sunder)
 {
-   if (Boxed (uv3)) return CentrePan == 0 ? CentreLeft (Fg_C, Bg_C, uv3)
-                         : CentrePan == 1 ? CentreRight (Fg_C, Bg_C, uv3)
-                         : CentrePan == 2 ? CentreUp (Fg_C, Bg_C, uv3)
-                         : CentreDown (Fg_C, Bg_C, uv3);
+   float4 retval, maskBg = tex2D (Fg_C, uv3);
 
-   return OuterPan == 0 ? OuterLeft (Fg_O, Bg_O, uv3)
-        : OuterPan == 1 ? OuterRight (Fg_O, Bg_O, uv3)
-        : OuterPan == 2 ? OuterUp (Fg_O, Bg_O, uv3) : OuterDown (Fg_O, Bg_O, uv3);
+   if (Boxed (uv3)) {
+      retval = CentrePan == 0 ? CentreLeft (Fg_C, Bg_C, uv3)
+             : CentrePan == 1 ? CentreRight (Fg_C, Bg_C, uv3)
+             : CentrePan == 2 ? CentreUp (Fg_C, Bg_C, uv3) : CentreDown (Fg_C, Bg_C, uv3);
+   }
+   else {
+      retval = OuterPan == 0 ? OuterLeft (Fg_O, Bg_O, uv3)
+             : OuterPan == 1 ? OuterRight (Fg_O, Bg_O, uv3)
+             : OuterPan == 2 ? OuterUp (Fg_O, Bg_O, uv3) : OuterDown (Fg_O, Bg_O, uv3);
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

@@ -4,7 +4,7 @@
 // @Created 2021-06-12
 
 /**
- This is a transition that sseparates the central area of the outgoing image from the
+ This is a transition that separates the central area of the outgoing image from the
  background and pushes it to reveal the incoming media.  At the same time the whole
  background also pushes to reveal the incoming media.  Each can be pushed left, right,
  up or down, and the centre area of the background can optionally be blanked.  The

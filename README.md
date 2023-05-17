@@ -1,4 +1,4 @@
-# Lightworks user Fx library, May 16, 2023.
+# Lightworks user Fx library, May 17, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -284,56 +284,56 @@ If you need to use two effects that have the same name, simply open one of them 
 ## TRANSITIONS
 
 ## CATEGORY FOLDER: Abstract transitions
-|EFFECT                    |DIRECT      |KEYED      |FILE NAME               |DESCRIPTION                                          |
-|:------------------------ |:--------- |:---------- |:---------------------- |:--------------------------------------------------- |
-|Erosion transition        |Yes        |Yes         |ErodeTrans.fx           |Transitions between two sources using a mixed key    |
-|Fractal transition        |Yes        |Yes         |FractalTrans.fx         |Uses a fractal-like pattern as a transition          |
-|Warp transition           |Yes        |Yes         |WarpTrans.fx            |Warps between two shots                              |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Erosion transition           |Yes      |Yes      |ErodeTrans.fx           |Transitions between two sources using a mixed key      |
+|Fractal transition           |Yes      |Yes      |FractalTrans.fx         |Uses a fractal-like pattern as a transition            |
+|Warp transition              |Yes      |Yes      |WarpTrans.fx            |Warps between two shots                                |
 
 ## CATEGORY FOLDER: Art transitions
-|EFFECT                    |DIRECT      |KEYED      |FILE NAME               |DESCRIPTION                                          |
-|:------------------------ |:--------- |:---------- |:---------------------- |:--------------------------------------------------- |
-|Border transition         |No         |Yes         |BorderTrans.fx          |Key materialises / dematerialises in four directions |
-|Dry brush transition      |Yes        |Yes         |DryBrushTrans.fx        |Angled brush stroke transitions between shots        |
-|Flare transition          |Yes        |No          |FlareTran.fx            |Dissolves between images using a burnout flare       |
-|Granular transition       |Yes        |Yes         |GranularTrans.fx        |A granular noise driven dissolve between shots       |
-|Toon transition           |Yes        |Yes         |ToonTrans.fx            |A stylised cartoon transition between images         |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Border transition            |No       |Yes      |BorderTrans.fx          |Key materialises / dematerialises in four directions   |
+|Dry brush transition         |Yes      |Yes      |DryBrushTrans.fx        |Angled brush stroke transitions between shots          |
+|Flare transition             |Yes      |No       |FlareTran.fx            |Dissolves between images using a burnout flare         |
+|Granular transition          |Yes      |Yes      |GranularTrans.fx        |A granular noise driven dissolve between shots         |
+|Toon transition              |Yes      |Yes      |ToonTrans.fx            |A stylised cartoon transition between images           |
 
 ## CATEGORY FOLDER: Blend transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|DissolveX                 |DissolveX_Dx.fx         |DissolveX_Kx.fx         |Allows blend modes to be used in a dissolve          |
-|Non-linear dissolve       |Ndissolve_Dx.fx         |Ndissolve_Kx.fx         |A series of four non-linear dissolves                |
-|Optical dissolve          |Optical_Dx.fx           |Optical_Kx.fx           |Simulates the burn effect of a film optical dissolve |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Dissolve X transitions       |Yes      |Yes      |DissolveXTrans.fx       |Allows blend modes to be used in a dissolve            |
+|Non-linear transitions       |Yes      |Yes      |NonlinearTrans.fx       |A series of four non-linear dissolves                  |
+|Optical transition           |Yes      |Yes      |OpticalTrans.fx         |Simulates the burn effect of a film optical dissolve   |
 
 ## CATEGORY FOLDER: Blur transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Blur dissolve             |Blur_Dx.fx              |Blur_Kx.fx              |Uses a blur to transition between two video sources  |
-|Directional blur dissolve |DirectionalBlur_Dx.fx   |DirectionalBlur_Kx.fx   |Uses a directional blur to dissolve between sources  |
-|Spin dissolve             |Spin_Dx.fx              |Spin_Kx.fx              |Uses a rotational blur to dissolve between sources   |
-|Swirl mix                 |SwirlMix_Dx.fx          |SwirlMix_Kx.fx          |Uses a spin effect to transition between two sources |
-|Whip pan                  |WhipPan_Dx.fx           |WhipPan_Kx.fx           |Uses a directional blur to simulate a whip pan       |
-|Zoom dissolve             |Zoom_Dx.fx              |Zoom_Kx.fx              |Zooms between the two sources                        |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Blur transition              |Yes      |Yes      |BlurTrans.fx            |Uses a blur to transition between two video sources    |
+|Directional blur transition  |Yes      |Yes      |DirectionalBlurTrans.fx |Uses a directional blur to dissolve between sources    |
+|Spin transition              |Yes      |Yes      |SpinTrans.fx            |Uses a rotational blur to dissolve between sources     |
+|Swirl transition             |Yes      |Yes      |SwirlMixTrans.fx        |Uses a spin effect to transition between two sources   |
+|Whip pan transition          |Yes      |Yes      |WhipPanTrans.fx         |Uses a directional blur to simulate a whip pan         |
+|Zoom transition              |Yes      |Yes      |ZoomTrans.fx            |Zooms between the two sources                          |
 
 ## CATEGORY FOLDER: Colour transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Colour sizzler            |ColourSizzler_Dx.fx     |ColourSizzler_Kx.fx     |Dissolves through a complex colour translation       |
-|Dissolve thru colour      |Colour_Dx.fx            |Colour_Kx.fx            |Dissolves through a user-selected colour field       |
-|Dissolve thru flat colour |FlatColour_Dx.fx        |                        |Dissolves through a flat colour between shots        |
-|RGB drifter               |RGBdrifter_Dx.fx        |RGBdrifter_Kx.fx        |Dissolves using different R, G and B curves          |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Colour gradient transition   |Yes      |Yes      |ColourGradTrans.fx      |Transitions through monochrome or a colour gradient    |
+|Colour transition            |Yes      |Yes      |ColourTrans.fx          |Transitions through monochrome video or a flat colour  |
+|RGB drift transition         |Yes      |Yes      |RGBdriftTrans.fx        |Dissolves using different R, G and B curves            |
+|Sizzler transition           |Yes      |Yes      |SizzlerTrans.fx         |Transitions using a complex colour translation         |
 
 ## CATEGORY FOLDER: DVE transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Barn door squeeze         |BarndoorSqueeze_Dx.fx   |BarndoorSqueeze_Kx.fx   |A barn door squeeze to/from the edge of frame        |
-|Bounce transition         |Bounce_Dx.fx            |Bounce_Kx.fx            |Bounces the foreground up then falls back            |
-|Corner squeeze            |CornerSqueeze_Dx.fx     |CornerSqueeze_Kx.fx     |Corner wipe effect that squeezes or expands images   |
-|Pinch transitions         |Pinches_Dx.fx           |Pinches_Kx.fx           |Pinches the outgoing video to a user-defined point   |
-|Split and zoom            |SplitAndZoom_Dx.fx      |                        |Splits outgoing video to reveal incoming zoom shot   |
-|Squeeze transition        |                        |Squeeze_Kx.fx           |A squeeze effect for blended images                  |
-|Stretch transition        |Stretch_Dx.fx           |Stretch_Kx.fx           |Stretches the image horizontally through dissolve    |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Barn door squeeze transition |Yes      |Yes      |BarndoorSqueezeTrans.fx |A barn door squeeze to/from the edge of frame          |
+|Bounce transition            |Yes      |Yes      |BounceTrans.fx          |Bounces the foreground up then falls back              |
+|Corner squeeze transitions   |Yes      |Yes      |CornerSqueezeTrans.fx   |Corner wipe effect that squeezes or expands images     |
+|Indiarubber transition       |Yes      |Yes      |IndiarubberTrans.fx     |Stretches the image horizontally through dissolve      |
+|Pinch transitions            |Yes      |Yes      |PinchTrans.fx           |Pinches the outgoing video to a user-defined point     |
+|Split and zoom transition    |Yes      |No       |SplitAndZoomTrans.fx    |Splits outgoing video to reveal incoming zoom shot     |
+|Squeeze transition           |No       |Yes      |SqueezeTrans.fx         |A squeeze effect for blended images                    |
 
 ## CATEGORY FOLDER: Fades and non mixes
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |

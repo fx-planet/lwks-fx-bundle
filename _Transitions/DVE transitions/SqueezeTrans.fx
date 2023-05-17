@@ -10,7 +10,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Squeeze_Fx.fx
+// Lightworks user effect SqueezeTrans.fx
 //
 // Version history:
 //

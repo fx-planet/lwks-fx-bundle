@@ -1,28 +1,31 @@
 // @Maintainer jwrl
-// @Released 2023-02-02
+// @Released 2023-05-17
+// @Author khaver
 // @Author jwrl
-// @Created 2023-02-02
+// @Created 2016-01-22
 
 /**
- This is a delta key and alpha transition that splits a keyed image into tiles then blows
- them apart or materialises the key from tiles.  It's a combination of two previous effects,
- TileSplit_Ax and TileSplit_Adx.
+ These are a collection of effects based on mosaic tiles that can be used to transition
+ into or out of standard video, blended foregrounds and titles.  Images fade into or out
+ of mosaic tiles or blocks progressively over the duration of the transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect TiledSplit_Kx.fx
+// Lightworks user effect TileTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-02 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-09 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Tiled split (keyed)", "Mix", "Geometric transitions", "Splits a blended foreground into tiles and blows them apart", CanSize);
+DeclareLightworksEffect ("Tile transitions", "Mix", "Geometric transitions", "Builds images into larger and larger blocks as they fades in or out", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -30,25 +33,29 @@ DeclareLightworksEffect ("Tiled split (keyed)", "Mix", "Geometric transitions", 
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
+DeclareIntParam (SetTechnique, "Mode", "Tiles", 0, "Mosaic tiles|Coloured blocks|Break apart to tiles|Materialise from tiles");
 
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareFloatParam (TileSize, "Size", "Tiles", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Aspect, "Aspect ratio", "Tiles", kNoFlags, 1.0, 0.25, 4.0);
 
-DeclareFloatParam (Width, "Width", "Tile size", kNoFlags, 0.5, 0.0, 1.0;);
-DeclareFloatParam (Height, "Height", "Tile size", kNoFlags, 0.5, 0.0, 1.0;);
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_OutputAspectRatio);
-
-DeclareFloatParam (_Progress);
+DeclareFloatParam (_LengthFrames);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -58,157 +65,336 @@ DeclareFloatParam (_Progress);
 #define PROFILE ps_3_0
 #endif
 
+#define BLACK float2 (0.0,1.0).xxxy
+
 #define FACTOR 100
 #define OFFSET 1.2
+
+#define BLOCKS  0.1
+
+#define SCALE   float3(1.2, 0.8, 1.0)
+
+#define HALF_PI 1.5707963268
+#define PI      3.1415926536
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (Fg, xy1);
+   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
 
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (B, xy2);
+      }
+      else Bgnd = ReadPixel (B, xy2);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
+
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
    }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
+   else Fgnd.a = 1.0;
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   return Fgnd;
 }
 
-float4 fn_horiz_split (sampler S, float2 uv)
+float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float dsplc  = (OFFSET - Height) * FACTOR / _OutputAspectRatio;
-   float offset = floor (uv.y * dsplc);
+   float4 retval;
 
-   offset = ceil (frac (offset / 2.0)) * 2.0;
-   offset = (1.0 - offset) * (1.0 - Amount);
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
+   else retval = ReadPixel (B, xy2);
 
-   return tex2D (S, uv + float2 (offset, 0.0));
+   if (!Blended) retval.a = 1.0;
+
+   return retval;
+}
+
+float2 fn_block_gen (float2 xy, float range)
+{
+   float AspectRatio = clamp (Aspect, 0.01, 10.0);
+   float Xsize = max (1e-10, range) * TileSize * BLOCKS;
+   float Ysize = Xsize * AspectRatio * _OutputAspectRatio;
+
+   float2 xy1;
+
+   xy1.x = (round ((xy.x - 0.5) / Xsize) * Xsize) + 0.5;
+   xy1.y = (round ((xy.y - 0.5) / Ysize) * Ysize) + 0.5;
+
+   return xy1;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique TiledSplit_F
+// technique Mosaics
 
-DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Fg_M)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_F)
+DeclarePass (Bgd)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Bg_M)
 {
-   float4 Fgnd = tex2D (Bg_F, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   return Blended ? Bgnd
+                  : lerp (tex2D (Fg_M, uv3), Bgnd, saturate ((Amount * 3.0) - 1.0));
 }
 
-DeclarePass (Tiles_F)
-{ return fn_horiz_split (Super_F, uv3); }
-
-DeclareEntryPoint (TiledSplit_F)
+DeclareEntryPoint (Mosaics)
 {
-   float2 uv = uv3;
+   float4 Fgnd = tex2D (Fg_M, uv3);
+   float4 Bgnd = tex2D (Bg_M, uv3);
+   float4 maskBg, retval = Bgnd;
 
-   float dsplc  = (OFFSET - Width) * FACTOR;
-   float offset = floor (uv.x * dsplc);
+   float2 xy;
 
-   offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
-   uv.y += offset / _OutputAspectRatio;
+   if (Blended) {
+      maskBg = Bgnd;
 
-   float4 Fgnd = ReadPixel (Tiles_F, uv);
+      if (SwapDir) {
+         xy = (TileSize > 0.0) ? fn_block_gen (uv3, cos (Amount * HALF_PI)) : uv3;
+         Fgnd = ReadPixel (Fg_M, xy);
+         retval = lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+      }
+      else {
+         xy = (TileSize > 0.0) ? fn_block_gen (uv3, sin (Amount * HALF_PI)) : uv3;
+         Fgnd = ReadPixel (Fg_M, xy);
+         retval = lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - Amount));
+      }
+   }
+   else {
+      maskBg = Fgnd;
+      xy = uv3;
 
-   if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
+      if (TileSize > 0.0) {
+         float Xsize = max (1e-6, TileSize * sin (Amount * PI) * 0.1);
+         float Ysize = Xsize * _OutputAspectRatio * Aspect;
 
-   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a);
+         xy.x = (floor ((xy.x - 0.5) / Xsize) * Xsize) + 0.5;
+         xy.y = (floor ((xy.y - 0.5) / Ysize) * Ysize) + 0.5;
+      }
+
+      retval = tex2D (Bg_M, xy);
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique TiledSplit_I
+// technique Blocks
 
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Fg_C)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_I)
-{ return fn_keygen (Bg_I, uv1, uv3); }
+DeclarePass (Bg_C)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Tiles_I)
-{ return fn_horiz_split (Super_I, uv3); }
-
-DeclareEntryPoint (TiledSplit_I)
+DeclarePass (Tiles_C)
 {
-   float2 uv = uv3;
+   float4 retval = tex2D (Fg_C, uv3);
 
-   float dsplc  = (OFFSET - Width) * FACTOR;
-   float offset = floor (uv.x * dsplc);
+   float amount = Amount * _LengthFrames / (_LengthFrames - 1.0);
+   float a, b;
 
-   offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - Amount);
-   uv.y += offset / _OutputAspectRatio;
+   retval = lerp (retval, tex2D (Bg_C, uv3), amount);
+   sincos (amount * HALF_PI, a, b);
+   retval.rgb = min (abs (retval.rgb - float3 (a, b, frac ((uv3.x + uv3.y) * 1.2345 + amount))), 1.0);
+   retval.a   = 1.0;
 
-   float4 Fgnd = ReadPixel (Tiles_I, uv);
+   float3 x = retval.aga;
 
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+   for (int i = 0; i < 32; i++) {
+      retval.rgb = SCALE * abs (retval.gbr / dot (retval.brg, retval.rgb) - x);
+   }
 
-   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a);
+   return retval;
+}
+
+DeclareEntryPoint (Blocks)
+{
+   float4 Fgnd = tex2D (Fg_C, uv3);
+   float4 Bgnd = tex2D (Bg_C, uv3);
+   float4 maskBg, retval = Bgnd;
+
+   float alpha, amount;
+
+   if (Blended) {
+      maskBg = Bgnd;
+      alpha = Fgnd.a;
+      amount = SwapDir ? 1.0 - Amount : Amount;
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+      Fgnd = retval;
+   }
+   else {
+      maskBg = Fgnd;
+      alpha = 1.0;
+      amount = Amount;
+   }
+
+   if (alpha > 0.0) {
+      amount = amount * _LengthFrames / (_LengthFrames - 1.0);
+
+      float Tscale = TileSize * 0.2;
+
+      float2 mosaic = float2 (1.0, _OutputAspectRatio * Aspect) * max (1.0e-6, Tscale * 0.2);
+      float2 Mscale = (1.0 - Tscale) / mosaic;
+      float2 xy1 = (round ((uv3 - 0.5.xx) * Mscale) * mosaic) + 0.5.xx;
+
+      float4 gating = lerp (tex2D (Fg_C, xy1), tex2D (Bg_C, xy1), amount);
+
+      retval = amount < 0.5 ? Fgnd : Bgnd;
+
+      float level = max (gating.r, max (gating.g, gating.b));
+      float range = abs (amount - 0.5) * 2.0;
+
+      retval = level >= range ? tex2D (Tiles_C, xy1) : retval;
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique TiledSplit_O
+// technique BreakTiles
 
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Fg_B)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_O)
-{ return fn_keygen (Bg_O, uv1, uv3); }
+DeclarePass (Bg_B)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Tiles_O)
+DeclarePass (Tiles_B)
 {
+   float4 retval;
+
    float2 uv = uv3;
 
-   float dsplc  = (OFFSET - Height) * FACTOR / _OutputAspectRatio;
+   float amount = Amount * _LengthFrames / (_LengthFrames - 1.0);
+   float dsplc  = (OFFSET - (TileSize * Aspect)) * FACTOR / _OutputAspectRatio;
    float offset = floor (uv.y * dsplc);
 
    offset = ceil (frac (offset / 2.0)) * 2.0;
-   offset = (offset - 1.0) * Amount;
-   uv.x += offset;
 
-   return ReadPixel (Super_O, uv);
+   if (Blended) {
+      uv.x += SwapDir ? (1.0 - offset) * (1.0 - amount) : (offset - 1.0) * amount;
+      retval = ReadPixel (Fg_B, uv);
+   }
+   else {
+      uv.x += (1.0 - offset) * (1.0 - amount);
+      retval = ReadPixel (Bg_B, uv);
+   }
+
+   return retval;
 }
 
-DeclareEntryPoint (TiledSplit_O)
+DeclareEntryPoint (BreakTiles)
 {
+   float4 Fgnd = tex2D (Fg_B, uv3);
+   float4 Bgnd = tex2D (Bg_B, uv3);
+   float4 maskBg, retval = Bgnd;
+
    float2 uv = uv3;
 
-   float dsplc  = (OFFSET - Width) * FACTOR;
+   float amount = Amount * _LengthFrames / (_LengthFrames - 1.0);
+   float dsplc  = (OFFSET - TileSize) * FACTOR;
    float offset = floor (uv.x * dsplc);
 
-   offset = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * Amount;
-   uv.y += offset / _OutputAspectRatio;
+   if (Blended) {
+      maskBg = Bgnd;
+      offset = SwapDir ? (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - amount)
+                       : ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * amount;
+      uv.y += offset / _OutputAspectRatio;
 
-   float4 Fgnd = ReadPixel (Tiles_O, uv);
+      retval = ReadPixel (Tiles_B, uv);
+      retval = lerp (Bgnd, retval, retval.a);
+   }
+   else {
+      maskBg = Fgnd;
+      offset = (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - amount);
+      uv.y += offset / _OutputAspectRatio;
+      retval = ReadPixel (Tiles_B, uv);
+      retval = lerp (Fgnd, retval, retval.a);
+   }
 
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
+}
 
-   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a);
+//-----------------------------------------------------------------------------------------//
+
+// technique JoinTiles
+
+DeclarePass (Fg_J)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Bg_J)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Tiles_J)
+{
+   float4 retval;
+
+   float2 uv = uv3;
+
+   float amount = Amount * _LengthFrames / (_LengthFrames - 1.0);
+   float dsplc  = (OFFSET - (TileSize * Aspect)) * FACTOR / _OutputAspectRatio;
+   float offset = floor (uv.y * dsplc);
+
+   offset = ceil (frac (offset / 2.0)) * 2.0;
+
+   if (Blended) {
+      uv.x += SwapDir ? (1.0 - offset) * (1.0 - amount) : (offset - 1.0) * amount;
+   }
+   else uv.x += (offset - 1.0) * amount;
+
+   retval = ReadPixel (Fg_J, uv);
+
+   return retval;
+}
+
+DeclareEntryPoint (JoinTiles)
+{
+   float4 Fgnd = tex2D (Fg_J, uv3);
+   float4 Bgnd = tex2D (Bg_J, uv3);
+   float4 maskBg, retval = Bgnd;
+
+   float2 uv = uv3;
+
+   float amount = Amount * _LengthFrames / (_LengthFrames - 1.0);
+   float dsplc  = (OFFSET - TileSize) * FACTOR;
+   float offset = floor (uv.x * dsplc);
+
+   if (Blended) {
+      maskBg = Bgnd;
+      offset = SwapDir ? (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - amount)
+                       : ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * amount;
+      uv.y += offset / _OutputAspectRatio;
+
+      retval = ReadPixel (Tiles_J, uv);
+      retval = lerp (Bgnd, retval, retval.a);
+   }
+   else {
+      maskBg = Fgnd;
+      offset  = ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * amount;
+      uv.y += offset / _OutputAspectRatio;
+      retval = ReadPixel (Tiles_J, uv);
+      retval = lerp (Bgnd, retval, retval.a);
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

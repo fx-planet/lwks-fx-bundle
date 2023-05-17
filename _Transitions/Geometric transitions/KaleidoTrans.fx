@@ -1,42 +1,38 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-05-17
 // @Author schrauber
 // @Author baopao
 // @Author nouanda
 // @Created 2016-08-10
 
 /**
- This effect is based on the user effect Kaleido, converted to function as a transition.
+ This is loosely based on the user effect Kaleido, converted to function as a transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect KaleidoTurbine_Dx.fx
-//
-// From Schrauber revised for transitions.  The transition effect is based on baopao's
-// (and/or nouanda?)  "Kaleido".  In the "Kaleido" file was the following:
-// Quote: ...................
-// Kaleido   http://www.alessandrodallafontana.com/ based on the pixel shader of:
-// http://pixelshaders.com/ corrected for HLSL by Lightworks user nouanda
-// ..........................
+// Lightworks user effect KaleidoTrans.fx
 //
 // Version history:
 //
-// Updated 2023-01-29 jwrl
-// Updated to provide LW 2022 revised cross platform support.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-09 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Kaleido turbine mix", "Mix", "Geometric transitions", "Uses a kaleidoscope pattern to transition between two clips", CanSize);
+DeclareLightworksEffect ("Kaleidoscope transition", "Mix", "Geometric transitions", "Breaks the images into a rotary kaleidoscope pattern", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -84,17 +80,8 @@ float mod (float x, float y)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Code
+// Shaders
 //-----------------------------------------------------------------------------------------//
-
-// These two passes map the outgoing and incoming video sources to sequence coordinates.
-// This makes handling the aspect ratio, size and rotation much simpler.
-
-DeclarePass (Outgoing)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Incoming)
-{ return ReadPixel (Bg, uv2); }
 
 // These passes provide the edge mirroring necessary for this effect.
 
@@ -134,11 +121,11 @@ DeclareEntryPoint (KaleidoTurbine_Dx)
    else color = MirrorPixel (BgK, p);                 // Kaleido phase 2
 
    // Fan phase 1
-   if ((a > amount) && (amount < 0.5) && (fan)) color = ReadPixel (Outgoing, uv3);
+   if ((a > amount) && (amount < 0.5) && (fan)) color = ReadPixel (Fg, uv1);
 
    // Fan phase 2
-   if ((a > 1.0 - amount) && (amount > 0.5) && (fan)) color = ReadPixel (Incoming, uv3);
+   if ((a > 1.0 - amount) && (amount > 0.5) && (fan)) color = ReadPixel (Bg, uv1);
 
-   return color;
+   return lerp (ReadPixel (Fg, uv1), color, tex2D (Mask, uv3).x);
 }
 

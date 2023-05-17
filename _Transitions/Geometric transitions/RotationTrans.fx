@@ -1,28 +1,30 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-01-29
+// @Created 2018-06-12
 
 /**
  Transitions between two sources by rotating them horizontally or vertically.  The maths
- used is quite different to that used in the keyed version because of non-linearities that
- were acceptable for that use were not for this.
+ used is quite different to that used in the original keyed version that triggered this.
+ Non-linearities that at the time were considered quite acceptable were really not.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Rotating_Dx.fx
+// Lightworks user effect RotationTrans.fx
 //
-// Revision history:
+// Version history:
 //
-// Built 2023-01-29 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-09 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Rotating transition", "Mix", "Geometric transitions", "X or Y axis rotating transition", CanSize);
+DeclareLightworksEffect ("Rotation transition", "Mix", "Geometric transitions", "Rotates a title, image key or other blended foreground in or out", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -30,17 +32,27 @@ DeclareLightworksEffect ("Rotating transition", "Mix", "Geometric transitions", 
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (SetTechnique, "Amount axis", kNoGroup, 0, "Vertical|Horizontal");
+DeclareIntParam (SetTechnique, "Rotation axis", "Rotation", 0, "Vertical|Horizontal");
 
-DeclareBoolParam (Reverse, "Reverse rotation", kNoGroup, false);
+DeclareBoolParam (Reverse, "Swap rotation direction", "Rotation", false);
 
-DeclareFloatParam (Offset, "Z offset", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Offset, "Z offset", "Rotation", kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -50,15 +62,54 @@ DeclareFloatParam (Offset, "Z offset", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 #define PROFILE ps_3_0
 #endif
 
+#define HALF_PI 1.5707963268
 #define PI      3.1415926536
 #define TWO_PI  6.2831853072
-#define HALF_PI 1.5707963268
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-bool fn_3Drotate (float2 tl, float2 tr, float2 bl, float2 br, inout float2 uv3)
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+{
+   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (B, xy2);
+      }
+      else Bgnd = ReadPixel (B, xy2);
+
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
+
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   }
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
+}
+
+float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
+{
+   float4 retval;
+
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
+   else retval = ReadPixel (B, xy2);
+
+   if (!Blended) retval.a = 1.0;
+
+   return retval;
+}
+
+bool fn_3Drotate (float2 tl, float2 tr, float2 bl, float2 br, inout float2 uv)
 {
    float2 c1 = tr - bl;
    float2 c2 = br - bl;
@@ -79,34 +130,53 @@ bool fn_3Drotate (float2 tl, float2 tr, float2 bl, float2 br, inout float2 uv3)
                           (c2.x * tl.y) - (c2.y * tl.x), (c1.y * tl.x) - (c1.x * tl.y),
                           (c1.x * c2.y)  - (c1.y * c2.x)) / d;
 
-   float3 xyz = mul (float3 (uv3, 1.0), mul (m, float3x3 (1.0, 0.0.xx, -1.0.xx, -2.0, 0.0.xx, 1.0)));
+   float3 xyz = mul (float3 (uv, 1.0), mul (m, float3x3 (1.0, 0.0.xx, -1.0.xx, -2.0, 0.0.xx, 1.0)));
 
-   uv3 = xyz.xy / xyz.z;
+   uv = xyz.xy / xyz.z;
 
-   return (uv3.x >= 0.0) && (uv3.y >= 0.0) && (uv3.x <= 1.0) && (uv3.y <= 1.0);
+   return (uv.x >= 0.0) && (uv.y >= 0.0) && (uv.x <= 1.0) && (uv.y <= 1.0);
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique Rotating_Dx_V
+// technique RotationTrans_V
+
+DeclarePass (Fg_V)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Bg_V)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Premix_V)
-{ return (Amount < 0.5) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+{ return (Amount < 0.5) ? tex2D (Fg_V, uv3) : tex2D (Bg_V, uv3); }
 
-DeclareEntryPoint (Main_V)
+DeclareEntryPoint (RotationTrans_V)
 {
-   float scale = lerp (0.1, 0.025, Offset);
-   float L = (1.0 - cos (Amount * PI)) * 0.5;
-   float R = 1.0 - L;
-   float X = sin (Amount * TWO_PI) * scale;
-   float Y = sin (Amount * PI) * (scale + scale);
-   float Z = 1.0 - (tan ((0.5 - abs (Amount - 0.5)) * HALF_PI) * lerp (0.2, 0.0125, Offset));
+   float4 Fgnd = tex2D (Fg_V, uv3);
+   float4 Bgnd = tex2D (Bg_V, uv3);
+   float4 maskBg, retval;
 
    float2 xy = uv3;
 
-   if (Amount >= 0.5) {
+   float amount = Amount;
+
+   if (Blended) {
+      maskBg = Bgnd;
+      amount /= 2.0;
+      if (SwapDir) amount += 0.5;
+   }
+   else maskBg = Fgnd;
+
+   float scale = lerp (0.1, 0.025, Offset);
+   float L = (1.0 - cos (amount * PI)) * 0.5;
+   float R = 1.0 - L;
+   float X = sin (amount * TWO_PI) * scale;
+   float Y = sin (amount * PI) * (scale + scale);
+   float Z = 1.0 - (tan ((0.5 - abs (amount - 0.5)) * HALF_PI) * lerp (0.2, 0.0125, Offset));
+
+   if (amount >= 0.5) {
       L = 1.0 - L;
       R = 1.0 - R;
       Y = -Y;
@@ -127,30 +197,53 @@ DeclareEntryPoint (Main_V)
 
    bool InRange = fn_3Drotate (topLeft, topRight, botLeft, botRight, xy);
 
-   float4 retval = tex2D (Premix_V, xy);
+   if (Blended) {
+      Fgnd = InRange ? tex2D (Fg_V, xy) : kTransparentBlack;
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else retval = InRange ? tex2D (Premix_V, xy) : kTransparentBlack;
 
-   return InRange ? retval : kTransparentBlack;
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Rotating_Dx_H
+// technique RotationTrans_H
+
+DeclarePass (Fg_H)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
+
+DeclarePass (Bg_H)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Premix_H)
-{ return (Amount < 0.5) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+{ return (Amount < 0.5) ? tex2D (Fg_H, uv3) : tex2D (Bg_H, uv3); }
 
-DeclareEntryPoint (Main_H)
+DeclareEntryPoint (RotationTrans_H)
 {
-   float scale = lerp (0.1, 0.025, Offset);
-   float B = (cos (Amount * PI) + 1.0) * 0.5;
-   float T = 1.0 - B;
-   float X = sin (Amount * PI) * (scale + scale);
-   float Y = sin (Amount * TWO_PI) * scale;
-   float Z = 1.0 - (tan ((0.5 - abs (Amount - 0.5)) * HALF_PI) * lerp (0.2, 0.0125, Offset));
+   float4 Fgnd = tex2D (Fg_H, uv3);
+   float4 Bgnd = tex2D (Bg_H, uv3);
+   float4 maskBg, retval;
 
    float2 xy = uv3;
 
-   if (Amount >= 0.5) {
+   float amount = Amount;
+
+   if (Blended) {
+      maskBg = Bgnd;
+      amount /= 2.0;
+      if (SwapDir) amount += 0.5;
+   }
+   else maskBg = Fgnd;
+
+   float scale = lerp (0.1, 0.025, Offset);
+   float B = (cos (amount * PI) + 1.0) * 0.5;
+   float T = 1.0 - B;
+   float X = sin (amount * PI) * (scale + scale);
+   float Y = sin (amount * TWO_PI) * scale;
+   float Z = 1.0 - (tan ((0.5 - abs (amount - 0.5)) * HALF_PI) * lerp (0.2, 0.0125, Offset));
+
+   if (amount >= 0.5) {
       B = 1.0 - B;
       T = 1.0 - T;
       X = -X;
@@ -171,8 +264,12 @@ DeclareEntryPoint (Main_H)
 
    bool InRange = fn_3Drotate (topLeft, topRight, botLeft, botRight, xy);
 
-   float4 retval = tex2D (Premix_H, xy);
+   if (Blended) {
+      Fgnd = InRange ? tex2D (Fg_H, xy) : kTransparentBlack;
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else retval = InRange ? tex2D (Premix_H, xy) : kTransparentBlack;
 
-   return InRange ? retval : kTransparentBlack;
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

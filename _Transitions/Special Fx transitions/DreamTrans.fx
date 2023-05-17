@@ -1,26 +1,36 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2018-11-10
 
 /**
- This effect ripples the outgoing or incoming blended foreground as it dissolves.
+ This effect starts off by rippling the outgoing image for the first third of the effect,
+ then dissolves to the new image for the next third, then loses the ripple over the
+ remainder of the effect.  It simulates Hollywood's classic dream effect.  The default
+ settings give exactly that result.
+
+ It's based on khaver's water effect, but some parameters have been changed to better
+ mimic the original film effect.  Two directional blurs have also been added, one very
+ much weaker than the other.  Their comparative strengths depend on the predominant
+ direction of the wave effect.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Dreams_Fx.fx
+// Lightworks user effect DreamTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Dream sequence (keyed)", "Mix", "Special Fx transitions", "Ripples the outgoing or incoming blended foreground as it dissolves", CanSize);
+DeclareLightworksEffect ("Dream sequence", "Mix", "Special Fx transitions", "Ripples the images as it dissolves between them", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -28,27 +38,30 @@ DeclareLightworksEffect ("Dream sequence (keyed)", "Mix", "Special Fx transition
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
-
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
-
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (WaveType, "Wave type", kNoGroup, 0, "Waves|Ripples");
 
-DeclareFloatParam (Frequency, "Frequency", "Pattern", kNoFlags, 0.2, 0.0, 1.0);
-DeclareFloatParam (Speed, "Speed", "Pattern", kNoFlags, 0.5, 0.0, 1.0);
-DeclareFloatParam (BlurAmt, "Blur", "Pattern", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Frequency, "Frequency", kNoGroup, "SpecifiesPointX", 0.2, 0.0, 1.0);
+DeclareFloatParam (Speed, "Speed", kNoGroup, kNoFlags, 25.0, 0.0, 125.0);
+DeclareFloatParam (BlurAmt, "Blur", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareFloatParam (StrengthX, "Strength", "Pattern", "SpecifiesPointX", 0.0, 0.0, 1.0);
-DeclareFloatParam (StrengthY, "Strength", "Pattern", "SpecifiesPointY", 0.2, 0.0, 1.0);
+DeclareFloatParam (StrengthX, "Strength", kNoGroup, "SpecifiesPointX", 0.0, 0.0, 1.0);
+DeclareFloatParam (StrengthY, "Strength", kNoGroup, "SpecifiesPointY", 0.2, 0.0, 1.0);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_Progress);
 
@@ -72,6 +85,15 @@ DeclareFloatParam (_Progress);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
+// This function is necessary because we can't set addressing modes
+
+float4 MirrorPixel (sampler S, float2 xy)
+{
+   float2 xy1 = 1.0.xx - abs (2.0 * (frac (xy / 2.0) - 0.5.xx));
+
+   return ReadPixel (S, xy1);
+}
+
 float2 fn_wave (float2 uv, float2 waves, float levels)
 {
    float waveRate = _Progress * Speed * 25.0;
@@ -84,31 +106,13 @@ float2 fn_wave (float2 uv, float2 waves, float levels)
    return uv + (retXY * strength);
 }
 
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
-{
-   float4 Fgnd = ReadPixel (Fg, xy1);
-
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
 float4 fn_dissolve (sampler S, float2 uv)
 {
    float waves = float (Frequency * 200.0);
 
    float2 xy = fn_wave (uv, waves.xx, cos (Amount * HALF_PI));
 
-   return tex2D (S, xy) * Amount;
+   return MirrorPixel (S, xy) * Amount;
 }
 
 float4 fn_blur (sampler B, float2 uv)
@@ -116,8 +120,8 @@ float4 fn_blur (sampler B, float2 uv)
    float4 Inp = tex2D (B, uv);
    float4 retval = kTransparentBlack;
 
-   float blur = (StrengthY > StrengthX) ? WaveType ? BlurAmt : (BlurAmt / 2.0)
-                                        : WaveType ? (BlurAmt / 2.0) : BlurAmt;
+   float blur = (StrengthY > StrengthX) ? WaveType == 0 ? BlurAmt : (BlurAmt / 2.0)
+                                        : WaveType == 0 ? (BlurAmt / 2.0) : BlurAmt;
    if (blur <= 0.0) return Inp;
 
    float2 offset = float2 (blur, 0.0) * OFFSET;
@@ -134,175 +138,185 @@ float4 fn_blur (sampler B, float2 uv)
    return lerp (Inp, retval, 1.0 - Amount);
 }
 
-//-----------------------------------------------------------------------------------------//
-// Shaders
-//-----------------------------------------------------------------------------------------//
-
-// technique Dreams_Kx_F
-
-DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Super_F)
+float4 fn_blur_sub (sampler S, float2 xy, float2 offs)
 {
-   float4 Fgnd = tex2D (Bg_F, uv3);
+   float Samples = 60.0;
+   float Mix = min (1.0, abs (2.5 - abs ((Amount * 5.0) - 2.5)));
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 result  = 0.0.xxxx;
+   float4 blurInp = tex2D (S, xy);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-DeclarePass (BlurX_F)
-{ return fn_dissolve (Super_F, uv3); }
-
-DeclarePass (BlurY_F)
-{ return fn_blur (BlurX_F, uv3); }
-
-DeclareEntryPoint (Dreams_F)
-{
-   float4 Fgnd   = tex2D (BlurY_F, uv3);
-   float4 retval = kTransparentBlack;
-
-   float blur = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
-                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
-   if (blur > 0.0) {
-      float2 offset = float2 (0.0, blur) * OFFSET;
-      float2 blurriness = 0.0.xx;
-
-      for (int i = 0; i < SAMPLE; i++) {
-         retval += tex2D (BlurY_F, uv3 + blurriness);
-         retval += tex2D (BlurY_F, uv3 - blurriness);
-         blurriness += offset;
+   for (int i = 0; i < Samples; i++) {
+      result += tex2D (S, xy - offs * i);
       }
-
-      retval /= SAMPLES;
-
-      Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
-   }
-
-   if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Dreams_Kx_I
-
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_I)
-{ return fn_keygen (Bg_I, uv1, uv3); }
-
-DeclarePass (BlurX_I)
-{ return fn_dissolve (Super_I, uv3); }
-
-DeclarePass (BlurY_I)
-{ return fn_blur (BlurX_I, uv3); }
-
-DeclareEntryPoint (Dreams_I)
-{
-   float4 Fgnd   = tex2D (BlurY_I, uv3);
-   float4 retval = kTransparentBlack;
-
-   float blur = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
-                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
-   if (blur > 0.0) {
-      float2 offset = float2 (0.0, blur) * OFFSET;
-      float2 blurriness = 0.0.xx;
-
-      for (int i = 0; i < SAMPLE; i++) {
-         retval += tex2D (BlurY_I, uv3 + blurriness);
-         retval += tex2D (BlurY_I, uv3 - blurriness);
-         blurriness += offset;
-      }
-
-      retval /= SAMPLES;
-
-      Fgnd = lerp (Fgnd, retval, 1.0 - Amount);
-   }
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Dreams_Kx_O
-
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_O)
-{ return fn_keygen (Bg_O, uv1, uv3); }
-
-DeclarePass (BlurX_O)
-{
-   float waves = float (Frequency * 200.0);
-
-   float2 xy = fn_wave (uv3, waves.xx, sin (Amount * HALF_PI));
-
-   return tex2D (Super_O, xy) * (1.0 - Amount);
-}
-
-DeclarePass (BlurY_O)
-{
-   float4 Inp = tex2D (BlurX_O, uv3);
-   float4 retval = kTransparentBlack;
-
-   float blur = (StrengthY > StrengthX) ? WaveType ? BlurAmt : (BlurAmt / 2)
-                                         : WaveType ? (BlurAmt / 2) : BlurAmt;
-   if (blur <= 0.0) return Inp;
-
-   float2 offset = float2 (blur, 0.0) * OFFSET;
-   float2 blurriness = 0.0.xx;
-
-   for (int i = 0; i < SAMPLE; i++) {
-      retval += tex2D (BlurX_O, uv3 + blurriness);
-      retval += tex2D (BlurX_O, uv3 - blurriness);
-      blurriness += offset;
-   }
     
-   retval = retval / SAMPLES;
-    
-   return lerp (Inp, retval, Amount);
+   result /= Samples;
+
+   return lerp (blurInp, result, Mix);
 }
 
-DeclareEntryPoint (Dreams_O)
+float2 fn_XYwave (float2 xy1, float2 xy2, float amt)
 {
-   float4 Fgnd   = tex2D (BlurY_O, uv3);
-   float4 retval = kTransparentBlack;
+   float waveRate = _Progress * Speed / 2.0;
 
-   float blur = (StrengthY > StrengthX) ? WaveType ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
-                                         : WaveType ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
-   if (blur > 0.0) {
-      float2 offset = float2 (0.0, blur) * OFFSET;
+   float2 xy = (xy1 * xy2) + waveRate.xx;
+   float2 strength = float2 (StrengthX, StrengthY) * amt;
+
+   return WaveType == 0 ? xy1 + (float2 (sin (xy.y), cos (xy.x)) * strength)
+                        : xy1 + (float2 (sin (xy.x), cos (xy.y)) * strength.yx);
+}
+
+//-----------------------------------------------------------------------------------------//
+// Code
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (Fgd)
+{
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (Bg, uv2);
+      }
+      else Bgnd = ReadPixel (Bg, uv2);
+
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
+
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   }
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
+}
+
+DeclarePass (Bgd)
+{
+   float4 retval;
+
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
+   else retval = ReadPixel (Bg, uv2);
+
+   if (!Blended) retval.a = 1.0;
+
+   return retval;
+}
+
+DeclarePass (BlurX)
+{
+   float4 retval;
+
+   float2 waves, xy;
+
+   if (Blended) {
+      if (SwapDir) { retval = fn_dissolve (Fgd, uv3); }
+      else {
+         waves = float (Frequency * 200.0).xx;
+         xy = fn_wave (uv3, waves, sin (Amount * HALF_PI));
+         retval = MirrorPixel (Fgd, xy) * (1.0 - Amount);
+      }
+   }
+   else {
+      float wAmount = min (1.0, abs (1.5 - abs ((Amount * 3.0) - 1.5))) / 10.0;
+
+      float mixAmount = saturate ((Amount * 2.0) - 0.5);
+
+      waves = Frequency.xx * 20.0;
+      xy = fn_XYwave (uv3, waves, wAmount);
+
+      float4 fgProc = MirrorPixel (Fgd, xy);
+      float4 bgProc = MirrorPixel (Bgd, xy);
+
+      retval = lerp (fgProc, bgProc, mixAmount);
+   }
+
+   return retval;
+}
+
+DeclarePass (BlurY)
+{
+   float4 retval;
+
+   float blur;
+
+   if (Blended) {
+      if (SwapDir) { retval = fn_blur (BlurX, uv3); }
+      else {
+         float4 Inp = tex2D (BlurX, uv3);
+
+         retval = kTransparentBlack;
+         blur = (StrengthY > StrengthX) ? WaveType ? BlurAmt : (BlurAmt / 2)
+                                        : WaveType ? (BlurAmt / 2) : BlurAmt;
+         if (blur <= 0.0) { retval = Inp; }
+         else {
+            float2 offset = float2 (blur, 0.0) * OFFSET;
+            float2 blurriness = 0.0.xx;
+
+            for (int i = 0; i < SAMPLE; i++) {
+               retval += tex2D (BlurX, uv3 + blurriness);
+               retval += tex2D (BlurX, uv3 - blurriness);
+               blurriness += offset;
+            }
+
+            retval = retval / SAMPLES;
+            retval = lerp (Inp, retval, Amount);
+         }
+      }
+   }
+   else {
+      if (StrengthX > StrengthY) { blur = WaveType == 0 ? BlurAmt : (BlurAmt / 2.0); }
+      else blur = WaveType == 0 ? (BlurAmt / 2.0) : BlurAmt;
+
+      float2 offset = float2 (blur, 0.0) * 0.0005;
+
+      retval = (blur > 0.0) ? fn_blur_sub (BlurX, uv3, offset) : tex2D (BlurX, uv3);
+   }
+
+   return retval;
+}
+
+DeclareEntryPoint (Dream_Dx)
+{
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 maskBg, retval;
+
+   float blur = (StrengthY > StrengthX) ? WaveType == 0 ? (BlurAmt / 2.0) : (BlurAmt * 2.0)
+                                        : WaveType == 0 ? (BlurAmt * 2.0) : (BlurAmt / 2.0);
+
+   float2 offset = float2 (0.0, blur) * OFFSET;
+
+   if (Blended) {
+      maskBg = Bgnd;
+
       float2 blurriness = 0.0.xx;
 
       for (int i = 0; i < SAMPLE; i++) {
-         retval += tex2D (BlurY_O, uv3 + blurriness);
-         retval += tex2D (BlurY_O, uv3 - blurriness);
+         retval += tex2D (BlurY, uv3 + blurriness);
+         retval += tex2D (BlurY, uv3 - blurriness);
          blurriness += offset;
       }
 
       retval /= SAMPLES;
 
-      Fgnd = lerp (Fgnd, retval, Amount);
+      Fgnd = SwapDir ? lerp (tex2D (BlurY, uv3), retval, 1.0 - Amount)
+                     : lerp (tex2D (BlurY, uv3), retval, Amount);
+
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      retval = (blur > 0.0) ? fn_blur_sub (BlurY, uv3, offset) : tex2D (BlurY, uv3);
    }
 
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

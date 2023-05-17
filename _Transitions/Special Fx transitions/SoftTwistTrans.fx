@@ -1,29 +1,31 @@
 // @Maintainer jwrl
-// @Released 2023-02_01
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02_01
+// @Created 2017-11-08
 
 /**
- This is a wipe that uses a trig distortion to perform a single simple twist to transition
- between two images, either horizontally or vertically.  It does not have any of the bells
- and whistles such as adjustable blending and softness.  If you need that have a look at
- Twister_Dx.fx instead.
+ This is a dissolve/wipe that uses sine & cos distortions to perform a rippling twist to
+ transition between two images or to establish or remove the blended foreground.  The
+ range of effect variations possible with different combinations of settings is almost
+ inifinite.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect TwistIt_Dx.fx
+// Lightworks user effect TwisterTrans.fx
 //
 // Version history:
 //
-// Built 2023-02_01 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-09 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Twist it", "Mix", "Special Fx transitions", "Twists one image to another vertically or horizontally", CanSize);
+DeclareLightworksEffect ("Soft twist transition", "Mix", "Special Fx transitions", "Performs a rippling twist to transition between two video images", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -31,15 +33,33 @@ DeclareLightworksEffect ("Twist it", "Mix", "Special Fx transitions", "Twists on
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (SetTechnique, "Transition profile", kNoGroup, 0, "Left > right|Right > left|Top > bottom|Bottom > top"); 
+DeclareIntParam (TransProfile, "Transition profile", kNoGroup, 1, "Left > right profile A|Left > right profile B|Right > left profile A|Right > left profile B");
 
-DeclareFloatParam (Spread, "Twist width", kNoGroup, kNoFlags, 0.1, 0.0, 1.0);
+DeclareFloatParam (Width, "Softness", "Ripples", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Ripples, "Ripple amount", "Ripples", kNoFlags, 0.6, 0.0, 1.0);
+DeclareFloatParam (Spread, "Ripple width", "Ripples", kNoFlags, 0.15, 0.0, 1.0);
+
+DeclareFloatParam (Twists, "Twist amount", "Twists", kNoFlags, 0.25, 0.0, 1.0);
+
+DeclareBoolParam (Show_Axis, "Show twist axis", "Twists", false);
+
+DeclareFloatParam (Twist_Axis, "Twist axis", "Twists", kNoFlags, 0.5, 0.0, 1.0);
+
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (_OutputHeight);
 
@@ -51,99 +71,134 @@ DeclareFloatParam (_OutputHeight);
 #define PROFILE ps_3_0
 #endif
 
-#define PI 3.1415926536
+#define RIPPLES  125.0
+#define SOFTNESS 0.45
+#define OFFSET   0.05
+#define SCALE    0.02
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique Twistit_LR
-
-DeclarePass (Fg_LR)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_LR)
-{ return ReadPixel (Bg, uv2); }
-
-DeclareEntryPoint (Twistit_LR)
+DeclarePass (Fgd)
 {
-   float twist = (9.0 * Spread) + 3.0;
-   float pos_n = ((1.0 - Amount) / twist) - Amount;
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
 
-   twist *= pos_n + uv3.x;
-   twist  = cos (saturate (twist) * PI);
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (Bg, uv2);
+      }
+      else Bgnd = ReadPixel (Bg, uv2);
 
-   float2 xy = float2 (uv3.x, ((uv3.y - 0.5) / twist) + 0.5);
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
 
-   return twist > 0.0 ? ReadPixel (Bg_LR, xy) : ReadPixel (Fg_LR, float2 (xy.x, 1.0 - xy.y));
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   }
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
 }
 
-//-----------------------------------------------------------------------------------------//
-
-// technique Twistit_RL
-
-DeclarePass (Fg_RL)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_RL)
-{ return ReadPixel (Bg, uv2); }
-
-DeclareEntryPoint (Twistit_RL)
+DeclarePass (Bgd)
 {
-   float twist = (9.0 * Spread) + 3.0;
-   float pos_n = ((1.0 - Amount) / twist) - Amount;
+   float4 retval;
 
-   twist *= pos_n - uv3.x + 1.0;
-   twist  = cos (saturate (twist) * PI);
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
+   else retval = ReadPixel (Bg, uv2);
 
-   float2 xy = float2 (uv3.x, ((uv3.y - 0.5) / twist) + 0.5);
+   if (!Blended) retval.a = 1.0;
 
-   return twist > 0.0 ? ReadPixel (Bg_RL, xy) : ReadPixel (Fg_RL, float2 (xy.x, 1.0 - xy.y));
+   return retval;
 }
 
-//-----------------------------------------------------------------------------------------//
-
-// technique Twistit_TB
-
-DeclarePass (Fg_TB)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Bg_TB)
-{ return ReadPixel (Bg, uv2); }
-
-DeclareEntryPoint (Twistit_TB)
+DeclareEntryPoint (TwisterTrans)
 {
-   float twist = (9.0 * Spread) + 3.0;
-   float pos_n = ((1.0 - Amount) / twist) - Amount;
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 maskBg, retval;
 
-   twist *= pos_n + uv3.y;
-   twist  = cos (saturate (twist) * PI);
+   float2 xy;
 
-   float2 xy = float2 (((uv3.x - 0.5) / twist) + 0.5, uv3.y);
+   float range = max (0.0, Width * SOFTNESS) + OFFSET;         // Calculate softness range of the effect
+   float amount, maxVis, minVis, modulate, offset;
+   float ripples, spread, T_Axis, twistAxis, twists;
 
-   return twist > 0.0 ? ReadPixel (Bg_TB, xy) : ReadPixel (Fg_TB, float2 (1.0 - xy.x, xy.y));
-}
+   int Mode = (int) fmod ((float)TransProfile, 2.0);
 
-//-----------------------------------------------------------------------------------------//
+   if (Blended && !SwapDir) {
+      maxVis = (Mode == TransProfile) ? 1.0 - uv3.x : uv3.x;
+      maxVis = (1.0 - Amount) * (1.0 + range) - maxVis;
+      twistAxis = 1.0 - Twist_Axis;
+      ripples = max (0.0, RIPPLES * (range - maxVis));
+   }
+   else {
+      maxVis = Mode == TransProfile ? uv3.x : 1.0 - uv3.x;
+      minVis = range + maxVis - (Amount * (1.0 + range));         // The sense of the Amount parameter has to change
 
-// technique Twistit_BT
+      if (Blended) {
+         maxVis = Amount * (1.0 + range) - maxVis;
+         twistAxis = 1.0 - Twist_Axis;
+         ripples = max (0.0, RIPPLES * (range - maxVis));
+      }
+      else {
+         maxVis = range - minVis;                                 // Set up the maximum visibility
+         twistAxis = 1.0 - Twist_Axis;                            // Invert the twist axis setting
+         ripples = max (0.0, RIPPLES * minVis);                   // Correct the ripples of the final effect
+      }
+   }
 
-DeclarePass (Fg_BT)
-{ return ReadPixel (Fg, uv1); }
+   amount = saturate (maxVis / range);                            // Calculate the visibility
+   T_Axis = uv3.y - twistAxis;                                    // Calculate the normalised twist axis
 
-DeclarePass (Bg_BT)
-{ return ReadPixel (Bg, uv2); }
+   spread   = ripples * Spread * SCALE;                           // Correct the spread
+   modulate = pow (max (0.0, Ripples), 5.0) * ripples;            // Calculate the modulation factor
+   offset   = sin (modulate) * spread;                            // Calculate the vertical offset from the modulation and spread
+   twists   = cos (modulate * Twists * 4.0);                      // Calculate the twists using cos () instead of sin ()
 
-DeclareEntryPoint (Twistit_BT)
-{
-   float twist = (9.0 * Spread) + 3.0;
-   float pos_n = ((1.0 - Amount) / twist) - Amount;
+   xy = float2 (uv3.x, twistAxis + (T_Axis / twists) - offset);   // Foreground X is uv3.x, foreground Y is modulated uv3.y
 
-   twist *= pos_n - uv3.y + 1.0;
-   twist  = cos (saturate (twist) * PI);
+   if (Blended) {
+      maskBg = Bgnd;
+      xy.y += offset * float (Mode * 2);
 
-   float2 xy = float2 (((uv3.x - 0.5) / twist) + 0.5, uv3.y);
+      Fgnd = ReadPixel (Fgd, xy);
+      retval = lerp (Bgnd, Fgnd, Fgnd.a * amount);
+   }
+   else {
+      maskBg = Fgnd;
+      Bgnd = ReadPixel (Bgd, xy);                                 // This version of the background has the modulation applied
 
-   return twist > 0.0 ? ReadPixel (Bg_BT, xy) : ReadPixel (Fg_BT, float2 (1.0 - xy.x, xy.y));
+      ripples  = max (0.0, RIPPLES * maxVis);
+      spread   = ripples * Spread * SCALE;
+      modulate = pow (max (0.0, Ripples), 5.0) * ripples;
+      offset   = sin (modulate) * spread;
+      twists   = cos (modulate * Twists * 4.0);
+
+      xy = float2 (uv3.x, twistAxis + (T_Axis / twists) - offset);
+
+      Fgnd = ReadPixel (Fgd, xy);                                 // Get the second partial composite
+      retval = lerp (Fgnd, Bgnd, amount);                         // Dissolve between the halves
+   }
+
+   retval = lerp (maskBg, retval, tex2D (Mask, uv3).x);           // Mask now, because we can't afford to mask the twist axis
+
+   if (Show_Axis) {
+
+      // To help with line-up this section produces a two-pixel wide line from the twist axis.  It's added to the output, and the
+      // result is folded if it exceeds peak white.  This ensures that the line will remain visible regardless of the video content.
+
+      retval.rgb -= max (0.0, (1.0 - (abs (T_Axis) * _OutputHeight * 0.25)) * 3.0 - 2.0).xxx;
+      retval.rgb  = max (0.0.xxx, retval.rgb) - min (0.0.xxx, retval.rgb);
+   }
+
+   return retval;
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-01-29
+// @Created 2021-07-25
 
 /**
  This is a fireball effect that can be used to transition between two video sources.
@@ -13,11 +13,10 @@
  the frame with the hot centre colour then dissolves to the second video source.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Fireball_Dx.fx
+// Lightworks user effect FireballTrans.fx
 //
 // Author's note:
 // This effect is based on a matchbook fireball effect called CPGP_Fireball.glsl found
@@ -30,12 +29,15 @@
 //
 // Version history:
 //
-// Built 2023-01-29 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Fireball transition", "Mix", "Special Fx transitions", "Produces a hot fireball and uses it to transition between video sources", CanSize);
+DeclareLightworksEffect ("Fireball transitions", "Mix", "Special Fx transitions", "Uses hot fireballs to transition between video sources", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -43,11 +45,13 @@ DeclareLightworksEffect ("Fireball transition", "Mix", "Special Fx transitions",
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (SetTechnique, "Transition mode", kNoGroup, 0, "Expand fireball|Contract fireball|Fill and dissolve");
 
@@ -140,14 +144,16 @@ float4 fn_hueShift (float4 rgb)
 
 // technique Expand fireball
 
-DeclarePass (Out_I)
+DeclarePass (Fg_E)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Inc_I)
+DeclarePass (Bg_E)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint (Fireballs_Dx_I)
+DeclareEntryPoint (Fireballs_E)
 {
+   float4 maskBg = tex2D (Fg_E, uv3);
+
    float2 xy = float2 ((uv3.x - PosX) * _OutputAspectRatio, 1.0 - uv3.y - PosY);
 
    float amount = Amount * Amount;
@@ -181,8 +187,8 @@ DeclareEntryPoint (Fireballs_Dx_I)
 
    Ball = saturate (fn_hueShift (Ball * Intensity));
 
-   float4 Fgnd = lerp (ReadPixel (Out_I, uv3), Ball, min (1.0, fire));
-   float4 Bgnd = ReadPixel (Inc_I, uv3);
+   float4 Fgnd = lerp (ReadPixel (Fg_E, uv3), Ball, min (1.0, fire));
+   float4 Bgnd = ReadPixel (Bg_E, uv3);
 
    Fgnd = lerp (Bgnd, Fgnd, key);
    xy = float2 ((uv0.x - PosX) * _OutputAspectRatio, uv0.y - PosY);
@@ -190,21 +196,25 @@ DeclareEntryPoint (Fireballs_Dx_I)
    float radius = pow (max (Amount - 0.5, 0.0) * 2.0, 4.0);
    float circle = pow (radius / length (xy), 2.0);
 
-   return lerp (Fgnd, Bgnd, circle);
+   float4 retval = lerp (Fgnd, Bgnd, circle);
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
 // technique Contract fireball
 
-DeclarePass (Out_O)
+DeclarePass (Fg_C)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Inc_O)
+DeclarePass (Bg_C)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint (Fireballs_Dx_O)
+DeclareEntryPoint (Fireballs_C)
 {
+   float4 maskBg = tex2D (Fg_C, uv3);
+
    float2 xy = float2 ((uv3.x - PosX) * _OutputAspectRatio, 1.0 - uv3.y - PosY);
 
    float amount = (Amount * (Amount - 2.0)) + 1.0;
@@ -238,8 +248,8 @@ DeclareEntryPoint (Fireballs_Dx_O)
 
    Ball = saturate (fn_hueShift (Ball * Intensity));
 
-   float4 Fgnd = lerp (ReadPixel (Inc_O, uv3), Ball, min (1.0, fire));
-   float4 Bgnd = ReadPixel (Out_O, uv3);
+   float4 Fgnd = lerp (tex2D (Bg_C, uv3), Ball, min (1.0, fire));
+   float4 Bgnd = tex2D (Fg_C, uv3);
 
    Fgnd = lerp (Bgnd, Fgnd, key);
    xy = float2 ((uv0.x - PosX) * _OutputAspectRatio, uv0.y - PosY);
@@ -247,20 +257,22 @@ DeclareEntryPoint (Fireballs_Dx_O)
    float radius = pow (max (0.5 - Amount, 0.0) * 2.0, 4.0);
    float circle = pow (radius / length (xy), 2.0);
 
-   return lerp (Fgnd, Bgnd, circle);
+   float4 retval = lerp (Fgnd, Bgnd, circle);
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
 // technique Fill and dissolve
 
-DeclarePass (Outgoing)
+DeclarePass (Fg_D)
 { return ReadPixel (Fg, uv1); }
 
-DeclarePass (Incoming)
+DeclarePass (Bg_D)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint (Fireballs_B_Dx)
+DeclareEntryPoint (Fireballs_D)
 {
    float2 xy = float2 ((uv3.x - PosX) * _OutputAspectRatio, 1.0 - uv3.y - PosY);
 
@@ -292,14 +304,17 @@ DeclareEntryPoint (Fireballs_B_Dx)
 
    fire_blu = min (fire_blu, fire_grn * fire * 0.15);
 
-   float4 Ball = float4 (fire, fire_grn * 0.4, fire_blu, fire_grn);
+   float4 retval = float4 (fire, fire_grn * 0.4, fire_blu, fire_grn);
 
-   Ball = saturate (fn_hueShift (Ball * Intensity));
-
-   float4 Fgnd = lerp (tex2D (Outgoing, uv3), Ball, min (1.0, fire));
-
+   retval = saturate (fn_hueShift (retval * Intensity));
    amount = saturate ((Amount * 3.0) - 2.0);
 
-   return lerp (Fgnd, tex2D (Incoming, uv3), amount);
+   float4 maskBg = tex2D (Fg_D, uv3);
+   float4 Fgnd = lerp (maskBg, retval, min (1.0, fire));
+   float4 Bgnd = tex2D (Bg_D, uv3);
+
+   retval = lerp (Fgnd, Bgnd, amount);
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

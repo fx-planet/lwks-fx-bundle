@@ -1,27 +1,29 @@
 // @Maintainer jwrl
-// @Released 2023-02-02
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-02
+// @Created 2017-10-30
 
 /**
- This is a dissolve/wipe that uses sine distortion to perform a left-right or right-left
- transition into or out of the blended foreground.  Phase can be offset by 180 degrees.
+ This is a dissolve/wipe that uses a sine distortion to do a left-right or right-left
+ transition between the inputs.  The phase can also be offset by 180 degrees.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Sine_Kx.fx
+// Lightworks user effect SineTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-02 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Sinusoidal mix (keyed)", "Mix", "Special Fx transitions", "Uses a sine wave distortion to transition into or out of the blended foreground", CanSize);
+DeclareLightworksEffect ("Sine transition", "Mix", "Special Fx transitions", "Uses a sine distortion to do a left-right or right-left transition between the inputs", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -29,29 +31,29 @@ DeclareLightworksEffect ("Sinusoidal mix (keyed)", "Mix", "Special Fx transition
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
+DeclareIntParam (Direction, "Direction", kNoGroup, 0, "Left to right|Right to left");
 
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareIntParam (Mode, "Distortion", "Ripples", 0, "Normal|Inverted");
 
-DeclareIntParam (Direction, "Transition direction", kNoGroup, 0, "Left to right|Right to left");
+DeclareFloatParam (Softness, "Softness", "Ripples", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Ripples, "Ripples", "Ripples", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Spread, "Spread", "Ripples", kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareIntParam (Mode, "Distortion", "Ripples", 0, "Upwards|Downwards");
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
-DeclareFloatParam (Width, "Softness", "Ripples", kNoFlags, 0.5, 0.0, 1.0);
-DeclareFloatParam (Ripples, "Spread", "Ripples", kNoFlags, 0.5, 0.0, 1.0);
-DeclareFloatParam (Spread, "Amount", "Ripples", kNoFlags, 0.5, 0.0, 1.0);
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
 
-DeclareFloatParam (_OutputWidth);
-DeclareFloatParam (_OutputHeight);
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -67,62 +69,68 @@ DeclareFloatParam (_OutputHeight);
 #define SCALE    0.02
 
 //-----------------------------------------------------------------------------------------//
-// Functions
-//-----------------------------------------------------------------------------------------//
-
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
-{
-   float4 Fgnd = ReadPixel (Fg, xy1);
-
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
-
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
-
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-//-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique Sine_F
-
-DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Super_F)
+DeclarePass (Fgd)
 {
-   float4 Fgnd = tex2D (Bg_F, uv3);
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (Bg, uv2);
+      }
+      else Bgnd = ReadPixel (Bg, uv2);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
+
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
    }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
+}
+
+DeclarePass (Bgd)
+{
+   float4 retval;
+
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
+   else retval = ReadPixel (Bg, uv2);
+
+   if (!Blended) retval.a = 1.0;
+
+   return retval;
+}
+
+DeclareEntryPoint (SineTrans)
+{
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 maskBg, retval;
+
+   float maxVis, x;
+
+   float range  = max (0.0, Softness * SOFTNESS) + OFFSET;
+
+   if (Blended && !SwapDir) {
+      maxVis = (1.0 - Amount) * (1.0 + range);
+      x = (Direction == 0) ? 1.0 - uv3.x : uv3.x;
+   }
+   else {
+      maxVis = Amount * (1.0 + range);
+      x = (Direction == 0) ? uv3.x : 1.0 - uv3.x;
    }
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-DeclareEntryPoint (Sine__Kx_F)
-{
-   float range  = max (0.0, Width * SOFTNESS) + OFFSET;
-   float maxVis = Amount * (1.0 + range);
    float minVis = maxVis - range;
-
-   float x = (Direction == 0) ? uv3.x : 1.0 - uv3.x;
-
    float amount = (x <= minVis) ? 1.0
                 : (x >= maxVis) ? 0.0 : (maxVis - x) / range;
 
@@ -130,74 +138,19 @@ DeclareEntryPoint (Sine__Kx_F)
    float spread  = ripples * Spread * SCALE;
    float offset  = sin (pow (max (0.0, Ripples), 5.0) * ripples) * spread;
 
-   float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
+   float2 xy = (Mode == 0) ? uv3 + float2 (0.0, offset) : uv3 - float2 (0.0, offset);
 
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv1)) ? kTransparentBlack : ReadPixel (Super_F, xy);
+   if (Blended) {
+      maskBg = Bgnd;
+      Fgnd = ReadPixel (Fgd, xy);
+      retval = lerp (Bgnd, Fgnd, Fgnd.a * amount);
+   }
+   else {
+      maskBg = Fgnd;
+      Bgnd = ReadPixel (Bgd, xy);
+      retval = lerp (Fgnd, Bgnd, amount);
+   }
 
-   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a * amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Sine_I
-
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_I)
-{ return fn_keygen (Bg_I, uv1, uv3); }
-
-DeclareEntryPoint (Sine__Kx_I)
-{
-   float range  = max (0.0, Width * SOFTNESS) + OFFSET;
-   float maxVis = Amount * (1.0 + range);
-   float minVis = maxVis - range;
-
-   float x = (Direction == 0) ? uv3.x : 1.0 - uv3.x;
-
-   float amount = (x <= minVis) ? 1.0
-                : (x >= maxVis) ? 0.0 : (maxVis - x) / range;
-
-   float ripples = max (0.0, RIPPLES * (x - minVis));
-   float spread  = ripples * Spread * SCALE;
-   float offset  = sin (pow (max (0.0, Ripples), 5.0) * ripples) * spread;
-
-   float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_I, xy);
-
-   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a * amount);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Sine_O
-
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Super_O)
-{ return fn_keygen (Bg_O, uv1, uv3); }
-
-DeclareEntryPoint (Sine__Kx_O)
-{
-   float range  = max (0.0, Width * SOFTNESS) + OFFSET;
-   float maxVis = (1.0 - Amount) * (1.0 + range);
-   float minVis = maxVis - range;
-
-   float x = (Direction == 0) ? 1.0 - uv3.x : uv3.x;
-
-   float amount = (x <= minVis) ? 1.0
-                : (x >= maxVis) ? 0.0 : (maxVis - x) / range;
-
-   float ripples = max (0.0, RIPPLES * (x - minVis));
-   float spread  = ripples * Spread * SCALE;
-   float offset  = sin (pow (max (0.0, Ripples), 5.0) * ripples) * spread;
-
-   float2 xy = (Mode == 0) ? float2 (uv3.x, uv3.y + offset) : float2 (uv3.x, uv3.y - offset);
-
-   float4 Fgnd = (CropEdges && IsOutOfBounds (uv2)) ? kTransparentBlack : ReadPixel (Super_O, xy);
-
-   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a * amount);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

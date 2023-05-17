@@ -1,20 +1,17 @@
 // @Maintainer jwrl
-// @Released 2023-01-29
+// @Released 2023-05-17
 // @Author khaver
 // @Author Eduardo Castineyra
 // @Created 2018-06-01
-// @see https://www.lwks.com/media/kunena/attachments/6375/PageRoll_640.png
-// @see https://www.lwks.com/media/kunena/attachments/6375/PageRoll.mp4
 
 /**
  This is the classic page turn transition.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect PageRoll_Dx.fx
+// Lightworks user effect PageRollTrans.fx
 //
 //-----------------------------------------------------------------------------------------//
 // Original Shadertoy author:
@@ -34,13 +31,15 @@
 //
 // Version history:
 //
-// Updated 2023-01-29 jwrl.
-// Updated to provide LW 2022 revised cross platform support.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Page Roll", "Mix", "Special Fx transitions", "Page Roll Transition", CanSize);
+DeclareLightworksEffect ("Page Roll transition", "Mix", "Special Fx transitions", "Page Roll Transition", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -48,11 +47,13 @@ DeclareLightworksEffect ("Page Roll", "Mix", "Special Fx transitions", "Page Rol
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareFloatParam (radius, "Page Radius", kNoGroup, kNoFlags, 0.2, 0.0, 1.0);
 
@@ -180,7 +181,8 @@ DeclareEntryPoint (PageRoll)
 
    shadow *= smoothstep (-rad, rad, (maxt - (cf.x + (PX * rad))));
 
-   float4 curr, next;
+   float4 maskBg = tex2D (Fgd, uv3);
+   float4 retval, curr, next;
 
    if (REVERSE) {
       curr = tex2D (Vid_2, tuv);
@@ -195,13 +197,9 @@ DeclareEntryPoint (PageRoll)
    else curr = cf.y > 0.0 ? curr * cf.y  * (1.0 - shadow): -cf.y;
 
    shadow = smoothstep (0.0, rad * 2.0, (d - _cyl [DIST]));
+   retval = prog == 1.0 ? next : cf.x > 0.0 ? curr : next * shadow;
+   retval.a = 1.0;
 
-   if (prog == 1.0) return float4 (next.rgb, 1.0);
-
-   next *= shadow;
-
-   float4 fragColor = cf.x > 0.0 ? curr : next;
-
-   return float4 (fragColor.rgb,1.0);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

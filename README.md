@@ -336,11 +336,11 @@ If you need to use two effects that have the same name, simply open one of them 
 |Squeeze transition           |No       |Yes      |SqueezeTrans.fx         |A squeeze effect for blended images                    |
 
 ## CATEGORY FOLDER: Fades and non mixes
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Chinagraph pencil         |Chinagraph_Dx.fx        |                        |Simulates the chinagraph marks used by film editors  |
-|Fades                     |Fades_Dx.fx             |                        |Fades video to or from black                         |
-|Optical fades             |OpticalFades_Dx.fx      |                        |Simulates the black crush effect of a film optical   |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Chinagraph markup            |Yes      |No       |ChinagraphMarkup.fx     |Simulates the chinagraph marks used by film editors    |
+|Fades                        |Yes      |No       |Fades.fx                |Fades video to or from black                           |
+|Optical fades                |Yes      |No       |OpticalFades.fx         |Simulates the black crush effect of a film optical     |
 
 ## CATEGORY FOLDER: Geometric transitions
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |

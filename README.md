@@ -343,13 +343,11 @@ If you need to use two effects that have the same name, simply open one of them 
 |Optical fades                |Yes      |No       |OpticalFades.fx         |Simulates the black crush effect of a film optical     |
 
 ## CATEGORY FOLDER: Geometric transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Coloured tiles            |ColourTile_Dx.fx        |                        |Transition using a highly coloured mosaic pattern    |
-|Kaleido turbine mix       |KaleidoTurbine_Dx.fx    |KaleidoTurbine_Kx.fx    |A kaleidoscope transitions between two clips         |
-|Mosaic blocks             |MosaicBlocks_Dx.fx      |MosaicBlocks_Kx.fx      |Obliterates the outgoing image into expanding blocks |
-|Rotating transition       |Rotating_Dx.fx          |Rotating_Kx.fx          |X or Y axis rotating transition                      |
-|Tiled split               |TiledSplit_Dx.fx        |TiledSplit_Kx.fx        |Splits the video into tiles and blows them apart     |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Kaleidoscope transition      |Yes      |No       |KaleidoTrans.fx         |A kaleidoscope transitions between two clips           |
+|Rotation transition          |Yes      |Yes      |RotationTrans.fx        |X or Y axis rotating transition                        |
+|Tile transitions             |Yes      |Yes      |TileTrans.fx            |Uses tile patterns to transition between video sources |
 
 ## CATEGORY FOLDER: Special Fx transitions
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |

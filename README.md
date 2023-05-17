@@ -350,17 +350,17 @@ If you need to use two effects that have the same name, simply open one of them 
 |Tile transitions             |Yes      |Yes      |TileTrans.fx            |Uses tile patterns to transition between video sources |
 
 ## CATEGORY FOLDER: Special Fx transitions
-|EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |
-|:------------------------ |:---------------------- |:---------------------- |:--------------------------------------------------- |
-|Dream sequence            |Dream_Dx.fx             |Dream_Kx.fx             |Ripples the images as it dissolves between them      |
-|Fireball transition       |Fireball_Dx.fx          |                        |Uses a hot fireball to transition between sources    |
-|Fly away                  |FlyAway_Dx.fx           |                        |Flies the outgoing image out to reveal the incoming  |
-|Page Roll                 |PageRoll_Dx.fx          |                        |The classic page turn transition                     |
-|Sinusoidal mix            |Sine_Dx.fx              |Sine_Kx.fx              |Uses a sine distortion to transition between inputs  |
-|Transporter mix           |Transporter_Dx.fx       |                        |A Star Trek-like transporter fade in or out          |
-|The twister               |Twister_Dx.fx           |Twister_Kx.fx           |Performs a rippling twist transition between images  |
-|Twist it                  |TwistIt_Dx.fx           |                        |Twists one image to another vertically/horizontally  |
-|Wave collapse             |                        |WaveCollapse_Kx.fx      |Compresses the foreground to sinue strips or waves   |
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Dream sequence               |Yes      |Yes      |DreamTrans.fx           |Ripples the images as it dissolves between them        |
+|Fireball transitions         |Yes      |No       |FireballTrans.fx        |Uses a hot fireball to transition between sources      |
+|Fly away transition          |Yes      |No       |FlyAwayTrans.fx         |Flies the outgoing image out to reveal the incoming    |
+|Page Roll transition         |Yes      |No       |PageRollTrans.fx        |The classic page turn transition                       |
+|Sine transition              |Yes      |Yes      |SineTrans.fx            |Uses a sine distortion to transition between inputs    |
+|Soft twist transition        |Yes      |Yes      |SoftTwistTrans.fx       |Performs a rippling twist transition between images    |
+|Transporter transition       |Yes      |Yes      |TransporterTrans.fx     |A Star Trek-like transporter fade in or out            |
+|Twist transition             |Yes      |No       |TwistTrans.fx           |Twists one image to another vertically/horizontally    |
+|Wave fall transition         |Yes      |Yes      |WaveFallTrans.fx        |Compresses the foreground to sinue strips or waves     |
 
 ## CATEGORY FOLDER: Wipe transitions
 |EFFECT                    |DISSOLVE                |KEYED TRANSITION        |DESCRIPTION                                          |

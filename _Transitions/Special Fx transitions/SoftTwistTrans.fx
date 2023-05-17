@@ -13,7 +13,7 @@
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect TwisterTrans.fx
+// Lightworks user effect SoftTwistTrans.fx
 //
 // Version history:
 //

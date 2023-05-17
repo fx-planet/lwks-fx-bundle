@@ -1,17 +1,16 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2019-01-01
 
 /**
  This simulates the look of the classic film optical fade to or from black.  It applies
- an exposure shift and a degree of black crush to the transition the way that the early
+ an exposure shift and a degree of black crush to the transition the way that the lab
  optical printers did.  It isn't a transition, and requires one input only.  It must be
  applied in the same way as a title effect, i.e., by marking the region that the fade is
  to occupy.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -19,7 +18,10 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-08 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -31,6 +33,8 @@ DeclareLightworksEffect ("Optical fades", "Mix", "Fades and non mixes", "Simulat
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Inp);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -48,24 +52,22 @@ DeclareIntParam (Type, "Fade type", kNoGroup, 0, "Fade up|Fade down");
 #define PROFILE ps_3_0
 #endif
 
-#define BLACK float2(0.0,1.0).xxxy
-
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Fgd)
+{ return ReadPixel (Inp, uv1); }
+
 DeclareEntryPoint (OpticalFades)
 {
-   float4 video = ReadPixel (Inp, uv1);
-
    float level = Type ? Amount : 1.0 - Amount;
-   float alpha = max (video.a, level);
 
-   float3 retval = pow (video.rgb, 1.0 + (level * 0.25));
+   float4 video = ReadPixel (Fgd, uv2);
+   float4 retval = pow (video, (0.33 + level) * 3.0);
 
-   retval = lerp (retval, BLACK, level * 0.8);
-   retval = saturate (retval - (level * 0.2).xxx);
+   retval = lerp (retval, kTransparentBlack, level);
 
-   return float4 (retval, alpha);
+   return lerp (kTransparentBlack, retval, tex2D (Mask, uv2).x);
 }
 

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2018-12-31
 
 /**
  This simple effect fades any video to which it's applied to or from from black.  It
@@ -10,7 +10,6 @@
  is to occupy.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -18,7 +17,10 @@
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -30,6 +32,8 @@ DeclareLightworksEffect ("Fades", "Mix", "Fades and non mixes", "Fades video to 
 //-----------------------------------------------------------------------------------------//
 
 DeclareInput (Inp);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -53,10 +57,16 @@ DeclareIntParam (Type, "Fade type", kNoGroup, 0, "Fade up|Fade down");
 // Code
 //-----------------------------------------------------------------------------------------//
 
+DeclarePass (Fgd)
+{ return ReadPixel (Inp, uv1); }
+
 DeclareEntryPoint (Fades)
 {
    float level = Type ? Amount : 1.0 - Amount;
 
-   return lerp (ReadPixel (Inp, uv1), BLACK, level);
+   float4 Input  = ReadPixel (Fgd, uv2);
+   float4 retval = lerp (Input, BLACK, level);
+
+   return lerp (kTransparentBlack, retval, tex2D (Mask, uv2).x);
 }
 

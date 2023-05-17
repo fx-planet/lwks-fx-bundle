@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-02-02
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-02
+// @Created 2017-09-08
 
 /**
  This effect is a range of linear, radial and X pinches that pinch the outgoing video
@@ -13,21 +13,26 @@
  the zoom in through the entire un-pinch process.  Trig functions are used on the effect
  progress to make the acceleration smoother.
 
+ It can also be used to pinch an outgoing blended foreground to clear the background
+ video.  It can also reverse the process to bring in the foreground.
+
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect Pinches_Dx.fx
+// Lightworks user effect PinchTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-02 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Pinch transitions", "Mix", "DVE transitions", "Pinches the outgoing video to a user-defined point to reveal the incoming shot", CanSize);
+DeclareLightworksEffect ("Pinch transitions", "Mix", "DVE transitions", "Pinches video to a user-defined point to either hide or reveal it", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -35,16 +40,28 @@ DeclareLightworksEffect ("Pinch transitions", "Mix", "DVE transitions", "Pinches
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Linear pinch|Radial pinch|X pinch|Linear expansion|Radial expansion|X expansion");
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Linear pinch|Radial pinch|X pinch");
 
-DeclareFloatParam (centreX, "Position", "End point", "SpecifiesPointX", 0.5, 0.0, 1.0);
-DeclareFloatParam (centreY, "Position", "End point", "SpecifiesPointY", 0.5, 0.0, 1.0);
+DeclareBoolParam (ChangeDir, "Change pinch direction", kNoGroup, true);
+
+DeclareFloatParam (centreX, "Position", "Pinch centre", "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (centreY, "Position", "Pinch centre", "SpecifiesPointY", 0.5, 0.0, 1.0);
+
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -54,186 +71,249 @@ DeclareFloatParam (centreY, "Position", "End point", "SpecifiesPointY", 0.5, 0.0
 #define PROFILE ps_3_0
 #endif
 
-#define BLACK float2(0.0, 1.0).xxxy
+#define MID_PT     (0.5).xx
+#define HALF_PI    1.5707963268
+#define QUARTER_PI 0.7853981634
 
-#define MID_PT  0.5.xx
-#define HALF_PI 1.5707963
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
+
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+{
+   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (B, xy2);
+      }
+      else Bgnd = ReadPixel (B, xy2);
+
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
+
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   }
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
+}
+
+float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
+{
+   float4 retval;
+
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
+   else retval = ReadPixel (B, xy2);
+
+   if (!Blended) retval.a = 1.0;
+
+   return retval;
+}
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique Pinches_Dx_P_L (Linear pinch to reveal)
+// technique PinchTrans_L
 
-DeclarePass (Pinch_P_L)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+DeclarePass (Fg_L)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bg_P_L)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Bg_L)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
-DeclareEntryPoint (Pinches_Dx_P_L)
+DeclareEntryPoint (Pinch_L)
 {
-   float2 centre = lerp (MID_PT, float2 (centreX, 1.0 - centreY), Amount);
-   float2 xy1 = (uv3 - centre) * (1.0 + pow ((1.0 - cos (Amount * HALF_PI)), 4.0) * 128.0);
-   float2 scale = pow (abs (xy1 * 2.0), -sin (Amount * HALF_PI));
+   float4 Fgnd = tex2D (Fg_L, uv3);
+   float4 Bgnd = tex2D (Bg_L, uv3);
+   float4 maskBg, retval;
 
-   xy1 *= scale;
-   xy1 += MID_PT;
+   float2 centre, scale, xy;
 
-   float4 retval = ReadPixel (Pinch_P_L, xy1);
+   float amount;
 
-   return lerp (tex2D (Bg_P_L, uv3), retval, retval.a);
+   if (Blended) {
+      maskBg = Bgnd;
+      amount = Amount * 0.5;
+
+      if (SwapDir) {
+         amount += 0.5;
+
+         centre = lerp (float2 (centreX, 1.0 - centreY), MID_PT, amount);
+         xy = (uv3 - centre) * (1.0 + pow ((1.0 - sin (amount * HALF_PI)), 4.0) * 128.0);
+         scale = pow (abs (xy * 2.0), -cos ((amount + 0.01) * HALF_PI));
+      }
+      else {
+         centre = lerp (MID_PT, float2 (centreX, 1.0 - centreY), amount);
+         xy = (uv3 - centre) * (1.0 + pow ((1.0 - cos (amount * HALF_PI)), 4.0) * 128.0);
+         scale = pow (abs (xy * 2.0), -sin (amount * HALF_PI));
+      }
+
+      xy *= scale;
+      xy += MID_PT;
+
+      Fgnd = ReadPixel (Fg_L, xy);
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      if (ChangeDir) {
+         centre = lerp (float2 (centreX, 1.0 - centreY), MID_PT, Amount);
+         xy = (uv3 - centre) * (1.0 + pow ((1.0 - sin (Amount * HALF_PI)), 4.0) * 128.0);
+         scale = pow (abs (xy * 2.0), -cos ((Amount + 0.01) * HALF_PI));
+
+         xy *= scale;
+         xy += MID_PT;
+
+         retval = ReadPixel (Bg_L, xy);
+         retval = lerp (Fgnd, retval, retval.a);
+      }
+      else {
+          centre = lerp (MID_PT, float2 (centreX, 1.0 - centreY), Amount);
+          xy = (uv3 - centre) * (1.0 + pow ((1.0 - cos (Amount * HALF_PI)), 4.0) * 128.0);
+          scale = pow (abs (xy * 2.0), -sin (Amount * HALF_PI));
+
+         xy *= scale;
+         xy += MID_PT;
+
+         retval = ReadPixel (Fg_L, xy);
+         retval = lerp (Bgnd, retval, retval.a);
+      }
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Pinches_Dx_P_R (Radial pinch to reveal)
+// technique PinchTrans_R
 
-DeclarePass (Pinch_P_R)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+DeclarePass (Fg_R)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bg_P_R)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Bg_R)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
-DeclareEntryPoint (Pinches_Dx_P_R)
+DeclareEntryPoint (PinchTrans_R)
 {
-   float2 centre = lerp (MID_PT, float2 (centreX, 1.0 - centreY), Amount);
+   float4 Fgnd = tex2D (Fg_R, uv3);
+   float4 Bgnd = tex2D (Bg_R, uv3);
+   float4 maskBg, retval;
 
-   float progress = Amount / 2.14;
-   float rfrnc = (distance (uv3, centre) * 32.0) + 1.0;
-   float scale = lerp (1.0, pow (rfrnc, -1.0) * 24.0, progress);
+   float2 xy;
 
-   float2 xy1 = (uv3 - centre) * scale;
+   float progress, rfrnc, scale;
 
-   xy1 *= scale;
-   xy1 += MID_PT;
+   if (Blended) {
+      maskBg = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   float4 retval = ReadPixel (Pinch_P_R, xy1);
+      if (SwapDir) {
+         progress = (1.0 - Amount) / 2.14;
+         rfrnc = (distance (uv3, MID_PT) * 32.0) + 1.0;
+         scale = lerp (1.0, pow (rfrnc, -1.0) * 24.0, progress);
+      }
+      else {
+         progress = Amount / 2.14;
+         rfrnc = (distance (uv3, MID_PT) * 32.0) + 1.0;
+         scale = lerp (1.0, pow (rfrnc, -1.0) * 24.0, progress);
+      }
 
-   return lerp (tex2D (Bg_P_R, uv3), retval, retval.a);
+      xy = (uv3 - MID_PT) * scale;
+      xy *= scale;
+      xy += MID_PT;
+
+      Fgnd = ReadPixel (Fg_R, xy);
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      progress = ChangeDir ? Amount / 2.14 : (1.0 - Amount) / 2.14;
+      rfrnc = (distance (uv3, MID_PT) * 32.0) + 1.0;
+      scale = lerp (1.0, pow (rfrnc, -1.0) * 24.0, progress);
+
+      xy  = (uv3 - MID_PT) * scale;
+      xy *= scale;
+      xy += MID_PT;
+
+      if (ChangeDir) {
+         retval = ReadPixel (Fg_R, xy);
+         retval = lerp (Bgnd, retval, retval.a);
+      }
+      else {
+         retval = ReadPixel (Bg_R, xy);
+         retval = lerp (Fgnd, retval, retval.a);
+      }
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique Pinches_Dx_P_X (X pinch to reveal)
+// technique PinchTrans_X
 
-DeclarePass (Pinch_P_X)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+DeclarePass (Fg_X)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Bg_P_X)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Bg_X)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Video_P_X)
+DeclarePass (Pinch)
 {
-   float2 centre = lerp (MID_PT, float2 (centreX, 1.0 - centreY), Amount);
+   float progress, amount = SwapDir ? 1.0 - Amount : Amount;
 
-   float progress = sin (Amount * HALF_PI);
-   float dist = (distance (uv3, centre) * 32.0) + 1.0;
+   if (Blended) { progress = sin (amount * QUARTER_PI); }
+   else progress = ChangeDir ? sin (Amount * HALF_PI) : cos (Amount * HALF_PI);
+
+   float dist  = (distance (uv3, MID_PT) * 32.0) + 1.0;
    float scale = lerp (1.0, pow (dist, -1.0) * 24.0, progress);
 
-   float2 xy1 = ((uv3 - centre) * scale) + MID_PT;
+   float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-   return ReadPixel (Pinch_P_X, xy1);
+   return !(Blended || ChangeDir) ? ReadPixel (Bg_X, xy) : ReadPixel (Fg_X, xy);
 }
 
-DeclareEntryPoint (Pinches_Dx_P_X)
+DeclareEntryPoint (xPinch_Fx_I)
 {
-   float progress = 1.0 - cos (max (0.0, Amount - 0.25) * HALF_PI);
-   float scale    = 1.0 + (progress * (32.0 + progress * 32.0));
+   float4 Fgnd = tex2D (Fg_X, uv3);
+   float4 Bgnd = tex2D (Bg_X, uv3);
+   float4 maskBg, retval;
 
-   float2 centre = lerp (MID_PT, float2 (centreX, 1.0 - centreY), Amount);
-   float2 xy1 = ((uv3 - centre) * scale) + MID_PT;
+   float progress;
 
-   float4 retval = ReadPixel (Video_P_X, xy1);
+   if (Blended) {
+      maskBg = Bgnd;
 
-   return lerp (tex2D (Bg_P_X, uv3), retval, retval.a);
-}
+      if (SwapDir) { progress = 1.0 - cos (sin ((1.0 - Amount) * QUARTER_PI)); }
+      else progress = 1.0 - cos (sin (Amount * QUARTER_PI));
+   }
+   else {
+      maskBg = Fgnd;
 
-//-----------------------------------------------------------------------------------------//
+      if (ChangeDir) { progress = 1.0 - cos (max (0.0, Amount - 0.25) * HALF_PI); }
+      else {
+         progress = 1.0 - sin (Amount * HALF_PI);
+         Bgnd = Fgnd;
+      }
+   }
 
-// technique Pinches_Dx_E_L (Linear expand to reveal)
+   float scale = 1.0 + (progress * (32.0 + progress * 32.0));
 
-DeclarePass (Fg_E_L)
-{ return ReadPixel (Fg, uv1); }
+   float2 xy = ((uv3 - MID_PT) * scale) + MID_PT;
 
-DeclarePass (Expand_E_L)
-{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
+   Fgnd = ReadPixel (Pinch, xy);
+   retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-DeclareEntryPoint (Pinches_Dx_E_L)
-{
-   float2 centre = lerp (float2 (centreX, 1.0 - centreY), MID_PT, Amount);
-   float2 xy1 = (uv3 - centre) * (1.0 + pow ((1.0 - sin (Amount * HALF_PI)), 4.0) * 128.0);
-   float2 scale = pow (abs (xy1 * 2.0), -cos ((Amount + 0.01) * HALF_PI));
-
-   xy1 *= scale;
-   xy1 += MID_PT;
-
-   float4 retval = ReadPixel (Expand_E_L, xy1);
-
-   return lerp (tex2D (Fg_E_L, uv3), retval, retval.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Pinches_Dx_E_R (Radial expand to reveal)
-
-DeclarePass (Fg_E_R)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Expand_E_R)
-{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
-
-DeclareEntryPoint (Pinches_Dx_E_R)
-{
-   float2 centre = lerp (float2 (centreX, 1.0 - centreY), MID_PT, Amount);
-
-   float progress = (1.0 - Amount) / 2.14;
-   float rfrnc = (distance (uv3, centre) * 32.0) + 1.0;
-   float scale = lerp (1.0, pow (rfrnc, -1.0) * 24.0, progress);
-
-   float2 xy1 = (uv3 - centre) * scale;
-
-   xy1 *= scale;
-   xy1 += MID_PT;
-
-   float4 retval = ReadPixel (Expand_E_R, xy1);
-
-   return lerp (tex2D (Fg_E_R, uv3), retval, retval.a);
-}
-
-//-----------------------------------------------------------------------------------------//
-
-// technique Pinches_Dx_E_X (X expand to reveal)
-
-DeclarePass (Fg_E_X)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (Pinch_E_X)
-{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
-
-DeclarePass (Video_E_X)
-{
-   float2 centre = lerp (float2 (centreX, 1.0 - centreY), MID_PT, Amount);
-
-   float progress = cos (Amount * HALF_PI);
-   float dist = (distance (uv3, centre) * 32.0) + 1.0;
-   float scale = lerp (1.0, pow (dist, -1.0) * 24.0, progress);
-
-   float2 xy1 = ((uv3 - centre) * scale) + MID_PT;
-
-   return ReadPixel (Pinch_E_X, xy1);
-}
-
-DeclareEntryPoint (Pinches_Dx_E_X)
-{
-   float progress = 1.0 - sin (Amount * HALF_PI);
-   float scale    = 1.0 + (progress * (32.0 + progress * 32.0));
-
-   float2 centre = lerp (float2 (centreX, 1.0 - centreY), MID_PT, Amount);
-   float2 xy1 = ((uv3 - centre) * scale) + MID_PT;
-
-   float4 retval = ReadPixel (Video_E_X, xy1);
-
-   return lerp (tex2D (Fg_E_X, uv3), retval, retval.a);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

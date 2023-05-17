@@ -1,27 +1,29 @@
 // @Maintainer jwrl
-// @Released 2023-01-28
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-01-28
+// @Created 2017-08-26
 
 /**
- This is based on the corner wipe effect, modified to squeeze or expand the divided
- section of the frame.
+ This is similar to the alpha corner squeeze effect, except that it expands the blended
+ foreground from the corners or compresses it to the corners of the screen.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect CornerSqueeze_Dx.fx
+// User effect CornerSqueezeTrans.fx
 //
 // Version history:
 //
-// Built 2023-01-28 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Corner squeeze", "Mix", "DVE transitions", "A corner wipe effect that squeezes or expands the divided section of the frame", CanSize);
+DeclareLightworksEffect ("Corner squeeze transitions", "Mix", "DVE transitions", "Squeezes or expands the foreground to or from the corners of the screen", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -29,13 +31,23 @@ DeclareLightworksEffect ("Corner squeeze", "Mix", "DVE transitions", "A corner w
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Squeeze to corners|Expand from corners");
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareIntParam (Ttype, "Transition", "Standard video", 0, "Squeeze to corners|Expand from corners");
+
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -45,82 +57,116 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 #define PROFILE ps_3_0
 #endif
 
-#define BLACK float2(0.0, 1.0).xxxy
-
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique CornerSqueeze_Dx_0
-
-DeclarePass (SqzOut)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
-
-DeclarePass (Bg_0)
-{ return ReadPixel (Bg, uv2); }
-
-DeclarePass (Video_0)
+DeclarePass (Fgd)
 {
-   float negAmt = 1.0 - Amount;
-   float posAmt = (1.0 + Amount) / 2.0;
+   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
 
-   float2 xy1 = float2 ((uv3.x - Amount) / negAmt, uv3.y);
-   float2 xy2 = float2 (uv3.x / negAmt, uv3.y);
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (Bg, uv2);
+      }
+      else Bgnd = ReadPixel (Bg, uv2);
 
-   negAmt /= 2.0;
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
 
-   return (uv3.x > posAmt) ? tex2D (SqzOut, xy1) : (uv3.x < negAmt)
-                           ? tex2D (SqzOut, xy2) : kTransparentBlack;
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   }
+   else Fgnd.a = 1.0;
+
+   return Fgnd;
 }
 
-DeclareEntryPoint (CornerSqueeze_Dx_0)
+DeclarePass (Bgd)
 {
-   float negAmt = 1.0 - Amount;
-   float posAmt = (1.0 + Amount) / 2.0;
+   float4 retval;
 
-   float2 xy1 = float2 (uv3.x, (uv3.y - Amount) / negAmt);
-   float2 xy2 = float2 (uv3.x, uv3.y / negAmt);
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
+   else retval = ReadPixel (Bg, uv2);
 
-   negAmt /= 2.0;
+   if (!Blended) retval.a = 1.0;
 
-   float4 retval = (uv3.y > posAmt) ? tex2D (Video_0, xy1) : (uv3.y < negAmt)
-                                    ? tex2D (Video_0, xy2) : kTransparentBlack;
-
-   return lerp (tex2D (Bg_0, uv3), retval, retval.a);
+   return retval;
 }
 
-
-// technique CornerSqueeze_Dx_1
-
-DeclarePass (Fg_1)
-{ return ReadPixel (Fg, uv1); }
-
-DeclarePass (SqzIn)
-{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
-
-DeclarePass (Video_1)
+DeclarePass (Horiz)
 {
-   float negAmt = Amount / 2.0;
-   float posAmt = 1.0 - negAmt;
+   float4 retval;
 
-   float2 xy1 = float2 ((uv3.x + Amount - 1.0) / Amount, uv3.y);
-   float2 xy2 = float2 (uv3.x / Amount, uv3.y);
+   float negAmt, posAmt;
 
-   return (uv3.x > posAmt) ? tex2D (SqzIn, xy1) : (uv3.x < negAmt)
-                           ? tex2D (SqzIn, xy2) : kTransparentBlack;
+   float2 xy1, xy2;
+
+   if ((Blended && SwapDir) || (!Blended && Ttype)) {
+      negAmt = Amount * 0.5;
+      posAmt = 1.0 - negAmt;
+
+      xy1 = float2 ((uv3.x + Amount - 1.0) / Amount, uv3.y);
+      xy2 = float2 (uv3.x / Amount, uv3.y);
+   }
+   else {
+      negAmt = 1.0 - Amount;
+      posAmt = (1.0 + Amount) * 0.5;
+
+       xy1 = float2 ((uv3.x - Amount) / negAmt, uv3.y);
+       xy2 = float2 (uv3.x / negAmt, uv3.y);
+
+       negAmt *= 0.5;
+   }
+
+   if (!Blended && Ttype) {
+      retval = (uv3.x > posAmt) ? tex2D (Bgd, xy1)
+             : (uv3.x < negAmt) ? tex2D (Bgd, xy2) : kTransparentBlack;
+   }
+   else retval = (uv3.x > posAmt) ? tex2D (Fgd, xy1) :
+                 (uv3.x < negAmt) ? tex2D (Fgd, xy2) : kTransparentBlack;
+
+   return retval;
 }
 
-DeclareEntryPoint (CornerSqueeze_Dx_1)
+DeclareEntryPoint (CornerSqueezeTrans)
 {
-   float negAmt = Amount / 2.0;
-   float posAmt = 1.0 - negAmt;
+   float4 Fgnd = tex2D (Fgd, uv3);
+   float4 Bgnd = tex2D (Bgd, uv3);
+   float4 maskBg = Blended ? Bgnd : Fgnd;
+   float4 retval = !Blended && Ttype ? Fgnd : Bgnd;
 
-   float2 xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
-   float2 xy2 = float2 (uv3.x, uv3.y / Amount);
+   float negAmt, posAmt;
 
-   float4 retval = (uv3.y > posAmt) ? tex2D (Video_1, xy1) : (uv3.y < negAmt)
-                                    ? tex2D (Video_1, xy2) : kTransparentBlack;
+   float2 xy1, xy2;
 
-   return lerp (ReadPixel (Fg_1, uv3), retval, retval.a);
+   if ((Blended && SwapDir) || (!Blended && Ttype)) {
+      negAmt = Amount * 0.5;
+      posAmt = 1.0 - negAmt;
+
+      xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
+      xy2 = float2 (uv3.x, uv3.y / Amount);
+   }
+   else {
+      negAmt = 1.0 - Amount;
+      posAmt = (1.0 + Amount) * 0.5;
+
+      xy1 = float2 (uv3.x, (uv3.y - Amount) / negAmt);
+      xy2 = float2 (uv3.x, uv3.y / negAmt);
+
+      negAmt *= 0.5;
+   }
+
+   Fgnd = (uv3.y > posAmt) ? tex2D (Horiz, xy1) :
+          (uv3.y < negAmt) ? tex2D (Horiz, xy2) : kTransparentBlack;
+
+   retval = lerp (retval, Fgnd, Fgnd.a);
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
-

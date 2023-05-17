@@ -1,27 +1,30 @@
 // @Maintainer jwrl
-// @Released 2023-02-01
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-01
+// @Created 2016-05-10
 
 /**
- This is similar to the alpha corner squeeze effect, except that it expands the blended
- foreground from the corners or compresses it to the corners of the screen.
+ This effect stretches standard video or blended foreground horizontally or vertically
+ to transition in or out.  It used to just be called "Stretch", but I like this name
+ much better.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// User effect CornerSqueeze_Fx.fx
+// Lightworks user effect IndiarubberTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-01 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Corner squeeze (keyed)", "Mix", "DVE transitions", "Squeezes or expands the foreground to or from the corners of the screen", CanSize);
+DeclareLightworksEffect ("Indiarubber transition", "Mix", "DVE transitions", "Stretches the foreground horizontally or vertically to reveal or remove it", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -29,51 +32,78 @@ DeclareLightworksEffect ("Corner squeeze (keyed)", "Mix", "DVE transitions", "Sq
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (SetTechnique, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
+DeclareIntParam (SetTechnique, "Transition direction", kNoGroup, 0, "Stretch horizontal|Stretch vertical");
 
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareFloatParam (Stretch, "Size", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
+
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define CENTRE  0.5.xx
+
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (Fg, xy1);
+   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
 
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (B, xy2);
+      }
+      else Bgnd = ReadPixel (B, xy2);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
+
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
    }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
+   else Fgnd.a = 1.0;
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   return Fgnd;
 }
 
-float4 fn_horiz (sampler Super, float2 uv)
+float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float negAmt = Amount * 0.5;
-   float posAmt = 1.0 - negAmt;
+   float4 retval;
 
-   float2 xy1 = float2 ((uv.x + Amount - 1.0) / Amount, uv.y);
-   float2 xy2 = float2 (uv.x / Amount, uv.y);
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
+   else retval = ReadPixel (B, xy2);
 
-   float4 retval = (uv.x > posAmt) ? tex2D (Super, xy1)
-                 : (uv.x < negAmt) ? tex2D (Super, xy2) : kTransparentBlack;
+   if (!Blended) retval.a = 1.0;
 
    return retval;
 }
@@ -82,118 +112,111 @@ float4 fn_horiz (sampler Super, float2 uv)
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// technique CornerSqueeze_Fx_F
+// technique Stretch_H
 
-DeclarePass (Bg_F)
-{ return ReadPixel (Fg, uv1); }
+DeclarePass (Fg_H)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_F)
+DeclarePass (Bg_H)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
+
+DeclareEntryPoint (Stretch_H)
 {
-   float4 Fgnd = tex2D (Bg_F, uv3);
+   float4 Fgnd = tex2D (Fg_H, uv3);
+   float4 Bgnd = tex2D (Bg_H, uv3);
+   float4 maskBg, retval;
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
+   float2 xy = uv3 - CENTRE;
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+   float distort = sin (xy.y * PI);
+   float dissAmt, stretchAmt;
+
+   distort = sin (distort * HALF_PI);
+
+   if (Blended) {
+      maskBg = lerp (Bgnd, Fgnd, Fgnd.a);
+
+      dissAmt = SwapDir ? 1.0 - Amount : Amount;
+      stretchAmt = Stretch * dissAmt;
+      distort /= 2.0;
+
+      xy.x /= 1.0 + (5.0 * stretchAmt);
+      xy.y  = lerp (xy.y, distort, stretchAmt);
+      xy += CENTRE;
+
+      Fgnd = tex2D (Fg_H, xy);
+      retval = lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - dissAmt));
    }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
+   else {
+      maskBg = Fgnd;
+
+      dissAmt = saturate (lerp (Amount, ((1.5 * Amount) - 0.25), Stretch));
+      stretchAmt = lerp (0.0, saturate (sin (Amount * PI)), Stretch);
+
+      xy.x /= 1.0 + (5.0 * stretchAmt);
+      xy.y = lerp (xy.y, distort / 2.0, stretchAmt);
+      xy += CENTRE;
+
+      Fgnd = ReadPixel (Fg_H, xy);
+      Bgnd = ReadPixel (Bg_H, xy);
+      retval = lerp (Fgnd, Bgnd, dissAmt);
    }
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
-}
-
-DeclarePass (Horiz_F)
-{ return fn_horiz (Super_F, uv3); }
-
-DeclareEntryPoint (CornerSqueeze_F)
-{
-   float negAmt = Amount * 0.5;
-   float posAmt = 1.0 - negAmt;
-
-   float2 xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
-   float2 xy2 = float2 (uv3.x, uv3.y / Amount);
-
-   float4 Fgnd = (uv3.y > posAmt) ? tex2D (Horiz_F, xy1)
-               : (uv3.y < negAmt) ? tex2D (Horiz_F, xy2) : kTransparentBlack;
-
-   if (CropEdges && IsOutOfBounds (uv1)) Fgnd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_F, uv3), Fgnd, Fgnd.a);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
-// technique CornerSqueeze_Fx_I
+// technique Stretch_V
 
-DeclarePass (Bg_I)
-{ return ReadPixel (Bg, uv2); }
+DeclarePass (Fg_V)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_I)
-{ return fn_keygen (Bg_I, uv1, uv3); }
+DeclarePass (Bg_V)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Horiz_I)
-{ return fn_horiz (Super_I, uv3); }
-
-DeclareEntryPoint (CornerSqueeze_I)
+DeclareEntryPoint (Stretch_V)
 {
-   float negAmt = Amount * 0.5;
-   float posAmt = 1.0 - negAmt;
+   float4 Fgnd = tex2D (Fg_V, uv3);
+   float4 Bgnd = tex2D (Bg_V, uv3);
+   float4 maskBg, retval;
 
-   float2 xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
-   float2 xy2 = float2 (uv3.x, uv3.y / Amount);
+   float2 xy = uv3 - CENTRE;
 
-   float4 Fgnd = (uv3.y > posAmt) ? tex2D (Horiz_I, xy1)
-               : (uv3.y < negAmt) ? tex2D (Horiz_I, xy2) : kTransparentBlack;
+   float distort = sin (xy.x * PI);
+   float dissAmt, stretchAmt;
 
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
+   distort = sin (distort * HALF_PI);
 
-   return lerp (tex2D (Bg_I, uv3), Fgnd, Fgnd.a);
-}
+   if (Blended) {
+      maskBg = lerp (Bgnd, Fgnd, Fgnd.a);
 
-//-----------------------------------------------------------------------------------------//
+      dissAmt = SwapDir ? 1.0 - Amount : Amount;
+      stretchAmt = Stretch * dissAmt;
+      distort /= 2.0;
 
-// technique CornerSqueeze_Fx_O
+      xy.x = lerp (xy.x, distort, stretchAmt);
+      xy.y /= 1.0 + (5.0 * stretchAmt);
+      xy += CENTRE;
 
-DeclarePass (Bg_O)
-{ return ReadPixel (Bg, uv2); }
+      Fgnd = tex2D (Fg_V, xy);
+      retval = lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - dissAmt));
+   }
+   else {
+      maskBg = Fgnd;
 
-DeclarePass (Super_O)
-{ return fn_keygen (Bg_O, uv1, uv3); }
+      dissAmt = saturate (lerp (Amount, ((1.5 * Amount) - 0.25), Stretch));
+      stretchAmt = lerp (0.0, saturate (sin (Amount * PI)), Stretch);
 
-DeclarePass (Horiz_O)
-{
-   float negAmt = 1.0 - Amount;
-   float posAmt = (1.0 + Amount) * 0.5;
+      xy.x = lerp (xy.x, distort / 2.0, stretchAmt);
+      xy.y /= 1.0 + (5.0 * stretchAmt);
+      xy += CENTRE;
 
-   float2 xy1 = float2 ((uv3.x - Amount) / negAmt, uv3.y);
-   float2 xy2 = float2 (uv3.x / negAmt, uv3.y);
+      Fgnd = ReadPixel (Fg_V, xy);
+      Bgnd = ReadPixel (Bg_V, xy);
+      retval = lerp (Fgnd, Bgnd, dissAmt);
+   }
 
-   negAmt *= 0.5;
-
-   float4 retval = (uv3.x > posAmt) ? tex2D (Super_O, xy1)
-                 : (uv3.x < negAmt) ? tex2D (Super_O, xy2) : kTransparentBlack;
-
-   return retval;
-}
-
-DeclareEntryPoint (CornerSqueeze_O)
-{
-   float negAmt = 1.0 - Amount;
-   float posAmt = (1.0 + Amount) * 0.5;
-
-   float2 xy1 = float2 (uv3.x, (uv3.y - Amount) / negAmt);
-   float2 xy2 = float2 (uv3.x, uv3.y / negAmt);
-
-   negAmt *= 0.5;
-
-   float4 Fgnd = (uv3.y > posAmt) ? tex2D (Horiz_O, xy1)
-               : (uv3.y < negAmt) ? tex2D (Horiz_O, xy2) : kTransparentBlack;
-
-   if (CropEdges && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
-
-   return lerp (tex2D (Bg_O, uv3), Fgnd, Fgnd.a);
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

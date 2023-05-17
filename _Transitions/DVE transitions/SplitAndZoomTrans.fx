@@ -1,30 +1,31 @@
 // @Maintainer jwrl
-// @Released 2023-01-31
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-01-31
+// @Created 2021-06-04
 
 /**
  This effect splits the outgoing video horizontally or vertically to reveal the incoming
- shot, which zooms up out of an opaque black background.  It is a rewrite of an earlier
- effect, H split with zoom, which has been withdrawn.  Instead of the colour background
- provided with the earlier effect transparent black has been used.  This gives maximum
- flexibility when using aspect ratios that don't match the sequence.
+ shot, which zooms up out of an opaque black background.  Instead of the colour background
+ provided in an earlier version of this effect transparent black has been used.  This
+ gives maximum flexibility when using aspect ratios that don't match the sequence.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect SplitAndZoom_Dx.fx
+// Lightworks user effect SplitAndZoomTrans.fx
 //
 // Version history:
 //
-// Built 2023-01-31 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Split and zoom", "Mix", "DVE transitions", "Splits the outgoing video to reveal the incoming shot zooming out of black", CanSize);
+DeclareLightworksEffect ("Split and zoom transition", "Mix", "DVE transitions", "Splits the outgoing video to reveal the incoming shot zooming out of black", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -32,17 +33,23 @@ DeclareLightworksEffect ("Split and zoom", "Mix", "DVE transitions", "Splits the
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Split horizontally|Split vertically");
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Split horizontally|Split vertically");
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
 //-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
 #define BLACK float2(0.0, 1.0).xxxy
 
@@ -54,11 +61,11 @@ DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0
 
 // technique SpinAndZoom_Dx (pinch to reveal)
 
-DeclarePass (Outgoing_H)
-{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
+DeclarePass (Fg_H)
+{ return ReadPixel (Fg, uv1); }
 
-DeclarePass (Incoming_H)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+DeclarePass (Bg_H)
+{ return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint (SplitAndZoom_Dx_H)
 {
@@ -70,26 +77,26 @@ DeclareEntryPoint (SplitAndZoom_Dx_H)
    float4 retval;
 
    if ((uv3.x < pos + 0.5) && (uv3.x > 0.5 - pos))
-      retval = ReadPixel (Outgoing_H, xy2);
+      retval = ReadPixel (Bg_H, xy2);
    else {
       if (uv3.x > 0.5) xy1.x -= pos;
       else xy1.x += pos;
 
-      retval = ReadPixel (Incoming_H, xy1);
+      retval = ReadPixel (Fg_H, xy1);
    }
 
-   return retval;
+   return lerp (tex2D (Fg_H, uv3), retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
 // technique SpinAndZoom_Dx (expand to reveal)
 
-DeclarePass (Outgoing_V)
-{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
+DeclarePass (Fg_V)
+{ return ReadPixel (Fg, uv1); }
 
-DeclarePass (Incoming_V)
-{ return IsOutOfBounds (uv1) ? BLACK : tex2D (Fg, uv1); }
+DeclarePass (Bg_V)
+{ return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint (SplitAndZoom_Dx_V)
 {
@@ -101,14 +108,14 @@ DeclareEntryPoint (SplitAndZoom_Dx_V)
    float4 retval;
 
    if ((uv3.y < pos + 0.5) && (uv3.y > 0.5 - pos))
-      retval = ReadPixel (Outgoing_V, xy2);
+      retval = ReadPixel (Bg_V, xy2);
    else {
       if (uv3.y > 0.5) xy1.y -= pos;
       else xy1.y += pos;
 
-      retval = ReadPixel (Incoming_V, xy1);
+      retval = ReadPixel (Fg_V, xy1);
    }
 
-   return retval;
+   return lerp (tex2D (Fg_V, uv3), retval, tex2D (Mask, uv3).x);
 }
 

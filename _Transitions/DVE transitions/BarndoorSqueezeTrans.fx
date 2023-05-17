@@ -1,29 +1,31 @@
 // @Maintainer jwrl
-// @Released 2023-02-02
+// @Released 2023-05-17
 // @Author jwrl
-// @Created 2023-02-02
+// @Created 2017-08-25
 
 /**
- This is similar to the split squeeze effect, customised to suit its use with blended
- effects.  It moves the separated foreground image halves apart and squeezes them to
- the edges of the screen or expands the halves from the edges.  It can operate either
- vertically or horizontally depending on the user setting.
+ This is similar to the split squeeze effect, customised to also allow it to be used
+ with blended effects.  It moves the separated foreground image halves apart and
+ squeezes them to the edges of the screen or expands the halves from the edges.  It
+ can operate either vertically or horizontally depending on the user setting.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-        Unlike LW transitions there is no mask, because I cannot see a reason for it.
 */
 
 //-----------------------------------------------------------------------------------------//
-// User effect BarndoorSqueeze_Fx.fx
+// Lightworks user effect BarndoorSqueezeTrans.fx
 //
 // Version history:
 //
-// Built 2023-02-02 jwrl.
+// Updated 2023-05-17 jwrl.
+// Header reformatted.
+//
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Barn door squeeze (keyed)", "Mix", "DVE transitions", "Splits the foreground and squeezes the halves apart horizontally or vertically", CanSize);
+DeclareLightworksEffect ("Barn door squeeze transition", "Mix", "DVE transitions", "Splits the video and squeezes the halves apart horizontally or vertically", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -31,60 +33,75 @@ DeclareLightworksEffect ("Barn door squeeze (keyed)", "Mix", "DVE transitions", 
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source", kNoGroup, 0, "Extracted foreground (delta key)|Crawl/Roll/Title/Image key|Video/External image");
-DeclareIntParam (Ttype, "Transition position", kNoGroup, 2, "At start if delta key|At start if non-delta|Standard transitions");
 DeclareIntParam (SetTechnique, "Transition direction", kNoGroup, 0, "Expand horizontal|Expand vertical|Squeeze horizontal|Squeeze vertical");
 
-DeclareBoolParam (CropEdges, "Crop effect to background", kNoGroup, false);
+DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
-DeclareFloatParam (Split, "Split centre", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Split, "Split centre", "Blend settings", kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareFloatParam (KeyGain, "Key trim", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+
+DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
+
+DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen_F (sampler F, float2 xy1, float2 xy2)
+float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = tex2D (F, xy2);
+   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
 
-   if (Source == 0) {
-      float4 Bgnd = ReadPixel (Bg, xy1);
+   if (Blended) {
+      if ((Source == 0) && SwapDir) {
+         Bgnd = Fgnd;
+         Fgnd = ReadPixel (B, xy2);
+      }
+      else Bgnd = ReadPixel (B, xy2);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb = Bgnd.rgb * Fgnd.a;
+      if (Source == 0) {
+         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
+         Fgnd.rgb *= Fgnd.a;
+      }
+      else if (Source == 1) {
+         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
+         Fgnd.rgb /= Fgnd.a;
+      }
+
+      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
    }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
+   else Fgnd.a = 1.0;
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   return Fgnd;
 }
 
-float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
+float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (Fg, xy1);
+   float4 retval;
 
-   if (Source == 0) {
-      float4 Bgnd = tex2D (B, xy2);
+   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
+   else retval = ReadPixel (B, xy2);
 
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
+   if (!Blended) retval.a = 1.0;
 
-   return (Fgnd.a == 0.0) ? Fgnd.aaaa : Fgnd;
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -93,107 +110,211 @@ float4 fn_keygen (sampler B, float2 xy1, float2 xy2)
 
 // technique BarndoorExpand_Eh
 
-DeclarePass (Bg_Eh)
-{ return Ttype == 0 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+DeclarePass (Fg_Eh)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_Eh)
-{ return Ttype == 0 ? fn_keygen_F (Bg_Eh, uv2, uv3) : fn_keygen (Bg_Eh, uv1, uv3); }
+DeclarePass (Bg_Eh)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (BarndoorExpand_Eh)
 {
-   float2 xy = Ttype == 0 ? uv1 : uv2;
+   float4 Fgnd = tex2D (Fg_Eh, uv3);
+   float4 Bgnd = tex2D (Bg_Eh, uv3);
+   float4 maskBg, retval;
 
-   float Amt = Ttype == 2 ? 1.0 - Amount : Amount;
-   float amount = Amt - 1.0;
-   float negAmt = Amt * Split;
-   float posAmt = 1.0 - (Amt * (1.0 - Split));
+   float2 xy1, xy2;
 
-   float4 Fgnd = (uv3.x > posAmt) ? tex2D (Super_Eh, float2 ((uv3.x + amount) / Amt, uv3.y))
-               : (uv3.x < negAmt) ? tex2D (Super_Eh, float2 (uv3.x / Amt, uv3.y)) : kTransparentBlack;
+   float negAmt, posAmt;
 
-   if (CropEdges && IsOutOfBounds (xy)) Fgnd = kTransparentBlack;
+   if (Blended) {
+      maskBg = Bgnd;
 
-   return lerp (tex2D (Bg_Eh, uv3), Fgnd, Fgnd.a);
+      float Amt = SwapDir ? Amount : 1.0 - Amount;
+      float amount = Amt - 1.0;
+
+      negAmt = Amt * Split;
+      posAmt = 1.0 - (Amt * (1.0 - Split));
+
+      xy1 = float2 ((uv3.x + amount) / Amt, uv3.y);
+      xy2 = float2 (uv3.x / Amt, uv3.y);
+
+      Fgnd = (uv3.x > posAmt) ? tex2D (Fg_Eh, xy1)
+           : (uv3.x < negAmt) ? tex2D (Fg_Eh, xy2) : kTransparentBlack;
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      negAmt = Amount / 2.0;
+      posAmt = 1.0 - negAmt;
+
+      xy1 = float2 ((uv3.x + Amount - 1.0) / Amount, uv3.y);
+      xy2 = float2 (uv3.x / Amount, uv3.y);
+
+      retval = (uv3.x > posAmt) ? tex2D (Bg_Eh, xy1) :
+               (uv3.x < negAmt) ? tex2D (Bg_Eh, xy2) : Fgnd;
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
 // technique BarndoorExpand_Ev
 
-DeclarePass (Bg_Ev)
-{ return Ttype == 0 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+DeclarePass (Fg_Ev)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_Ev)
-{ return Ttype == 0 ? fn_keygen_F (Bg_Ev, uv2, uv3) : fn_keygen (Bg_Ev, uv1, uv3); }
+DeclarePass (Bg_Ev)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (BarndoorExpand_Ev)
 {
-   float2 xy = Ttype == 0 ? uv1 : uv2;
+   float4 Fgnd = tex2D (Fg_Ev, uv3);
+   float4 Bgnd = tex2D (Bg_Ev, uv3);
+   float4 maskBg, retval;
 
-   float Amt = Ttype == 2 ? 1.0 - Amount : Amount;
-   float amount = Amt - 1.0;
-   float negAmt = Amt * (1.0 - Split);
-   float posAmt = 1.0 - (Amt * Split);
+   float2 xy1, xy2;
 
-   float4 Fgnd = (uv3.y > posAmt) ? tex2D (Super_Ev, float2 (uv3.x, (uv3.y + amount) / Amt))
-               : (uv3.y < negAmt) ? tex2D (Super_Ev, float2 (uv3.x, uv3.y / Amt)) : kTransparentBlack;
+   float negAmt, posAmt;
 
-   if (CropEdges && IsOutOfBounds (xy)) Fgnd = kTransparentBlack;
+   if (Blended) {
+      maskBg = Bgnd;
 
-   return lerp (tex2D (Bg_Ev, uv3), Fgnd, Fgnd.a);
+      float Amt = SwapDir ? Amount : 1.0 - Amount;
+      float amount = Amt - 1.0;
+
+      negAmt = Amt * (1.0 - Split);
+      posAmt = 1.0 - (Amt * Split);
+
+      xy1 = float2 (uv3.x, (uv3.y + amount) / Amt);
+      xy2 = float2 (uv3.x, uv3.y / Amt);
+
+      Fgnd = (uv3.y > posAmt) ? tex2D (Fg_Ev, xy1) :
+             (uv3.y < negAmt) ? tex2D (Fg_Ev, xy2) : kTransparentBlack;
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      negAmt = Amount / 2.0;
+      posAmt = 1.0 - negAmt;
+
+      xy1 = float2 (uv3.x, (uv3.y + Amount - 1.0) / Amount);
+      xy2 = float2 (uv3.x, uv3.y / Amount);
+
+      retval = (uv3.y > posAmt) ? tex2D (Bg_Ev, xy1)
+             : (uv3.y < negAmt) ? tex2D (Bg_Ev, xy2) : Fgnd;
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
 // technique BarndoorSqueeze_Sh
 
-DeclarePass (Bg_Sh)
-{ return Ttype == 0 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+DeclarePass (Fg_Sh)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_Sh)
-{ return Ttype == 0 ? fn_keygen_F (Bg_Sh, uv2, uv3) : fn_keygen (Bg_Sh, uv1, uv3); }
+DeclarePass (Bg_Sh)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (BarndoorSqueeze_Sh)
 {
-   float2 xy = Ttype == 0 ? uv1 : uv2;
+   float4 Fgnd = tex2D (Fg_Sh, uv3);
+   float4 Bgnd = tex2D (Bg_Sh, uv3);
+   float4 maskBg, retval;
 
-   float Amt = Ttype == 2 ? Amount : 1.0 - Amount;
-   float amount = 1.0 - Amt;
-   float negAmt = amount * Split;
-   float posAmt = 1.0 - (amount * (1.0 - Split));
+   float2 xy1, xy2;
 
-   float4 Fgnd = (uv3.x > posAmt) ? tex2D (Super_Sh, float2 ((uv3.x - Amt) / amount, uv3.y))
-               : (uv3.x < negAmt) ? tex2D (Super_Sh, float2 (uv3.x / amount, uv3.y)) : kTransparentBlack;
+   float negAmt, posAmt;
 
-   if (CropEdges && IsOutOfBounds (xy)) Fgnd = kTransparentBlack;
+   if (Blended) {
+      maskBg = Bgnd;
 
-   return lerp (tex2D (Bg_Sh, uv3), Fgnd, Fgnd.a);
+      float Amt = SwapDir ? Amount : 1.0 - Amount;
+      float amount = Amt - 1.0;
+
+      negAmt = Amt * Split;
+      posAmt = 1.0 - (Amt * (1.0 - Split));
+
+      xy1 = float2 ((uv3.x + amount) / Amt, uv3.y);
+      xy2 = float2 (uv3.x / Amt, uv3.y);
+
+      Fgnd = (uv3.x > posAmt) ? tex2D (Fg_Sh, xy1) :
+             (uv3.x < negAmt) ? tex2D (Fg_Sh, xy2) : kTransparentBlack;
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      negAmt = 1.0 - Amount;
+      posAmt = (1.0 + Amount) / 2.0;
+
+      xy1 = float2 ((uv3.x - Amount) / negAmt, uv3.y);
+      xy2 = float2 (uv3.x / negAmt, uv3.y);
+
+      negAmt /= 2.0;
+
+      retval = (uv3.x > posAmt) ? tex2D (Fg_Sh, xy1) :
+               (uv3.x < negAmt) ? tex2D (Fg_Sh, xy2) : Bgnd;
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 
 //-----------------------------------------------------------------------------------------//
 
 // technique BarndoorSqueeze_Sv
 
-DeclarePass (Bg_Sv)
-{ return Ttype == 0 ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+DeclarePass (Fg_Sv)
+{ return fn_keygen (Fg, uv1, Bg, uv2); }
 
-DeclarePass (Super_Sv)
-{ return Ttype == 0 ? fn_keygen_F (Bg_Sv, uv2, uv3) : fn_keygen (Bg_Sv, uv1, uv3); }
+DeclarePass (Bg_Sv)
+{ return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclareEntryPoint (BarndoorSqueeze_Sv)
 {
-   float2 xy = Ttype == 0 ? uv1 : uv2;
+   float4 Fgnd = tex2D (Fg_Sv, uv3);
+   float4 Bgnd = tex2D (Bg_Sv, uv3);
+   float4 maskBg, retval;
 
-   float Amt = Ttype == 2 ? Amount : 1.0 - Amount;
-   float amount = 1.0 - Amt;
-   float negAmt = amount * (1.0 - Split);
-   float posAmt = 1.0 - (amount * Split);
+   float2 xy1, xy2;
 
-   float4 Fgnd = (uv3.y > posAmt) ? tex2D (Super_Sv, float2 (uv3.x, (uv3.y - Amt) / amount))
-               : (uv3.y < negAmt) ? tex2D (Super_Sv, float2 (uv3.x, uv3.y / amount)) : kTransparentBlack;
+   float negAmt, posAmt;
 
-   if (CropEdges && IsOutOfBounds (xy)) Fgnd = kTransparentBlack;
+   if (Blended) {
+      maskBg = Bgnd;
 
-   return lerp (tex2D (Bg_Sv, uv3), Fgnd, Fgnd.a);
+      float Amt = SwapDir ? Amount : 1.0 - Amount;
+      float amount = Amt - 1.0;
+
+      negAmt = Amt * (1.0 - Split);
+      posAmt = 1.0 - (Amt * Split);
+
+      xy1 = float2 (uv3.x, (uv3.y + amount) / Amt);
+      xy2 = float2 (uv3.x, uv3.y / Amt);
+
+      Fgnd = (uv3.y > posAmt) ? tex2D (Fg_Sv, xy1) :
+             (uv3.y < negAmt) ? tex2D (Fg_Sv, xy2) : kTransparentBlack;
+      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+   }
+   else {
+      maskBg = Fgnd;
+
+      negAmt = 1.0 - Amount;
+      posAmt = (1.0 + Amount) / 2.0;
+
+      xy1 = float2 (uv3.x, (uv3.y - Amount) / negAmt);
+      xy2 = float2 (uv3.x, uv3.y / negAmt);
+
+      negAmt /= 2.0;
+
+      retval = (uv3.y > posAmt) ? tex2D (Fg_Sv, xy1) :
+               (uv3.y < negAmt) ? tex2D (Fg_Sv, xy2) : Bgnd;
+   }
+
+   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }
 

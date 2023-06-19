@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2020-02-29
 
@@ -24,7 +24,7 @@
  to create an artificial alpha channel for each channel.  The alpha value, however
  it is produced, is output for possible use by the blending logic.  Where the final
  output alpha channel is zero the video is blanked to allow for the boolean result
- to be used in external blend and DVE effects.
+ to be used in external blend and transition effects.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -33,6 +33,9 @@
 // Lightworks user effect BoolBlendPlus.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Replaced DVE reference to transform.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -617,3 +620,4 @@ DeclareEntryPoint (Luminosity)
 
    return lerp (Fgnd, retval, tex2D (Mask, uv1).x);
 }
+

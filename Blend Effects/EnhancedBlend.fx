@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2018-06-15
 
 /**
  "Enhanced blend" is a variant of the Lightworks blend effect with the option to boost the
  alpha channel (transparency) to match the blending used by title effects.  It can help
- when using titles with their inputs disconnected and used with other effects such as DVEs.
- It also closely emulates most of the Photoshop blend modes.
+ when using titles with their inputs disconnected and used with other effects such as 
+ transforms.  It also closely emulates most of the Photoshop blend modes.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -16,6 +16,9 @@
 // User effect EnhancedBlend.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Change DVE reference to transform.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -592,3 +595,4 @@ DeclareEntryPoint (Luminosity)
 
    return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
+

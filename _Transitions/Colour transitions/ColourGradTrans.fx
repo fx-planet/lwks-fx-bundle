@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-08
 // @Author jwrl
 // @Created 2016-07-31
 
@@ -18,6 +18,11 @@
 // Lightworks user effect ColourGradTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-08 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
+// Added means of previewing colour gradient while setting up.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -47,24 +52,22 @@ DeclareFloatParam (FxCentre, "Transition centre", kNoGroup, kNoFlags, 0.0, -1.0,
 
 DeclareFloatParam (cAmount, "Opacity", "Colour setup", kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (cCurve, "Transition curve", "Colour setup", kNoFlags, 0.0, 0.0, 1.0);
-
 DeclareIntParam (cGradient, "Gradient", "Colour setup", 5, "Flat (uses only the top left colour)|Horizontal blend (top left > top right)|Horizontal blend to centre (TL > TR > TL)|Vertical blend (top left > bottom left)|Vertical blend to centre (TL > BL > TL)|Four way gradient|Four way gradient to centre|Four way gradient to centre (horizontal)|Four way gradient to centre (vertical)|Radial (TL outer > TR centre)|Black and white");
-
 DeclareFloatParam (OffsX, "Grad. midpoint", "Colour setup", "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (OffsY, "Grad. midpoint", "Colour setup", "SpecifiesPointY", 0.5, 0.0, 1.0);
-
 DeclareColourParam (topLeft, "Top left", "Colour setup", kNoFlags, 0.0, 0.0, 0.0, 1.0);
 DeclareColourParam (topRight, "Top right", "Colour setup", kNoFlags, 0.5, 0.0, 0.8, 1.0);
 DeclareColourParam (botLeft, "Bottom left", "Colour setup", kNoFlags, 0.0, 0.0, 1.0, 1.0);
 DeclareColourParam (botRight, "Bottom right", "Colour setup", kNoFlags, 0.0, 0.8, 0.5, 1.0);
+DeclareBoolParam (ShowGrad, "Show gradient", "Colour setup", false);
 
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -81,45 +84,7 @@ DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_setFg (sampler F, float2 xy1, sampler B, float2 xy2)
-{
-   float4 Fgnd = ReadPixel (F, xy1);
-
-   if (Blended) {
-      float4 Bgnd = ReadPixel (B, xy2);
-
-      if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
-      else {
-         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
-
-         Fgnd.rgb = SwapDir ? Bgnd.rgb : lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a);
-      }
-      Fgnd.a = pow (Fgnd.a, 0.1);
-   }
-   else Fgnd.a = 1.0;
-
-   return Fgnd;
-}
-
-float4 fn_setBg (sampler F, float2 xy1, sampler B, float2 xy2)
-{
-   float4 Bgnd = ReadPixel (B, xy2);
-
-   if (Blended && SwapDir) {
-
-      if (Source > 0) {
-         float4 Fgnd = ReadPixel (F, xy1);
-
-         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
-
-         Bgnd = lerp (Bgnd, Fgnd, Fgnd.a);
-      }
-   }
-
-   return Bgnd;
-}
-
-float4 fn_colour (float2 uv, float4 Fgd, float4 Bgd)
+float4 fn_gradient (float4 Fgd, float4 Bgd, float2 uv)
 {
    if (cGradient == 0) return topLeft;
 
@@ -169,48 +134,96 @@ float4 fn_colour (float2 uv, float4 Fgd, float4 Bgd)
    return retval;
 }
 
+float4 fn_colour (float4 Fgnd, float4 Bgnd, float amt, float2 xy)
+{
+   float Mix = (FxCentre + 1.0) / 2.0;
+
+   Mix = (Mix <= 0.0) ? (amt / 2.0) + 0.5 :
+         (Mix >= 1.0) ? amt / 2.0 :
+         (Mix > amt) ? amt / (2.0 * Mix) : ((amt - Mix) / (2.0 * (1.0 - Mix))) + 0.5;
+
+   float4 retval = fn_gradient (Fgnd, Bgnd, xy);
+   float4 colDx, rawDx = lerp (Fgnd, Bgnd, Mix);
+
+   float nonLin = sin (Mix * PI);
+
+   Mix += Mix;
+
+   if (Mix > 1.0) {
+      Mix = lerp (2.0 - Mix, nonLin, cCurve);
+      colDx = lerp (Bgnd, retval, Mix);
+   }
+   else {
+      Mix = lerp (Mix, nonLin, cCurve);
+      colDx = lerp (Fgnd, retval, Mix);
+   }
+
+   return lerp (rawDx, colDx, cAmount);
+}
+
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (Fgd)
-{ return fn_setFg (Fg, uv1, Bg, uv2); }
+{
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
+
+   float4 Fgnd, Bgnd;
+
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
+   }
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+
+   return Fgnd;
+}
 
 DeclarePass (Bgd)
-{ return fn_setBg (Fg, uv1, Bg, uv2); }
+{
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
+
+   if (!Blended) { Bgnd.a = 1.0; }
+
+   return Bgnd;
+}
 
 DeclareEntryPoint (ColourMixTrans)
 {
    float4 Fgnd = tex2D (Fgd, uv3);
    float4 Bgnd = tex2D (Bgd, uv3);
-   float4 maskBg = Blended && !SwapDir ? Bgnd : Fgnd;
-   float4 retval = Bgnd;
+   float4 maskBg, retval;
 
-   if (Fgnd.a > 0.0) {
-      float Mix = (FxCentre + 1.0) / 2.0;
-
-      Mix = (Mix <= 0.0) ? (Amount / 2.0) + 0.5 :
-            (Mix >= 1.0) ? Amount / 2.0 :
-            (Mix > Amount) ? Amount / (2.0 * Mix) : ((Amount - Mix) / (2.0 * (1.0 - Mix))) + 0.5;
-
-      retval = fn_colour (uv0, Fgnd, Bgnd);
-
-      float4 colDx, rawDx = lerp (Fgnd, Bgnd, Mix);
-
-      float nonLin = sin (Mix * PI);
-
-      Mix *= 2.0;
-
-      if (Mix > 1.0) {
-         Mix = lerp (2.0 - Mix, nonLin, cCurve);
-         colDx = lerp (Bgnd, retval, Mix);
+   if (Blended) {
+      if (ShowKey) {
+         maskBg = kTransparentBlack;
+         retval = lerp (maskBg, Fgnd, Fgnd.a);
       }
       else {
-         Mix = lerp (Mix, nonLin, cCurve);
-         colDx = lerp (Fgnd, retval, Mix);
-      }
+         if (ShowGrad) { retval = float4 (fn_gradient (Fgnd, Bgnd, uv0).rgb, 1.0); }
+         else {
+            float amt = SwapDir ? 1.0 - Amount : Amount;
 
-      retval = lerp (rawDx, colDx, cAmount);
+            retval = lerp (Bgnd, fn_colour (Fgnd, Bgnd, amt, uv0), Fgnd.a);
+         }
+
+         maskBg = Bgnd;
+      }
+   }
+   else {
+      if (ShowGrad) { retval = float4 (fn_gradient (Fgnd, Bgnd, uv0).rgb, 1.0); }
+      else retval = fn_colour (Fgnd, Bgnd, Amount, uv0);
+
+      maskBg = Fgnd;
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

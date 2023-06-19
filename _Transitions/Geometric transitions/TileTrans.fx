@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-13
 // @Author khaver
 // @Author jwrl
 // @Created 2016-01-22
@@ -16,6 +16,10 @@
 // Lightworks user effect TileTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-13 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -42,17 +46,16 @@ DeclareMask;
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (SetTechnique, "Mode", "Tiles", 0, "Mosaic tiles|Coloured blocks|Break apart to tiles|Materialise from tiles");
-
 DeclareFloatParam (TileSize, "Size", "Tiles", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (Aspect, "Aspect ratio", "Tiles", kNoFlags, 1.0, 0.25, 4.0);
 
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputAspectRatio);
 DeclareFloatParam (_LengthFrames);
@@ -81,43 +84,36 @@ DeclareFloatParam (_LengthFrames);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_initFg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   if (!Blended) return float4 ((ReadPixel (F, xy1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
-      }
-      else Bgnd = ReadPixel (B, xy2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (B, xy2);
+      Bgnd = ReadPixel (F, xy1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (F, xy1);
+      Bgnd = ReadPixel (B, xy2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (F, xy1) : ReadPixel (B, xy2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
-   else retval = ReadPixel (B, xy2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 float2 fn_block_gen (float2 xy, float range)
@@ -141,7 +137,7 @@ float2 fn_block_gen (float2 xy, float range)
 // technique Mosaics
 
 DeclarePass (Fg_M)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bgd)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -163,18 +159,27 @@ DeclareEntryPoint (Mosaics)
    float2 xy;
 
    if (Blended) {
-      maskBg = Bgnd;
-
-      if (SwapDir) {
-         xy = (TileSize > 0.0) ? fn_block_gen (uv3, cos (Amount * HALF_PI)) : uv3;
-         Fgnd = ReadPixel (Fg_M, xy);
-         retval = lerp (Bgnd, Fgnd, Fgnd.a * Amount);
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
       }
       else {
-         xy = (TileSize > 0.0) ? fn_block_gen (uv3, sin (Amount * HALF_PI)) : uv3;
-         Fgnd = ReadPixel (Fg_M, xy);
-         retval = lerp (Bgnd, Fgnd, Fgnd.a * (1.0 - Amount));
+         if (SwapDir) {
+            xy = (TileSize > 0.0) ? fn_block_gen (uv3, cos (Amount * HALF_PI)) : uv3;
+            Fgnd = ReadPixel (Fg_M, xy);
+            retval = lerp (Bgnd, Fgnd, Amount);
+         }
+         else {
+            xy = (TileSize > 0.0) ? fn_block_gen (uv3, sin (Amount * HALF_PI)) : uv3;
+            Fgnd = ReadPixel (Fg_M, xy);
+            retval = lerp (Bgnd, Fgnd, 1.0 - Amount);
+         }
+
+         retval.a = Fgnd.a;
+         maskBg = Bgnd;
       }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;
@@ -199,7 +204,7 @@ DeclareEntryPoint (Mosaics)
 // technique Blocks
 
 DeclarePass (Fg_C)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_C)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -234,11 +239,13 @@ DeclareEntryPoint (Blocks)
    float alpha, amount;
 
    if (Blended) {
+      if (ShowKey) return lerp (kTransparentBlack, Fgnd, Fgnd.a * tex2D (Mask, uv3).x);
+
       maskBg = Bgnd;
       alpha = Fgnd.a;
       amount = SwapDir ? 1.0 - Amount : Amount;
       retval = lerp (Bgnd, Fgnd, Fgnd.a);
-      Fgnd = retval;
+      Fgnd.rgb = retval.rgb;
    }
    else {
       maskBg = Fgnd;
@@ -273,7 +280,7 @@ DeclareEntryPoint (Blocks)
 // technique BreakTiles
 
 DeclarePass (Fg_B)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_B)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -315,13 +322,20 @@ DeclareEntryPoint (BreakTiles)
    float offset = floor (uv.x * dsplc);
 
    if (Blended) {
-      maskBg = Bgnd;
-      offset = SwapDir ? (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - amount)
-                       : ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * amount;
-      uv.y += offset / _OutputAspectRatio;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         offset = SwapDir ? (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - amount)
+                          : ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * amount;
+         uv.y += offset / _OutputAspectRatio;
 
-      retval = ReadPixel (Tiles_B, uv);
-      retval = lerp (Bgnd, retval, retval.a);
+         retval = ReadPixel (Tiles_B, uv);
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;
@@ -339,7 +353,7 @@ DeclareEntryPoint (BreakTiles)
 // technique JoinTiles
 
 DeclarePass (Fg_J)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_J)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -379,13 +393,20 @@ DeclareEntryPoint (JoinTiles)
    float offset = floor (uv.x * dsplc);
 
    if (Blended) {
-      maskBg = Bgnd;
-      offset = SwapDir ? (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - amount)
-                       : ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * amount;
-      uv.y += offset / _OutputAspectRatio;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         offset = SwapDir ? (1.0 - (ceil (frac (offset / 2.0)) * 2.0)) * (1.0 - amount)
+                          : ((ceil (frac (offset / 2.0)) * 2.0) - 1.0) * amount;
+         uv.y += offset / _OutputAspectRatio;
 
-      retval = ReadPixel (Tiles_J, uv);
-      retval = lerp (Bgnd, retval, retval.a);
+         retval = ReadPixel (Tiles_J, uv);
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;

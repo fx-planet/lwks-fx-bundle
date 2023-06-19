@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-10
 // @Author jwrl
 // @Created 2018-06-12
 
@@ -15,6 +15,10 @@
 // Lightworks user effect RotationTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-10 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -41,18 +45,16 @@ DeclareMask;
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (SetTechnique, "Rotation axis", "Rotation", 0, "Vertical|Horizontal");
-
 DeclareBoolParam (Reverse, "Swap rotation direction", "Rotation", false);
-
 DeclareFloatParam (Offset, "Z offset", "Rotation", kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -70,43 +72,36 @@ DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_initFg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   if (!Blended) return float4 ((ReadPixel (F, xy1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
-      }
-      else Bgnd = ReadPixel (B, xy2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (B, xy2);
+      Bgnd = ReadPixel (F, xy1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (F, xy1);
+      Bgnd = ReadPixel (B, xy2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (F, xy1) : ReadPixel (B, xy2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
-   else retval = ReadPixel (B, xy2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 bool fn_3Drotate (float2 tl, float2 tr, float2 bl, float2 br, inout float2 uv)
@@ -144,7 +139,7 @@ bool fn_3Drotate (float2 tl, float2 tr, float2 bl, float2 br, inout float2 uv)
 // technique RotationTrans_V
 
 DeclarePass (Fg_V)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_V)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -161,8 +156,11 @@ DeclareEntryPoint (RotationTrans_V)
    float2 xy = uv3;
 
    float amount = Amount;
+   float masked = tex2D (Mask, uv3).x;
 
    if (Blended) {
+      if (ShowKey) return lerp (kTransparentBlack, Fgnd, Fgnd.a * masked);
+
       maskBg = Bgnd;
       amount /= 2.0;
       if (SwapDir) amount += 0.5;
@@ -203,7 +201,7 @@ DeclareEntryPoint (RotationTrans_V)
    }
    else retval = InRange ? tex2D (Premix_V, xy) : kTransparentBlack;
 
-   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
+   return lerp (maskBg, retval, masked);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -211,7 +209,7 @@ DeclareEntryPoint (RotationTrans_V)
 // technique RotationTrans_H
 
 DeclarePass (Fg_H)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_H)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -228,8 +226,11 @@ DeclareEntryPoint (RotationTrans_H)
    float2 xy = uv3;
 
    float amount = Amount;
+   float masked = tex2D (Mask, uv3).x;
 
    if (Blended) {
+      if (ShowKey) return lerp (kTransparentBlack, Fgnd, Fgnd.a * masked);
+
       maskBg = Bgnd;
       amount /= 2.0;
       if (SwapDir) amount += 0.5;
@@ -270,6 +271,6 @@ DeclareEntryPoint (RotationTrans_H)
    }
    else retval = InRange ? tex2D (Premix_H, xy) : kTransparentBlack;
 
-   return lerp (maskBg, retval, tex2D (Mask, uv3).x);
+   return lerp (maskBg, retval, masked);
 }
 

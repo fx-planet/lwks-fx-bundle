@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2019-11-06
 
@@ -10,9 +10,9 @@
  which simply shades the background by an adjustable amount.
 
  X-Y positioning of the border and its contents has been included, but since this is not
- intended as a comprehensive DVE replacement that's as far as it goes.  There isn't any
- scaling or rotation provided, nor is there intended to be.  It's complex enough for the
- user as it is!!!
+ intended as a comprehensive transform effect replacement that's as far as it goes.  There
+ isn't any scaling or rotation provided, nor is there intended to be.  It's complex enough
+ for the user as it is!!!
 
  Any alpha information in the foreground is discarded by this effect.  This means that
  wherever the foreground and bevelled border appears will be opaque black.  The
@@ -25,6 +25,9 @@
 // Lightworks user effect BevelCrop.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed DVE reference to transform.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -282,3 +285,4 @@ DeclareEntryPoint (BevelCrop)
 
    return lerp (Bgnd, Fgnd, Fgnd.a);
 }
+

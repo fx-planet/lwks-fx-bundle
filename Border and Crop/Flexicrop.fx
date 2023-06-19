@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2023-02-14
 
@@ -9,7 +9,7 @@
  shaded surround as a percentage of the edge softness.  Drop shadowing of the mask
  is included, and is set as an offset percentage.
 
- There is a limited 2D DVE function included which will allow the masked video to
+ There is a limited transform function included which will allow the masked video to
  be scaled and positioned.  Since this is applied after the mask is generated it is
  advisable to set the mask up first.
 
@@ -27,8 +27,13 @@
 //
 // Version history:
 //
+// Updated 2023-06-19 jwrl.
+// Changed DVE reference to transform.
+//
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
+//
+// Conversion 2023-02-17 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
@@ -51,13 +56,13 @@ DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareBoolParam (Invert, "Invert effect", kNoGroup, false);
 
-DeclareFloatParam (Scale, "Master size", "DVE", "DisplayAsPercentage", 1.0, 0.0, 10.0);
+DeclareFloatParam (Scale, "Master size", "Transform", "DisplayAsPercentage", 1.0, 0.0, 10.0);
 
-DeclareFloatParam (SizeX, "Size", "DVE", "SpecifiesPointX|DisplayAsPercentage", 1.0, 0.0, 10.0);
-DeclareFloatParam (SizeY, "Size", "DVE", "SpecifiesPointY|DisplayAsPercentage", 1.0, 0.0, 10.0);
+DeclareFloatParam (SizeX, "Size", "Transform", "SpecifiesPointX|DisplayAsPercentage", 1.0, 0.0, 10.0);
+DeclareFloatParam (SizeY, "Size", "Transform", "SpecifiesPointY|DisplayAsPercentage", 1.0, 0.0, 10.0);
 
-DeclareFloatParam (Pos_X, "Position", "DVE", "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.0, 2.0);
-DeclareFloatParam (Pos_Y, "Position", "DVE", "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.0, 2.0);
+DeclareFloatParam (Pos_X, "Position", "Transform", "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.0, 2.0);
+DeclareFloatParam (Pos_Y, "Position", "Transform", "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.0, 2.0);
 
 DeclareBoolParam (UseBorder, "Show border (mask softness must be on)", "Border", true);
 
@@ -194,3 +199,4 @@ DeclareEntryPoint (Flexicrop)
 
    return ((Fgnd - Bgnd) * Fgnd.a * Opacity) + Bgnd;
 }
+

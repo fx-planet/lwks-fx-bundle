@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2020-09-14
 
@@ -12,9 +12,9 @@
  by an adjustable amount.
 
  X-Y positioning of the border and its contents has been included, and simple scaling is
- available.  Since this is not intended as a comprehensive DVE replacement no X-Y scale
- factors nor rotation have been provided.  Finally, if desired the bevelled foreground
- can be automatically cropped to fit inside the background boundaries.
+ available.  Since this is not intended as a comprehensive traqnsform effect replacement
+ no X-Y scale factors nor rotation have been provided.  Finally, if desired the bevelled
+ foreground can be automatically cropped to fit inside the background boundaries.
 
  Any alpha information in the foreground is discarded by this effect.  This means that
  wherever the foreground and bevelled border appears will be opaque black.  The
@@ -27,6 +27,9 @@
 // Lightworks user effect 3Dbevel.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed DVE references to transform.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -206,3 +209,4 @@ DeclareEntryPoint (Bevel3D)
 
    return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
 }
+

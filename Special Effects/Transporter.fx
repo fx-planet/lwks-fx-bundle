@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-19
 // @Author jwrl
 // @Author LWKS Software Ltd
 // @Created 2018-04-02
@@ -18,9 +18,9 @@
 
  Because significant sections of this effect are copyright (c) LWKS Software Ltd and
  all rights are reserved it cannot be used in other effects in whole or in part without
- the express written permission of LWKS Software Ltd.  The additional DVE component and
- the sparkle generation is an original implementation, although it is based on common
- algorithms.
+ the express written permission of LWKS Software Ltd.  The additional transform effect
+ and the sparkle generation is an original implementation, although it is based on
+ common algorithms.
 
  NOTE:  This effect breaks resolution independence.  It is only suitable for use with
  Lightworks version 2023 and higher.
@@ -32,6 +32,9 @@
 // Licenced LWKS Software Ltd.  All Rights Reserved
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed DVE references to transform.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -63,9 +66,9 @@ DeclareFloatParam (KeySoftAmount, "Key softness", "Key settings", kNoFlags, 0.5,
 DeclareFloatParam (RemoveSpill, "Remove spill", "Key settings", kNoFlags, 0.5, 0.0, 1.0);
 DeclareBoolParam (NoAlpha, "Ignore foreground alpha", "Key settings", false);
 
-DeclareFloatParam (CentreX, "Position", "DVE", "SpecifiesPointX", 0.0, -1.0, 1.0);
-DeclareFloatParam (CentreY, "Position", "DVE", "SpecifiesPointY", 0.0, -1.0, 1.0);
-DeclareFloatParam (CentreZ, "Position", "DVE", "SpecifiesPointZ", 0.0, -1.0, 1.0);
+DeclareFloatParam (CentreX, "Position", "Transform", "SpecifiesPointX", 0.0, -1.0, 1.0);
+DeclareFloatParam (CentreY, "Position", "Transform", "SpecifiesPointY", 0.0, -1.0, 1.0);
+DeclareFloatParam (CentreZ, "Position", "Transform", "SpecifiesPointZ", 0.0, -1.0, 1.0);
 
 DeclareFloatParam (CropLeft, "Top left", "Crop", "SpecifiesPointX", 0.0, 0.0, 1.0);
 DeclareFloatParam (CropTop, "Top left", "Crop", "SpecifiesPointY", 1.0, 0.0, 1.0);
@@ -123,14 +126,14 @@ DeclarePass (Bgd)
 { return ReadPixel (Bg, uv2); }
 
 //-----------------------------------------------------------------------------------------//
-// The DVE and has been added to give masking, scaling and position adjustment.
+// The transform has been added to give masking, scaling and position adjustment.
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (DVE)
 {
    // First set up the scale factor, using the Z axis position.  Unlike the Lightworks
-   // 3D DVE the transition isn't linear and operates smallest to largest.  Since it has
-   // been designed to fine tune position it does not cover the full range of the 3D DVE.
+   // transform 3D the transition isn't linear and operates smallest to largest.  Since it
+   // has been designed to fine tune position it does not cover the range of that effect.
 
    float Xcntr = 0.5 - CentreX;
    float Ycntr = 0.5 + CentreY;

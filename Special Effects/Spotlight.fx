@@ -1,14 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2017-12-29
 
 /**
  This effect is designed to produce a highlighted spotlight effect on the source video.
  It's a simple single effect solution for the alternative, a wipe/matte combination
- used in conjunction with a blend or DVE.  The spot can be scaled, have its aspect ratio
- adjusted, and rotated through plus or minus 90 degrees.  The edge of the effect can
- also be feathered.
+ used in conjunction with a blend or transform effect.  The spot can be scaled, have
+ its aspect ratio adjusted, and rotated through plus or minus 90 degrees.  The edge of
+ the effect can also be feathered.
 
  Foreground and background exposure can be adjusted, as can saturation and vibrance.  The
  background can also be slightly blurred to give a soft focus effect, and the foreground
@@ -22,6 +22,9 @@
 // Lightworks user effect Spotlight.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed DVE references to transform.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

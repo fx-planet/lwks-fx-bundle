@@ -324,17 +324,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |RGB drift transition         |Yes      |Yes      |RGBdriftTrans.fx        |Dissolves using different R, G and B curves            |
 |Sizzler transition           |Yes      |Yes      |SizzlerTrans.fx         |Transitions using a complex colour translation         |
 
-## CATEGORY FOLDER: DVE transitions
-|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
-|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
-|Barn door squeeze transition |Yes      |Yes      |BarndoorSqueezeTrans.fx |A barn door squeeze to/from the edge of frame          |
-|Bounce transition            |Yes      |Yes      |BounceTrans.fx          |Bounces the foreground up then falls back              |
-|Corner squeeze transitions   |Yes      |Yes      |CornerSqueezeTrans.fx   |Corner wipe effect that squeezes or expands images     |
-|Indiarubber transition       |Yes      |Yes      |IndiarubberTrans.fx     |Stretches the image horizontally through dissolve      |
-|Pinch transitions            |Yes      |Yes      |PinchTrans.fx           |Pinches the outgoing video to a user-defined point     |
-|Split and zoom transition    |Yes      |No       |SplitAndZoomTrans.fx    |Splits outgoing video to reveal incoming zoom shot     |
-|Squeeze transition           |No       |Yes      |SqueezeTrans.fx         |A squeeze effect for blended images                    |
-
 ## CATEGORY FOLDER: Fades and non mixes
 |EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
 |:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
@@ -361,6 +350,17 @@ If you need to use two effects that have the same name, simply open one of them 
 |Transporter transition       |Yes      |Yes      |TransporterTrans.fx     |A Star Trek-like transporter fade in or out            |
 |Twist transition             |Yes      |No       |TwistTrans.fx           |Twists one image to another vertically/horizontally    |
 |Wave fall transition         |Yes      |Yes      |WaveFallTrans.fx        |Compresses the foreground to sinue strips or waves     |
+
+## CATEGORY FOLDER: Transform transitions
+|EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |
+|:--------------------------- |:------- |:------- |:---------------------- |:----------------------------------------------------- |
+|Barn door squeeze transition |Yes      |Yes      |BarndoorSqueezeTrans.fx |A barn door squeeze to/from the edge of frame          |
+|Bounce transition            |Yes      |Yes      |BounceTrans.fx          |Bounces the foreground up then falls back              |
+|Corner squeeze transition    |Yes      |Yes      |CornerSqueezeTrans.fx   |Corner wipe effect that squeezes or expands images     |
+|Indiarubber transition       |Yes      |Yes      |IndiarubberTrans.fx     |Stretches the image horizontally through dissolve      |
+|Pinch transitions            |Yes      |Yes      |PinchTrans.fx           |Pinches the outgoing video to a user-defined point     |
+|Split and zoom transition    |Yes      |No       |SplitAndZoomTrans.fx    |Splits outgoing video to reveal incoming zoom shot     |
+|Squeeze transition           |No       |Yes      |SqueezeTrans.fx         |A squeeze effect for blended images                    |
 
 ## CATEGORY FOLDER: Wipe transitions
 |EFFECT                       |DIRECT   |KEYED    |FILE NAME               |DESCRIPTION                                            |

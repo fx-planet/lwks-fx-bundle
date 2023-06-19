@@ -1,23 +1,17 @@
 // @Maintainer jwrl
 // @Released 2023-06-19
-// @Author Robert Schütze
 // @Author jwrl
-// @Created 2016-05-21
+// @Created 2016-12-10
 
 /**
- This effect uses a fractal-like pattern to transition between two sources.  It supports
- titles and other blended effects.  If you have used the previous fractal transition you
- will notice that the border settings are much more extreme.  This is to assist in the
- blend transition process.
+ This effect transitions between two video sources using a mixed key.  The result is
+ that one image appears to "erode" into the other as if being eaten away by acid.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect FractalTrans.fx
-//
-// The fractal component is a conversion of GLSL sandbox effect #308888 created by Robert
-// Schütze (trirop) 07.12.2015.
+// Lightworks user effect ErodeTrans.fx
 //
 // Version history:
 //
@@ -28,12 +22,12 @@
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
 //
-// Conversion 2023-03-06 for LW 2023 jwrl.
+// Conversion 2023-03-04 for LW 2023 jwrl.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Fractal transition", "Mix", "Abstract transitions", "Uses a fractal-like pattern to transition between two sources", "CanSize");
+DeclareLightworksEffect ("Erosion transition", "Mix", "Abstract transitions", "Transitions between two video sources using a luma key process", "CanSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -49,11 +43,6 @@ DeclareMask;
 
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareFloatParam (fractalOffset, "Offset", "Fractal settings", kNoFlags, 0.5, 0.0, 1.0);
-DeclareFloatParam (Rate, "Rate", "Fractal settings", kNoFlags, 0.5, 0.0, 1.0);
-DeclareFloatParam (Border, "Edge size", "Fractal settings", kNoFlags, 0.1, 0.0, 1.0);
-DeclareFloatParam (Feather, "Feather", "Fractal settings", kNoFlags, 0.1, 0.0, 1.0);
-
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
@@ -62,33 +51,15 @@ DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 
 DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
 DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
-DeclareFloatParam (_OutputAspectRatio);
-
 //-----------------------------------------------------------------------------------------//
-// Functions
+// Definitions and declarations
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_technique (float4 Fgnd, float4 Bgnd, float4 retval, float amount)
-{
-   float amt_in   = min (1.0, amount * 5.0);
-   float amt_body = (amount * 0.5) + 0.5;
-   float amt_out  = max (0.0, (amount * 5.0) - 4.0);
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
 
-   float fractal = max (retval.g, max (retval.r, retval.b));
-   float bdWidth = Border * 0.5;
-   float FthrRng = amt_body + Feather;
-   float fracAmt = (fractal - amt_body) / Feather;
-
-   if (fractal <= FthrRng) {
-      if (fractal > (amt_body - bdWidth)) { retval = lerp (Bgnd, retval, fracAmt); }
-      else retval = Bgnd;
-
-      if (fractal > (amt_body + bdWidth)) { retval = lerp (retval, Fgnd, fracAmt); }
-   }
-   else retval = Fgnd;
-
-   return lerp (lerp (Fgnd, retval, amt_in), Bgnd, amt_out);
-}
+#define PI 3.1415926536
 
 //-----------------------------------------------------------------------------------------//
 // Code
@@ -126,42 +97,49 @@ DeclarePass (Bgd)
    return Bgnd;
 }
 
-DeclarePass (Fractal)
-{
-   float3 offset  = float3 (1.0.xx, Amount * Rate * 0.5);
-   float3 fractal = float3 (uv0.x / _OutputAspectRatio, uv0.y, fractalOffset);
-
-   for (int i = 0; i < 75; i++) {
-      fractal.xzy = float3 (1.3, 0.999, 0.7) * (abs ((abs (fractal) / dot (fractal, fractal) - offset)));
-   }
-
-   return float4 (saturate (fractal), 1.0);
-}
-
-DeclareEntryPoint (FractalTrans)
+DeclareEntryPoint (Erosion)
 {
    float4 Fgnd = tex2D (Fgd, uv3);
    float4 Bgnd = tex2D (Bgd, uv3);
-   float4 retval = tex2D (Fractal, uv3);
-   float4 maskBg;
+   float4 maskBg, retval;
+
+   float a_1, a_2;
 
    if (Blended) {
       if (ShowKey) {
-         retval = Fgnd;
          maskBg = kTransparentBlack;
+         retval = lerp (maskBg, Fgnd, Fgnd.a);
       }
       else {
-         float amount = SwapDir ? 1.0 - Amount : Amount;
+         a_1 = Amount > 0.5 ? 1.0 - (sin (Amount * PI) / 2.0) : sin (Amount * PI) / 2.0;
 
-         retval = fn_technique (Fgnd, Bgnd, retval, amount);
+         if (SwapDir) { a_2 = pow (Amount, 0.25); }
+         else {
+            a_1 = 1.0 - a_1;
+            a_2 = pow (1.0 - Amount, 0.25);
+         }
+
+         retval = max (Bgnd.r, max (Bgnd.g, Bgnd.b)) < a_1 ? Fgnd : Bgnd;
+         retval = lerp (Bgnd, retval, Fgnd.a * a_2);
          maskBg = Bgnd;
       }
-
-      retval = lerp (maskBg, retval, Fgnd.a);
    }
    else {
-      retval = fn_technique (Fgnd, Bgnd, retval, Amount);
       maskBg = Fgnd;
+
+      a_1 = Amount * 1.5;
+      a_2 = max (0.0, a_1 - 0.5);
+      a_1 = min (a_1, 1.0);
+
+      float4 m_1 = (Fgnd + Bgnd) * 0.5;
+      float4 m_2 = max (m_1.r, max (m_1.g, m_1.b)) >= a_1 ? Fgnd : m_1;
+
+      retval = max (m_2.r, max (m_2.g, m_2.b)) >= a_2 ? m_2 : Bgnd;
+
+      Fgnd = IsOutOfBounds (uv1) ? kTransparentBlack : retval;
+      Bgnd = IsOutOfBounds (uv2) ? kTransparentBlack : retval;
+
+      retval = lerp (Fgnd, Bgnd, Amount);
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

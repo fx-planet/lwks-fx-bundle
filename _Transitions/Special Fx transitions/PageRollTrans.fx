@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-13
 // @Author khaver
 // @Author Eduardo Castineyra
 // @Created 2018-06-01
@@ -31,7 +31,7 @@
 //
 // Version history:
 //
-// Updated 2023-05-17 jwrl.
+// Updated 2023-06-13 jwrl.
 // Header reformatted.
 //
 // Conversion 2023-03-04 for LW 2023 jwrl.
@@ -164,7 +164,7 @@ DeclareEntryPoint (PageRoll)
 
    if (Direction > 3) {
       mouse.y = 0.0;
-      if (Direction == 6) mouse = mouse.yx;
+      if (Direction >= 6) mouse = mouse.yx;
    }
 
    float d = length (mouse * (1.0 + (4.0 * rad))) - (2.0 * rad);

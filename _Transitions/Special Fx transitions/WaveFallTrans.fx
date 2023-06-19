@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-13
 // @Author jwrl
 // @Created 2018-06-13
 
@@ -15,6 +15,10 @@
 // Lightworks user effect WaveFallTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-13 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -46,10 +50,10 @@ DeclareFloatParam (centreY, "Vertical centre", "Waves", kNoFlags, 0.5, 0.0, 1.0)
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -70,41 +74,34 @@ DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 
 
 DeclarePass (Fgd)
 {
-   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (Bg, uv2);
-      }
-      else Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 DeclarePass (Bgd)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
-   else retval = ReadPixel (Bg, uv2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 DeclareEntryPoint (WaveFallTrans)
@@ -119,22 +116,30 @@ DeclareEntryPoint (WaveFallTrans)
    float2 xy;
 
    if (Blended) {
-      maskBg = Bgnd;
-
-      if (SwapDir) {
-         Height = ((1.0 - cos (HALF_PI - (Amount * HALF_PI))) * HEIGHT) + 1.0;
-         amount = 1.0 - Amount;
+      if (ShowKey) {
+         maskBg = kTransparentBlack;
+         retval = Fgnd;
       }
       else {
-         Height = ((1.0 - cos (Amount * HALF_PI)) * HEIGHT) + 1.0;
-         amount = Amount;
+         if (SwapDir) {
+            Height = ((1.0 - cos (HALF_PI - (Amount * HALF_PI))) * HEIGHT) + 1.0;
+            amount = 1.0 - Amount;
+         }
+         else {
+            Height = ((1.0 - cos (Amount * HALF_PI)) * HEIGHT) + 1.0;
+            amount = Amount;
+         }
+
+         xy.x = saturate (uv3.x + (sin (Width * uv3.y * PI) * amount));
+         xy.y = saturate (((uv3.y - centreY) * Height) + centreY);
+
+         Fgnd = ReadPixel (Fgd, xy);
+         retval = lerp (Bgnd, Fgnd, saturate ((1.0 - amount) * 5.0));
+         retval.a = Fgnd.a;
+         maskBg = Bgnd;
       }
 
-      xy.x = saturate (uv3.x + (sin (Width * uv3.y * PI) * amount));
-      xy.y = saturate (((uv3.y - centreY) * Height) + centreY);
-
-      Fgnd = ReadPixel (Fgd, xy);
-      retval = lerp (Bgnd, Fgnd, Fgnd.a * saturate ((1.0 - amount) * 5.0));
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;

@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2018-07-27
 
 /**
- This effect simulates a flag waving.  It incorporates a 3D DVE to allow the flag to be
- scaled, rotated and positioned.
+ This effect simulates a flag waving.  It incorporates a transform 3D effect to allow
+ the flag to be scaled, rotated and positioned.
 
  Note that the depth setting interacts with the scaling.  This is a side effect of the
  way that the waveform tracks the DVE settings.  An accident originally, it was found
@@ -19,6 +19,9 @@
 // Lightworks user effect FlagWave.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed DVE reference to transform.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -135,7 +138,7 @@ DeclarePass (Waves)
 
 DeclareEntryPoint (FlagWave)
 {
-   //  This first section is a standard 3D DVE.  This is the bulk of the effect
+   //  This first section is a standard Transform 3D effect.  This is the bulk of the effect
 
    float rotation = (RotateX < 0.0 ? RotateX + 0.5 : RotateX - 0.5) * 2.0;
    float scale, rotate;

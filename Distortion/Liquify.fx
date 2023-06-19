@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-06-19
 // @Author schrauber
 // @Created 2020-10-23
 
@@ -9,7 +9,7 @@
  of an offset from a frame reference point.  The difference in the end result is slight.
 
  The edge of the frame can be mirrored, the area outside the frame can be black, or can
- be made transparent for use in other blend or DVE effects.  When in the two latter
+ be made transparent for use in other blend or transform effects.  When in the two latter
  modes the edge of frame can be softened.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
@@ -19,6 +19,9 @@
 // Lightworks user effect  Liquify.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed DVE reference to transform.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

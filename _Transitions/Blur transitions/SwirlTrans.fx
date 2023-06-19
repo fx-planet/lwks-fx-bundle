@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-08
 // @Author schrauber
 // @Author jwrl
 // @Created 2017-11-13
@@ -23,6 +23,10 @@
 // Lightworks user effect SwirlTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-08 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -55,15 +59,14 @@ DeclareFloatParam (FillGaps, "Fill gaps", "Rotation", kNoFlags, 0.9, 0.0, 1.0);
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareFloatParam (Start, "Start angle", "Blend swirl", kNoFlags, 0.0, -360.0, 360.0);
-
 DeclareFloatParam (CentreX, "Spin centre", "Blend swirl", "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (CentreY, "Spin centre", "Blend swirl", "SpecifiesPointY", 0.5, 0.0, 1.0);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputAspectRatio);
 DeclareFloatParam (_Length);
@@ -173,41 +176,34 @@ float4 fn_zoom (sampler Twist, float2 uv, out float distC)
 
 DeclarePass (Fgd)
 {
-   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (Bg, uv2);
-      }
-      else Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 DeclarePass (Bgd)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
-   else retval = ReadPixel (Bg, uv2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 DeclarePass (FgTwist)
@@ -225,24 +221,31 @@ DeclareEntryPoint (SwirlTrans)
    float amount;
 
    if (Blended) {
-      amount = SwapDir ? Amount : 1.0 - Amount;
-      maskBg = Bgnd;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         amount = SwapDir ? Amount : 1.0 - Amount;
 
-      float2 centre = float2 (CentreX, 1.0 - CentreY);
-      float2 xy, xy1 = uv3 - centre;
+         float2 centre = float2 (CentreX, 1.0 - CentreY);
+         float2 xy, xy1 = uv3 - centre;
 
-      float3 spin = float3 (Amplitude, Start, Rate) * (1.0 - amount);
+         float3 spin = float3 (Amplitude, Start, Rate) * (1.0 - amount);
 
-      float angle = (length (xy1) * spin.x * TWO_PI) + radians (spin.y);
-      float scale0, scale90;
+         float angle = (length (xy1) * spin.x * TWO_PI) + radians (spin.y);
+         float scale0, scale90;
 
-      amount = sin (amount * HALF_PI);
-      sincos (angle + (spin.z * _Length * PI), scale90, scale0);
-      xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
+         amount = sin (amount * HALF_PI);
+         sincos (angle + (spin.z * _Length * PI), scale90, scale0);
+         xy = (xy1 * scale0) - (float2 (xy1.y, -xy1.x) * scale90) + centre;
 
-      Fgnd = ReadPixel (Fgd, xy);
+         retval = ReadPixel (Fgd, xy);
+         retval.a *= amount;
+         maskBg = Bgnd;
+      }
 
-      retval = lerp (Bgnd, Fgnd, Fgnd.a * amount);
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;

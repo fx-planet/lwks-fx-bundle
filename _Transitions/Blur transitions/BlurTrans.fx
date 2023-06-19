@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-08
 // @Author jwrl
 // @Created 2015-10-12
 
@@ -16,6 +16,10 @@
 // Lightworks user effect BlurTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-08 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -46,10 +50,10 @@ DeclareFloatParam (Blurriness, "Blurriness", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -61,13 +65,35 @@ DeclareFloatParam (_OutputAspectRatio);
 #define PROFILE ps_3_0
 #endif
 
-#define PI        3.1415926536
-#define HALF_PI   1.5707963268
+#define PI      3.1415926536
+#define HALF_PI 1.5707963268
 
-#define STRENGTH  0.005
+//-----------------------------------------------------------------------------------------//
+// Functions
+//-----------------------------------------------------------------------------------------//
 
-#define SAMPLES   30
-#define SAMPSCALE 61
+float4 fn_transition (sampler vid, float2 uv, float2 blur)
+{
+   float4 retval = tex2D (vid, uv);
+
+   if (Blurriness > 0.0) {
+      float2 xy1 = uv;
+      float2 xy2 = uv;
+
+      blur *= Blurriness * 0.005;
+
+      for (int i = 0; i < 30; i++) {
+         xy1 -= blur;
+         xy2 += blur;
+         retval += tex2D (vid, xy1);
+         retval += tex2D (vid, xy2);
+      }
+    
+      retval /= 61;
+   }
+    
+   return retval;
+}
 
 //-----------------------------------------------------------------------------------------//
 // Code
@@ -75,41 +101,34 @@ DeclareFloatParam (_OutputAspectRatio);
 
 DeclarePass (Fgd)
 {
-   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (Bg, uv2);
-      }
-      else Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 DeclarePass (Bgd)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
-   else retval = ReadPixel (Bg, uv2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 DeclarePass (Mixed)
@@ -128,29 +147,12 @@ DeclarePass (BlurX)
 {
    float4 retval = tex2D (Mixed, uv3);
 
-   float amount;
+   float2 blur = 0.0.xx;
 
-   if (Blended) {
-      amount  = SwapDir ? 1.0 - Amount : Amount;
-      amount *= Blurriness * STRENGTH / _OutputAspectRatio;
-   }
-   else amount = sin (saturate (Amount) * PI) * Blurriness * STRENGTH / _OutputAspectRatio;
+   blur.x = !Blended ? sin (saturate (Amount) * PI) : SwapDir ? 1.0 - Amount : Amount;
+   blur  /= _OutputAspectRatio;
 
-   if (Blurriness > 0.0) {
-      float2 blur = float2 (amount, 0.0);
-      float2 xy1 = uv3, xy2 = uv3;
-
-      for (int i = 0; i < SAMPLES; i++) {
-         xy1 -= blur;
-         xy2 += blur;
-         retval += tex2D (Mixed, xy1);
-         retval += tex2D (Mixed, xy2);
-      }
-
-      retval /= SAMPSCALE;
-   }
-
-   return retval;
+   return fn_transition (Mixed, uv3, blur);
 }
 
 DeclareEntryPoint (BlurTrans)
@@ -159,48 +161,27 @@ DeclareEntryPoint (BlurTrans)
    float4 Bgnd = tex2D (Bgd, uv3);
    float4 maskBg, retval;
 
-   float2 xy1 = uv3, xy2 = uv3;
    float2 blur;
 
    if (Blended) {
-      maskBg = Bgnd;
-      retval = tex2D (BlurX, uv3);
-
-      if (Blurriness > 0.0) {
-         blur = SwapDir ? float2 (0.0, (1.0 - Amount) * Blurriness * STRENGTH)
-                        : float2 (0.0, Amount * Blurriness * STRENGTH);
-
-         for (int i = 0; i < SAMPLES; i++) {
-            xy1 -= blur;
-            xy2 += blur;
-            retval += tex2D (BlurX, xy1);
-            retval += tex2D (BlurX, xy2);
-         }
-    
-         retval /= SAMPSCALE;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         blur  = SwapDir ? float2 (0.0, 1.0 - Amount) : float2 (0.0, Amount);
+         retval = fn_transition (BlurX, uv3, blur);
+         retval.a *= SwapDir ? sin (saturate (Amount * 2.0) * HALF_PI)
+                             : cos (saturate (Amount - 0.5) * PI);
+         maskBg = Bgnd;
       }
 
-      retval.a *= SwapDir ? sin (saturate (Amount * 2.0) * HALF_PI)
-                          : cos (saturate (Amount - 0.5) * PI);
-
-      retval = lerp (Bgnd, retval, retval.a);
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
+      blur = float2 (0.0, sin (saturate (Amount) * PI));
+      retval = fn_transition (BlurX, uv3, blur);
       maskBg = Fgnd;
-      retval = tex2D (BlurX, uv3);
-
-      if (Blurriness > 0.0) {
-         blur = float2 (0.0, sin (saturate (Amount) * PI) * Blurriness * STRENGTH);
-
-         for (int i = 0; i < SAMPLES; i++) {
-            xy1 -= blur;
-            xy2 += blur;
-            retval += tex2D (BlurX, xy1);
-            retval += tex2D (BlurX, xy2);
-         }
-    
-         retval /= SAMPSCALE;
-      }
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-08
 // @Author jwrl
 // @Created 2020-07-19
 
@@ -15,6 +15,10 @@
 // Lightworks user effect WhipPanTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-08 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -41,16 +45,16 @@ DeclareMask;
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Mode, "Whip direction", kNoGroup, 0, "Left to right|Right to left|Top to bottom|Bottom to top");
-
 DeclareFloatParam (Spread, "Spread", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (Offset, "Start point", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -62,23 +66,7 @@ DeclareFloatParam (_OutputAspectRatio);
 #define PROFILE ps_3_0
 #endif
 
-#define SAMPLES   60
-#define SAMPSCALE 61
-
-#define KSAMPLE   120
-#define KSMPSCALE 121.0
-
-#define STRENGTH  0.01
-
-#define KSTRENGTH 0.00125
-
-#define L_R       0
-#define R_L       1
-#define T_B       2
-#define B_T       3
-
-#define PI        3.14159265359
-#define HALF_PI   1.5707963268
+#define HALF_PI 1.5707963268
 
 float2 _ang [4] = { { -1.5, 0.0 }, { 1.5, 0.0 }, { 0.0, -1.5 }, { 0.0, 1.5 } };
 
@@ -95,47 +83,66 @@ float4 MirrorPixel (sampler S, float2 xy)
    return ReadPixel (S, xy1);
 }
 
+float4 fn_transition (sampler vid, float2 uv, float amt)
+{
+   float2 offs = _ang [Mode] * amt;
+   float2 blur = offs * Spread;
+   float2 xy = uv + blur;
+
+   offs = abs (offs) * Offset;
+
+   if (Mode < 2) offs = -offs;
+
+   float4 retval = MirrorPixel (vid, uv);
+
+   if (Spread > 0.0) {
+      blur *= 0.01;
+
+      for (int i = 0; i < 60; i++) {
+         xy += blur;
+         retval += MirrorPixel (vid, (xy + offs));
+      }
+    
+      retval /= 61;
+   }
+    
+   return retval;
+}
+
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (Fgd)
 {
-   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (Bg, uv2);
-      }
-      else Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 DeclarePass (Bgd)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
-   else retval = ReadPixel (Bg, uv2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 DeclareEntryPoint (WhipPanTrans)
@@ -144,63 +151,52 @@ DeclareEntryPoint (WhipPanTrans)
    float4 Bgnd = tex2D (Bgd, uv3);
    float4 maskBg, retval;
 
-   float2 blur1, blur2, xy1, xy2;
-
    float amount = saturate (Amount);   // Just in case someone types in silly numbers
 
    if (Blended) {
-      maskBg = Bgnd;
-      blur1 = _ang [Mode] * Spread;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         amount = SwapDir ? cos ((amount + 2.0) * HALF_PI) : sin (amount * HALF_PI);
+/*
+         if (SwapDir) amount -= 1.0;
+*/
+         float2 offs = _ang [Mode] * amount / 2.0;
+         float2 blur = offs * Spread;
+         float2 xy = uv3 + blur;
 
-      if (SwapDir) { blur1 *= (amount - 1.0); }
-      else blur1 *= amount;
+         offs = abs (offs) * Offset;
 
-      xy1 = uv3 + blur1;
-      Fgnd = ReadPixel (Fgd, xy1);
+         if (Mode < 2) offs = -offs;
 
-      if (Spread > 0.0) {
-         blur1 *= STRENGTH;
+         retval = ReadPixel (Fgd, uv3);
 
-         for (int i = 0; i < SAMPLES; i++) {
-            xy1 += blur1;
-            Fgnd += ReadPixel (Fgd, xy1);
-         }
+         if (Spread > 0.0) {
+            blur *= 0.01;
+
+            for (int i = 0; i < 60; i++) {
+               xy += blur;
+               retval += ReadPixel (Fgd, (xy + offs));
+            }
     
-         Fgnd /= SAMPSCALE;
+            retval /= 61;
+         }
+
+         maskBg = Bgnd;
       }
 
-      retval = lerp (Bgnd, Fgnd, Fgnd.a);
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;
+      amount *= 2.0;
 
-      blur1 = _ang [Mode] * Spread * 2.0;
-      blur2 = blur1 * (amount - 1.0);
+      Fgnd = fn_transition (Fgd, uv3, amount);
+      Bgnd = fn_transition (Bgd, uv3, amount - 2.0);
 
-      blur1 *= amount;
-
-      xy1 = uv3 + blur1;
-      xy2 = uv3 + blur2;
-
-      Fgnd = MirrorPixel (Fgd, xy1);
-      Bgnd = MirrorPixel (Bgd, xy2);
-
-      if (Spread > 0.0) {
-         blur1 *= STRENGTH;
-         blur2 *= STRENGTH;
-
-         for (int i = 0; i < SAMPLES; i++) {
-            xy1 += blur1;
-            xy2 += blur2;
-            Fgnd += MirrorPixel (Fgd, xy1);
-            Bgnd += MirrorPixel (Bgd, xy2);
-         }
-    
-         Fgnd /= SAMPSCALE;
-         Bgnd /= SAMPSCALE;
-      }
-
-      retval = lerp (Fgnd, Bgnd, 0.5 - (cos (amount * PI) / 2.0));
+      retval = lerp (Fgnd, Bgnd, 0.5 - (cos (amount * HALF_PI) / 2.0));
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

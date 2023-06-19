@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-08
 // @Author rakusan
 // @Author jwrl
 // @Created 2016-02-15
@@ -17,6 +17,10 @@
 // Lightworks user effect SpinTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-08 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -53,10 +57,10 @@ DeclareFloatParam (CentreY, "Centre", "Spin", "SpecifiesPointY", 0.5, -0.5, 1.5)
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputAspectRatio);
 DeclareFloatParam (_LengthFrames);
@@ -146,46 +150,42 @@ float4 fn_BgBlur (sampler B, float2 uv, int base)
 }
 
 //-----------------------------------------------------------------------------------------//
-// Techniques
+// Code
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (Fgd)
 {
-   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (Bg, uv2);
-      }
-      else Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, 0.25, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.5); }
+/*
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+*/
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 DeclarePass (Bgd)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
-   else retval = ReadPixel (Bg, uv2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 DeclarePass (Rot_1)
@@ -229,15 +229,22 @@ DeclareEntryPoint (SpinTrans)
    Fg_vid += tex2D (Rot_3, uv3) + tex2D (Rot_4, uv3);
 
    if (Blended) {
-      float amount = SwapDir ? Amount * _LengthFrames / (_LengthFrames - 1.0) : 1.0 - Amount;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         float amount = SwapDir ? Amount * _LengthFrames / (_LengthFrames - 1.0) : 1.0 - Amount;
 
-      maskBg = Bgnd;
-      Fg_vid = lerp (Fgnd, Fg_vid, saturate ((1.0 - amount) * 8.0));
-      retval = lerp (Bgnd, Fg_vid, Fg_vid.a * amount);
+         Fg_vid *= 1.4585;
+         retval = lerp (Fgnd, Fg_vid, saturate ((1.0 - amount) * 8.0));
+         retval.a *= amount;
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
-      maskBg = Fgnd;
-
       retval  = tex2D (Bblur, uv3);
       retval += tex2D (Spin1, uv3) + tex2D (Spin2, uv3);
       retval += tex2D (Spin3, uv3) + tex2D (Spin4, uv3);
@@ -248,6 +255,7 @@ DeclareEntryPoint (SpinTrans)
 
       mix = (1.0 + (abs (mix) * mix)) / 2.0;
       retval = lerp (Fg_vid, retval, mix);
+      maskBg = Fgnd;
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

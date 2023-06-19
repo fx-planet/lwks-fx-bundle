@@ -1,4 +1,4 @@
-# Lightworks user Fx library, May 17, 2023.
+# Lightworks user Fx library, June 19, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -122,19 +122,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Skew                          |Skew.fx                 |A neat, simple effect for adding a perspective illusion to a flat plane       |
 |Water                         |Water.fx                |Makes waves as well as refraction, and provides X and Y adjustment            |
 |Whirl                         |Whirl.fx                |Simulates what happens when water empties out of a sink                       |
-
-## CATEGORY FOLDER: DVE Extras
-|EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
-|:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
-|2D DVE with repeats           |2dDVErepeats.fx         |A 2D DVE that can duplicate the foreground image as you zoom out              |
-|Art Deco DVE                  |ArtDecoDVE.fx           |Art Deco flash lines are included in the 2D DVE borders                       |
-|Flexible 2D DVE               |FlexiDVE.fx             |A flexible masked 2D DVE with Z-axis rotation                                 |
-|Framed DVE                    |FramedDVE.fx            |Creates a textured frame around the foreground and resizes and positions it   |
-|Rosehaven                     |Rosehaven.fx            |Creates mirrored top/bottom or left/right images                              |
-|Simple zoom in                |SimpleZoomIn.fx         |Designed for simple zooming in (not recommended for negative zoom values)     |
-|Spin zoom                     |SpinZoom.fx             |Similar to the 3D DVE, but the settings are much easier to use                |
-|Tiled images                  |TiledImages.fx          |Creates tile patterns from the image, which can be rotated                    |
-|Triple DVE                    |TripleDVE.fx            |Foreground, background and the overall effect have independent DVE adjustment |
 
 ## CATEGORY FOLDER: Film Effects
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
@@ -265,6 +252,19 @@ If you need to use two effects that have the same name, simply open one of them 
 |Tiling                        |Tiling.fx               |Breaks the image into a bevelled mosaic or glass tiles                        |
 |Variable film grain           |VarFilmGrain.fx         |This effect reduces the grain as the luminance values approach their limits   |
 |Video noise                   |VideoNoise.fx           |Generates either monochrome or colour video noise                             |
+
+## CATEGORY FOLDER: Transform plus
+|EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
+|:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
+|Art Deco transform            |ArtDecoTransform.fx     |Art Deco flash lines are included in the transform borders                    |
+|Flexible transform            |FlexiTransform.fx       |A flexible masked transform with Z-axis rotation                              |
+|Framed DVE                    |FramedDVE.fx            |Creates a textured frame around the foreground and resizes and positions it   |
+|Repeated transform            |RepeatTransform.fx      |A transform that can duplicate the foreground image as you zoom out           |
+|Rosehaven                     |Rosehaven.fx            |Creates mirrored top/bottom or left/right images                              |
+|Simple zoom in                |SimpleZoomIn.fx         |Designed for simple zooming in (not recommended for negative zoom values)     |
+|Spin zoom                     |SpinZoom.fx             |Similar to the transform 3D, but the settings are much easier to use          |
+|Tiled images                  |TiledImages.fx          |Creates tile patterns from the image, which can be rotated                    |
+|Triple DVE                    |TripleDVE.fx            |Foreground, background and the overall effect have independent DVE adjustment |
 
 ## CATEGORY FOLDER: Video artefacts
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |

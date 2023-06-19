@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-20
+// @Released 2023-06-19
 // @Author nouanda
 // @Created 2014-10-20
 
@@ -24,6 +24,9 @@
 //-----------------------------------------------------------------------------------------//
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed "Destination Position" to "Destination Pos".
 //
 // Updated 2023-05-20 jwrl.
 // Destination parameter reformatted.
@@ -60,8 +63,8 @@ DeclareFloatParam (SrcPosY, "Source Position", "Parameters", "SpecifiesPointY", 
 
 DeclareFloatParam (AspectRatio, "Aspect ratio x:1", "Parameters", kNoFlags, 1.0, 0.3, 3.3333333);
 
-DeclareFloatParam (DestPosX, "Destination", "Parameters", "SpecifiesPointX", 0.7, 0.0, 1.0);
-DeclareFloatParam (DestPosY, "Destination", "Parameters", "SpecifiesPointY", 0.7, 0.0, 1.0);
+DeclareFloatParam (DestPosX, "Destination Pos", "Parameters", "SpecifiesPointX", 0.7, 0.0, 1.0);
+DeclareFloatParam (DestPosY, "Destination Pos", "Parameters", "SpecifiesPointY", 0.7, 0.0, 1.0);
 
 DeclareFloatParam (BlendOpacity, "Blend Opacity", "Overlay", kNoFlags, 1.0, 0.0, 1.0);
 
@@ -221,3 +224,4 @@ DeclareEntryPoint (CloneStampRectangle)
 
    return IsOutOfBounds (uv1) ? kTransparentBlack : float4 (lerp (Src.rgb, Dest.rgb, BlendOpacity), Src.a);
 }
+

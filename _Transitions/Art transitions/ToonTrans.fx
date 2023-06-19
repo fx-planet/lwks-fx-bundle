@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-13
 // @Author jwrl
 // @Created 2022-06-01
 
@@ -18,6 +18,10 @@
 // Lightworks user effect ToonTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-13 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -61,10 +65,10 @@ DeclareFloatParam (HueAngle, "Hue (degrees)", "Posterize postprocess", kNoFlags,
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputWidth);
 DeclareFloatParam (_OutputHeight);
@@ -138,44 +142,94 @@ float3 fn_RGBtoHSL (float3 RGB)
    return float3 (Hue, Satn, Luma);
 }
 
+float4 fn_technique (sampler M, sampler T, float2 uv, float amount)
+{
+   float Amt = max ((abs (amount - 0.5) * 2.0) - 0.5, 0.0) * 2.0;
+   float Thr = Threshold * Threshold;
+   float W_X = 100.0 + ((1.0 - LineWeightX) * 2048.0);
+   float W_Y = 100.0 + ((1.0 - LineWeightY) * 2048.0);
+
+   Thr *= Thr;
+
+   float2 LwX = float2 (1.0 / W_X, 0.0);
+   float2 LwY = float2 (0.0, 1.0 / W_Y);
+   float2 xy1 = uv - LwY;
+   float2 xy2 = uv + LwY;
+
+   // Convolution
+
+   float4 vidX = ReadPixel (M, (xy1 - LwX));
+   float4 vidY = vidX;
+   float4 conv = ReadPixel (M, (xy1 + LwX));
+
+   vidX += conv - (ReadPixel (M, xy1));
+   vidY -= (conv - ReadPixel (M, (uv - LwX)) + ReadPixel (M, (uv + LwX)));
+
+   conv  = ReadPixel (M, (xy2 - LwX));
+   vidX -= (conv - ReadPixel (M, xy2));
+   vidY += conv;
+   conv  = ReadPixel (M, (xy2 + LwX));
+   vidX -= conv;
+   vidY -= conv;
+   conv  = (vidX * vidX) + (vidY * vidY);
+
+   // Add and apply threshold
+
+   float outlines = ((conv.x <= Thr) + (conv.y <= Thr) + (conv.z <= Thr)) / 3.0;
+   float sinAmt = sin (amount * PI);
+
+   float4 Bgnd = ReadPixel (M, uv);
+   float4 retval = lerp (float4 (outlines.xxx, 1.0), Bgnd, Amt);
+   float4 Fgnd = ReadPixel (T, uv);
+
+   float3 pp = fn_RGBtoHSL (Fgnd.rgb);
+
+   pp.x  = pp.x > 0.5 ? pp.x - 0.5 : pp.x + 0.5;
+   pp.yz = 1.0.xx - pp.yz;
+   pp    = lerp (fn_HSLtoRGB (pp), 1.0.xxx, sinAmt * 0.5);
+   Fgnd  = lerp (Fgnd, float4 (pp, Fgnd.a), sinAmt);
+
+   Amt = saturate (1.0 - Amt);
+   Bgnd = lerp (Bgnd, saturate (Fgnd), Amt);
+
+   retval.rgb = min (retval.rgb, Bgnd.rgb);
+   retval.a   = Bgnd.a;
+
+   return retval;
+}
+
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (Fgd)
 {
-   float4 Fgnd = ReadPixel (Fg, uv1);
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
 
-   if (Blended) {
-      float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
-      else {
-         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
-
-         Fgnd.rgb = SwapDir ? Bgnd.rgb : lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a);
-      }
-      Fgnd.a = pow (Fgnd.a, 0.1);
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 DeclarePass (Bgd)
 {
-   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
 
-   if (Blended && SwapDir) {
-
-      if (Source > 0) {
-         float4 Fgnd = ReadPixel (Fg, uv1);
-
-         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
-
-         Bgnd = lerp (Bgnd, Fgnd, Fgnd.a);
-      }
-   }
+   if (!Blended) { Bgnd.a = 1.0; }
 
    return Bgnd;
 }
@@ -185,12 +239,9 @@ DeclarePass (Mixed)
    float4 Fgnd = tex2D (Fgd, uv3);
    float4 Bgnd = tex2D (Bgd, uv3);
 
-   float amt;
+   float amt = saturate ((Blended && SwapDir ? Amount - 0.25 : 0.75 - Amount) * 2.0);
 
-   if (Blended && SwapDir && (Source > 0)) { saturate ((1.25 - Amount) * 2.0); }
-   else amt = saturate ((Amount - 0.25) * 2.0);
-
-   return lerp (Fgnd, Bgnd, amt);
+   return lerp (Bgnd, Fgnd, amt);
 }
 
 DeclarePass (Blur_X)
@@ -224,7 +275,7 @@ DeclarePass (Blur_X)
    return retval / 13.0;
 }
 
-DeclarePass (Blur_Y)
+DeclarePass (ToonSub)
 {
    float4 RGB = tex2D (Blur_X, uv3);
 
@@ -289,66 +340,29 @@ DeclareEntryPoint (ToonTrans)
    float4 maskBg, retval;
 
    if (Blended) {
-      retval = Fgnd;
-      maskBg = SwapDir ? Fgnd : Bgnd;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         retval = fn_technique (Mixed, ToonSub, uv3, 0.5);
+         maskBg = Bgnd;
+
+         if (SwapDir) {
+            retval = lerp (Bgnd, retval, saturate (Amount * 2.0));
+            retval = lerp (retval, Fgnd, saturate ((Amount - 0.5) * 2.0));
+         }
+         else {
+            retval = lerp (Fgnd, retval, saturate (Amount * 2.0));
+            retval = lerp (retval, Bgnd, saturate ((Amount - 0.5) * 2.0));
+         }
+      }
+
+      retval = lerp (maskBg, retval, Fgnd.a);
    }
    else {
+      retval = fn_technique (Mixed, ToonSub, uv3, Amount) * Fgnd.a;
       maskBg = Fgnd;
-      retval = Bgnd;
-   }
-
-   float alpha = Fgnd.a;
-
-   if (alpha > 0.0) {
-      float Amt = max ((abs (Amount - 0.5) * 2.0) - 0.5, 0.0) * 2.0;
-      float Thr = Threshold * Threshold;
-      float W_X = 100.0 + ((1.0 - LineWeightX) * 2048.0);
-      float W_Y = 100.0 + ((1.0 - LineWeightY) * 2048.0);
-
-      Thr *= Thr;
-
-      float2 LwX = float2 (1.0 / W_X, 0.0);
-      float2 LwY = float2 (0.0, 1.0 / W_Y);
-      float2 xy1 = uv3 - LwY;
-      float2 xy2 = uv3 + LwY;
-
-      // Convolution
-
-      float4 vidX = ReadPixel (Mixed, xy1 - LwX);
-      float4 vidY = vidX;
-      float4 conv = ReadPixel (Mixed, xy1 + LwX);
-
-      vidX += conv - (ReadPixel (Mixed, xy1));
-      vidY -= (conv - ReadPixel (Mixed, uv3 - LwX) + ReadPixel (Mixed, uv3 + LwX));
-
-      conv  = ReadPixel (Mixed, xy2 - LwX);
-      vidX -= (conv - ReadPixel (Mixed, xy2));
-      vidY += conv;
-      conv  = ReadPixel (Mixed, xy2 + LwX);
-      vidX -= conv;
-      vidY -= conv;
-      conv  = (vidX * vidX) + (vidY * vidY);
-
-      // Add and apply threshold
-
-      float outlines = ((conv.x <= Thr) + (conv.y <= Thr) + (conv.z <= Thr)) / 3.0;
-      float sinAmt = sin (Amount * PI);
-
-      Bgnd = tex2D (Mixed, uv3);
-      Fgnd = tex2D (Blur_Y, uv3);
-
-      float3 pp = fn_RGBtoHSL (Fgnd.rgb);
-
-      retval = lerp (float4 (outlines.xxx, 1.0), Bgnd, Amt);
-
-      pp.x  = pp.x > 0.5 ? pp.x - 0.5 : pp.x + 0.5;
-      pp.yz = 1.0.xx - pp.yz;
-      pp    = lerp (fn_HSLtoRGB (pp), 1.0.xxx, sinAmt * 0.5);
-      Fgnd  = lerp (Fgnd, float4 (pp, Fgnd.a), sinAmt);
-
-      Amt = 1.0 - max ((Amt - 0.5) * 2.0, 0.0);
-      Bgnd = lerp (Bgnd, saturate (Fgnd), Amt);
-      retval.rgb = min (retval.rgb, Bgnd.rgb) * alpha;
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

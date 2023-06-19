@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-09
 // @Author jwrl
 // @Created 2018-06-11
 
@@ -18,6 +18,10 @@
 // Lightworks user effect BorderTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-09 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -52,10 +56,10 @@ DeclareColourParam (Colour_3, "Outline 3", "Colours", kNoFlags, 0.9, 0.6, 1.0, 1
 DeclareColourParam (Colour_4, "Outline 4", "Colours", kNoFlags, 0.6, 0.3, 1.0, 1.0);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputAspectRatio);
 DeclareFloatParam (_Progress);
@@ -86,22 +90,19 @@ DeclareFloatParam (_Progress);
 
 DeclarePass (Fgd)
 {
-   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+   float4 Fgnd, Bgnd;
 
-   if ((Source == 0) && SwapDir) {
-      Bgnd = Fgnd;
+   if (SwapSource) {
       Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Bgnd = ReadPixel (Bg, uv2);
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
 
-   if (Source == 0) {
-      Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-      Fgnd.rgb *= Fgnd.a;
-   }
-   else if (Source == 1) {
-      Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-      Fgnd.rgb /= Fgnd.a;
-   }
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
 
    if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
@@ -109,14 +110,17 @@ DeclarePass (Fgd)
 }
 
 DeclarePass (Bgd)
-{ return SwapDir && (Source == 0) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
+{ return (SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2); }
 
 DeclarePass (Super)
 {
+   float4 retval = ReadPixel (Fgd, uv3);
+
+   if (ShowKey) return lerp (kTransparentBlack, retval, retval.a);
+
    float2 radius = float2 (1.0, _OutputAspectRatio) * 0.00125;
    float2 xy1, xy2;
 
-   float4 retval = ReadPixel (Fgd, uv3);
    float4 input  = retval;
 
    float amount = saturate (_Progress * 15.0);
@@ -139,7 +143,7 @@ DeclarePass (Border_1)
 {
    float4 retval = kTransparentBlack;
 
-   if (Radius != 0.0) {
+   if (!ShowKey && (Radius != 0.0)) {
       float radScale = SwapDir ? cos (Amount * HALF_PI) : sin (Amount * HALF_PI);
 
       float2 radius = float2 (1.0, _OutputAspectRatio) * Radius * radScale * 0.018;
@@ -162,7 +166,7 @@ DeclarePass (Border_2)
 {
    float4 retval = ReadPixel (Border_1, uv3);
 
-   if (Radius != 0.0) {
+   if (!ShowKey && (Radius != 0.0)) {
       float radScale = SwapDir ? cos (Amount * HALF_PI) : sin (Amount * HALF_PI);
       float alpha = saturate (ReadPixel (Super, uv3).a * 2.0);
 
@@ -186,6 +190,8 @@ DeclarePass (Border_2)
 
 DeclareEntryPoint (BorderTrans)
 {
+   if (ShowKey) return lerp (kTransparentBlack, tex2D (Super, uv3), tex2D (Mask, uv3).x);
+
    float2 xy1 = (Displace / 2.0).xx;
 
    if (SwapDir) { xy1 *= 1.0 - Amount; }

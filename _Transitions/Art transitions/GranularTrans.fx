@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-12
 // @Author jwrl
 // @Created 2016-02-08
 
@@ -15,6 +15,10 @@
 // Lightworks user effect GranularTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-12 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -41,26 +45,21 @@ DeclareMask;
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareIntParam (SetTechnique, "Transition type", kNoGroup, 1, "Top to bottom|Left to right|Radial|No gradient");
-
 DeclareBoolParam (TransDir, "Invert transition direction", kNoGroup, false);
-
 DeclareFloatParam (gWidth, "Width", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
-
 DeclareFloatParam (pSize, "Size", "Particles", kNoFlags, 5.5, 1.0, 10.0);
 DeclareFloatParam (pSoftness, "Softness", "Particles", kNoFlags, 0.5, 0.0, 1.0);
-
 DeclareBoolParam (TransVar, "Static particle pattern", "Particles", false);
 DeclareBoolParam (Sparkles, "Sparkle", "Particles", false);
-
 DeclareColourParam (starColour, "Colour", "Particles", kNoFlags, 0.9, 0.75, 0.0, 1.0);
 
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -83,40 +82,34 @@ float _pascal [] = { 0.3125, 0.2344, 0.09375, 0.01563 };
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_initFg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Fgnd = ReadPixel (F, xy1);
+   if (!Blended) return float4 ((ReadPixel (F, xy1)).rgb, 1.0);
 
-   if (Blended) {
-      float4 Bgnd = ReadPixel (B, xy2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
-      else {
-         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
-
-         Fgnd.rgb = SwapDir ? Bgnd.rgb : lerp (Bgnd.rgb, Fgnd.rgb, Fgnd.a);
-      }
-      Fgnd.a = pow (Fgnd.a, 0.1);
+   if (SwapSource) {
+      Fgnd = ReadPixel (B, xy2);
+      Bgnd = ReadPixel (F, xy1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (F, xy1);
+      Bgnd = ReadPixel (B, xy2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Bgnd = ReadPixel (B, xy2);
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (F, xy1) : ReadPixel (B, xy2);
 
-   if (Blended && SwapDir) {
-
-      if (Source > 0) {
-         float4 Fgnd = ReadPixel (F, xy1);
-
-         if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
-
-         Bgnd = lerp (Bgnd, Fgnd, Fgnd.a);
-      }
-   }
+   if (!Blended) { Bgnd.a = 1.0; }
 
    return Bgnd;
 }
@@ -175,28 +168,38 @@ float4 fn_main (sampler F, sampler B, sampler G, sampler S, float2 xy)
    float4 Bgnd = tex2D (B, xy);     // Incoming
    float4 maskBg, retval;
 
+   float4 grad  = tex2D (G, xy);                          // Gradient
+   float4 noise = tex2D (S, ((xy - 0.5) / pSize) + 0.5);  // Soft
+
+   float stars, level = saturate (((0.5 - grad.x) * 2) + noise);
+
    if (Blended) {
-      retval = Fgnd;
-      maskBg = SwapDir ? Fgnd : Bgnd;
+      if (ShowKey) {
+         retval = lerp (kTransparentBlack, Fgnd, Fgnd.a);
+         maskBg = kTransparentBlack;
+      }
+      else {
+         retval = lerp (Fgnd, Bgnd, level);
+
+         if (Sparkles) {
+            if (level > 0.5) level = 0.5 - level;
+
+            stars = saturate ((pow (level, 3.0) * 4.0) + level);
+            retval = lerp (retval, starColour, stars);
+         }
+
+         maskBg = Bgnd;
+         retval = lerp (maskBg, retval, Fgnd.a);
+      }
    }
    else {
       maskBg = Fgnd;
-      retval = Bgnd;
-   }
-
-   if (Fgnd.a > 0.0) {
-      float4 grad  = tex2D (G, xy);                          // Gradient
-      float4 noise = tex2D (S, ((xy - 0.5) / pSize) + 0.5);  // Soft
-
-      float level = saturate (((0.5 - grad.x) * 2) + noise);
-
       retval = lerp (Fgnd, Bgnd, level);
 
       if (Sparkles) {
          if (level > 0.5) level = 0.5 - level;
 
-         float stars = saturate ((pow (level, 3.0) * 4.0) + level);
-
+         stars = saturate ((pow (level, 3.0) * 4.0) + level);
          retval = lerp (retval, starColour, stars);
       }
    }
@@ -211,18 +214,37 @@ float4 fn_main (sampler F, sampler B, sampler G, sampler S, float2 xy)
 // technique Granulate Vertical
 
 DeclarePass (Fg_V)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_V)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Gradient_V)                  // Buffer_0
 {
-   float retval = lerp (0.0, 1.0, uv3.y);
+   float amount, direction;
 
-   if (TransDir) retval = 1.0 - retval;
+   if (Blended) {
+      if (SwapDir) {
+         amount = 1.0 - Amount;
+         direction = uv3.y;
+      }
+      else {
+         amount = Amount;
+         direction = 1.0 - uv3.y;
+      }
 
-   return saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0)).xxxx;
+      if (!TransDir) direction = 1.0 - direction;
+   }
+   else {
+      amount = Amount;
+      direction = TransDir ? 1.0 - uv3.y : uv3.y;
+   }
+
+   float retval = smoothstep (0.0, 1.0, direction);
+
+   retval = saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * amount))) + ((0.5 - amount) * 2.0));
+
+   return retval.xxxx;
 }
 
 DeclarePass (Noise_V)                     // Buffer_1
@@ -242,16 +264,35 @@ DeclareEntryPoint (Granulate_V)
 // technique Granulate Horizontal
 
 DeclarePass (Fg_H)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_H)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Gradient_H)
 {
-   float retval = TransDir ? smoothstep (0.0, 1.0, 1.0 - uv3.x) : smoothstep (0.0, 1.0, uv3.x);
+   float amount, direction;
 
-   retval = saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0));
+   if (Blended) {
+      if (SwapDir) {
+         amount = 1.0 - Amount;
+         direction = 1.0 - uv3.x;
+      }
+      else {
+         amount = Amount;
+         direction = uv3.x;
+      }
+
+      if (TransDir) direction = 1.0 - direction;
+   }
+   else {
+      amount = Amount;
+      direction = TransDir ? 1.0 - uv3.x : uv3.x;
+   }
+
+   float retval = smoothstep (0.0, 1.0, direction);
+
+   retval = saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * amount))) + ((0.5 - amount) * 2.0));
 
    return retval.xxxx;
 }
@@ -273,18 +314,30 @@ DeclareEntryPoint (Granulate_H)
 // technique Granulate Radial
 
 DeclarePass (Fg_R)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_R)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Gradient_R)
 {
-   float retval = abs (distance (uv3, 0.5.xx)) * SQRT_2;
+   float amount, retval = abs (distance (uv3, 0.5.xx)) * SQRT_2;
 
-   if (TransDir) retval = 1.0 - retval;
+   if (Blended) {
+      if (SwapDir) {
+         amount = 1.0 - Amount;
+         retval = 1.0 - retval;
+      }
+      else amount = Amount;
 
-   retval = saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * Amount))) + ((0.5 - Amount) * 2.0));
+      if (TransDir) retval = 1.0 - retval;
+   }
+   else {
+      amount = Amount;
+      if (TransDir) retval = 1.0 - retval;
+   }
+
+   retval = saturate ((5.0 * (((1.2 - gWidth) * retval) - ((1.0 - gWidth) * amount))) + ((0.5 - amount) * 2.0));
 
    return retval.xxxx;
 }
@@ -306,7 +359,7 @@ DeclareEntryPoint (Granulate_R)
 // technique Granulate Flat
 
 DeclarePass (Fg_F)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_F)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -326,14 +379,28 @@ DeclareEntryPoint (Granulate_F)
    float4 Bgnd = tex2D (Bg_F, uv3);
    float4 MaskBg, retval;
 
-   if (Blended && !SwapDir) { MaskBg = Bgnd; }
-   else MaskBg = Fgnd;
+   float amount;
+
+   if (Blended) {
+      if (ShowKey) {
+         retval = lerp (kTransparentBlack, Fgnd, Fgnd.a);
+
+         return lerp (kTransparentBlack, retval, tex2D (Mask, uv3).x);
+      }
+
+      amount = SwapDir ? 1.0 - Amount : Amount;
+      MaskBg = Bgnd;
+   }
+   else {
+      amount = Amount;
+      MaskBg = Fgnd;
+   }
 
    if (Fgnd.a > 0.0 ) {
       float noise  = tex2D (Blur_F, ((uv3 - 0.5) / pSize) + 0.5).x;
-      float amount = saturate (((Amount - 0.5) * 2.0) + noise);
       float stars;
 
+      amount = saturate (((amount - 0.5) * 2.0) + noise);
       retval = lerp (Fgnd, Bgnd, amount);
 
       if (amount > 0.5) amount = 0.5 - amount;

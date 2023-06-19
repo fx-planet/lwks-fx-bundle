@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-10
 // @Author jwrl
 // @Created 2017-08-25
 
@@ -13,6 +13,10 @@
 // Lightworks user effect CornerTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-10 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -43,10 +47,10 @@ DeclareIntParam (SetTechnique, "Transition", kNoGroup, 0, "Corner open|Corner cl
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -63,43 +67,36 @@ DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_initFg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   if (!Blended) return float4 ((ReadPixel (F, xy1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
-      }
-      else Bgnd = ReadPixel (B, xy2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (B, xy2);
+      Bgnd = ReadPixel (F, xy1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (F, xy1);
+      Bgnd = ReadPixel (B, xy2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (F, xy1) : ReadPixel (B, xy2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
-   else retval = ReadPixel (B, xy2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 float4 fn_trans (sampler V, float2 uv, bool mode)
@@ -127,7 +124,7 @@ float4 fn_trans (sampler V, float2 uv, bool mode)
 // technique Open
 
 DeclarePass (Fg_0)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_0)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -139,8 +136,10 @@ DeclareEntryPoint (Open)
    float4 maskBg, retval;
 
    if (Blended) {
+      if (ShowKey) { Bgnd = kTransparentBlack; }
+      else { Fgnd = fn_trans (Fg_0, uv3, SwapDir); }
+
       maskBg = Bgnd;
-      Fgnd = fn_trans (Fg_0, uv3, SwapDir);
    }
    else {
       maskBg = Fgnd;
@@ -157,7 +156,7 @@ DeclareEntryPoint (Open)
 // technique Shut
 
 DeclarePass (Fg_1)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_1)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -169,14 +168,16 @@ DeclareEntryPoint (Shut)
    float4 maskBg, retval;
 
    if (Blended) {
-      maskBg = Bgnd;
-      Fgnd = fn_trans (Fg_1, uv3, SwapDir);
+      if (ShowKey) { Bgnd = kTransparentBlack; }
+      else { Fgnd = fn_trans (Fg_1, uv3, SwapDir); }
+
       retval = lerp (Bgnd, Fgnd, Fgnd.a);
+      maskBg = Bgnd;
    }
    else {
-      maskBg = Fgnd;
       Bgnd = fn_trans (Bg_1, uv3, SHUT);
       retval = lerp (Fgnd, Bgnd, Bgnd.a);
+      maskBg = Fgnd;
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

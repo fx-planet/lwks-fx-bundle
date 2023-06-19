@@ -1,12 +1,12 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-19
 // @Author khaver
 // @Created 2016-10-19
 
 /**
  This is a delta mask or difference matte effect which  subtracts the background from the
  foreground to produce an image with transparency.  This can then be used with external
- blend or DVE effects in the same way as a title or image key.
+ blend or transform effects in the same way as a title or image key.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -15,6 +15,9 @@
 // Lightworks user effect DeltaMask.fx
 //
 // Version history:
+//
+// Updated 2023-06-19 jwrl.
+// Changed DVE reference to transform.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

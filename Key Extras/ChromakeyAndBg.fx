@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-19
 // @Author jwrl
 // @Created 2020-07-23
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
- some simple DVE adjustments added.  A means of generating an infinite cyclorama style
- background has also been added.  The colour of the background and its linearity can be
- adjusted to give a very realistic studio look.
+ some simple transform adjustments added.  A means of generating an infinite cyclorama
+ style background has also been added.  The colour of the background and its linearity can
+ be adjusted to give a very realistic studio look.
 
  The ChromaKey sections are based on work copyright (c) LWKS Software Ltd.  To allow full
  screen width of the background in all combinations of foreground and sequence this effect
@@ -21,6 +21,9 @@
 //
 // Version history:
 //
+// Updated 2023-06-19 jwrl.
+// Changed DVE reference to transform.
+//
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
 //
@@ -29,7 +32,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Chromakey and background", "Key", "Key Extras", "A chromakey effect with a simple DVE and cyclorama background generation.", kNoFlags);
+DeclareLightworksEffect ("Chromakey and background", "Key", "Key Extras", "A chromakey effect with a simple transform and cyclorama background generation.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -51,9 +54,9 @@ DeclareFloatParam (KeySoftAmount, "Key softness", "Key settings", kNoFlags, 0.5,
 DeclareFloatParam (RemoveSpill, "Remove spill", "Key settings", kNoFlags, 0.5, 0.0, 1.0);
 DeclareBoolParam (Reveal, "Reveal", "Key settings", false);
 
-DeclareFloatParam (CentreX, "DVE position", kNoGroup, "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.5, 1.5);
-DeclareFloatParam (CentreY, "DVE position", kNoGroup, "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.5, 1.5);
-DeclareFloatParam (CentreZ, "DVE position", kNoGroup, "SpecifiesPointZ", 0.0, -1.0, 1.0);
+DeclareFloatParam (CentreX, "Position", kNoGroup, "SpecifiesPointX|DisplayAsPercentage", 0.5, -1.5, 1.5);
+DeclareFloatParam (CentreY, "Position", kNoGroup, "SpecifiesPointY|DisplayAsPercentage", 0.5, -1.5, 1.5);
+DeclareFloatParam (CentreZ, "Position", kNoGroup, "SpecifiesPointZ", 0.0, -1.0, 1.0);
 
 DeclareFloatParam (CropLeft, "Top left", "Crop", "SpecifiesPointX", 0.0, 0.0, 1.0);
 DeclareFloatParam (CropTop, "Top left", "Crop", "SpecifiesPointY", 1.0, 0.0, 1.0);
@@ -130,7 +133,7 @@ float2 fixParams (out float L, out float T, out float R, out float B)
 //-----------------------------------------------------------------------------------------//
 
 //-----------------------------------------------------------------------------------------//
-// DVE
+// Transform
 //
 // This simple shader adjusts the cropping, position and scaling of the foreground image.
 // It is a new addition to the original Lightworks chromakey effect.
@@ -144,9 +147,9 @@ DeclarePass (DVEvid)
 
    float2 position = fixParams (Left, Top, Right, Bottom);
 
-   // Set up the scale factor, using the Z axis position.  Unlike the Lightworks 3D DVE
-   // the range isn't linear and operates smallest to largest.  Since it is intended to
-   // just fine tune position it does not cover the full range of the 3D DVE.
+   // Set up the scale factor, using the Z axis position.  Unlike the Lightworks transform 3D
+   // the range isn't linear and operates smallest to largest.  Since it is intended to just
+   // fine tune position it does not cover the full range of the transform 3D.
 
    float scale = pow (max ((CentreZ + 1.0) * 0.5, 0.0001) + 0.5, 4.0);
 
@@ -314,7 +317,7 @@ DeclarePass (FullKey)
 // Blend the foreground with the background using the key that was built earlier.
 // Apply spill suppression as we go.
 //
-// New: 1.  Original foreground sampler replaced with DVE version.
+// New: 1.  Original foreground sampler replaced with transform version.
 //      2.  Original background sampler replaced with generated version.
 //      3.  The invert key function which is pointless in this context has been removed.
 //-----------------------------------------------------------------------------------------//

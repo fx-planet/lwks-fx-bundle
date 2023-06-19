@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-09
 // @Author jwrl
 // @Created 2016-07-30
 
@@ -15,6 +15,10 @@
 // Lightworks user effect OpticalTrans.fx
 //
 // Version history:
+//
+// Updated 2023-06-09 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
 //
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
@@ -43,10 +47,10 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -64,41 +68,34 @@ DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 
 
 DeclarePass (Fgd)
 {
-   float4 Bgnd, Fgnd = ReadPixel (Fg, uv1);
+   if (!Blended) return float4 ((ReadPixel (Fg, uv1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (Bg, uv2);
-      }
-      else Bgnd = ReadPixel (Bg, uv2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (Bg, uv2);
+      Bgnd = ReadPixel (Fg, uv1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (Fg, uv1);
+      Bgnd = ReadPixel (Bg, uv2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 DeclarePass (Bgd)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (Fg, uv1) : ReadPixel (Bg, uv2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (Fg, uv1); }
-   else retval = ReadPixel (Bg, uv2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 DeclareEntryPoint (OpticalDissolve)
@@ -107,27 +104,27 @@ DeclareEntryPoint (OpticalDissolve)
    float4 Bgnd = tex2D (Bgd, uv3);
    float4 maskBg, retval;
 
-   float amount, alpha = Fgnd.a;
-
    if (Blended) {
-      amount = SwapDir ? 1.0 - Amount : Amount;
-      maskBg = Bgnd;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         float amount = SwapDir ? 1.0 - Amount : Amount;
+
+         retval = lerp (kTransparentBlack, Bgnd, pow (amount, 2.0));
+         retval += lerp (Fgnd, kTransparentBlack, amount);
+         retval.a = Fgnd.a;
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
-      amount = Amount;
+      retval = lerp (kTransparentBlack, Bgnd, pow (Amount, 2.0));
+      retval += lerp (Fgnd, kTransparentBlack, pow (Amount, 0.5));
       maskBg = Fgnd;
    }
-
-   float cAmount = sin (amount * PI) / 4.0;
-   float bAmount = cAmount / 2.0;
-   float aAmount = (1.0 - cos (amount * PI)) / 2.0;
-
-   retval = lerp (min (Fgnd, Bgnd), Bgnd, amount);
-   Fgnd = lerp (Fgnd, min (Fgnd, Bgnd), amount);
-   retval  = lerp (Fgnd, retval, aAmount);
-
-   cAmount += 1.0;
-   retval = lerp (Bgnd, saturate ((retval * cAmount) - bAmount.xxxx), alpha);
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);
 }

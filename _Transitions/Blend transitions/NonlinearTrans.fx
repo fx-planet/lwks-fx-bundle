@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-17
+// @Released 2023-06-11
 // @Author jwrl
 // @Created 2017-01-03
 
@@ -26,6 +26,10 @@
 //
 // Version history:
 //
+// Updated 2023-06-11 jwrl.
+// Added keyed foreground viewing to help set up delta key.
+// Added delta key swap to correct routing problems.
+//
 // Updated 2023-05-17 jwrl.
 // Header reformatted.
 //
@@ -51,16 +55,15 @@ DeclareMask;
 DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (SetTechnique, "Dissolve profile", kNoGroup, 0, "Non-additive mix|Ultra non-add|Trig curve|Quad curve");
-
 DeclareFloatParam (Strength, "Strength", kNoGroup, kNoFlags, 0.5, -1.0, 1.0);
 
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
 DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
-
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
-
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
+DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);
+DeclareBoolParam (SwapSource, "Swap sources", "Blend settings", false);
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -77,43 +80,36 @@ DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_keygen (sampler F, float2 xy1, sampler B, float2 xy2)
+float4 fn_initFg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 Bgnd, Fgnd = ReadPixel (F, xy1);
+   if (!Blended) return float4 ((ReadPixel (F, xy1)).rgb, 1.0);
 
-   if (Blended) {
-      if ((Source == 0) && SwapDir) {
-         Bgnd = Fgnd;
-         Fgnd = ReadPixel (B, xy2);
-      }
-      else Bgnd = ReadPixel (B, xy2);
+   float4 Fgnd, Bgnd;
 
-      if (Source == 0) {
-         Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb));
-         Fgnd.rgb *= Fgnd.a;
-      }
-      else if (Source == 1) {
-         Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0));
-         Fgnd.rgb /= Fgnd.a;
-      }
-
-      if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
+   if (SwapSource) {
+      Fgnd = ReadPixel (B, xy2);
+      Bgnd = ReadPixel (F, xy1);
    }
-   else Fgnd.a = 1.0;
+   else {
+      Fgnd = ReadPixel (F, xy1);
+      Bgnd = ReadPixel (B, xy2);
+   }
+
+   if (Source == 0) { Fgnd.a = smoothstep (0.0, KeyGain, distance (Bgnd.rgb, Fgnd.rgb)); }
+   else if (Source == 1) { Fgnd.a = pow (Fgnd.a, 0.375 + (KeyGain / 2.0)); }
+
+   if (Fgnd.a == 0.0) Fgnd.rgb = Fgnd.aaa;
 
    return Fgnd;
 }
 
 float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 {
-   float4 retval;
+   float4 Bgnd = (Blended && SwapSource) ? ReadPixel (F, xy1) : ReadPixel (B, xy2);
 
-   if (Blended && SwapDir && (Source == 0)) { retval = ReadPixel (F, xy1); }
-   else retval = ReadPixel (B, xy2);
+   if (!Blended) { Bgnd.a = 1.0; }
 
-   if (!Blended) retval.a = 1.0;
-
-   return retval;
+   return Bgnd;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -123,7 +119,7 @@ float4 fn_initBg (sampler F, float2 xy1, sampler B, float2 xy2)
 // Non-add
 
 DeclarePass (Fg_N)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_N)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -134,18 +130,28 @@ DeclareEntryPoint (NonAdd)
    float4 Bgnd = tex2D (Bg_N, uv3);
    float4 maskBg, retval;
 
-   float alpha, amount;
+   float amount;
 
    if (Blended) {
-      maskBg = Bgnd;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         float alpha = Fgnd.a;
 
-      alpha = Fgnd.a;
-      amount = SwapDir ? Amount : 1.0 - Amount;
+         amount = SwapDir ? Amount : 1.0 - Amount;
 
-      Fgnd.a *= (1.0 - abs (Amount - 0.5)) * 2.0;
-      Fgnd = lerp (kTransparentBlack, Fgnd, amount);
-      Fgnd = max (lerp (Bgnd, kTransparentBlack, amount), Fgnd);
-      retval = lerp (Bgnd, lerp (Bgnd, Fgnd, Fgnd.a), alpha);
+         Fgnd.a *= (1.0 - abs (Amount - 0.5)) * 2.0;
+         Fgnd = lerp (kTransparentBlack, Fgnd, amount);
+
+         retval = max (lerp (Bgnd, kTransparentBlack, amount), Fgnd);
+         retval.a = alpha;
+
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;
@@ -165,7 +171,7 @@ DeclareEntryPoint (NonAdd)
 // Ultra non-add
 
 DeclarePass (Fg_U)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_U)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -176,18 +182,26 @@ DeclareEntryPoint (NonAddUltra)
    float4 Bgnd = tex2D (Bg_U, uv3);
    float4 maskBg, retval;
 
-   float alpha, amount;
+   float amount;
 
    if (Blended) {
-      float alpha  = Fgnd.a;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         float alpha  = Fgnd.a;
 
-      amount = SwapDir ? Amount : 1.0 - Amount;
-      maskBg = Bgnd;
+         amount = SwapDir ? Amount : 1.0 - Amount;
 
-      Fgnd.a *= (1.0 - abs (Amount - 0.5)) * 2.0;
-      Fgnd = max (lerp (Bgnd, kTransparentBlack, amount), lerp (kTransparentBlack, Fgnd, amount));
+         Fgnd.a *= (1.0 - abs (amount - 0.5)) * 2.0;
+         retval = max (lerp (Bgnd, kTransparentBlack, amount), lerp (kTransparentBlack, Fgnd, amount));
+         retval.a = alpha;
 
-      retval = lerp (Bgnd, lerp (Bgnd, Fgnd, Fgnd.a), alpha);
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       amount = (1.0 - abs (Amount - 0.5)) * 2.0;
@@ -206,7 +220,7 @@ DeclareEntryPoint (NonAddUltra)
 // Trig curve
 
 DeclarePass (Fg_T)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_T)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -217,17 +231,28 @@ DeclareEntryPoint (Trig)
    float4 Bgnd = tex2D (Bg_T, uv3);
    float4 maskBg, retval;
 
-   float alpha  = Fgnd.a;
    float curve  = Strength < 0.0 ? Strength * 0.6666666667 : Strength;
    float amount = (1.0 + sin ((cos (Amount * PI)) * HALF_PI)) / 2.0;
 
    amount = lerp (Amount, 1.0 - amount, curve);
 
    if (Blended) {
-      if (!SwapDir) amount = 1.0 - amount;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         float alpha  = Fgnd.a;
 
-      maskBg = Bgnd;
-      retval = lerp (Bgnd, lerp (Bgnd, Fgnd, amount), alpha);
+         if (!SwapDir) amount = 1.0 - amount;
+
+         retval = lerp (Bgnd, Fgnd, amount);
+         retval.a = alpha;
+
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
       maskBg = Fgnd;
@@ -242,7 +267,7 @@ DeclareEntryPoint (Trig)
 // Quad curve
 
 DeclarePass (Fg_P)
-{ return fn_keygen (Fg, uv1, Bg, uv2); }
+{ return fn_initFg (Fg, uv1, Bg, uv2); }
 
 DeclarePass (Bg_P)
 { return fn_initBg (Fg, uv1, Bg, uv2); }
@@ -253,20 +278,31 @@ DeclareEntryPoint (Quad)
    float4 Bgnd = tex2D (Bg_P, uv3);
    float4 maskBg, retval;
 
-   float alpha  = Fgnd.a;
    float amount = Amount * Amount * (3.0 - (Amount * 2.0));
 
    amount = lerp (Amount, amount, Strength + 1.0);
 
    if (Blended) {
-      if (!SwapDir) amount = 1.0 - amount;
+      if (ShowKey) {
+         retval = Fgnd;
+         maskBg = kTransparentBlack;
+      }
+      else {
+         float alpha  = Fgnd.a;
 
-      maskBg = Bgnd;
-      retval = lerp (Bgnd, lerp (Bgnd, Fgnd, amount), alpha);
+         if (!SwapDir) amount = 1.0 - amount;
+
+         retval = lerp (Bgnd, Fgnd, amount);
+         retval.a = alpha;
+
+         maskBg = Bgnd;
+      }
+
+      retval = lerp (maskBg, retval, retval.a);
    }
    else {
-      maskBg = Fgnd;
       retval = lerp (Fgnd, Bgnd, amount);
+      maskBg = Fgnd;
    }
 
    return lerp (maskBg, retval, tex2D (Mask, uv3).x);

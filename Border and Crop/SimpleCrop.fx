@@ -1,15 +1,14 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-06-20
 // @Author jwrl
 // @Created 2017-03-23
 
 /**
  This is a quick simple cropping tool.  You can also use it to blend images without
- using a blend effect.  It provides a simple border and can be automatically cropped
- to the edges of the background.  If the foreground is smaller than the crop area
- the overflow is filled with the border colour.  With its extended alpha support you
- can also use it to crop and overlay two images with alpha channels over another
- background using an external blend effect.
+ using a blend effect.  It provides a simple border and if the foreground is smaller
+ than the crop area the overflow is filled with the border colour.  With its extended
+ alpha support you can also use it to crop and overlay two images with alpha channels
+ over another background using an external blend effect.
 
  Previously the "sense" of the effect could have been swapped so that background
  became foreground and vice versa.  With the ability to cycle inputs built in to
@@ -22,6 +21,9 @@
 // Lightworks user effect SimpleCrop.fx
 //
 // Version history:
+//
+// Updated 2023-06-20 jwrl.
+// Added masking.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -38,6 +40,8 @@ DeclareLightworksEffect ("Simple crop", "DVE", "Border and Crop", "A simple crop
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -79,8 +83,6 @@ DeclarePass (Fgd)
 
 DeclareEntryPoint (SimpleCrop)
 {
-   if (CropToBgd && IsOutOfBounds (uv2)) return kTransparentBlack;
-
    float2 brdrEdge = (Border * 0.05).xx;
 
    brdrEdge.y *= _OutputAspectRatio;
@@ -103,5 +105,8 @@ DeclareEntryPoint (SimpleCrop)
                : (AlphaMode == 1) ? Bgnd.a
                : (AlphaMode == 2) ? Fgnd.a : max (Bgnd.a, Fgnd.a);
 
-   return float4 (lerp (Bgnd, Fgnd, Fgnd.a).rgb, alpha);
+   float4 retval = float4 (lerp (Bgnd, Fgnd, Fgnd.a).rgb, alpha);
+
+   return lerp (Bgnd, retval, tex2D (Mask, uv1).x);
 }
+

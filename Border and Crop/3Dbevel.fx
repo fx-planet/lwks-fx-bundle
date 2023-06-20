@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-06-20
 // @Author jwrl
 // @Created 2020-09-14
 
@@ -13,8 +13,7 @@
 
  X-Y positioning of the border and its contents has been included, and simple scaling is
  available.  Since this is not intended as a comprehensive traqnsform effect replacement
- no X-Y scale factors nor rotation have been provided.  Finally, if desired the bevelled
- foreground can be automatically cropped to fit inside the background boundaries.
+ no X-Y scale factors nor rotation have been provided.
 
  Any alpha information in the foreground is discarded by this effect.  This means that
  wherever the foreground and bevelled border appears will be opaque black.  The
@@ -27,6 +26,9 @@
 // Lightworks user effect 3Dbevel.fx
 //
 // Version history:
+//
+// Updated 2023-06-20 jwrl.
+// Added masking and removed background generated cropping.
 //
 // Updated 2023-06-19 jwrl.
 // Changed DVE references to transform.
@@ -46,6 +48,8 @@ DeclareLightworksEffect ("3D bevelled crop", "DVE", "Border and Crop", "This pro
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -68,8 +72,6 @@ DeclareFloatParam (Bstrength, "Strength", "Bevel settings", kNoFlags, 0.5, 0.0, 
 DeclareFloatParam (Intensity, "Light level", "Bevel settings", kNoFlags, 0.45, 0.0, 1.0);
 DeclareFloatParam (Angle, "Light angle", "Bevel settings", kNoFlags, 80.0, -180.0, 180.0);
 DeclareColourParam (Light, "Colour", "Bevel settings", kNoFlags, 1.0, 0.67, 0.0, 1.0);
-
-DeclareBoolParam (CropToBgd, "Crop foreground to background", kNoGroup, false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -201,12 +203,12 @@ DeclarePass (Bvl)
 
 DeclareEntryPoint (Bevel3D)
 {
-   if (CropToBgd && IsOutOfBounds (uv2)) return kTransparentBlack;
-
    float2 xy = ((uv3 - float2 (PosX, 1.0 - PosY)) / max (1e-6, Scale)) + 0.5.xx;
 
    float4 Fgnd = tex2D (Bvl, xy);
+   float4 Bgnd = ReadPixel (Bg, uv2);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   return lerp (ReadPixel (Bg, uv2), Fgnd, Fgnd.a);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 

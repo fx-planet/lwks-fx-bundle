@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-06-20
 // @Author jwrl
 // @Created 2019-11-06
 
@@ -45,6 +45,8 @@ DeclareLightworksEffect ("Bevel edged crop", "DVE", "Border and Crop", "This pro
 
 DeclareInputs (Fg, Bg);
 
+DeclareMask;
+
 //-----------------------------------------------------------------------------------------//
 // Parameters
 //-----------------------------------------------------------------------------------------//
@@ -71,8 +73,6 @@ DeclareFloatParam (Strength, "Strength", "Drop shadow", kNoFlags, 0.25, 0.0, 1.0
 DeclareFloatParam (ShadowX, "Offset", "Drop shadow", "SpecifiesPointX", -0.25, -1.0, 1.0);
 DeclareFloatParam (ShadowY, "Offset", "Drop shadow", "SpecifiesPointY", -0.25, -1.0, 1.0);
 DeclareColourParam (Shade, "Colour", "Drop shadow", kNoFlags, 0.125, 0.2, 0.25, 1.0);
-
-DeclareBoolParam (CropToBgd, "Crop foreground to background", kNoGroup, false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -255,11 +255,7 @@ DeclarePass (Bvl)
 
 DeclareEntryPoint (BevelCrop)
 {
-   // First we check to see if we're outside the background and masked and quit if so
-
-   if (CropToBgd && IsOutOfBounds (uv2)) return kTransparentBlack;
-
-   // Now we calculate the position offset and and scale and put it in xy1.  The
+   // First we calculate the position offset and and scale and put it in xy1.  The
    // drop shadow is also calculated and placed in xy2.  While it would be possible
    // to use the bevel angle parameter to do this, it's much simpler this way.
 
@@ -281,8 +277,11 @@ DeclareEntryPoint (BevelCrop)
 
    Bgnd.rgb = lerp (Bgnd.rgb, Shade.rgb, alpha);
 
-   // Finally the bevelled cropped image is overlaid and the whole thing is returned.
+   // Finally the bevelled cropped image is overlaid and the whole thing is returned
+   // with masking.
 
-   return lerp (Bgnd, Fgnd, Fgnd.a);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
+
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 

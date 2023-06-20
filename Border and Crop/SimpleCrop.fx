@@ -58,8 +58,6 @@ DeclareFloatParam (Border, "Thickness", "Border", kNoFlags, 0.1, 0.0, 1.0);
 
 DeclareColourParam (Colour, "Colour", "Border", kNoFlags, 1.0, 1.0, 1.0, 1.0);
 
-DeclareBoolParam (CropToBgd, "Crop foreground to background", kNoGroup, false);
-
 DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//

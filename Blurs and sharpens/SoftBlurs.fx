@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-05-20
 // @Author jwrl
 // @Created 2017-06-01
 
@@ -15,6 +15,9 @@
 // Lightworks user effect SoftBlurs.fx
 //
 // Version history:
+//
+// Updated 2023-05-20 jwrl.
+// Minor user interface change.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -40,7 +43,7 @@ DeclareMask;
 
 DeclareIntParam (SetTechnique, "Blur type", kNoGroup, 0, "Foggy rays|Motion blur|Spin|Zoom blur);
 
-DeclareFloatParam (Strength, "Blur strength", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (Strength, "Opacity", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 DeclareFloatParam (Angle, "Blur rotation", kNoGroup, kNoFlags, 0.0, -180.0, 180.0);
 DeclareFloatParam (Aspect, "Aspect ratio", kNoGroup, kNoFlags, 0.0, -1.0, 1.0);
 
@@ -354,3 +357,4 @@ DeclareEntryPoint (SoftZoomBlur)
 
    return lerp (tex2D (Inp, uv1), retval, tex2D (Mask, uv1).x);
 }
+

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-06-21
 // @Author schrauber
 // @Created 2020-10-23
 
@@ -19,6 +19,9 @@
 // Lightworks user effect  Liquify.fx
 //
 // Version history:
+//
+// Updated 2023-06-21 jwrl.
+// Changed "Distortion Direction" to "Direction" to prevent truncation.
 //
 // Updated 2023-06-19 jwrl.
 // Changed DVE reference to transform.
@@ -52,8 +55,8 @@ DeclareFloatParam (Soft, "Edge softness", kNoGroup, "DisplayAsPercentage", 0.0, 
 DeclareFloatParam (Xcentre, "Effect centre", kNoGroup, "SpecifiesPointX", 0.9, 0.0, 1.0);
 DeclareFloatParam (Ycentre, "Effect centre", kNoGroup, "SpecifiesPointY", 0.1, 0.0, 1.0);
 
-DeclareFloatParam (Xdistort, "Distortion Direction", kNoGroup, "SpecifiesPointX", 0.75, 0.0, 1.0);
-DeclareFloatParam (Ydistort, "Distortion Direction", kNoGroup, "SpecifiesPointY", 0.6, 0.0, 1.0);
+DeclareFloatParam (Xdistort, "Direction", kNoGroup, "SpecifiesPointX", 0.75, 0.0, 1.0);
+DeclareFloatParam (Ydistort, "Direction", kNoGroup, "SpecifiesPointY", 0.6, 0.0, 1.0);
 
 DeclareIntParam (modeAlpha, "Background", kNoGroup, 1, "Mirrored foreground|Opaque black|Transparent");
 

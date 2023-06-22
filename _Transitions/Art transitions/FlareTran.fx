@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-22
 // @Author khaver
 // @Created 2014-08-30
 
@@ -17,6 +17,9 @@
 // Lightworks user effect FlareTran.fx
 //
 // Version history:
+//
+// Updated 2023-06-22 jwrl.
+// Removed needless input swap.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -42,8 +45,6 @@ DeclareMask;
 
 DeclareFloatParamAnimated (Amount, "Progress", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareBoolParam (Swap, "Swap target track", kNoGroup, false);
-
 DeclareFloatParam (CentreX, "Origin", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (CentreY, "Origin", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
@@ -68,7 +69,7 @@ DeclarePass (Flare)
 {
    float flare = 1.0 - abs ((Amount * 2.0) - 1.0);
 
-   float4 Color = (Swap) ? tex2D (Bgd, uv3) : tex2D (Fgd, uv3);
+   float4 Color = tex2D (Fgd, uv3);
 
    if (Color.r < 1.0 - flare) Color.r = 0.0;
    if (Color.g < 1.0 - flare) Color.g = 0.0;

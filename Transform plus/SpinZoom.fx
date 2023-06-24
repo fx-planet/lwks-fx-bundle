@@ -62,7 +62,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Spin Zoom", "DVE", "Transform plus", "Has some of the same functions as the 3D DVE, but the settings are much easier to use", kNoFlags);
+DeclareLightworksEffect ("Spin Zoom", "DVE", "Transform plus", "Has some of the same functions as transform 3D, but the settings are much easier to use", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

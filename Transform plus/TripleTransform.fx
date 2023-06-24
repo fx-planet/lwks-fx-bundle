@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-06-24
 // @Author jwrl
 // @Created 2017-06-06
 
@@ -12,9 +12,7 @@
  The master DVE takes the cropped, bordered output of the transformed background and
  foreground as its input.  This means that it's possible to scale the background and
  foreground independently, then adjust the position and size of the cropped foreground
- in the master transform.  Also available is the ability to crop the output of the
- effect to sit inside the boundaries of the background video.  This means that if your
- background is letterboxed, the effect can be too.
+ in the master transform.
 
  Scaling settings follow a square law, which means that although the range covered is
  still 0 to 10, the settings range from 0 to just over 3.  This has two advantages.
@@ -30,6 +28,9 @@
 //
 // Version history:
 //
+// Updated 2023-06-24 jwrl.
+// Changed foreground autocrop to masking.
+//
 // Updated 2023-06-19 jwrl.
 // Changed DVE references to transform.
 // Changed title from "Triple DVE" to "Triple transform"
@@ -44,13 +45,15 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Triple transform", "DVE", "Transform plus", "Foreground, background and the overall effect each have independent DVE adjustment.", CanSize);
+DeclareLightworksEffect ("Triple transform", "DVE", "Transform plus", "Foreground, background and the overall effect each have independent transformation.", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -90,8 +93,6 @@ DeclareFloatParam (PosY_2, "Position", "Background", "SpecifiesPointY|DisplayAsP
 DeclareFloatParam (Scale_2, "Master scale", "Background", kNoFlags, 1.0, 0.0, 3.16227766);
 DeclareFloatParam (ScaleX_2, "Scale X", "Background", kNoFlags, 1.0, 0.0, 3.16227766);
 DeclareFloatParam (ScaleY_2, "Scale Y", "Background", kNoFlags, 1.0, 0.0, 3.16227766);
-
-DeclareIntParam (Blanking, "Crop image to background", kNoGroup, 0, "No|Yes");
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -154,14 +155,14 @@ DeclarePass (Msk)
 
    float scope = distance (XY, 0.0.xx);
 
-   float4 Mask = kTransparentBlack;
+   float4 MaskIt = kTransparentBlack;
 
    if (all (xy < outer_1)) {
-      Mask.r = min (1.0, min ((outer_1.y - xy.y) / F_scale.y, (outer_1.x - xy.x) / F_scale.x));
+      MaskIt.r = min (1.0, min ((outer_1.y - xy.y) / F_scale.y, (outer_1.x - xy.x) / F_scale.x));
 
       if (all (xy >= inner)) {
-         if (scope < radius_1) { Mask.r = min (1.0, (radius_1 - scope) / F_scale.x); }
-         else Mask.r = 0.0;
+         if (scope < radius_1) { MaskIt.r = min (1.0, (radius_1 - scope) / F_scale.x); }
+         else MaskIt.r = 0.0;
       }
    }
 
@@ -171,25 +172,25 @@ DeclarePass (Msk)
    adjust   = sin (min (1.0, CropRadius * 20.0) * HALF_PI);
 
    if (all (xy < outer_2)) {
-      Mask.g = min (1.0, min ((outer_0.y - xy.y) / border.y, (outer_0.x - xy.x) / border.x));
-      Mask.b = min (1.0, min ((outer_2.y - xy.y) / F_scale.y, (outer_2.x - xy.x) / F_scale.x));
-      Mask.a = min (1.0, min ((outer_2.y - xy.y) / S_scale.y, (outer_2.x - xy.x) / S_scale.x));
+      MaskIt.g = min (1.0, min ((outer_0.y - xy.y) / border.y, (outer_0.x - xy.x) / border.x));
+      MaskIt.b = min (1.0, min ((outer_2.y - xy.y) / F_scale.y, (outer_2.x - xy.x) / F_scale.x));
+      MaskIt.a = min (1.0, min ((outer_2.y - xy.y) / S_scale.y, (outer_2.x - xy.x) / S_scale.x));
 
       if (all (xy >= inner)) {
          if (scope < radius_2) {
-            Mask.g = lerp (Mask.g, min (1.0, (radius_0 - scope) / border.x), adjust);
-            Mask.b = lerp (Mask.b, min (1.0, (radius_2 - scope) / F_scale.x), adjust);
-            Mask.a = lerp (Mask.a, min (1.0, (radius_2 - scope) / S_scale.x), adjust);
+            MaskIt.g = lerp (MaskIt.g, min (1.0, (radius_0 - scope) / border.x), adjust);
+            MaskIt.b = lerp (MaskIt.b, min (1.0, (radius_2 - scope) / F_scale.x), adjust);
+            MaskIt.a = lerp (MaskIt.a, min (1.0, (radius_2 - scope) / S_scale.x), adjust);
          }
-         else Mask.gba = lerp (Mask.gba, 0.0.xxx, adjust);
+         else MaskIt.gba = lerp (MaskIt.gba, 0.0.xxx, adjust);
       }
    }
 
    adjust  = sin (min (1.0, BorderWidth * 10.0) * HALF_PI);
-   Mask.gb = lerp (0.0.xx, Mask.gb, adjust);
-   Mask.a  = lerp (0.0, Mask.a, Shadow * TRANSPARENCY);
+   MaskIt.gb = lerp (0.0.xx, MaskIt.gb, adjust);
+   MaskIt.a  = lerp (0.0, MaskIt.a, Shadow * TRANSPARENCY);
 
-   return Mask;
+   return MaskIt;
 }
 
 DeclareEntryPoint (TripleDVE)
@@ -206,15 +207,15 @@ DeclareEntryPoint (TripleDVE)
 
    float4 Fgnd = ReadPixel (Fgd, xy1);
    float4 Bgnd = ReadPixel (Bgd, xy2);
-   float4 Mask = ReadPixel (Msk, xy3);
+   float4 MaskIt = ReadPixel (Msk, xy3);
 
    float3 Base = IsOutOfBounds (xy4) ? Bgnd.rgb : Bgnd.rgb * (1.0 - ReadPixel (Msk, xy4).w);
 
-   float4 Colour = lerp (BorderColour_2, BorderColour_1, Mask.y);
-   float4 retval = lerp (float4 (Base, Bgnd.a), Colour, Mask.z);
+   float4 Colour = lerp (BorderColour_2, BorderColour_1, MaskIt.y);
+   float4 retval = lerp (float4 (Base, Bgnd.a), Colour, MaskIt.z);
 
-   retval = lerp (retval, Fgnd, Mask.x);
+   retval = lerp (retval, Fgnd, MaskIt.x);
 
-   return Blanking && (Bgnd.a == 0.0) ? kTransparentBlack : lerp (Bgnd, retval, Amt_3);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x * Amt_3);
 }
 

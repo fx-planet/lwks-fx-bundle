@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-06-24
 // @Author jwrl
 // @Created 2018-11-14
 
@@ -13,8 +13,7 @@
  transform adjusts the size and position of the foreground inside the frame.
 
  There is actually a third transform of sorts that adjusts the size and offset of the
- border texture.  This is extremely rudimentary though.  Also LW masking hasn't been
- included because it was impossible to do that and still control the edges of the frame.
+ border texture.  This is extremely rudimentary though.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -23,6 +22,9 @@
 // Lightworks user effect FramedTransform.fx
 //
 // Version history:
+//
+// Updated 2023-06-24 jwrl.
+// Changed foreground autocrop to masking.
 //
 // Updated 2023-06-19 jwrl.
 // Changed DVE references to transform.
@@ -44,6 +46,8 @@ DeclareLightworksEffect ("Framed transform", "DVE", "Transform plus", "Creates a
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg, Tx);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -79,8 +83,6 @@ DeclareFloatParam (ShadowSoft, "Softness", "Shadow", kNoFlags, 0.2, 0.0, 1.0);
 DeclareFloatParam (ShadowAngle, "Angle", "Shadow", kNoFlags, 45.0, -180.0, 180.0);
 DeclareFloatParam (ShadowOffset, "Offset", "Shadow", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (ShadowDistance, "Distance", "Shadow", kNoFlags, 0.0, 0.0, 1.0);
-
-DeclareBoolParam (CropToBgd, "Crop to background", kNoGroup, false);
 
 DeclareFloatParam (_OutputAspectRatio);
 
@@ -194,9 +196,9 @@ DeclareEntryPoint (FramedTransform)
    xy2  = float2 ((xy0.x * xy2.y / _OutputAspectRatio) + (xy0.y * xy2.x), temp);
    xy2  = ((xy1 - xy2 - CENTRE) * (shadow + 1.0) / ((ShadowSoft * 0.05) + 1.0)) + CENTRE;
 
-   float4 Mask = ReadPixel (CropMask, xy3);
+   float4 MaskIt = ReadPixel (CropMask, xy3);
 
-   Mask.z = IsOutOfBounds (xy2) ? 0.0 : tex2D (CropMask, xy2).z;
+   MaskIt.z = IsOutOfBounds (xy2) ? 0.0 : tex2D (CropMask, xy2).z;
 
    scale = VideoScale < 0.0001 ? 10000.0 : 1.0 / VideoScale;
    xy1   = (CENTRE + ((xy1 - CENTRE) * scale)) - (float2 (VideoPosX, -VideoPosY) * 2.0);
@@ -206,17 +208,17 @@ DeclareEntryPoint (FramedTransform)
    float4 Fgnd = BdrPixel (Fgd, xy1);
    float4 Bgnd = ReadPixel (Bg, uv2);
    float4 frame = GetMirror (Texture, xy3, uv4);
-   float4 retval = lerp (Bgnd, BLACK, Mask.z * ShadowOpacity);
+   float4 retval = lerp (Bgnd, BLACK, MaskIt.z * ShadowOpacity);
 
-   float alpha_O = ((2.0 * Mask.y) - 1.0);
+   float alpha_O = ((2.0 * MaskIt.y) - 1.0);
    float alpha_I = max (0.0, -alpha_O) * abs (BorderInner);
 
    alpha_O = max (0.0, alpha_O) * abs (BorderOuter);
    frame = BorderOuter > 0.0 ? lerp (frame, WHITE, alpha_O) : lerp (frame, BLACK, alpha_O);
    frame = BorderInner > 0.0 ? lerp (frame, WHITE, alpha_I) : lerp (frame, BLACK, alpha_I);
-   retval = lerp (retval, frame, Mask.w);
-   retval = lerp (retval, Fgnd, Mask.x);
+   retval = lerp (retval, frame, MaskIt.w);
+   retval = lerp (retval, Fgnd, MaskIt.x);
 
-   return CropToBgd && IsOutOfBounds (uv2) ? kTransparentBlack : lerp (Bgnd, retval, Opacity);
+   return lerp (Bgnd, retval, tex2D (Mask, uv4).x * Opacity);
 }
 

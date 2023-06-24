@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-06-24
 // @Author jwrl
 // @Created 2017-04-27
 
@@ -17,8 +17,7 @@
 
  Dropped from this version is the ability to display multiple images, which wasn't
  really consistent with the look that we were trying to achieve.  Replacing it is a
- command to crop the image to the background when that doesn't match the sequence
- size or aspect ratio.
+ command to mask the image using the LW masking tool.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -27,6 +26,9 @@
 // Lightworks user effect ArtDecoTransform.fx
 //
 // Version history:
+//
+// Updated 2023-06-24 jwrl.
+// Changed foreground autocrop to masking.
 //
 // Updated 2023-06-19 jwrl.
 // Changed DVE references to transform.
@@ -48,6 +50,8 @@ DeclareLightworksEffect ("Art Deco transform", "DVE", "Transform plus", "Art Dec
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -82,8 +86,6 @@ DeclareColourParam (Colour, "Border colour", kNoGroup, kNoFlags, 1.0, 1.0, 1.0);
 
 DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (Background, "Background", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
-
-DeclareIntParam (Blanking, "Crop foreground to background", kNoGroup, 0, "No|Yes");
 
 DeclareIntParam (_FgOrientation);
 
@@ -237,10 +239,9 @@ DeclareEntryPoint (ArtDecoTransform)
       }
    }
 
-   if (Blanking && IsOutOfBounds (uv2)) Fgnd = kTransparentBlack;
-
    float4 Bgnd = lerp (kTransparentBlack, ReadPixel (Bg, uv2), Background);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
 
-   return lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 

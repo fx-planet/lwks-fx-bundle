@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-06-24
 // @Author jwrl
 // @Created 2020-11-29
 
@@ -34,6 +34,9 @@
 //
 // Version history:
 //
+// Updated 2023-06-24 jwrl.
+// Changed foreground autocrop to masking.
+//
 // Updated 2023-06-19 jwrl.
 // Changed DVE references to transform.
 // Changed title from "2D DVE with repeats" to "Repeated transform"
@@ -47,13 +50,15 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Repeated transform", "DVE", "Transform plus", "A 2D DVE that can duplicate the foreground image as you zoom out", "ScaleAware|HasMinOutputSize");
+DeclareLightworksEffect ("Repeated transform", "DVE", "Transform plus", "A transform that can duplicate the foreground image as you zoom out", "ScaleAware|HasMinOutputSize");
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
 //-----------------------------------------------------------------------------------------//
 
 DeclareInputs (Fg, Bg);
+
+DeclareMask;
 
 //-----------------------------------------------------------------------------------------//
 // Parameters
@@ -80,7 +85,6 @@ DeclareIntParam (OuterBorder, "Border outside foreground", "Border", 1, "No|Yes"
 
 DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (Background, "Background", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
-DeclareIntParam (Blanking, "Crop foreground to background", kNoGroup, 0, "No|Yes");
 
 DeclareIntParam (_FgOrientation);
 
@@ -237,15 +241,14 @@ DeclareEntryPoint (RepeatTransform)
       xy1 = xy2;
    }
 
-   // The value in xy1 is now used to index into the foreground, which is cropped
-   // to transparent black outside background bounds if required.  The background
-   // is also recovered and faded if necessary.
+   // The value in xy1 is now used to index into the foreground.  The background
+   // is also recovered and faded if necessary.  The duplicated foreground is
+   // finally blended with the background.
 
-   float4 Fgnd = Blanking && IsOutOfBounds (uv2) ? kTransparentBlack : ReadPixel (Crop, xy1);
+   float4 Fgnd = ReadPixel (Crop, xy1);
    float4 Bgnd = lerp (kTransparentBlack, ReadPixel (Bg, uv2), Background);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
 
-   // The duplicated foreground is finally blended with the background.
-
-   return lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-06-24
 // @Author Gary Hango (khaver)
 // @Created 2012-12-04
 
@@ -33,6 +33,9 @@
 // Lightworks user effect CameraShake.fx
 //
 // Version history:
+//
+// Updated 2023-06-24 jwrl.
+// Corrected a grouping bug.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -84,8 +87,8 @@ DeclareBoolParam (VSmooth, "Smooth", "Vertical", false);
 DeclareFloatParam (v1x, "V-Start", "Vertical", "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (v1y, "V-Start", "Vertical", "SpecifiesPointY", 0.9, 0.0, 1.0);
 DeclareFloatParam (v2x, "V-End", "Vertical", "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (v2y, "V-End", "Vertical", "SpecifiesPointY", 0.1, 0.0, 1.0);
 
-DeclareFloatParam (v2y, "V-End", "Rotation", "SpecifiesPointY", 0.1, 0.0, 1.0);
 DeclareFloatParam (RBias, "Bias", "Rotation", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (RStrength, "Strength", "Rotation", kNoFlags, 0.0, 0.0, 1.0);
 

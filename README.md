@@ -177,8 +177,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
 |Color halftone                |ColorHalftone.fx        |Emulates the dot pattern of a colour half-tone print image                    |
-|Dot screen                    |DotScreen.fx            |An emulation of the dot pattern of a black and white half-tone print image    |
-|Halftone                      |Halftone.fx             |Simulates the dot pattern used in a black and white half-tone print image     |
+|Dot screen                    |DotScreen.fx            |Simulates the dot pattern used in a black and white half-tone print image     |
 |Manga pattern                 |MangaPattern.fx         |Simulates the star pattern and hard contours of Manga half-tone images        |
 
 ## CATEGORY FOLDER: Repair tools

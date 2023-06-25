@@ -1,4 +1,4 @@
-# Lightworks user Fx library, June 19, 2023.
+# Lightworks user Fx library, June 25, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -236,7 +236,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |Expand 16-235 to 0-255        |Expand_16_235.fx        |Expands legal video levels to full gamut RGB                                  |
 |Exposure leveller             |ExposeLevel.fx          |This corrects the levels of shots where the exposure varies over time         |
 |Frame lock                    |FrameLock.fx            |Locks the frame size and aspect ratio of the image to that of the sequence    |
-|Safe area                     |SafeArea.fx             |This effect is probably edundant but may be useful for viewfinder simulations |
 |Show highs and lows           |ShowHiLo.fx             |This effect flashes blacks and whites that exceed preset levels               |
 |Shrink 0-255 to 16-235        |Shrink_16_235.fx        |Shrinks full gamut RGB signals to broadcast legal video                       |
 |Tenderizer                    |Tenderizer.fx           |Converts 8 bit video to 10 bit video using intermediate spline interpolation  |

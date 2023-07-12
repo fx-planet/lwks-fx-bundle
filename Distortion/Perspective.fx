@@ -1,11 +1,11 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-07-12
 // @Author windsturm
 // @OriginalAuthor "Evan Wallace"
-// @Created 2017-05-03
+// @Created 2012-08-14
 
 /**
- This effect warps one rectanglur area to another with a perspective transform.  It can be
+ This effect warps one rectangular area to another with a perspective transform.  It can be
  used to make a 2D image look 3D or to flatten a 2D image captured in a 3D environment.
 
  With current resolution independence, the image wrap display will only wrap to the edges
@@ -51,6 +51,9 @@ THE SOFTWARE.
 //-----------------------------------------------------------------------------------------//
 //
 // Version history:
+//
+// Updated 2023-07-12 jwrl.
+// Corrected creation date.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-07-13
 // @Author brdloush
-// @Created 2013-02-08
+// @Created 2012-06-10
 
 /**
  Nice effect that can be used for getting rid of heavy fish-eye distortion when shooting
@@ -13,7 +13,7 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect CubicLensDistortion.fx 
 //
-// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by François Tarlier
+// Ported & ripped by Brdloush, based on ft-CubicLensDistortion effect by FranÃ§ois Tarlier
 //
 // Following settings worked nicely:
 // - Comp Size - X: 100%
@@ -25,7 +25,7 @@
 // Feel free to share/modify or implement all the functions of original
 // "ft-CubicLensDistortion".
 //
-// Pixel Bender shader written by François Tarlier
+// Pixel Bender shader written by FranÃ§ois Tarlier
 // http://www.francois-tarlier.com/blog/index.php/2010/03/update-cubic-lens-distortion-pixel-bender-shader-for-ae-with-scale-chroamtic-aberration/
 //     
 // Original Lens Distortion Algorithm from SSontech (Syntheyes)
@@ -35,7 +35,7 @@
 //     u' = f*u
 //     v' = f*v
 //
-// Copyright (c) 2010 François Tarlier
+// Copyright (c) 2010 FranÃ§ois Tarlier
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in the
 // Software without restriction, including without limitation the rights to use, copy,
@@ -56,6 +56,9 @@
 //-----------------------------------------------------------------------------------------//
 //
 // Version history:
+//
+// Updated 2023-07-13 jwrl.
+// Corrected creation date.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

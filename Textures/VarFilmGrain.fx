@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-07-13
 // @Author khaver
-// @Created 2017-05-05
+// @Created 2011-05-12
 
 /**
  Author's note:  This effect is based on my earlier Grain (Variable) effect.  This effect
@@ -27,6 +27,9 @@
 // Lightworks user effect VarFilmGrain.fx
 //
 // Version history:
+//
+// Updated 2023-07-13 jwrl.
+// Corrected creation date.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

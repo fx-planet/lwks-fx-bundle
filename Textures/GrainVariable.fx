@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-07-13
 // @Author khaver
-// @Created 2011-04-22
+// @Created 2011-05-05
 
 /**
  This effect is an extended flexible means of adding grain to an image.  As well as
@@ -17,6 +17,9 @@
 // Lightworks user effect GrainVariable.fx
 //
 // Version history:
+//
+// Updated 2023-07-13 jwrl.
+// Corrected creation date.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

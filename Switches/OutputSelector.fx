@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-07-13
 // @Author baopao
-// @Created 2014-02-06
+// @Created 2014-02-02
 
 /**
  This effect is a simple device to select from up to four different outputs.  It was designed
@@ -17,6 +17,9 @@
 // Lightworks user effect OutputSelector.fx
 //
 // Version history:
+//
+// Updated 2023-07-13 jwrl.
+// Corrected creation date.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

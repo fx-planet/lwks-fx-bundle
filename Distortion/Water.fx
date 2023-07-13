@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-07-13
 // @Author khaver
-// @Created 2014-11-20
+// @Created 2011-04-21
 
 /**
  Water makes waves as well as refraction, and provides X and Y adjustment of the
@@ -14,6 +14,9 @@
 // Lightworks user effect Water.fx
 //
 // Version history:
+//
+// Updated 2023-07-13 jwrl.
+// Corrected creation date.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.

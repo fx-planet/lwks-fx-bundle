@@ -11,9 +11,9 @@
  necessary the distorted image can also be masked to fit it into a defined area of
  a much larger image.
 
- With current resolution independence, the image wrap display will only wrap to the edges
- of the undistorted image.  If the aspect ratio of the input video is such that it doesn't
- fill the frame, neither will the wrapped image.
+ This effect is similar to the Perspective effect, but includes the ability to blend
+ the distorted image over background media.  The blended image can be faded in and
+ out.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */

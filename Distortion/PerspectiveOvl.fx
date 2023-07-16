@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-07-15
+// @Released 2023-07-16
 // @Author windsturm
 // @Author jwrl
 // @OriginalAuthor "Evan Wallace"
@@ -45,6 +45,9 @@
 //-----------------------------------------------------------------------------------------//
 //
 // This modified version history:
+//
+// Updated 2023-07-16 jwrl.
+// General code cleanup.
 //
 // Created 2023-07-15 by jwrl from windsturm's original effect.
 //-----------------------------------------------------------------------------------------//

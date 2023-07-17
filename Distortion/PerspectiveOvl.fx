@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-07-16
+// @Released 2023-07-17
 // @Author windsturm
 // @Author jwrl
 // @OriginalAuthor "Evan Wallace"
@@ -9,11 +9,13 @@
  This effect warps a 2D image to a 3D area to give it perspective.  It does this by
  either dragging the corners of the image or by manually adjusting the settings.  If
  necessary the distorted image can also be masked to fit it into a defined area of
- a much larger image.
+ a much larger image.  It's similar to the Perspective effect, but is much simpler
+ to set up.
 
- This effect is similar to the Perspective effect, but includes the ability to blend
- the distorted image over background media.  The blended image can be faded in and
- out.
+ It also includes the ability to blend the distorted image over background media.
+ To do this it provides a small group of blend modes to help manage reflections
+ and shadows.  In those modes the mix amount increases to 100% of the blend image
+ at the 50% amount setting, then dissolves to normal overlay at the 100% point.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -46,15 +48,15 @@
 //
 // This modified version history:
 //
-// Updated 2023-07-16 jwrl.
-// General code cleanup.
+// Updated 2023-07-17 jwrl.
+// Added blend modes.
 //
 // Created 2023-07-15 by jwrl from windsturm's original effect.
 //-----------------------------------------------------------------------------------------//
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Perspective overlay", "DVE", "Distortion", "Uses a 3D transform to give perspective to a 2D shape", CanSize);
+DeclareLightworksEffect ("Perspective overlay", "DVE", "Distortion", "Uses a 3D transform to give a blended perspective to a 2D shape", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -83,6 +85,21 @@ DeclareFloatParam (BRx, "Bottom right", "Corner pins", "SpecifiesPointX", 0.9, 0
 DeclareFloatParam (BRy, "Bottom right", "Corner pins", "SpecifiesPointY", 0.1, 0.0, 1.0);
 
 DeclareBoolParam (ShowInp, "View source", kNoGroup, false);
+
+DeclareIntParam (BlendMode, "Blend mode", kNoGroup, 0, "Normal|____________________|Screen|Add|Darken|Multiply");
+
+//-----------------------------------------------------------------------------------------//
+// Definitions and declarations
+//-----------------------------------------------------------------------------------------//
+
+#ifdef WINDOWS
+#define PROFILE ps_3_0
+#endif
+
+#define SCREEN   2
+#define ADD      3
+#define DARKEN   4
+#define MULTIPLY 5
 
 //-----------------------------------------------------------------------------------------//
 // Code
@@ -135,8 +152,23 @@ DeclareEntryPoint (PerspectiveOvl)
 
    float4 Fgnd = any (xy0 - frac (xy0)) ? kTransparentBlack : tex2D (Fgd, xy0);
    float4 Bgnd = tex2D (Bgd, uv3);
-   float4 retval = lerp (kTransparentBlack, Fgnd, tex2D (Mask, uv3).x);
+   float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   return lerp (Bgnd, retval, retval.a * Amount);
+   if (BlendMode < SCREEN) { retval = lerp (Bgnd, retval, Amount); }
+   else {
+      float4 Fmix = float4 (retval.rgb, Fgnd.a);
+
+      if (BlendMode == MULTIPLY) { Fmix.rgb *= Bgnd.rgb; }
+      else if (BlendMode == DARKEN) { Fmix.rgb = min (Bgnd.rgb, Fmix.rgb); }
+      else if (BlendMode == ADD) { Fmix.rgb = min (Fmix.rgb + Bgnd.rgb, 1.0.xxx); }
+      else Fmix.rgb += Bgnd.rgb * (1.0.xxx - Fmix.rgb);     // SCREEN
+
+      float blend = Amount * 2.0;
+
+      Fmix = lerp (Bgnd, Fmix, Fmix.a * saturate (blend));
+      retval = lerp (Fmix, retval, saturate (blend - 1.0));
+   }
+
+   return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
 

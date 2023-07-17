@@ -12,10 +12,10 @@
  a much larger image.  It's similar to the Perspective effect, but is much simpler
  to set up.
 
- It also includes the ability to blend the distorted image over background media.
- To do this it provides a small group of blend modes to help manage reflections
- and shadows.  In those modes the mix amount increases to 100% of the blend image
- at the 50% amount setting, then dissolves to normal overlay at the 100% point.
+ It also includes the ability to blend the distorted image over the background media.
+ It provides a small group of blend modes chosen to help manage highlights and shadows.
+ In those modes the mix amount increases to 100% of the blended image at the 50% amount
+ setting, then dissolves to a standard overlay at the 100% point.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -97,7 +97,6 @@ DeclareIntParam (BlendMode, "Blend mode", kNoGroup, 0, "Normal|_________________
 #endif
 
 #define SCREEN   2
-#define ADD      3
 #define DARKEN   4
 #define MULTIPLY 5
 
@@ -158,10 +157,10 @@ DeclareEntryPoint (PerspectiveOvl)
    else {
       float4 Fmix = float4 (retval.rgb, Fgnd.a);
 
-      if (BlendMode == MULTIPLY) { Fmix.rgb *= Bgnd.rgb; }
+      if (BlendMode == SCREEN) { Fmix.rgb += Bgnd.rgb * (1.0.xxx - Fmix.rgb); }
       else if (BlendMode == DARKEN) { Fmix.rgb = min (Bgnd.rgb, Fmix.rgb); }
-      else if (BlendMode == ADD) { Fmix.rgb = min (Fmix.rgb + Bgnd.rgb, 1.0.xxx); }
-      else Fmix.rgb += Bgnd.rgb * (1.0.xxx - Fmix.rgb);     // SCREEN
+      else if (BlendMode == MULTIPLY) { Fmix.rgb *= Bgnd.rgb; }
+      else Fmix.rgb = min (Fmix.rgb + Bgnd.rgb, 1.0.xxx);      // Add blend mode
 
       float blend = Amount * 2.0;
 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-14
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2020-10-16
 
@@ -26,6 +26,9 @@
 //
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded source selection for 2023.2 settings.
 //
 // Updated 2023-05-14 jwrl.
 // Header reformatted.
@@ -58,7 +61,7 @@ DeclareFloatParam (Size, "Size", "Glow", kNoFlags, 4.0, 1.0, 10.0);
 DeclareFloatParam (Strength, "Strength", "Glow", kNoFlags, 0.5, 0.0, 1.0);
 DeclareColourParam (Colour, "Colour", "Glow", kNoFlags, 1.0, 1.0, 1.0, 1.0);
 
-DeclareIntParam (Source, "Source selection (disconnect title and image key inputs)", "Blend mode", 1, "Delta key|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (Source, "Source selection (disconnect title and image key inputs)", "Blend mode", 1, "Extracted foreground|Image key/Title pre LW 2023.2|Video, image key or title");
 DeclareFloatParam (KeyGain, "Trim key", "Blend mode", kNoFlags, 0.25, 0.0, 1.0);
 
 DeclareFloatParam (FgOverlay, "Fg overlay", "Extras", kNoFlags, 0.25, 0.0, 1.0);
@@ -298,3 +301,4 @@ DeclareEntryPoint (FgndGlowKeySetup)
 
    return lerp (kTransparentBlack, retval, tex2D (Mask, uv1).x);
 }
+

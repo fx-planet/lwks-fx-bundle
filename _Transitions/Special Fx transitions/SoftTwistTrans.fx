@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-10
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2017-11-08
 
@@ -16,6 +16,9 @@
 // Lightworks user effect SoftTwistTrans.fx
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded source selection for 2023.2 settings.
 //
 // Updated 2023-06-10 jwrl.
 // Added keyed foreground viewing to help set up delta key.
@@ -59,7 +62,7 @@ DeclareFloatParam (Twist_Axis, "Twist axis", "Twists", kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareBoolParam (Blended, "Enable blend transitions", kNoGroup, false);
 
-DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Image key/Title pre 2023.2, no input|Image or title without connected input");
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);

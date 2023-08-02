@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-08
+// @Released 2023-08-02
 // @Author schrauber
 // @Author jwrl
 // @Created 2017-11-13
@@ -23,6 +23,9 @@
 // Lightworks user effect SwirlTrans.fx
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded source selection for 2023.2 settings.
 //
 // Updated 2023-06-08 jwrl.
 // Added keyed foreground viewing to help set up delta key.
@@ -62,7 +65,7 @@ DeclareFloatParam (Start, "Start angle", "Blend swirl", kNoFlags, 0.0, -360.0, 3
 DeclareFloatParam (CentreX, "Spin centre", "Blend swirl", "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (CentreY, "Spin centre", "Blend swirl", "SpecifiesPointY", 0.5, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Crawl/Roll/Title/Image key|Video/External image");
+DeclareIntParam (Source, "Source", "Blend settings", 0, "Extracted foreground|Image key/Title pre 2023.2, no input|Image or title without connected input");
 DeclareBoolParam (SwapDir, "Transition into blend", "Blend settings", true);
 DeclareFloatParam (KeyGain, "Key adjustment", "Blend settings", kNoFlags, 0.25, 0.0, 1.0);
 DeclareBoolParam (ShowKey, "Show foreground key", "Blend settings", false);

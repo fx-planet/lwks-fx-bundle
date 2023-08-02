@@ -1,7 +1,7 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-08-02
 // @Author jwrl
-// @Author Robert Schuetze
+// @Author Robert Schütze
 // @Created 2016-05-08
 
 /**
@@ -19,6 +19,9 @@
 // Lightworks user effect MagicalEdges.fx
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded source selection for 2023.2 settings.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -61,7 +64,7 @@ DeclareColourParam (Colour, "Modulation value", kNoGroup, kNoFlags, 0.69, 0.26, 
 
 DeclareBoolParam (ShowFractal, "Show pattern", kNoGroup, false);
 
-DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 1, "Crawl/Roll/Title/Image key|Video/External image|Extracted foreground");
+DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 1, "Image key/Title pre LW 2023.2|Video, image key or title|Extracted foreground");
 
 DeclareFloatParam (_Progress);
 
@@ -288,3 +291,4 @@ DeclareEntryPoint (MagicalEdges)
 
    return lerp (Bgd, retval, tex2D (Mask, uv1).x);
 }
+

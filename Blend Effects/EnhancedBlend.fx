@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2018-06-15
 
 /**
  "Enhanced blend" is a variant of the Lightworks blend effect with the option to boost the
  alpha channel (transparency) to match the blending used by title effects.  It can help
- when using titles with their inputs disconnected and used with other effects such as 
- transforms.  It also closely emulates most of the Photoshop blend modes.
+ when using titles with their inputs disconnected and used with other effects such as DVEs.
+ It also closely emulates most of the Photoshop blend modes.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
@@ -17,8 +17,8 @@
 //
 // Version history:
 //
-// Updated 2023-06-19 jwrl.
-// Change DVE reference to transform.
+// Updated 2023-08-02 jwrl.
+// Reworded source selection for 2023.2 settings.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -42,7 +42,7 @@ DeclareMask;
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 2, "Crawl/Roll/Title/Image key|Video/External image|Extracted foreground");
+DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 2, "Image key/Title pre LW 2023.2|Video, image key or title|Extracted foreground");
 
 DeclareFloatParam (Amount, "Fg Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2016-05-10
 
@@ -23,6 +23,9 @@
 // Lightworks user effect GlitteryEdges.fx
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded source selection for 2023.2 settings.
 //
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
@@ -61,7 +64,7 @@ DeclareFloatParam (StartPoint, "Noise seed", "Stars", kNoFlags, 0.0, 0.0, 1.0);
 
 DeclareColourParam (Colour, "Colour", kNoGroup, kNoFlags, 1.0, 0.8, 0.0, 1.0);
 
-DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 1, "Crawl/Roll/Title/Image key|Video/External image|Extracted foreground");
+DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 2, "Image key/Title pre LW 2023.2|Video, image key or title|Extracted foreground");
 
 DeclareFloatParam (_Length);
 DeclareFloatParam (_Progress);
@@ -265,3 +268,4 @@ DeclareEntryPoint (GlitteryEdges)
 
    return lerp (Bgd, retval, tex2D (Mask, uv1).x);
 }
+

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-15
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2016-11-11
 
@@ -24,6 +24,9 @@
 //
 // Version history:
 //
+// Updated 2023-08-02 jwrl.
+// Reworded source selection for 2023.2 settings.
+//
 // Updated 2023-05-15 jwrl.
 // Header reformatted.
 //
@@ -46,7 +49,7 @@ DeclareMask;
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 1, "Crawl/Roll/Title/Image key|Video/External image|Extracted foreground");
+DeclareIntParam (Source, "Source selection", "Disconnect title and image key inputs", 1, "Image key/Title pre LW 2023.2|Video, image key or title|Extracted foreground");
 
 DeclareFloatParam (A_Opac, "Opacity", "Overlay 1 (always enabled)", kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (A_Zoom, "Scale", "Overlay 1 (always enabled)", kNoFlags, 1.0, 0.0, 3.16227766);
@@ -132,3 +135,4 @@ DeclareEntryPoint (FloatingImages)
 
    return lerp (ret, Bgnd, tex2D (Mask, uv1).x);
 }
+

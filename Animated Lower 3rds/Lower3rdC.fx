@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-13
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2018-03-15
 
@@ -14,6 +14,9 @@
 // Lightworks user effect Lower3rdC.fx
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded text type selection for 2023.2 settings.
 //
 // Updated 2023-05-13 jwrl.
 // Header reformatted.
@@ -38,7 +41,7 @@ DeclareInputs (In_1, In_2);
 DeclareFloatParam (Transition, "Transition", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
-DeclareIntParam (ArtAlpha, "Text type", "Text settings", 1, "Video/External image|Crawl/Roll/Title/Image key");
+DeclareIntParam (ArtAlpha, "Text type", "Text settings", 0, "Video, image key or title|Image key/Title pre LW 2023.2");
 
 DeclareBoolParam (SetupText, "Setup text position", "Text settings", true);
 

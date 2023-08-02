@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-13
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2018-03-15
 
@@ -16,6 +16,9 @@
 // Lightworks user effect Lower3rdToolsA.fx
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded text type selection for 2023.2 settings.
 //
 // Updated 2023-05-13 jwrl.
 // Header reformatted.
@@ -40,7 +43,7 @@ DeclareInputs (In_1, In_2);
 DeclareFloatParam (Opacity, "Opacity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (InpMode, "Text source", "Text settings", 0, "Before - uses In_1 for text / In_2 as background|After - uses In_1 as background with external text");
-DeclareIntParam (TxtAlpha, "Text type", "Text settings", 1, "Video/External image|Crawl/Roll/Title/Image key");
+DeclareIntParam (TxtAlpha, "Text type", "Text settings", 0, "Video, image key or title|Image key/Title pre LW 2023.2");
 
 DeclareFloatParam (TxtPosX, "Position", "Text settings", "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (TxtPosY, "Position", "Text settings", "SpecifiesPointY", 0.5, 0.0, 1.0);

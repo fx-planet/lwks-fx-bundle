@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-02
 // @Author jwrl
 // @Created 2019-05-12
 
@@ -19,6 +19,9 @@
 // Lightworks user effect AlphaOpq.fx
 //
 // Version history:
+//
+// Updated 2023-08-02 jwrl.
+// Reworded alpha channel selection for 2023.2 settings.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -43,7 +46,7 @@ DeclareMask;
 //-----------------------------------------------------------------------------------------//
 
 DeclareIntParam (OpacityMode, "Opacity mode", kNoGroup, 0, "Make opaque|Blend with colour");
-DeclareIntParam (KeyMode, "Type of alpha channel", kNoGroup, 0, "Standard|Premultiplied|Lightworks title effects");
+DeclareIntParam (KeyMode, "Type of alpha channel", kNoGroup, 0, "Standard|Premultiplied|Image key/Title pre 2023.2");
 
 DeclareColourParam (Colour, "Background colour", kNoGroup, kNoFlags, 0.0, 0.0, 0.0);
 

@@ -48,7 +48,7 @@ DeclareFloatParam (RedAmount, "Red amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 DeclareFloatParam (FgVal, "Fg val", kNoGroup, kNoFlags, 0.45, 0.0, 1.0);
 DeclareFloatParam (BgVal, "Bg val", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
 DeclareFloatParam (GammaFG, "Gamma fg", kNoGroup, kNoFlags, 2.0, 0.0, 4.0);
-DeclareFloatParam (GammaBG, "Gamma Bg", kNoGroup, kNoFlags, 0.4, 0.0, 2.0);
+DeclareFloatParam (GammaBG, "Gamma bg", kNoGroup, kNoFlags, 0.4, 0.0, 2.0);
 DeclareFloatParam (GammaMix, "Gamma mix", kNoGroup, kNoFlags, 2.0, 0.0, 5.0);
 DeclareFloatParam (Despill, "Despill blur", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 

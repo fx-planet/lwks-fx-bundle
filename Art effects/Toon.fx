@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-14
+// @Released 2023-08-04
 // @Author khaver
 // @Created 2011-04-18
 
@@ -15,6 +15,9 @@
 // Lightworks user effect Toon.fx
 //
 // Version history:
+//
+// Updated 2023-08-04 jwrl.
+// User parameters reformatted.
 //
 // Updated 2023-05-14 jwrl.
 // Header reformatted.
@@ -38,9 +41,9 @@ DeclareMask;
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParam (RedStrength, "RedStrength", "Master", "DisplayAsPercentage", 4.0, 1.0, 100.0);
-DeclareFloatParam (GreenStrength, "GreenStrength", "Master", "DisplayAsPercentage", 4.0, 1.0, 100.0);
-DeclareFloatParam (BlueStrength, "BlueStrength", "Master", "DisplayAsPercentage", 4.0, 1.0, 100.0);
+DeclareFloatParam (RedStrength, "Red strength", "Master", "DisplayAsPercentage", 4.0, 1.0, 100.0);
+DeclareFloatParam (GreenStrength, "Green strength", "Master", "DisplayAsPercentage", 4.0, 1.0, 100.0);
+DeclareFloatParam (BlueStrength, "Blues strength", "Master", "DisplayAsPercentage", 4.0, 1.0, 100.0);
 DeclareFloatParam (Threshold, "Threshold", "Master", kNoFlags, 0.1, 0.0, 10.0);
 
 //-----------------------------------------------------------------------------------------//

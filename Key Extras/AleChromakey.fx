@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-04
 // @Author baopao
 // @Created 2013-06-07
 
@@ -16,6 +16,9 @@
 // Created by baopao (http://www.alessandrodallafontana.com).
 //
 // Version history:
+//
+// Updated 2023-08-04 jwrl.
+// User parameters reformatted.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -41,15 +44,15 @@ DeclareMask;
 
 DeclareIntParam (ChromaKey, "ChromaKey", kNoGroup, 0, "Green|Blue");
 
-DeclareFloatParam (RedAmount, "RedAmount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
-DeclareFloatParam (FgVal, "FgVal", kNoGroup, kNoFlags, 0.45, 0.0, 1.0);
-DeclareFloatParam (BgVal, "BgVal", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
-DeclareFloatParam (GammaFG, "GammaFG", kNoGroup, kNoFlags, 2.0, 0.0, 4.0);
-DeclareFloatParam (GammaBG, "GammaBG", kNoGroup, kNoFlags, 0.4, 0.0, 2.0);
-DeclareFloatParam (GammaMix, "GammaMix", kNoGroup, kNoFlags, 2.0, 0.0, 5.0);
+DeclareFloatParam (RedAmount, "Red amount", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (FgVal, "Fg val", kNoGroup, kNoFlags, 0.45, 0.0, 1.0);
+DeclareFloatParam (BgVal, "Bg val", kNoGroup, kNoFlags, 0.25, 0.0, 1.0);
+DeclareFloatParam (GammaFG, "Gamma fg", kNoGroup, kNoFlags, 2.0, 0.0, 4.0);
+DeclareFloatParam (GammaBG, "Gamma Bg", kNoGroup, kNoFlags, 0.4, 0.0, 2.0);
+DeclareFloatParam (GammaMix, "Gamma mix", kNoGroup, kNoFlags, 2.0, 0.0, 5.0);
 DeclareFloatParam (Despill, "Despill blur", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 
-DeclareColourParam (ColorReplace, "ColorReplace", kNoGroup, kNoFlags, 0.5, 0.5, 0.5, 1.0);
+DeclareColourParam (ColorReplace, "Color replace", kNoGroup, kNoFlags, 0.5, 0.5, 0.5, 1.0);
 
 DeclareFloatParam (_OutputWidth);
 DeclareFloatParam (_OutputHeight);

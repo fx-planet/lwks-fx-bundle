@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-08-02
+// @Released 2023-08-05
 // @Author jwrl
 // @Created 2016-05-07
 
@@ -21,7 +21,7 @@
 //
 // Version history:
 //
-// Updated 2023-08-02 jwrl.
+// Updated 2023-08-05 jwrl.
 // Reworded source selection for 2023.2 settings.
 //
 // Updated 2023-06-08 jwrl.
@@ -54,7 +54,7 @@ DeclareFloatParamAnimated (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareIntParam (Direction, "Direction", "Zoom", 0, "Zoom in|Zoom out");
 
-DeclareFloatParam (zoomAmount, "zoomAmount", "Zoom", kNoFlags, 0.5, 0.0, 1.0);
+DeclareFloatParam (zoomAmount, "Zoom amount", "Zoom", kNoFlags, 0.5, 0.0, 1.0);
 
 DeclareFloatParam (Xcentre, "Centre", "Zoom", "SpecifiesPointX", 0.5, 0.0, 1.0);
 DeclareFloatParam (Ycentre, "Centre", "Zoom", "SpecifiesPointY", 0.5, 0.0, 1.0);

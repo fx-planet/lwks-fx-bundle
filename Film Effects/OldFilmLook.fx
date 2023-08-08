@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-09
 // @Author khaver
 // @Author saabi
 // @Created 2018-06-20
@@ -31,6 +31,10 @@
 //
 // Version history:
 //
+// Updated 2023-08-09 jwrl.
+// Corrected the category.  Changed it from "Colour" to "Stylize", which is what it
+// was originally and should never have been changed.
+//
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
 //
@@ -39,7 +43,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Old film look", "Colour", "Film Effects", "Simulates a black and white film with scratches, sprocket holes, weave and flicker.", kNoFlags);
+DeclareLightworksEffect ("Old film look", "Stylize", "Film Effects", "Simulates a black and white film with scratches, sprocket holes, weave and flicker.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

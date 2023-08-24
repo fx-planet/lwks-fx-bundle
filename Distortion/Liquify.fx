@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-21
+// @Released 2023-08-24
 // @Author schrauber
 // @Created 2020-10-23
 
@@ -19,6 +19,9 @@
 // Lightworks user effect  Liquify.fx
 //
 // Version history:
+//
+// Updated 2023-08-24 jwrl.
+// Debugged possible NAN and/or mul issue in Linux and Mac.
 //
 // Updated 2023-06-21 jwrl.
 // Changed "Distortion Direction" to "Direction" to prevent truncation.
@@ -48,9 +51,9 @@ DeclareMask;
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParam (Area, "Distortion Area", kNoGroup, "DisplayAsPercentage", 0.5, 0.0, 1.5);
+DeclareFloatParam (dArea, "Distortion Area", kNoGroup, "DisplayAsPercentage", 0.5, 0.0, 1.5);
 DeclareFloatParam (Strength, "Strength", kNoGroup, "DisplayAsPercentage", 0.5, 0.0, 1.0);
-DeclareFloatParam (Soft, "Edge softness", kNoGroup, "DisplayAsPercentage", 0.0, -0.01, 0.2);
+DeclareFloatParam (eSoft, "Edge softness", kNoGroup, "DisplayAsPercentage", 0.0, -0.01, 0.2);
 
 DeclareFloatParam (Xcentre, "Effect centre", kNoGroup, "SpecifiesPointX", 0.9, 0.0, 1.0);
 DeclareFloatParam (Ycentre, "Effect centre", kNoGroup, "SpecifiesPointY", 0.1, 0.0, 1.0);
@@ -74,6 +77,8 @@ DeclareFloatParam (_OutputWidth);
 #define PI      3.1415926536
 #define HALF_PI 1.5707963268
 
+#define kMin(P) (1.0 / max (0.000001, P))
+
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
@@ -91,7 +96,7 @@ float4 MirrorEdge (sampler S, float2 uv)
 
 DeclareEntryPoint (Liquify)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;                    // Quit if we're outside frame boundaries - applies with unmatched aspect ratios
+   if (IsOutOfBounds (uv1)) return 0.0.xxxx;                        // Quit if we're outside frame boundaries - applies with unmatched aspect ratios
 
    // This section is a heavily optimised version of the original shader ps_mirror()
 
@@ -105,12 +110,12 @@ DeclareEntryPoint (Liquify)
 
    displace = (1.0 - cos (displace * PI)) * 0.5;                    // Distance curve rounded to soften distortion in the effect centre
 
-   float area = max (0.0, Area - displace);                         // Limits the maximum range of the distortion (removes residual distortion)
+   float area = max (0.0, dArea - displace);                        // Limits the maximum range of the distortion (removes residual distortion)
 
    area = (1.0 - cos (area * HALF_PI)) * 0.5;                       // Soft edge of the distortion area (S-curve)
    displace += area;                                                // Offset the displacement with the corrected area value
-   area *= Strength * Area * 1.5;                                   // Adjust the strength only within the active area
-   distortion *= area / max (1e-9, displace);                       // Distortion decreases with distance from the effect centre
+   area *= Strength * dArea * 1.5;                                  // Adjust the strength only within the active area
+   distortion *= area * kMin (displace);                            // Distortion decreases with distance from the effect centre
 
    float4 retval = MirrorEdge (Input, uv1 + distortion);            // Take a distorted pixel sample from the sampler
 
@@ -120,10 +125,12 @@ DeclareEntryPoint (Liquify)
       float2 xy = uv1 - 0.5.xx;                                     // Centre sampler coordinates around 0 as midpoint
       float2 soft = float2 (1.0, _OutputAspectRatio);               // Preload soft with aspect ratio adjustment
 
-      soft *= Soft + (1.0 /_OutputWidth);                           // Calculate the softness range
-      soft *= min (1.0.xx, (0.5.xx - abs (xy)) / max (1e-9, soft)); // Remove the interpolation (soft = 0) if the output pixel is on the frame border
+      soft *= eSoft + (1.0 /_OutputWidth);                          // Calculate the softness range
+      soft.x *= min (1.0, (0.5 - abs (xy.x)) * kMin (soft.x));      // Remove the interpolation (soft = 0) if the output pixel is on the frame border
+      soft.y *= min (1.0, (0.5 - abs (xy.y)) * kMin (soft.y));
       xy = 0.5.xx - abs (xy + distortion);                          // Distance from the edges of the output frame (negative values are outside)
-      soft = min (1.0.xx, xy / max (1e-9, soft));                   // Reverses the direction of action.  Scale is proportional to distance from frame edge
+      soft.x = min (1.0, xy.x * kMin (soft.x));                     // Reverses the direction of action.  Scale is proportional to distance from frame edge
+      soft.y = min (1.0, xy.y * kMin (soft.y));
 
       retval.a *= saturate (min (soft.x, soft.y));                  // Alpha edge softness ramps from 0 to 1
 

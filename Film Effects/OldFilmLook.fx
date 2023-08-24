@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-08-09
+// @Released 2023-08-24
 // @Author khaver
 // @Author saabi
 // @Created 2018-06-20
@@ -30,6 +30,9 @@
 // note: code comments are from the original author(s).
 //
 // Version history:
+//
+// Debugged 2023-08-24 jwrl.
+// Reorganised code to correct a Linux/Mac variable mismatch.
 //
 // Updated 2023-08-09 jwrl.
 // Corrected the category.  Changed it from "Colour" to "Stylize", which is what it
@@ -90,28 +93,11 @@ DeclareFloatParam (_Frame);
 #endif
 
 #define CTIME  (_Length * _Progress)
-#define iFrame _Frame
-
-float separation = 1.2;
-float filmWidth = 1.4;
-
-float2 smallJitterDisplacement = float2(0.003,0.003);
-float2 largeJitterDisplacement = float2(0.03,0.03);
-
-float angleJitter = 0.0349; //2.0*3.1415/180.0;
+#define RTIME  (_Length * _Progress * 0.0101)
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
-
-float4 fn_tex2D (sampler s, float2 uv)
-{
-   float2 xy = abs (uv - 0.5.xx);
-
-   return (max (xy.x, xy.y) > 0.5) ? kTransparentBlack : tex2D (s, uv);
-}
-
-float time () { return CTIME * 0.0101; }
 
 float hash (float n) { return frac (cos (n * 89.42) * 343.42); }
 
@@ -170,7 +156,7 @@ float rand (float2 co)
 
 float2 jitter (float2 uv, float2 s, float seed)
 {
-   return float2 (rand (float2 (time (), seed)) - 0.5, rand (float2 (time(), seed + 0.11)) - 0.5) * s;
+   return float2 (rand (float2 (RTIME, seed)) - 0.5, rand (float2 (RTIME, seed + 0.11)) - 0.5) * s;
 }
 
 float2 rot (float2 coord, float a)
@@ -195,13 +181,6 @@ float4 vignette (float2 uv, float strength)
    return 1.0.xxxx - float4 (l.xxx * strength, 1.0);
 }
 
-float4 bw (float4 c)
-{
-   float v = c.r * 0.15 + c.g * 0.8 + c.b * 0.05;
-
-   return float4 (v.xxx, 1.0);
-}
-
 float4 sepia (float4 c, float s)
 {
    float or = (c.r * 0.393) + (c.g * 0.769) + (c.b * 0.189);
@@ -213,19 +192,19 @@ float4 sepia (float4 c, float s)
 
 float4 frame (float2 uv, float fn)
 {
-   if (any (abs (uv > 0.5))) return sepia (float4 (0.03, 0.02, 0.0, 0.02), 1.0);
+   if (max (abs (uv.x), abs (uv.y)) > 0.5) return sepia (float4 (0.03, 0.02, 0.0, 0.02), 1.0);
 
    float strength = 64.0 * gstrength;
    float x = (uv.x + 4.0 ) * (uv.y + 4.0 ) * (CTIME + 10.0);
 
    float4 grain = float (fmod ((fmod (x, 13.0) + 1.0) * (fmod (x, 123.0) + 1.0), 0.01) - 0.005).xxxx * strength;
-   float4 i = fn_tex2D (Input, uv + 0.5);
+   float4 i = ReadPixel (Input, (uv + 0.5.xx));
 
-   float fnn = frac ((floor ((fn + 0.5) / separation) + CTIME) / 20.0);
+   float fnn = frac ((floor ((fn + 0.5) / 1.2) + CTIME) / 20.0);
    float fj = rand (float2 (fnn, 5.34)) * 2.0;
 
    float4 ic = float4 (lerp (i.rgb, i.rgb * fj, flicker), 1.0) * vignette (uv * 2.5, 0.25);
-   float4 bwc = bw (ic);
+   float4 bwc = float4 ((ic.r * 0.15 + ic.g * 0.8 + ic.b * 0.05).xxx, ic.a);
 
    uv.x *= 100.0 + (CTIME * 0.1);
    uv.y *= 100.0;
@@ -236,60 +215,11 @@ float4 frame (float2 uv, float fn)
 
    float4 spots = float4 (saturate (c), 1.0);
 
-   float noiseTrigger = rand (float2 (time () * 8.543, 2.658));
+   float noiseTrigger = rand (float2 (CTIME * 0.0862843, 2.658));
 
    spots = (noiseTrigger < NoiseAmount) ? spots : 1.0.xxxx;
 
    return sepia (bwc, 1.0) * (1.0 - grain) * spots;
-}
-
-float4 film (float2 uv)
-{
-   float wm = 0.5 + ((filmWidth - 1.0) / 4.0);
-   float ww = (filmWidth - 1.0) * 0.1;
-   float ax = abs (uv.x);
-   float sprc = sprocket3 ? 2.0 : 4.0;
-
-   if (ax > filmWidth / 2.0 || (ax > wm - ww && ax < wm + ww && fmod (floor ((uv.y + sprocket2) * sprockets), sprc) == 1.0))
-      return 1.0.xxxx;
-
-   uv.x *= 2000.1;
-   uv.y *= 5.0;
-
-   float disw = worley2 (uv / 164.0, floor (CTIME * 10.389) * 50.124);
-
-   float3 cw = lerp (1.0.xxx, -30.6.xxx, disw);
-
-   cw = saturate (1.0.xxx - (cw * cw));
-
-   float scratchTrigger = rand (float2 (time() * 2.543, 0.823));
-
-   cw = scratchTrigger < ScratchAmount ? cw : 0.0.xxx;
-
-   return float4 (cw * 2.0, (cw.x < 0.5) ? 0.0 : 1.0);
-}
-
-float4 final (float2 uv, float aspect)
-{
-   float smallJitterTrigger = rand (float2 (time (), 0.125));
-   float largeJitterTrigger = rand (float2 (time (), 0.122));
-
-   float2 juv = float2 (uv.x - 0.5, uv.y);
-
-   juv += (smallJitterTrigger > smallJitterProbability ? 0.0.xx : jitter (uv, smallJitterDisplacement, 0.01));
-   juv += (largeJitterTrigger > largeJitterProbability ? 0.0.xx : jitter (uv, largeJitterDisplacement, 0.01));
-
-   float rotationTrigger = rand (float2 (time (), 0.123));
-
-   if (rotationTrigger <= angleProbability) juv = rot (juv, (rand (float2 (time (), 0.14)) - 0.5) * angleJitter);
-
-   float2 fuv = float2 (juv.x * aspect, (fmod (juv.y + 1.705, separation) - 0.5));
-
-   float4 flm = film (float2 (juv.x * aspect, juv.y + 100.0));
-
-   if (flm.a == 1.0) return frame (fuv, juv.y) + flm;
-
-   return float4 (frame (fuv, juv.y).rgb - (flm.rgb * 2.0), 1.0);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -311,22 +241,75 @@ DeclarePass (Film)
 
    // Output to screen
 
-   return final (uv, _OutputAspectRatio);
+   float smallJitterTrigger = rand (float2 (RTIME, 0.125));
+   float largeJitterTrigger = rand (float2 (RTIME, 0.122));
+
+   float2 juv = float2 (uv.x - 0.5, uv.y);
+
+   juv += smallJitterTrigger > smallJitterProbability ? 0.0.xx : jitter (uv, 0.003.xx, 0.01);
+   juv += largeJitterTrigger > largeJitterProbability ? 0.0.xx : jitter (uv, 0.03.xx, 0.01);
+
+   float rotationTrigger = rand (float2 (RTIME, 0.123));
+
+   if (rotationTrigger <= angleProbability) juv = rot (juv, (rand (float2 (RTIME, 0.14)) - 0.5) * 0.0349);
+
+   float2 fuv = float2 (juv.x * _OutputAspectRatio, (fmod (juv.y + 1.705, 1.2) - 0.5));
+   float2 suv = float2 (fuv.x, juv.y + 100.0);
+
+   // Add frame edges and sprocket holes
+
+   float wm = 0.6;
+   float ww = 0.04;
+   float ax = abs (suv.x);
+   float sprc = sprocket3 ? 2.0 : 4.0;
+
+   // Add scratches
+
+   float4 flm;
+
+   if (ax > 0.7 || (ax > wm - ww && ax < wm + ww && fmod (floor ((suv.y + sprocket2) * sprockets), sprc) == 1.0))
+      { flm = 1.0.xxxx; }
+   else {
+      suv.x *= 2000.1;
+      suv.y *= 5.0;
+
+      float disw = worley2 (suv / 164.0, floor (CTIME * 10.389) * 50.124);
+
+      float3 cw = lerp (1.0.xxx, -30.6.xxx, disw);
+
+      cw = saturate (1.0.xxx - (cw * cw));
+
+      float scratchTrigger = rand (float2 (CTIME * 0.0256843, 0.823));
+
+      cw = scratchTrigger < ScratchAmount ? cw : 0.0.xxx;
+
+      flm = float4 (cw * 2.0, (cw.x < 0.5) ? 0.0 : 1.0);
+   }
+
+   if (flm.a == 1.0) return frame (fuv, juv.y) + flm;
+
+   return float4 (frame (fuv, juv.y).rgb - (flm.rgb * 2.0), 1.0);
 }
 
-DeclareEntryPoint (OldFilmLook)
+DeclareEntryPoint (OldFilmTest)
 {
    float4 c = tex2D (Film, uv2);
 
-   for (float i = 0.25; i < 2.0; i += 0.25) {
-      c += tex2D (Film, uv2 + float2 (0.0, i / _OutputHeight));
-      c += tex2D (Film, uv2 - float2 (0.0, i / _OutputHeight));
-      c += tex2D (Film, uv2 + float2 (i / _OutputWidth, 0.0));
-      c += tex2D (Film, uv2 - float2 (i / _OutputWidth, 0.0));
+    float2 offsX = float2 (1.0 / (4.0 * _OutputWidth), 0.0);
+    float2 offsY = float2 (0.0, 1.0 / (4.0 * _OutputHeight));
+    float2 x0 = 0.0.xx, y0 = 0.0.xx;
+
+   for (int i = 0; i < 7; i++) {
+      x0 += offsX;
+      y0 += offsY;
+      c += tex2D (Film, uv2 + y0);
+      c += tex2D (Film, uv2 - y0);
+      c += tex2D (Film, uv2 + x0);
+      c += tex2D (Film, uv2 - x0);
    }
 
    float4 fragColor = (c / 29.0) * vignette (uv2 - 0.5, 2.0);
 
-   return IsOutOfBounds (uv1) ? kTransparentBlack : float4 (fragColor.rgb, 1.0);
+   return IsOutOfBounds (uv1) ? 0.0.xxxx : float4 (fragColor.rgb, 1.0);
 }
 

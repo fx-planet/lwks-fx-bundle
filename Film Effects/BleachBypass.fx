@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-24
 // @Author msi
 // @Created 2011-05-27
 
@@ -13,9 +13,14 @@
 //-----------------------------------------------------------------------------------------//
 // Lightworks user effect BleachBypass.fx
 //
-// Licensed Creative Commons [BY-NC-SA]
+// Based on Bleach bypass routine by NVidia.
+// https://developer.download.nvidia.com/shaderlibrary/webpages/hlsl_shaders.html#post_bleach_bypass
+// Licensed Creative Commons [BY-NC-SA].
 //
 // Version history:
+//
+// Updated 2023-08-24 jwrl.
+// Optimised the code to resolve a Linux/Mac compatibility issue.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -53,21 +58,18 @@ DeclareEntryPoint (BleachBypass)
 {
    float4 source = ReadPixel (Input, uv1);
 
-   // BEGIN Bleach bypass routine by NVidia
+   // Begin Bleach bypass routine by NVidia as optimised by jwrl.
    // (http://developer.download.nvidia.com/shaderlibrary/webpages/hlsl_shaders.html#post_bleach_bypass)
 
    float lum = dot (float3 (Red, Green, Blue), source.rgb);
 
    float3 result1 = 2.0 * source.rgb * lum;
-   float3 result2 = 1.0.xxx - 2.0 * (1.0 - lum) * (1.0.xxx - source.rgb);
-   float3 newC = lerp (result1, result2, saturate (10.0 * (lum - 0.45)));
-   float3 mixRGB = (BlendOpacity * source.a) * newC.rgb;
+   float3 result2 = (2.0 * (lum.xxx + source.rgb)) - result1 - 1.0.xxx;
+   float3 newC = lerp (result1, result2, saturate ((10.0 * lum) - 4.5));
 
-   mixRGB += ((1.0 - (BlendOpacity * source.a)) * source.rgb);
+   float4 retval = float4 (lerp (source.rgb, newC, BlendOpacity * source.a), source.a);
 
    // END Bleach bypass routine by NVidia
-
-   float4 retval = float4 (lerp (kTransparentBlack, mixRGB, source.a), source.a);
 
    return lerp (source, retval, tex2D (Mask, uv1).x);
 }

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-24
 // @Author jwrl
 // @Created 2023-01-27
 
@@ -30,6 +30,9 @@
 // Lightworks user effect AnalogLumakey.fx
 //
 // Version history:
+//
+// Updated 2023-08-24 jwrl.
+// Optimised the code to resolve a Linux/Mac compatibility issue.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -70,7 +73,7 @@ DeclareBoolParam (InvertKey, "Invert key", "Key settings", false);
 #define PROFILE ps_3_0
 #endif
 
-#define BLACK float2(0.0, 1.0).xxxy
+#define BLACK float4(0.0.xxx, 1.0)
 
 #define R_LUMA 0.2989
 #define G_LUMA 0.5866
@@ -80,13 +83,16 @@ DeclareBoolParam (InvertKey, "Invert key", "Key settings", false);
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (FG)
+DeclarePass (Fgnd)
 { return ReadPixel (Fg, uv1); }
+
+DeclarePass (Bgnd)
+{ return ReadPixel (Bg, uv2); }
 
 DeclareEntryPoint (AnalogLumakey)
 {
-   float4 Fgd = tex2D (FG, uv3);
-   float4 Bgd = KeyMode > 1 ? BLACK : ReadPixel (Bg, uv2);
+   float4 Fgd = tex2D (Fgnd, uv3);
+   float4 Bgd = (KeyMode > 1) ? BLACK : tex2D (Bgnd, uv3);
 
    float luma  = dot (Fgd.rgb, float3 (R_LUMA, G_LUMA, B_LUMA));
    float edge  = max (0.00001, Softness);
@@ -95,10 +101,10 @@ DeclareEntryPoint (AnalogLumakey)
 
    if (InvertKey) alpha = 1.0 - alpha;
 
-   if (abs (KeyMode - 2) == 1) alpha = min (Fgd.a, alpha);
+   if ((KeyMode == 1) || (KeyMode == 3)) alpha = min (Fgd.a, alpha);
 
-   alpha *= Amount;
+   alpha *= Amount * tex2D (Mask, uv3).x;
 
-   return lerp (Bgd, Fgd, alpha * tex2D (Mask, uv3).x);
+   return lerp (Bgd, Fgd, alpha);
 }
 

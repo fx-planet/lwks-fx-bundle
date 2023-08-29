@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-29
 // @Author khaver
 // @Created 2016-06-03
 
@@ -16,6 +16,9 @@
 // Lightworks user effect Tenderizer.fx
 //
 // Version history:
+//
+// Updated 2023-08-29 jwrl.
+// Addressed Linux/Mac bug, added support for portrait formats.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -37,8 +40,8 @@ DeclareInput (V);
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareIntParam (ReX, "Source Horizontal Resolution", kNoGroup, 0, "Project|720|1280|1440|1920|2048|3840|4096");
-DeclareIntParam (ReY, "Source Vertical Resolution", kNoGroup, 0, "Project|480|576|720|1080|2160");
+DeclareIntParam (ReX, "Source Horizontal Resolution", kNoGroup, 0, "Project|480|576|720|1080|1280|1440|1920|2048|2160|3840|4096");
+DeclareIntParam (ReY, "Source Vertical Resolution", kNoGroup, 0, "Project|480|576|720|1080|1280|1440|1920|2048|2160|3840|4096");
 
 DeclareBoolParam (Luma, "Tenderize Luma", kNoGroup, true);
 DeclareBoolParam (Chroma, "Tenderize Chroma", kNoGroup, true);
@@ -53,9 +56,6 @@ DeclareFloatParam (_OutputHeight);
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-float _idxX[8] = { 0.0, 720.0, 1280.0, 1440.0, 1920.0, 2048.0, 3840.0, 4096.0 };
-float _idxY[6] = { 0.0, 480.0, 576.0, 720.0, 1080.0, 2160.0 };
 
 //-----------------------------------------------------------------------------------------//
 // Functions
@@ -88,76 +88,73 @@ float closest (float test, float orig, float bit)
 {
    float t = abs (test - orig);
 
-   return (t < (bit * 0.3333)) ? orig : (t < (bit * 0.6667)) ? test : (test + orig) / 2.0;
+   return (t < (bit * 0.3333)) ? orig : (t > (bit * 0.6667)) ? test : (test + orig) / 2.0;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Code
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (VSampler)
-{ return ReadPixel (V, uv1); }
-
 DeclareEntryPoint (Tenderizer)
 {
-   if (IsOutOfBounds (uv1)) return kTransparentBlack;
+   if (IsOutOfBounds (uv1)) return 0.0.xxxx;
 
+   float idx [12] = { 0.0, 0.00208333, 0.001736111, 0.00138889, 0.00092593, 0.00078125,
+                      0.00069444, 0.00052083, 0.00048828, 0.00046296, 0.00026042, 0.00024414 };
    float2 pixel;
 
-   pixel.x = (ReX == 0) ? _OutputWidth : _idxX [ReX];
-   pixel.y = (ReY == 0) ? _OutputHeight : _idxY [ReY];
+   pixel.x = (ReX == 0) ? 1.0 / _OutputWidth : idx [ReX];
+   pixel.y = (ReY == 0) ? 1.0 / _OutputHeight : idx [ReY];
 
-   pixel = 1.0 / max (1.0e-6, pixel);
-
-   float4 seporg = colorsep (VSampler, uv2, 0.0.xx);
+   float4 seporg = colorsep (V, uv1, 0.0.xx);
    float4 samp2, samp3, samp4, samp5, samp6, samp7, samp8;
 
-   float4 samp00 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, 0.0));
-   float4 samp01 = colorsep (VSampler, uv2, float2 (-pixel.x, 0.0));
-   float4 samp02 = colorsep (VSampler, uv2, float2 (pixel.x, 0.0));
-   float4 samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, 0.0));
+   float4 samp00 = colorsep (V, uv1, float2 (pixel.x * -2.0, 0.0));
+   float4 samp01 = colorsep (V, uv1, float2 (-pixel.x, 0.0));
+   float4 samp02 = colorsep (V, uv1, float2 (pixel.x, 0.0));
+   float4 samp03 = colorsep (V, uv1, float2 (pixel.x * 2.0, 0.0));
    float4 samp1  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, uv2, float2 ((pixel.x * -2.0), -pixel.y));
-   samp01 = (colorsep (VSampler, uv2, float2 (-pixel.x, 0)) + colorsep (VSampler, uv2, float2 (-pixel.x, -pixel.y))) / 2.0;
-   samp02 = (colorsep (VSampler, uv2, float2 (pixel.x, 0)) + colorsep (VSampler, uv2, float2 (pixel.x, pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, pixel.y));
+   samp00 = colorsep (V, uv1, float2 ((pixel.x * -2.0), -pixel.y));
+   samp01 = (colorsep (V, uv1, float2 (-pixel.x, 0)) + colorsep (V, uv1, float2 (-pixel.x, -pixel.y))) / 2.0;
+   samp02 = (colorsep (V, uv1, float2 (pixel.x, 0)) + colorsep (V, uv1, float2 (pixel.x, pixel.y))) / 2.0;
+   samp03 = colorsep (V, uv1, float2 (pixel.x * 2.0, pixel.y));
    samp2  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, pixel.y * -2.0));
-   samp01 = colorsep (VSampler, uv2, float2 (-pixel.x, -pixel.y));
-   samp02 = colorsep (VSampler, uv2, float2 (pixel.x, pixel.y));
-   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, pixel.y * 2.0));
+   samp00 = colorsep (V, uv1, float2 (pixel.x * -2.0, pixel.y * -2.0));
+   samp01 = colorsep (V, uv1, float2 (-pixel.x, -pixel.y));
+   samp02 = colorsep (V, uv1, float2 (pixel.x, pixel.y));
+   samp03 = colorsep (V, uv1, float2 (pixel.x * 2.0, pixel.y * 2.0));
    samp3  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y * -2.0));
-   samp01 = (colorsep (VSampler, uv2, float2 (-pixel.x, -pixel.y)) + colorsep (VSampler, uv2, float2(0, -pixel.y))) / 2.0;
-   samp02 = (colorsep(VSampler, uv2, float2 (0.0, pixel.y)) + colorsep (VSampler, uv2, float2 (pixel.x, pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, uv2, float2 (pixel.x, pixel.y * 2.0));
+   samp00 = colorsep (V, uv1, float2 (-pixel.x, pixel.y * -2.0));
+   samp01 = (colorsep (V, uv1, float2 (-pixel.x, -pixel.y)) + colorsep (V, uv1, float2(0, -pixel.y))) / 2.0;
+   samp02 = (colorsep(V, uv1, float2 (0.0, pixel.y)) + colorsep (V, uv1, float2 (pixel.x, pixel.y))) / 2.0;
+   samp03 = colorsep (V, uv1, float2 (pixel.x, pixel.y * 2.0));
    samp4  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, uv2, float2 (0.0, pixel.y * -2.0));
-   samp01 = colorsep (VSampler, uv2, float2 (0.0, -pixel.y));
-   samp02 = colorsep (VSampler, uv2, float2 (0.0, pixel.y));
-   samp03 = colorsep (VSampler, uv2, float2 (0.0, pixel.y * 2.0));
+   samp00 = colorsep (V, uv1, float2 (0.0, pixel.y * -2.0));
+   samp01 = colorsep (V, uv1, float2 (0.0, -pixel.y));
+   samp02 = colorsep (V, uv1, float2 (0.0, pixel.y));
+   samp03 = colorsep (V, uv1, float2 (0.0, pixel.y * 2.0));
    samp5  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, uv2, float2 (pixel.x, pixel.y * -2.0));
-   samp01 = (colorsep (VSampler, uv2, float2 (pixel.x, -pixel.y)) + colorsep (VSampler, uv2, float2 (0.0, -pixel.y))) / 2.0;
-   samp02 = (colorsep (VSampler, uv2, float2 (0.0, pixel.y)) + colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y * 2.0));
+   samp00 = colorsep (V, uv1, float2 (pixel.x, pixel.y * -2.0));
+   samp01 = (colorsep (V, uv1, float2 (pixel.x, -pixel.y)) + colorsep (V, uv1, float2 (0.0, -pixel.y))) / 2.0;
+   samp02 = (colorsep (V, uv1, float2 (0.0, pixel.y)) + colorsep (V, uv1, float2 (-pixel.x, pixel.y))) / 2.0;
+   samp03 = colorsep (V, uv1, float2 (-pixel.x, pixel.y * 2.0));
    samp6  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, pixel.y * -2.0));
-   samp01 = colorsep (VSampler, uv2, float2 (pixel.x, -pixel.y));
-   samp02 = colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y));
-   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, pixel.y * 2.0));
+   samp00 = colorsep (V, uv1, float2 (pixel.x * 2.0, pixel.y * -2.0));
+   samp01 = colorsep (V, uv1, float2 (pixel.x, -pixel.y));
+   samp02 = colorsep (V, uv1, float2 (-pixel.x, pixel.y));
+   samp03 = colorsep (V, uv1, float2 (pixel.x * -2.0, pixel.y * 2.0));
    samp7  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
-   samp00 = colorsep (VSampler, uv2, float2 (pixel.x * -2.0, pixel.y));
-   samp01 = (colorsep (VSampler, uv2, float2 (-pixel.x, 0.0)) + colorsep (VSampler, uv2, float2 (-pixel.x, pixel.y))) / 2.0;
-   samp02 = (colorsep (VSampler, uv2, float2 (pixel.x, 0.0)) + colorsep (VSampler, uv2, float2 (pixel.x, -pixel.y))) / 2.0;
-   samp03 = colorsep (VSampler, uv2, float2 (pixel.x * 2.0, -pixel.y));
+   samp00 = colorsep (V, uv1, float2 (pixel.x * -2.0, pixel.y));
+   samp01 = (colorsep (V, uv1, float2 (-pixel.x, 0.0)) + colorsep (V, uv1, float2 (-pixel.x, pixel.y))) / 2.0;
+   samp02 = (colorsep (V, uv1, float2 (pixel.x, 0.0)) + colorsep (V, uv1, float2 (pixel.x, -pixel.y))) / 2.0;
+   samp03 = colorsep (V, uv1, float2 (pixel.x * 2.0, -pixel.y));
    samp8  = Hermite (0.5, samp00, samp01, samp02, samp03);
 
    float cbit = 1.0 / 256.0;
@@ -183,6 +180,6 @@ DeclareEntryPoint (Tenderizer)
    }
    else L = seporg.a;
 
-   return float4 (R + L, G + L, B + L, tex2D (VSampler, uv2).a);
+   return float4 (R + L, G + L, B + L, tex2D (V, uv1).a);
 }
 

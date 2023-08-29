@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-29
 // @Author khaver
 // @Created 2018-08-01
 // @OriginalAuthor Martijn Steinrucken 2018
@@ -27,6 +27,9 @@
 //
 // Version history:
 //
+// Updated 2023-08-29 jwrl.
+// Optimised the code to resolve a Linux/Mac compatibility issue.
+//
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
 //
@@ -49,21 +52,21 @@ DeclareLightworksEffect ("String Theory", "Matte", "Special Effects", "You reall
 
 DeclareFloatParam (Brightness, "Brightness", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 DeclareFloatParam (Glow, "Glow", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
-DeclareFloatParam (Sparkle, "Sparkle", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
+DeclareFloatParam (fSparkle, "Sparkle", kNoGroup, kNoFlags, 0.0, 0.0, 1.0);
 
-DeclareBoolParam (negate, "Negative", kNoGroup, false);
+DeclareBoolParam (Negative, "Negative", kNoGroup, false);
 
-DeclareIntParam (Layers, "Layers", kNoGroup, 5, "1|2|3|4|5|6|7|8");
+DeclareIntParam (LayerInt, "Layers", kNoGroup, 5, "1|2|3|4|5|6|7|8");
 
-DeclareFloatParam (CENTERX, "Center", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
-DeclareFloatParam (CENTERY, "Center", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
+DeclareFloatParam (Center_X, "Center", kNoGroup, "SpecifiesPointX", 0.5, 0.0, 1.0);
+DeclareFloatParam (Center_Y, "Center", kNoGroup, "SpecifiesPointY", 0.5, 0.0, 1.0);
 
 DeclareFloatParam (Rotation, "Rotation", kNoGroup, kNoFlags, 180.0, 0.0, 360.0);
-DeclareFloatParam (Size, "Zoom", kNoGroup, kNoFlags, 1.0, 0.0, 100.0);
-DeclareFloatParam (Zoom, "Size", kNoGroup, kNoFlags, 15.0, 0.0, 50.0);
-DeclareFloatParam (Speed, "Linear Speed", kNoGroup, kNoFlags, 0.0, -20.0, 20.0);
-DeclareFloatParam (Jumble, "Motion Speed", kNoGroup, kNoFlags, 5.0, 0.0, 100.0);
-DeclareFloatParam (Thinness, "String Density", kNoGroup, kNoFlags, 1.0, 0.0, 5.0);
+DeclareFloatParam (Zoom, "Zoom", kNoGroup, kNoFlags, 1.0, 0.0, 100.0);
+DeclareFloatParam (sSize, "Size", kNoGroup, kNoFlags, 15.0, 0.0, 50.0);
+DeclareFloatParam (lSpeed, "Linear Speed", kNoGroup, kNoFlags, 0.0, -20.0, 20.0);
+DeclareFloatParam (mSpeed, "Motion Speed", kNoGroup, kNoFlags, 5.0, 0.0, 100.0);
+DeclareFloatParam (Density, "String Density", kNoGroup, kNoFlags, 1.0, 0.0, 5.0);
 DeclareFloatParam (Irregularity, "Irregularity", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
 
 DeclareFloatParam (_OutputAspectRatio);
@@ -79,17 +82,15 @@ DeclareFloatParam (_Length);
 #define PROFILE ps_3_0
 #endif
 
-float3 baseCol = 1.0.xxx;
-
-#define iTime (_Length * _Progress + 20.0)
-
 #define NUM_LAYERS 4
 
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float N21 (float2 p)	// Dave Hoskins - https://www.shadertoy.com/view/4djSRW
+// Dave Hoskins - https://www.shadertoy.com/view/4djSRW
+
+float N21 (float2 p)
 {
    float3 p3 = frac (p.xyx * float3 (443.897, 441.423, 437.195));
 
@@ -125,7 +126,7 @@ float lines (float2 a, float2 b, float2 uv)
 
    float d = df_line (a, b, uv);
    float d2 = length (a - b);
-   float fade = smoothstep (Thinness + 0.0001, 0.0, d2);
+   float fade = smoothstep (Density + 0.0001, 0.0, d2);
 
    fade += smoothstep (0.05, 0.001, abs (d2 - 0.75));
 
@@ -134,7 +135,7 @@ float lines (float2 a, float2 b, float2 uv)
 
 float NetLayer (float2 st, float n, float t)
 {
-   float jumble = Jumble + 0.001;
+   float jumble = mSpeed + 0.001;
 
    float2 id = floor (st) + n;
 
@@ -146,7 +147,7 @@ float NetLayer (float2 st, float n, float t)
 
    for (int y = -1; y <= 1; y++) {
       for (int x = -1; x <= 1; x++) {
-         p[i++] = GetPos (id, float2 (x, y), t / float (Layers + 1));
+         p[i++] = GetPos (id, float2 (x, y), t / float (LayerInt + 1));
       }
    }
 
@@ -172,7 +173,7 @@ float NetLayer (float2 st, float n, float t)
    m += lines (p[1], p[5], st);
    m += lines (p[7], p[5], st);
    m += lines (p[7], p[3], st);
-   m += sparkle * Sparkle;
+   m += sparkle * fSparkle;
 
    return m;
 }
@@ -183,14 +184,15 @@ float NetLayer (float2 st, float n, float t)
 
 DeclareEntryPoint (StringTheory)
 {
-   float2 xy = (uv0 - 0.5.xx) * Size;
-   float2 M = float2 (CENTERX, 1.0 - CENTERY) * 10.0 - 5.0.xx;
+   float2 xy = (uv0 - 0.5.xx) * Zoom;
+   float2 mm = (float2 (Center_X, 1.0 - Center_Y) * 10.0) - 5.0.xx;
 
    xy.x *= _OutputAspectRatio;
 
-   float t = (iTime * 0.1 * Speed) + 1e-10;
-   float jumble = Jumble + 0.001;
-   float layers = 1.0 + float (Layers);
+   float iTime = ((_Length * _Progress) + 20.0)
+   float t = max (iTime * 0.1 * lSpeed, 1e-10);
+   float jumble = max (mSpeed, 0.001);
+   float layers = 1.0 + float (LayerInt);
    float s, c;
 
    sincos (radians (Rotation), s, c);
@@ -198,26 +200,26 @@ DeclareEntryPoint (StringTheory)
    float2x2 rot = float2x2 (c, -s, s, c);
    float2 st = mul (xy, rot);
 
-   M = mul (M, mul (rot, 2.0));
+   mm *= mul (rot, 2.0.xx);
 
    float m = 0.0;
 
-   for (int i = 0.0; i < 8.0; i++) {
-      if (i > Layers) break;
+   for (int i = 0; i < 8; i++) {
+      if (i > LayerInt) break;
 
       float j = float (i) / 8.0;
       float z = frac (t + j);
-      float size = lerp (Zoom, 1.0, z);
+      float size = lerp (sSize, 1.0, z);
       float fade = smoothstep (0.0, 0.6, z) * smoothstep (1.0, 0.8, z);
 
-      m += fade * NetLayer (st * size - M * z, j, iTime * jumble);
+      m += fade * NetLayer ((st * size) - (mm * z), j, iTime * jumble);
    }
 
-   float3 col = baseCol * (m + Glow + Glow) * (1.0 - dot (xy, xy));
+   float3 col = (m + Glow + Glow) * (1.0 - dot (xy, xy));
 
    col = saturate ((col + col) * Brightness);
 
-   if (negate) col = 1.0.xxx - col;
+   if (Negative) col = 1.0.xxx - col;
 
    return float4 (col, 1.0);
 }

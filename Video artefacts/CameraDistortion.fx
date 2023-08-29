@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-29
 // @Author jwrl
 // @Created 2016-03-12
 
@@ -62,6 +62,9 @@
 //
 // Version history:
 //
+// Updated 2023-08-29 jwrl.
+// Optimised the code to resolve a Linux/Mac compatibility issue.
+//
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
 //
@@ -106,8 +109,7 @@ DeclareFloatParam (_OutputAspectRatio);
 #define PROFILE ps_3_0
 #endif
 
-#define STEPS     12
-#define FRNG_INC  1.0/STEPS
+#define FRNG_INC  0.08333333
 
 #define DICHROIC  0.01
 #define CHIP_ERR  0.0025
@@ -120,24 +122,25 @@ DeclareFloatParam (_OutputAspectRatio);
 // Functions
 //-----------------------------------------------------------------------------------------//
 
-float4 fn_lens (sampler S, float2 uv)
+float4 fn_lens (sampler S, float2 xy)
 {
-   float4 retval = tex2D (S, uv);
+   if (IsOutOfBounds (xy)) return 0.0.xxxx;
+
+   float4 retval = tex2D (S, xy);
 
    if (OpticalErrors != 0.0) {
       retval.rgb = 0.0.xxx;
 
       float2 centre = float2 (Xcentre, 1.0 - Ycentre);
-      float2 xy1 = uv - centre;
-      float2 fringe, xy2;
+      float2 uv = xy - centre;
+      float2 fringe;
 
       float fringing = 0.0;
       float strength = 1.0;
-      float str_diff = (OpticalErrors / 100.0) * length (xy1);
+      float str_diff = OpticalErrors * length (uv) / 100.0;
 
-      for (int i = 0; i < STEPS; i++) {
-         xy2 = (xy1 * strength) + centre;
-         fringe = tex2D (S, xy2).rg / STEPS;
+      for (int i = 0; i < 12; i++) {
+         fringe = tex2D (S, (uv * strength) + centre).rg / 12.0;
 
          retval.rg += fringe * float2 (1.0 - fringing, fringing);
 
@@ -145,9 +148,8 @@ float4 fn_lens (sampler S, float2 uv)
          strength -= str_diff;
       }
 
-      for (int i = 0; i < STEPS; i++) {
-         xy2 = (xy1 * strength) + centre;
-         fringe = ReadPixel (S, xy2).gb / STEPS;
+      for (int j = 0; j < 12; j++) {
+         fringe = tex2D (S, (uv * strength) + centre).gb / 12.0;
 
          retval.gb += fringe * float2 (2.0 - fringing, fringing - 1.0);
 
@@ -155,9 +157,8 @@ float4 fn_lens (sampler S, float2 uv)
          strength -= str_diff;
       }
 
-      for (int i = 0; i < STEPS; i++) {
-         xy2 = (xy1 * strength) + centre;
-         fringe = ReadPixel (S, xy2).rb / STEPS;
+      for (int k = 0; k < 12; k++) {
+         fringe = tex2D (S, (uv * strength) + centre).rb / 12.0;
 
          retval.rb += fringe * float2 (fringing - 2.0, 3.0 - fringing);
 
@@ -175,13 +176,13 @@ float4 fn_distort (sampler S, float2 xy)
                           0.4093, 0.3731, 0.3476, 0.3243, 0.3039, 0.286,  0.2707,
                           0.2563, 0.2435, 0.2316, 0.2214, 0.2116, 0.2023, 0.1942 };
 
-   if (BasicDistortion || CubicDistortion || AnamorphicDistortion) {
+   if ((BasicDistortion != 0.0) || (CubicDistortion != 0.0) || (AnamorphicDistortion != 0.0)) {
       float sa, sb = (Scale * ((Scale / 2.0) - 1.0)) + 0.5;
 
       sb += pow (max (0.0, -Scale) * DISTORT, 2.0);
 
       if (DistortScale) {
-         float a_s0 = saturate (BasicDistortion) * 20;
+         float a_s0 = saturate (BasicDistortion) * 20.0;
          float a_s1 = floor (a_s0);
          float a_s2 = ceil (a_s0);
 
@@ -189,7 +190,7 @@ float4 fn_distort (sampler S, float2 xy)
 
          if (a_s1 != a_s2) {
             a_s0 -= a_s1;
-            a_s0  = sqrt (a_s0 / 9) + (0.666667 * a_s0);
+            a_s0  = sqrt (a_s0 / 9.0) + (0.666667 * a_s0);
             sa = lerp (sa, autoscale [a_s2], a_s0);
          }
       }
@@ -201,7 +202,7 @@ float4 fn_distort (sampler S, float2 xy)
       xy = 2.0 * (xy - centre);
       sf = (sb.xx - (sf * sf * DISTORT)) * xy * sa;
 
-      float r = _OutputAspectRatio * _OutputAspectRatio * xy.x * xy.x + xy.y * xy.y;
+      float r = pow (_OutputAspectRatio * xy.x, 2.0) + pow (xy.y, 2.0);
       float f = CubicDistortion ? 1.0 + (r * (BasicDistortion + (CubicDistortion * sqrt (r))))
                                 : 1.0 + (r * BasicDistortion);
       xy = (sf * f) + centre;

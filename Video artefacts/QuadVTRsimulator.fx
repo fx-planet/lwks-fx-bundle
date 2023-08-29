@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-05-16
+// @Released 2023-08-29
 // @Author jwrl
 // @Created 2018-09-07
 
@@ -14,7 +14,11 @@
  or aspect ratio is it has not been possible to make it truly resolution independent.
  What it does is lock the clip resolution to sequence resolution instead.
 
- NOTE 2:  This effect is only suitable for use with Lightworks version 2023 and higher.
+ NOTE 2:  Head switching dots and/or brush noise can only be enabled when VTR mode
+ is set to Low band (valve) and colour format is set to black and white.  This is
+ equivalent to an Ampex VR-1000, which were the only machines that had them.
+
+ NOTE 3:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
@@ -26,6 +30,11 @@
 // Create tracking errors.  That might just be one for the "too hard" basket.
 //
 // Version history:
+//
+// Updated 2023-08-29 jwrl.
+// Optimised the code to resolve a Linux/Mac compatibility issue.
+// Added code to prevent brush noise and/or head switching to be added in any mode other
+// than valve low band black and white, corresponding to the Ampex VR-1000 VTR.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -79,12 +88,15 @@ DeclareFloatParam (_OutputAspectRatio);
 #define PROFILE ps_3_0
 #endif
 
-#define BLACK float2(0.0, 1.0).xxxy
+#define BLACK      float2(0.0, 1.0).xxxy
 #define WHITE      1.0.xxxx
 
 #define B_W        float3(0.3, 0.59, 0.11)
 
 #define SQRT_2     0.7071067812
+
+#define VR_1000    true
+#define STD_VTR    false
 
 #define TV_525     0
 
@@ -117,11 +129,13 @@ DeclareFloatParam (_OutputAspectRatio);
 
 float4 fn_sharpen (sampler S, float2 uv)
 {
-   float4 retval = ReadPixel (S, uv);
+   if (IsOutOfBounds (uv)) return 0.0.xxxx;
+
+   float4 retval = tex2D (S, uv);
 
    float setband = (Mode == TV_525) ? 483.0 : 576.0;
 
-   setband *= (VTRmode * 0.5) + 1.0;
+   setband *= ((float)VTRmode * 0.5) + 1.0;
 
    float2 xy1 = float2 (1.0 / _OutputAspectRatio, 1.0) / setband;
    float2 xy2 = float2 (0.0, xy1.y);
@@ -142,42 +156,58 @@ float4 fn_sharpen (sampler S, float2 uv)
    retval -= tex2D (S, uv + xy2) * sharpen;
    retval -= tex2D (S, uv + xy1) * sharpen;
 
-   return IsOutOfBounds (uv) ? kTransparentBlack : retval;
+   return retval;
 }
 
-float4 fn_main (sampler S1, sampler S2, float2 uv) : COLOR
+float fn_imod (float y, out int i)
 {
-   float4 retval = tex2D (S1, uv);
+   float r = abs (y);
+   float f = frac (r);
 
+   r -= f;
+   i  = int (frac (r / 4.0) * 4.0);
+
+   return f;
+}
+
+float4 fn_main (sampler S1, sampler S2, float2 uv, bool hs)
+{
+   bool head_sw = (VTRmode == 0) && hs;
+
+   float brush_noise = head_sw ? Brush * 0.00625 : 0.0;
    float head, x = abs (uv.x - 0.5);
 
    if (Crop) x *= _OutputAspectRatio * 0.75;
 
-   if (x > 0.5) { return kTransparentBlack; }
+   if (x > 0.5) { return 0.0.xxxx; }
 
-   bool head_sw;
+   head_sw = head_sw && HeadSwitch;
 
-   float head_idx [] = { Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4,
-                 Head_1, Head_2, Head_3, Head_4, Head_1, Head_2, Head_3, Head_4 };
+   int h;
    float2 xy;
 
+   float head_idx [4] = { Head_2, Head_3, Head_4, Head_1 };
+
+   float4 retval = tex2D (S1, uv);
+
    if (Mode == TV_525) {
-      head_sw = (modf (NTSC * (uv.y + NTSC_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
+      head_sw = (fn_imod (NTSC * (uv.y + NTSC_OFFS), h) > 0.96) && (uv.x > 0.5) && head_sw;
       xy = floor (uv * 483.0) / 483.0;
    }
    else {
-      head_sw = (modf (PAL * (uv.y + PAL_OFFS), head) > 0.96) && (uv.x > 0.5) && HeadSwitch;
+      head_sw = (fn_imod (PAL * (uv.y + PAL_OFFS), h) > 0.96) && (uv.x > 0.5) && head_sw;
       xy = floor (uv * 574.0) / 574.0;
    }
 
    if ((x > 0.496) && head_sw) {
-      head++;
+      if (h == 3) { h = 0; }
+      else h++;
       retval.rgb = tex2D (S2, uv).rgb;
 
       if (retval.a == 0.0) retval = dot (retval.rgb, B_W).xxxx;
    }
 
-   head = head_idx [head] * 2.0;
+   head = head_idx [h] * 2.0;
    head_sw = (x > 0.4935) && (x < 0.496) && head_sw;
 
    float buildup = dot (retval.rgb, B_W);
@@ -186,7 +216,7 @@ float4 fn_main (sampler S1, sampler S2, float2 uv) : COLOR
    retval = (VTRmode == 0) ? lerp (retval, noise.xxxx, 0.1)
                            : lerp (retval, noise.xxxx, 0.05 / (VTRmode * VTRmode));
 
-   if ((Brush * 0.00625) > noise) return WHITE;
+   if (brush_noise > noise) return WHITE;
 
    noise   = frac (sin (dot (xy, float2 (N_2, N_4)) + noise) * (S_2));
    buildup = (noise < 0.5) ? saturate (2.0 * buildup * noise)
@@ -237,13 +267,13 @@ DeclarePass (Mono)
 
    if (Crop) xy2.x *= _OutputAspectRatio * 0.75;
 
-   if (max (xy2.x, xy2.y) > 0.5) return kTransparentBlack;
+   if (max (xy2.x, xy2.y) > 0.5) return 0.0.xxxx;
 
    return float4 (dot (tex2D (SharpMono, xy1).rgb, B_W).xxx, 0.0);
 }
 
 DeclareEntryPoint (QuadVTR_Mono)
-{ return fn_main (Mono, SharpMono, uv2); }
+{ return fn_main (Mono, SharpMono, uv2, VR_1000); }
 
 //-----------------------------------------------------------------------------------------//
 
@@ -294,7 +324,7 @@ DeclarePass (NTSCvid)
 }
 
 DeclareEntryPoint (QuadVTR_NTSC)
-{ return fn_main (NTSCvid, SharpNTSC, uv2); }
+{ return fn_main (NTSCvid, SharpNTSC, uv2, STD_VTR); }
 
 //-----------------------------------------------------------------------------------------//
 
@@ -341,7 +371,7 @@ DeclarePass (PALvid)
 }
 
 DeclareEntryPoint (QuadVTR_PAL)
-{ return fn_main (PALvid, SharpPAL, uv2); }
+{ return fn_main (PALvid, SharpPAL, uv2, STD_VTR); }
 
 //-----------------------------------------------------------------------------------------//
 
@@ -396,7 +426,7 @@ DeclarePass (Hanover)
 }
 
 DeclareEntryPoint (QuadVTR_Hanover)
-{ return fn_main (Hanover, SharpHanover, uv2); }
+{ return fn_main (Hanover, SharpHanover, uv2, STD_VTR); }
 
 //-----------------------------------------------------------------------------------------//
 
@@ -449,5 +479,5 @@ DeclarePass (RCA)
 }
 
 DeclareEntryPoint (QuadVTR_RCA)
-{ return fn_main (RCA, SharpRCA, uv2); }
+{ return fn_main (RCA, SharpRCA, uv2, STD_VTR); }
 

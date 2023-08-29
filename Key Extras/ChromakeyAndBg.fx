@@ -1,13 +1,13 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-08-29
 // @Author jwrl
 // @Created 2020-07-23
 
 /**
  This effect is a customised version of the Lightworks Chromakey effect with cropping and
- some simple transform adjustments added.  A means of generating an infinite cyclorama
- style background has also been added.  The colour of the background and its linearity can
- be adjusted to give a very realistic studio look.
+ some simple DVE adjustments added.  A means of generating an infinite cyclorama style
+ background has also been added.  The colour of the background and its linearity can be
+ adjusted to give a very realistic studio look.
 
  The ChromaKey sections are based on work copyright (c) LWKS Software Ltd.  To allow full
  screen width of the background in all combinations of foreground and sequence this effect
@@ -21,8 +21,8 @@
 //
 // Version history:
 //
-// Updated 2023-06-19 jwrl.
-// Changed DVE reference to transform.
+// Updated 2023-08-29 jwrl.
+// Optimised the code to resolve a Linux/Mac compatibility issue.
 //
 // Updated 2023-05-16 jwrl.
 // Header reformatted.
@@ -32,7 +32,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Chromakey and background", "Key", "Key Extras", "A chromakey effect with a simple transform and cyclorama background generation.", kNoFlags);
+DeclareLightworksEffect ("Chromakey and background", "Key", "Key Extras", "A chromakey effect with a simple DVE and cyclorama background generation.", kNoFlags);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -83,8 +83,6 @@ DeclareIntParam (_InpOrientation);
 #define PROFILE ps_3_0
 #endif
 
-#define CENTRE 0.5
-
 #define HUE_IDX 0
 #define SAT_IDX 1
 #define VAL_IDX 2
@@ -108,11 +106,11 @@ float2 fixParams (out float L, out float T, out float R, out float B)
 {
    float4 crop = float4 (CropLeft, 1.0 - CropTop, 1.0 - CropRight, CropBottom);
 
-   float2 pos = float2 (CENTRE - CentreX, CentreY - CENTRE);
+   float2 pos = float2 (0.5 - CentreX, CentreY - 0.5);
 
-   if (abs (abs (_InpOrientation - 90) - 90)) {
+   if (abs (_InpOrientation - 90) - 90 != 0) {
       crop = crop.wxyz;
-      pos = CENTRE - float2 (CentreY, CentreX);
+      pos = 0.5.xx - float2 (CentreY, CentreX);
    }
 
    if (_InpOrientation > 90) {
@@ -123,9 +121,9 @@ float2 fixParams (out float L, out float T, out float R, out float B)
    L = crop.x;
    T = crop.y;
    R = 1.0 - crop.z;
-   B = 1.0 - crop.z;
+   B = 1.0 - crop.w;
 
-   return (pos / abs (_InpExtents.xy - _InpExtents.zw)) + CENTRE;
+   return (pos / abs (_InpExtents.xy - _InpExtents.zw)) + 0.5.xx;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -133,13 +131,13 @@ float2 fixParams (out float L, out float T, out float R, out float B)
 //-----------------------------------------------------------------------------------------//
 
 //-----------------------------------------------------------------------------------------//
-// Transform
+// Foreground transform
 //
 // This simple shader adjusts the cropping, position and scaling of the foreground image.
 // It is a new addition to the original Lightworks chromakey effect.
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (DVEvid)
+DeclarePass (fgVid)
 {
    // Calculate the crop boundaries and adjust the position to correct for Inp size.
 
@@ -147,20 +145,49 @@ DeclarePass (DVEvid)
 
    float2 position = fixParams (Left, Top, Right, Bottom);
 
-   // Set up the scale factor, using the Z axis position.  Unlike the Lightworks transform 3D
-   // the range isn't linear and operates smallest to largest.  Since it is intended to just
-   // fine tune position it does not cover the full range of the transform 3D.
+   // Set up the scale factor, using the Z axis position.  Unlike the Lightworks 3D DVE
+   // the range isn't linear and operates smallest to largest.  Since it is intended to
+   // just fine tune position it does not cover the full range of the 3D DVE.
 
    float scale = pow (max ((CentreZ + 1.0) * 0.5, 0.0001) + 0.5, 4.0);
 
    // Set up the image position and scaling
 
-   float2 xy = ((uv1 - CENTRE) / scale) + position;
+   float2 xy = ((uv1 - 0.5.xx) / scale) + position;
 
    // Now return the cropped, repositioned and resized image.
 
    return (xy.x >= Left) && (xy.y >= Top) && (xy.x <= Right) && (xy.y <= Bottom)
-          ? ReadPixel (Inp, xy) : kTransparentBlack;
+          ? ReadPixel (Inp, xy) : 0.0.xxxx;
+}
+
+//-----------------------------------------------------------------------------------------//
+// Background generation
+//
+// To create the background, the groundrow distance to the centre point, cg, is first
+// calculated using a range limited version of Horizon.  Subtracting that from 1 gives
+// the lighting distance to the centre point, which is stored in cl.
+//-----------------------------------------------------------------------------------------//
+
+DeclarePass (bgVid)
+{
+   float cg = clamp (Horizon, 0.1, 0.9);
+   float cl = 1.0 - cg;
+
+   // If we are at the top of the "cyclorama" the gamma uses the value set in Lighting,
+   // otherwise the Groundrow value is used.  The amount of gamma correction to use is
+   // given by the normalised distance of the Y position from Horizon.
+
+   float gamma = (uv0.y < cl) ? lerp (1.0 / Lighting, 1.0, uv0.y / cl)
+                              : lerp (1.0 / Groundrow, 1.0, (1.0 - uv0.y) / cg);
+
+   if (gamma < 1.0) gamma = pow (gamma, 3.0);
+
+   // The appropriate gamma correction is now applied to the colour of the "cyclorama"
+   // to produce the desired lighting effect on the background.  The alpha channel is
+   // then set to 1.0 and we quit.
+
+   return float4 (pow (HorizonColour, gamma).rgb, 1.0);
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -183,7 +210,7 @@ DeclarePass (RawKey)
 
    float4 tolerance1 = Tolerance + _minTolerance;
    float4 tolerance2 = tolerance1 + ToleranceSoftness;
-   float4 rgba = tex2D (DVEvid, uv2);
+   float4 rgba = tex2D (fgVid, uv2);
    float4 hsva = 0.0.xxxx;
 
    // The float maxComponentVal has been set up here to save a redundant evalution
@@ -206,26 +233,21 @@ DeclarePass (RawKey)
    hsva [VAL_IDX] = maxComponentVal;
    hsva [SAT_IDX] = componentRange / maxComponentVal;
 
-   if (hsva [SAT_IDX] == 0.0) { hsva [HUE_IDX] = 0.0; }     // undefined
+   if (hsva [SAT_IDX] == 0.0) { hsva [HUE_IDX] = 0.0; }      // undefined colour
    else {
-      if (rgba.r == maxComponentVal) {
-         hsva [HUE_IDX] = (rgba.g - rgba.b) / componentRange;
-      }
-      else if (rgba.g == maxComponentVal) {
-         hsva [HUE_IDX] = 2.0 + ((rgba.b - rgba.r) / componentRange);
-      }
-      else hsva [HUE_IDX] = 4.0 + ((rgba.r - rgba.g) / componentRange);
+      if (rgba.r == maxComponentVal) { hsva [HUE_IDX] = (rgba.g - rgba.b) / componentRange; }
+      else if (rgba.g == maxComponentVal) { hsva [HUE_IDX] = 2.0 + ((rgba.b - rgba.r) / componentRange); }
+      else { hsva [HUE_IDX] = 4.0 + ((rgba.r - rgba.g) / componentRange); }
 
       hsva [HUE_IDX] *= _oneSixth;
-
       if (hsva [HUE_IDX] < 0.0) hsva [HUE_IDX] += 1.0;
    }
 
-   // Calc difference between current pixel and specified key-colour
+   // Calculate the difference between the current pixel and the specified key-colour
 
    float4 diff = abs (hsva - KeyColour);
 
-   if (diff [HUE_IDX] > 0.5) diff [HUE_IDX] = 1.0 - diff [HUE_IDX];
+   if (diff [HUE_IDX] > 0.5) { diff [HUE_IDX] = 1.0 - diff [HUE_IDX]; }
 
    // Work out how transparent/opaque the corrected pixel will be
 
@@ -252,63 +274,63 @@ DeclarePass (RawKey)
 //-----------------------------------------------------------------------------------------//
 // Blur 1
 //
-// Does the horizontal component of the blur.  Added a check for a valid key presence at
-// the start of the shader using the new flag in result.z.  If it isn't set, quit.
+// Does the horizontal component of a box blur.  Added a check for a valid key presence
+// at the start of the shader using the new flag in retval.z.  If it isn't set, quit.
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (BlurKey)
+DeclarePass (Blur_X)
 {
-   float4 result = tex2D (RawKey, uv2);
+   float4 retval = tex2D (RawKey, uv2);
 
-   // This next check will only be true if ps_keygen() has been bypassed.
+   // This next check will only be true if key generation has been bypassed.
 
-   if (result.z != 1.0) return result;
+   if (retval.z != 1.0) return retval;
 
    float2 onePixel    = float2 (KeySoftAmount / _OutputWidth, 0.0);
-   float2 twoPixels   = onePixel * 2.0;
-   float2 threePixels = onePixel * 3.0;
+   float2 twoPixels   = onePixel + onePixel;
+   float2 threePixels = onePixel + twoPixels;
 
-   // Calculate return result;
+   // Calculate return retval;
 
-   result.x *= blur [0];
-   result.x += tex2D (RawKey, uv2 + onePixel).x    * blur [1];
-   result.x += tex2D (RawKey, uv2 - onePixel).x    * blur [1];
-   result.x += tex2D (RawKey, uv2 + twoPixels).x   * blur [2];
-   result.x += tex2D (RawKey, uv2 - twoPixels).x   * blur [2];
-   result.x += tex2D (RawKey, uv2 + threePixels).x * blur [3];
-   result.x += tex2D (RawKey, uv2 - threePixels).x * blur [3];
+   retval.x *= blur [0];
+   retval.x += tex2D (RawKey, uv2 + onePixel).x    * blur [1];
+   retval.x += tex2D (RawKey, uv2 - onePixel).x    * blur [1];
+   retval.x += tex2D (RawKey, uv2 + twoPixels).x   * blur [2];
+   retval.x += tex2D (RawKey, uv2 - twoPixels).x   * blur [2];
+   retval.x += tex2D (RawKey, uv2 + threePixels).x * blur [3];
+   retval.x += tex2D (RawKey, uv2 - threePixels).x * blur [3];
 
-   return result;
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
 // Blur 2
 //
-// Adds the vertical component of the blur.  Added a check for key presence at the start
-// of the shader using the new flag in result.z.  If it isn't set, quit.
+// Adds the vertical component of a box blur.  Added a check for a valid key presence
+// at the start of the shader using the new flag in retval.z.  If it isn't set, quit.
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (FullKey)
 {
-   float4 result = tex2D (BlurKey, uv2);
+   float4 retval = tex2D (Blur_X, uv2);
 
-   if (result.z != 1.0) return result;
+   if (retval.z != 1.0) return retval;
 
    float2 onePixel    = float2 (0.0, KeySoftAmount / _OutputHeight);
-   float2 twoPixels   = onePixel * 2.0;
-   float2 threePixels = onePixel * 3.0;
+   float2 twoPixels   = onePixel + onePixel;
+   float2 threePixels = onePixel + twoPixels;
 
-   // Calculate return result;
+   // Calculate return retval;
 
-   result.x *= blur [0];
-   result.x += tex2D (BlurKey, uv2 + onePixel).x    * blur [1];
-   result.x += tex2D (BlurKey, uv2 - onePixel).x    * blur [1];
-   result.x += tex2D (BlurKey, uv2 + twoPixels).x   * blur [2];
-   result.x += tex2D (BlurKey, uv2 - twoPixels).x   * blur [2];
-   result.x += tex2D (BlurKey, uv2 + threePixels).x * blur [3];
-   result.x += tex2D (BlurKey, uv2 - threePixels).x * blur [3];
+   retval.x *= blur [0];
+   retval.x += tex2D (Blur_X, uv2 + onePixel).x    * blur [1];
+   retval.x += tex2D (Blur_X, uv2 - onePixel).x    * blur [1];
+   retval.x += tex2D (Blur_X, uv2 + twoPixels).x   * blur [2];
+   retval.x += tex2D (Blur_X, uv2 - twoPixels).x   * blur [2];
+   retval.x += tex2D (Blur_X, uv2 + threePixels).x * blur [3];
+   retval.x += tex2D (Blur_X, uv2 - threePixels).x * blur [3];
 
-   return result;
+   return retval;
 }
 
 //-----------------------------------------------------------------------------------------//
@@ -317,14 +339,15 @@ DeclarePass (FullKey)
 // Blend the foreground with the background using the key that was built earlier.
 // Apply spill suppression as we go.
 //
-// New: 1.  Original foreground sampler replaced with transform version.
-//      2.  Original background sampler replaced with generated version.
-//      3.  The invert key function which is pointless in this context has been removed.
+// New: 1. Original foreground sampler replaced with transform version.
+//      2. Original background sampler replaced with generated cyclorama.
+//      3. The invert key code has been removed.
 //-----------------------------------------------------------------------------------------//
 
 DeclareEntryPoint (ChromakeyAndBg)
 {
-   float4 Fgd = tex2D (DVEvid, uv2);
+   float4 Fgd = tex2D (fgVid, uv2);
+   float4 Bgd = tex2D (bgVid, uv2);          // Here we recover the cyclorama background.
    float4 Key = tex2D (FullKey, uv2);
 
    // Key.w = spill removal amount
@@ -334,47 +357,26 @@ DeclareEntryPoint (ChromakeyAndBg)
    // Using min (Key.x, Key.y) means that any softness around the key causes the
    // foreground to shrink in from the edges.
 
-   float mix = saturate ((1.0 - min (Key.x, Key.y) * Fgd.a) * 2.0);
+   float maskAmount = tex2D (Mask, uv2).x;
+   float mixAmount  = saturate ((1.0 - min (Key.x, Key.y) * Fgd.a) * 2.0);
 
    // If we just want to show the key we can get out now.  Because we no longer have the
    // invert key function this process has become simpler than the Lightworks original.
 
-   if (Reveal) return lerp (kTransparentBlack, float4 (mix.xxx, 1.0), tex2D (Mask, uv1));
-
-   // Now we generate the background. The groundrow distance to the centre point, cg,
-   // is first calculated using a range limited version of Horizon.  Subtracting that
-   // from 1 gives the lighting distance to the centre point, which is stored in cl.
-
-   float cg = clamp (Horizon, 0.1, 0.9);
-   float cl = 1.0 - cg;
-
-   // If we are at the top of the "cyclorama" the gamma uses the value set in Lighting,
-   // otherwise the Groundrow value is used.  The amount of gamma correction to use is
-   // given by the normalised distance of the Y position from Horizon.
-
-   float gamma = (uv2.y < cl) ? lerp (1.0 / Lighting, 1.0, uv2.y / cl)
-                              : lerp (1.0 / Groundrow, 1.0, (1.0 - uv2.y) / cg);
-
-   if (gamma < 1.0) gamma = pow (gamma, 3.0);
-
-   // The appropriate gamma correction is now applied to the colour of the "cyclorama"
-   // to produce the desired lighting effect on the background.  That is then combined
-   // with the foreground and the alpha is set to 1 and we quit.
-
-   float4 Bgd = float4 (pow (HorizonColour, gamma).rgb, 1.0);
+   if (Reveal) return lerp (0.0.xxxx, float4 (mixAmount.xxx, 1.0), maskAmount);
 
    // Perform spill removal on the foreground if necessary
 
    if (Key.w > 0.8) {
-      float4 fgLum = float4 ((Fgd.r + Fgd.g + Fgd.b).xxx / 3.0, 1.0);
+      float4 FgdLum = float4 (((Fgd.r + Fgd.g + Fgd.b) / 3.0).xxx, 1.0);
 
-      // Remove spill.
-
-      Fgd = lerp (Fgd, fgLum, ((Key.w - 0.8) / 0.2) * RemoveSpill);
+      Fgd = lerp (Fgd, FgdLum, ((Key.w - 0.8) * 5.0) * RemoveSpill);    // Remove spill.
    }
 
-   float4 retval = IsOutOfBounds (uv1) ? Bgd : float4 (lerp (Fgd, Bgd, mix).rgb, 1.0);
+   float4 retval = lerp (Fgd, Bgd, mixAmount * Bgd.a);
 
-   return lerp (Bgd, retval, tex2D (Mask, uv2).x);
+   retval.a = max (Bgd.a, 1.0 - mixAmount);
+
+   return lerp (Bgd, retval, maskAmount);
 }
 

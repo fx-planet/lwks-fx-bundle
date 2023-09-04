@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-08-29
+// @Released 2023-09-04
 // @Author khaver
 // @Created 2018-08-01
 // @OriginalAuthor Martijn Steinrucken 2018
@@ -27,7 +27,7 @@
 //
 // Version history:
 //
-// Updated 2023-08-29 jwrl.
+// Updated 2023-09-04 jwrl.
 // Optimised the code to resolve a Linux/Mac compatibility issue.
 //
 // Updated 2023-05-16 jwrl.
@@ -189,7 +189,7 @@ DeclareEntryPoint (StringTheory)
 
    xy.x *= _OutputAspectRatio;
 
-   float iTime = ((_Length * _Progress) + 20.0)
+   float iTime = ((_Length * _Progress) + 20.0);
    float t = max (iTime * 0.1 * lSpeed, 1e-10);
    float jumble = max (mSpeed, 0.001);
    float layers = 1.0 + float (LayerInt);

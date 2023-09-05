@@ -1,39 +1,42 @@
-// @Maintainer jwrl
-// @Released 2023-06-24
-// @Author jwrl
-// @Created 2020-11-29
-
-/**
- This transform effect performs in the same way as the Lightworks version does, but
- with some significant differences.  First, there is no drop shadow support.  Second,
- instead of the drop shadow you get a border.  This can be set to either eat into the
- foreground or surround the foreground image.  This allows for those cases where the
- border is invisible because the image isn't cropped.  This has been provided at the
- expense of the masking provided in current versions of the LW transform.
-
- Also added in this version is the ability to rotate the image.  And fourth, the
- image can be duplicated as you zoom out either directly or as a mirrored image.
- Mirroring can be horizontal or vertical only, or on both axes.  Fifth, all size
- adjustment follows a square law.  The range you will see in your sequence is the
- same as you see in the Lightworks effect, but the adjustment settings are from
- zero to the square root of ten - a little over three.  This has been done to make
- size reduction more easily controllable.
-
- The final image that the effect produces has a composite alpha channel built from
- a combination of the background and foreground.  If the background has transparency
- it will be preserved wherever the foreground isn't present.
-
- There is one final difference when compared with the Lightworks transform effect: the
- background can be faded to opaque black.
-
- NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
-*/
-
-//-----------------------------------------------------------------------------------------//
-// Lightworks user effect RepeatTransform.fx
-//
-// Version history:
-//
+// @Maintainer jwrl
+// @Released 2023-09-05
+// @Author jwrl
+// @Created 2020-11-29
+
+/**
+ This transform effect performs in the same way as the Lightworks version does, but
+ with some significant differences.  First, there is no drop shadow support.  Second,
+ instead of the drop shadow you get a border.  This can be set to either eat into the
+ foreground or surround the foreground image.  This allows for those cases where the
+ border is invisible because the image isn't cropped.  This has been provided at the
+ expense of the masking provided in current versions of the LW transform.
+
+ Also added in this version is the ability to rotate the image.  And fourth, the
+ image can be duplicated as you zoom out either directly or as a mirrored image.
+ Mirroring can be horizontal or vertical only, or on both axes.  Fifth, all size
+ adjustment follows a square law.  The range you will see in your sequence is the
+ same as you see in the Lightworks effect, but the adjustment settings are from
+ zero to the square root of ten - a little over three.  This has been done to make
+ size reduction more easily controllable.
+
+ The final image that the effect produces has a composite alpha channel built from
+ a combination of the background and foreground.  If the background has transparency
+ it will be preserved wherever the foreground isn't present.
+
+ There is one final difference when compared with the Lightworks transform effect: the
+ background can be faded to opaque black.
+
+ NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
+*/
+
+//-----------------------------------------------------------------------------------------//
+// Lightworks user effect RepeatTransform.fx
+//
+// Version history:
+//
+// Updated 2023-09-05 jwrl.
+// Corrected Linux/Mac bug.
+//
 // Updated 2023-06-24 jwrl.
 // Changed foreground autocrop to masking.
 //
@@ -113,7 +116,7 @@ float getCrop (out float L, out float T, out float R, out float B)
 
    float AR;
 
-   if (abs (abs (_FgOrientation - 90) - 90)) {
+   if ((_FgOrientation == 90) || (_FgOrientation == 270)) {
       crop = crop.wxyz;
       AR = _FgHeight / _FgWidth;
    }
@@ -193,7 +196,7 @@ DeclareEntryPoint (RepeatTransform)
 
    float scaleX = MasterScale * MasterScale;
    float scaleY = max (1.0e-6, scaleX * YScale * YScale);
-   float AspectRatio = abs (abs (_FgOrientation - 90) - 90)
+   float AspectRatio = (_FgOrientation == 90) || (_FgOrientation == 270)
                      ? _FgHeight / _FgWidth : _FgWidth / _FgHeight;
 
    scaleX = max (1.0e-6, scaleX * XScale * XScale);
@@ -246,7 +249,7 @@ DeclareEntryPoint (RepeatTransform)
    // finally blended with the background.
 
    float4 Fgnd = ReadPixel (Crop, xy1);
-   float4 Bgnd = lerp (kTransparentBlack, ReadPixel (Bg, uv2), Background);
+   float4 Bgnd = lerp (0.0.xxxx, ReadPixel (Bg, uv2), Background);
    float4 retval = lerp (Bgnd, Fgnd, Fgnd.a * Opacity);
 
    return lerp (Bgnd, retval, tex2D (Mask, uv3).x);

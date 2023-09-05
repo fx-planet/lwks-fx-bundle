@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-20
+// @Released 2023-09-05
 // @Author jwrl
 // @Created 2019-11-06
 
@@ -25,6 +25,9 @@
 // Lightworks user effect BevelCrop.fx
 //
 // Version history:
+//
+// Updated 2023-09-05 jwrl.
+// Corrected Linux/Mac bug.
 //
 // Updated 2023-06-19 jwrl.
 // Changed DVE reference to transform.
@@ -143,7 +146,7 @@ DeclarePass (Bvl)
 
    float4 Fgnd = ReadPixel (Fg, uv1);
 
-   float3 retval = lerp (kTransparentBlack, Fgnd, Fgnd.a).rgb;
+   float3 retval = lerp (0.0.xxx, Fgnd.rgb, Fgnd.a);
 
    // Now set up the crop boundaries, the size of the border and the percentage of the
    // border that we want to be bevelled.
@@ -250,7 +253,7 @@ DeclarePass (Bvl)
 
    // We now turn the alpha channel on and blank anything outside the border boundary.
 
-   return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? kTransparentBlack : float4 (retval, 1.0);
+   return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? 0.0.xxxx : float4 (retval, 1.0);
 }
 
 DeclareEntryPoint (BevelCrop)

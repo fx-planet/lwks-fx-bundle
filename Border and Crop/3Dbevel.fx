@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-20
+// @Released 2023-09-05
 // @Author jwrl
 // @Created 2020-09-14
 
@@ -26,6 +26,9 @@
 // Lightworks user effect 3Dbevel.fx
 //
 // Version history:
+//
+// Updated 2023-09-05 jwrl.
+// Corrected Linux/Mac bug.
 //
 // Updated 2023-06-20 jwrl.
 // Added masking and removed background generated cropping.
@@ -82,8 +85,6 @@ DeclareFloatParam (_OutputAspectRatio);
 #ifdef WINDOWS
 #define PROFILE ps_3_0
 #endif
-
-#define jSaturate(n)    min(max (n, 0.0), 1.0)
 
 #define BEVEL  0.1
 #define BORDER 0.0125
@@ -144,7 +145,7 @@ DeclarePass (Bvl)
 {
    float4 Fgnd = ReadPixel (Fgd, uv3);
 
-   float3 retval = lerp (kTransparentBlack, Fgnd, Fgnd.a).rgb;
+   float3 retval = lerp (0.0.xxx, Fgnd.rgb, Fgnd.a);
 
    float2 cropAspect = float2 (1.0, _OutputAspectRatio);
    float2 centreCrop = float2 (abs (CropRight - CropLeft), abs (CropTop - CropBottom));
@@ -153,9 +154,11 @@ DeclarePass (Bvl)
 
    float2 xy1 = uv3 - float2 (CropRight + CropLeft, 2.0 - CropTop - CropBottom) / 2.0;
    float2 xy2 = abs (xy1) * 2.0;
-   float2 xy3 = jSaturate (xy2 - cropBevel);
+   float2 xy3 = saturate (xy2 - cropBevel);
 
    xy3.x *= _OutputAspectRatio;
+
+   float amt;
 
    if ((xy2.x > cropBevel.x) || (xy2.y > cropBevel.y)) {
       float3 hsv = fn_rgb2hsv (Light.rgb);
@@ -168,7 +171,7 @@ DeclarePass (Bvl)
       sincos (radians (Angle), lit.x, lit.y);
       lit = (lit + 1.0.xx) * 0.5;
 
-      float amt = (xy1.y > 0.0) ? 1.0 - lit.y : lit.y;
+      amt = (xy1.y > 0.0) ? 1.0 - lit.y : lit.y;
 
       float2 uv = pow (abs (uv3 - 0.5.xx) * 2.0, 1.75 - (Bevel * 0.5)) / 2.0;
 
@@ -183,22 +186,22 @@ DeclarePass (Bvl)
       }
 
       Fgnd = ReadPixel (Fgd, uv);
-      retval = lerp (kTransparentBlack, Fgnd, Fgnd.a).rgb;
+      retval = lerp (0.0.xxx, Fgnd.rgb, Fgnd.a);
 
-      amt = jSaturate (0.95 - (amt * Intensity * 2.0)) * 6.0;
+      amt = saturate (0.95 - (amt * Intensity * 2.0)) * 6.0;
       amt = (amt >= 3.0) ? amt - 2.0 : 1.0 / (4.0 - amt);
       hsv.z = pow (hsv.z, amt);
 
-      if (hsv.z > 0.5) hsv.y = jSaturate (hsv.y - hsv.z + 0.5);
+      if (hsv.z > 0.5) hsv.y = saturate (hsv.y - hsv.z + 0.5);
 
-      hsv.z = jSaturate (hsv.z * 2.0);
+      hsv.z = saturate (hsv.z * 2.0);
 
       retval = lerp (retval, fn_hsv2rgb (hsv), (Bstrength * 0.5) + 0.25);
    }
 
    if ((xy2.x > centreCrop.x) || (xy2.y > centreCrop.y)) { retval = Colour.rgb; }
 
-   return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? kTransparentBlack : float4 (retval, 1.0);
+   return ((xy2.x > cropBorder.x) || (xy2.y > cropBorder.y)) ? 0.0.xxxx : float4 (retval, 1.0);
 }
 
 DeclareEntryPoint (Bevel3D)

@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-08-29
+// @Released 2023-09-05
 // @Author jwrl
 // @Created 2016-03-12
 
@@ -62,7 +62,7 @@
 //
 // Version history:
 //
-// Updated 2023-08-29 jwrl.
+// Updated 2023-09-05 jwrl.
 // Optimised the code to resolve a Linux/Mac compatibility issue.
 //
 // Updated 2023-05-16 jwrl.
@@ -118,6 +118,10 @@ DeclareFloatParam (_OutputAspectRatio);
 #define HORIZ     true
 #define VERT      false
 
+float _autoscale [21] = { 1.0,    0.8249, 0.7051, 0.6175, 0.5478, 0.4926, 0.4462,
+                          0.4093, 0.3731, 0.3476, 0.3243, 0.3039, 0.286,  0.2707,
+                          0.2563, 0.2435, 0.2316, 0.2214, 0.2116, 0.2023, 0.1942 };
+
 //-----------------------------------------------------------------------------------------//
 // Functions
 //-----------------------------------------------------------------------------------------//
@@ -172,10 +176,6 @@ float4 fn_lens (sampler S, float2 xy)
 
 float4 fn_distort (sampler S, float2 xy)
 {
-   float autoscale [] = { 1.0,    0.8249, 0.7051, 0.6175, 0.5478, 0.4926, 0.4462,
-                          0.4093, 0.3731, 0.3476, 0.3243, 0.3039, 0.286,  0.2707,
-                          0.2563, 0.2435, 0.2316, 0.2214, 0.2116, 0.2023, 0.1942 };
-
    if ((BasicDistortion != 0.0) || (CubicDistortion != 0.0) || (AnamorphicDistortion != 0.0)) {
       float sa, sb = (Scale * ((Scale / 2.0) - 1.0)) + 0.5;
 
@@ -186,18 +186,21 @@ float4 fn_distort (sampler S, float2 xy)
          float a_s1 = floor (a_s0);
          float a_s2 = ceil (a_s0);
 
-         sa = autoscale [a_s1];
+         sa = _autoscale [int (a_s1)];
 
          if (a_s1 != a_s2) {
             a_s0 -= a_s1;
             a_s0  = sqrt (a_s0 / 9.0) + (0.666667 * a_s0);
-            sa = lerp (sa, autoscale [a_s2], a_s0);
+            sa = lerp (sa, _autoscale [int (a_s2)], a_s0);
          }
       }
       else sa = 1.0;
 
+      float adx = max (0.0, AnamorphicDistortion);
+      float ady = max (0.0, -AnamorphicDistortion);
+
       float2 centre = float2 (Xcentre, 1.0 - Ycentre);
-      float2 sf = max (0.0, float2 (AnamorphicDistortion, -AnamorphicDistortion));
+      float2 sf = float2 (adx, ady);
 
       xy = 2.0 * (xy - centre);
       sf = (sb.xx - (sf * sf * DISTORT)) * xy * sa;
@@ -239,7 +242,7 @@ DeclareEntryPoint (CameraDistortion_Single_H)
    return retval;
 }
 
-//Single chip portrait
+// Single chip portrait
 
 DeclarePass (Inp_SV)
 { return fn_lens (Inp, uv1); }
@@ -263,7 +266,7 @@ DeclareEntryPoint (CameraDistortion_Single_V)
    return retval;
 }
 
-//Three chip landscape
+// Three chip landscape
 
 DeclarePass (Inp_DH)
 { return fn_lens (Inp, uv1); }
@@ -288,7 +291,7 @@ DeclareEntryPoint (CameraDistortion_Dichroic_H)
    return retval;
 }
 
-//Three chip portrait
+// Three chip portrait
 
 DeclarePass (Inp_DV)
 { return fn_lens (Inp, uv1); }

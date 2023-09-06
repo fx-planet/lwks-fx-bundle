@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-08-29
+// @Released 2023-09-05
 // @Author jwrl
 // @Created 2018-03-20
 
@@ -16,7 +16,7 @@
 //
 // Version history:
 //
-// Updated 2023-08-29 jwrl.
+// Updated 2023-09-05 jwrl.
 // Optimised the code to resolve a Linux/Mac compatibility issue.
 //
 // Updated 2023-06-14 jwrl.
@@ -108,16 +108,18 @@ DeclarePass (fgVid)
 {
    // The first section adjusts the position allowing for the foreground orientation.
 
-   float2 pos = abs (_FgOrientation - 90) - 90 == 0
+   float2 pos = (_FgOrientation == 0) || (_FgOrientation == 180)
               ? float2 (0.5 - CentreX, CentreY - 0.5)
               : 0.5.xx - float2 (CentreY, CentreX);
 
    if (_FgOrientation > 90) { pos = -pos; }
 
-   float2 xy = uv1 + (pos * abs (_FgExtents.xy - _FgExtents.zw));
+   float2 xtnts = float2 (_FgExtents.x - _FgExtents.z, _FgExtents.y - _FgExtents.w);
    float2 scale = MasterScale * float2 (XScale, YScale);
+   float2 xy = uv1 + (pos * abs (xtnts)) - 0.5.xx;
 
-   xy = ((xy - 0.5.xx) / scale) + 0.5.xx;
+   xy /= scale;
+   xy += 0.5.xx;
 
    // That's all we need.  Now the scaled and positioned foreground is returned.
 
@@ -291,9 +293,7 @@ DeclareEntryPoint (ChromakeyTransform)
    // Using min (Key.x, Key.y) means that any softness around the key causes the
    // foreground to shrink in from the edges.  After we derive the mix amount we
    // invert the spill removal and the mix amount if necessary.
-/*
-   float maskAmount = min (Bgd.a, tex2D (Mask, uv3).x);
-*/
+
    float maskAmount = tex2D (Mask, uv3).x;
    float mixAmount  = saturate ((1.0 - min (Key.x, Key.y) * Fgd.a) * 2.0);
 

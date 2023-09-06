@@ -1,5 +1,5 @@
 // @Maintainer jwrl
-// @Released 2023-06-19
+// @Released 2023-09-05
 // @Author jwrl
 // @Created 2018-03-20
 
@@ -36,7 +36,7 @@
 //
 // Version history:
 //
-// Updated 2023-06-19 jwrl.
+// Updated 2023-09-05 jwrl.
 // Changed DVE reference to transform.
 //
 // Updated 2023-05-16 jwrl.
@@ -102,29 +102,31 @@ DeclareFloat4Param (_FgExtents);
 //-----------------------------------------------------------------------------------------//
 
 DeclarePass (BG)
-{ return IsOutOfBounds(uv2) ? BLACK : tex2D (Bg, uv2); }
+{ return IsOutOfBounds (uv2) ? BLACK : tex2D (Bg, uv2); }
 
 //-----------------------------------------------------------------------------------------//
-// Transform
+// Foreground transform
 //
 // A much cutdown version of the standard transform effect, this version doesn't include
 // cropping or drop shadow generation which would be pointless in this configuration.
 //-----------------------------------------------------------------------------------------//
 
-DeclarePass (FG)
+DeclarePass (fgVid)
 {
    // The first section adjusts the position allowing for the foreground orientation.
 
-   float2 pos = abs (abs (_FgOrientation - 90) - 90)
-              ? 0.5.xx - float2 (CentreY, CentreX)
-              : float2 (0.5 - CentreX, CentreY - 0.5);
+   float2 pos = (_FgOrientation == 0) || (_FgOrientation == 180)
+              ? float2 (0.5 - CentreX, CentreY - 0.5)
+              : 0.5.xx - float2 (CentreY, CentreX);
 
    if (_FgOrientation > 90) { pos = -pos; }
 
-   float2 xy = uv1 + (pos * abs (_FgExtents.xy - _FgExtents.zw));
+   float2 xtnts = float2 (_FgExtents.x - _FgExtents.z, _FgExtents.y - _FgExtents.w);
    float2 scale = MasterScale * float2 (XScale, YScale);
+   float2 xy = uv1 + (pos * abs (xtnts)) - 0.5.xx;
 
-   xy = ((xy - 0.5.xx) / scale) + 0.5.xx;
+   xy /= scale;
+   xy += 0.5.xx;
 
    // That's all we need.  Now the scaled and positioned foreground is returned.
 

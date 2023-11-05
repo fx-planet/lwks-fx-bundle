@@ -1,4 +1,4 @@
-# Lightworks user Fx library, September 5, 2023.
+# Lightworks user Fx library, November 5, 2023.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -232,12 +232,13 @@ If you need to use two effects that have the same name, simply open one of them 
 |Antialias                     |Antialias.fx            |A two pass rotary anti-alias tool that gives a very smooth result             |
 |Channel diagnostics           |ChannelDiags.fx         |Can display individual RGB, luminance, summed RGB, U, V and alpha channels    |
 |Clamp to 16-235               |Clamp_16_235.fx         |Clamps full swing RGB signal to legal video gamut                             |
-|Color bars                    |Colorbars.fx            |Provides SMPTE-standard colour bars as an alternative to the LW EBU version   |
+|Colour smoother               |ColourSmooth.fx         |Interpolates colours to correct contouring and banding                        |
 |Expand 16-235 to 0-255        |Expand_16_235.fx        |Expands legal video levels to full gamut RGB                                  |
 |Exposure leveller             |ExposeLevel.fx          |This corrects the levels of shots where the exposure varies over time         |
 |Frame lock                    |FrameLock.fx            |Locks the frame size and aspect ratio of the image to that of the sequence    |
 |Show highs and lows           |ShowHiLo.fx             |This effect flashes blacks and whites that exceed preset levels               |
 |Shrink 0-255 to 16-235        |Shrink_16_235.fx        |Shrinks full gamut RGB signals to broadcast legal video                       |
+|SMPTE color bars              |SMPTEcolorbars.fx       |Provides SMPTE-standard colour bars as an alternative to the LW EBU version   |
 |Tenderizer                    |Tenderizer.fx           |Converts 8 bit video to 10 bit video using intermediate spline interpolation  |
 |Test greyscale                |TestGreyscale.fx        |Ten unique greyscale test patterns, either full gamut or broadcast limited    |
 |Zebra stripes                 |ZebraStripes.fx         |Displays zebra patterning in over white and under black areas of the frame    |

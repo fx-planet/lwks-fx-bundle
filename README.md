@@ -1,4 +1,4 @@
-# Lightworks user Fx library, November 6, 2023.
+# Lightworks user Fx library, January 2, 2024.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -52,6 +52,7 @@ If you need to use two effects that have the same name, simply open one of them 
 ## CATEGORY FOLDER: Backgrounds
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
+|Colour swirls                 |ColourSwirls.fx         |Generates swirling colour patterns                                            |
 |Fractal mattes                |FractalMattes.fx        |Produces fractal patterns for background generation                           |
 |Multicolour gradient          |MultiGradient.fx        |Creates a colour field with a wide range of possible gradients                |
 |Plasma matte                  |PlasmaMatte.fx          |Generates moving soft plasma-like cloud patterns                              |

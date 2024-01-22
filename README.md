@@ -1,4 +1,4 @@
-# Lightworks user Fx library, January 2, 2024.
+# Lightworks user Fx library, January 22, 2024.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
@@ -63,6 +63,7 @@ If you need to use two effects that have the same name, simply open one of them 
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
 |Alpha feather                 |AlphaFeather.fx         |Helps bed an externally generated graphic with transparency into a background |
 |Blend tools                   |BlendTools.fx           |A wide range of blend and key adjustments, can generate alpha from black      |
+|Blend with unpremultiply      |BlendTools.fx           |Adds premultiply and unpremultiply to the Lightworks blend effect.            |
 |Boolean blend plus            |BoolBlendPlus.fx        |Combines two images with an analogue of boolean logic, blends it over video   |
 |Crawl and roll fix            |CrawlRollFix.fx         |Directionally blurs a roll or crawl to smooth its motion                      |
 |Drop shadow and border        |DropShadowBdr.fx        |Drop shadow and border generator for text graphics                            |
@@ -112,11 +113,11 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
 |Bulge                         |BulgeFx.fx              |Allows a variable area of the frame to have a concave or convex bulge applied |
+|Fast perspective              |FastPerspective.fx      |Uses a 3D transform to give perspective to a 2D shape                         |
 |Flag wave                     |FlagWave.fx             |Simulates a waving flag (what a surprise)                                     |
 |Liquify                       |Liquify.fx              |Distorts the image in a soft liquid manner                                    |
 |Magnifying glass              |Magnify.fx              |Similar in operation to a bulge effect, but performs a flat linear zoom       |
 |Perspective                   |Perspective.fx          |Warps one rectangle to another using a perspective transform                  |
-|Perspective overlay           |PerspectiveOvl.fx       |Uses a 3D transform to give perspective to a 2D shape                         |
 |Refraction                    |Refraction.fx           |Simulates the distortion effect of an image seen through textured glass       |
 |Regional zoom                 |RegionalZoom.fx         |This allows you to apply localised distortion to any region of the frame      |
 |Ripples (automatic expansion) |RipplesAuto.fx          |Radiating ripples are produced under semi-automatic control                   |
@@ -195,7 +196,6 @@ If you need to use two effects that have the same name, simply open one of them 
 |EFFECT                        |FILE NAME               |DESCRIPTION                                                                   |
 |:---------------------------- |:---------------------- |:---------------------------------------------------------------------------- |
 |Auto fill                     |Autofill.fx             |Fills the blank edges of clips which differ in aspect ratio from the sequence |
-|Fast perspective              |FastPerspective.fx      |Performs a perspective transformation of the foreground image                 |
 |Flip flop                     |FlipFlop.fx             |Rotates video by 180 degrees, similar to a combination of LW flip and flop    |
 |Highlight widgets             |HighlightWidgets.fx     |Used to highlight sections of video that you want to emphasize                |
 |Progress bar                  |ProgressBar.fx          |A simple progress bar generator with border                                   |

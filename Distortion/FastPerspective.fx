@@ -1,27 +1,29 @@
 // @Maintainer jwrl
-// @Released 2023-07-17
+// @Released 2024-01-22
 // @Author windsturm
 // @Author jwrl
 // @OriginalAuthor "Evan Wallace"
 // @Created 2023-07-15
 
 /**
- This effect warps a 2D image to a 3D area to give it perspective.  It does this by
- either dragging the corners of the image or by manually adjusting the settings.  If
- necessary the distorted image can also be masked to fit it into a defined area of
- a much larger image.  It's similar to the Perspective effect, but is much simpler
- to set up.
+ Originally called "Perspective overlay", this effect warps a 2D image to a 3D area
+ to give it perspective.  It does this by either dragging the corners of the image
+ or by manually adjusting the corner settings.  If necessary the distorted image can
+ also be masked to fit it into a defined area of a much larger image.  It's similar
+ to the Perspective effect, but is much simpler to set up.
 
- It also includes the ability to blend the distorted image over the background media.
- It provides a small group of blend modes chosen to help manage highlights and shadows.
- In those modes the mix amount increases to 100% of the blended image at the 50% amount
- setting, then dissolves to a standard overlay at the 100% point.
+ The effect includes the ability to blend the distorted image over the background
+ media.  To do this it provides a small group of Photoshop-style blend modes.  In
+ those modes the mix amount increases to 100% of the blended image at the 100%
+ opacity setting, then dissolves to the normal blend overlay at the 200% point.
+ In normal blend mode the mix amount will not go above 100% no matter how high you
+ take opacity.
 
  NOTE:  This effect is only suitable for use with Lightworks version 2023 and higher.
 */
 
 //-----------------------------------------------------------------------------------------//
-// Lightworks user effect PerspectiveOvl.fx
+// Lightworks user effect FastPerspective.fx
 //
 // Based on Perspective copyright (C) 2011 by Evan Wallace
 // Forked by windsturm 2012-08-14.
@@ -48,6 +50,12 @@
 //
 // This modified version history:
 //
+// Updated 2024-01-22 jwrl.
+// Changed name from "Perspective overlay" to "Fast Perspective".
+// Changed Amount parameter to Overlay.
+// Changed Overlay range from 100% to 200%.
+// Moved blend modes to top of parameters under Overlay.
+//
 // Updated 2023-07-17 jwrl.
 // Added blend modes.
 //
@@ -56,7 +64,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Perspective overlay", "DVE", "Distortion", "Uses a 3D transform to give a blended perspective to a 2D shape", CanSize);
+DeclareLightworksEffect ("Fast perspective", "DVE", "Distortion", "Uses a 3D transform to give a blended perspective to a 2D shape", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs
@@ -70,7 +78,9 @@ DeclareMask;
 // Parameters
 //-----------------------------------------------------------------------------------------//
 
-DeclareFloatParam (Amount, "Amount", kNoGroup, kNoFlags, 1.0, 0.0, 1.0);
+DeclareFloatParam (Opacity, "Opacity", kNoGroup, DisplayAsPercentage, 1.0, 0.0, 2.0);
+
+DeclareIntParam (BlendMode, "Blend mode", kNoGroup, 0, "Normal|____________________|Screen|Add|Darken|Multiply");
 
 DeclareFloatParam (TLx, "Top left", "Corner pins", "SpecifiesPointX", 0.1, 0.0, 1.0);
 DeclareFloatParam (TLy, "Top left", "Corner pins", "SpecifiesPointY", 0.9, 0.0, 1.0);
@@ -85,8 +95,6 @@ DeclareFloatParam (BRx, "Bottom right", "Corner pins", "SpecifiesPointX", 0.9, 0
 DeclareFloatParam (BRy, "Bottom right", "Corner pins", "SpecifiesPointY", 0.1, 0.0, 1.0);
 
 DeclareBoolParam (ShowInp, "View source", kNoGroup, false);
-
-DeclareIntParam (BlendMode, "Blend mode", kNoGroup, 0, "Normal|____________________|Screen|Add|Darken|Multiply");
 
 //-----------------------------------------------------------------------------------------//
 // Definitions and declarations
@@ -104,15 +112,13 @@ DeclareIntParam (BlendMode, "Blend mode", kNoGroup, 0, "Normal|_________________
 // Code
 //-----------------------------------------------------------------------------------------//
 
-// These preamble passes means that we handle rotated video correctly.
-
 DeclarePass (Fgd)
 { return ReadPixel (Fg, uv1); }
 
 DeclarePass (Bgd)
 { return ReadPixel (Bg, uv2); }
 
-DeclareEntryPoint (PerspectiveOvl)
+DeclareEntryPoint (FastPerspective)
 {
    if (ShowInp) return tex2D (Fgd, uv3);
 
@@ -153,7 +159,9 @@ DeclareEntryPoint (PerspectiveOvl)
    float4 Bgnd = tex2D (Bgd, uv3);
    float4 retval = lerp (Bgnd, Fgnd, Fgnd.a);
 
-   if (BlendMode < SCREEN) { retval = lerp (Bgnd, retval, Amount); }
+   float blend = saturate (Opacity);
+
+   if (BlendMode < SCREEN) { retval = lerp (Bgnd, retval, blend); }
    else {
       float4 Fmix = float4 (retval.rgb, Fgnd.a);
 
@@ -162,12 +170,9 @@ DeclareEntryPoint (PerspectiveOvl)
       else if (BlendMode == MULTIPLY) { Fmix.rgb *= Bgnd.rgb; }
       else Fmix.rgb = min (Fmix.rgb + Bgnd.rgb, 1.0.xxx);      // Add blend mode
 
-      float blend = Amount * 2.0;
-
-      Fmix = lerp (Bgnd, Fmix, Fmix.a * saturate (blend));
-      retval = lerp (Fmix, retval, saturate (blend - 1.0));
+      Fmix = lerp (Bgnd, Fmix, Fmix.a * blend);
+      retval = lerp (Fmix, retval, saturate (Opacity - 1.0));
    }
 
    return lerp (Bgnd, retval, tex2D (Mask, uv3).x);
 }
-

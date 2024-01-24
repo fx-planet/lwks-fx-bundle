@@ -44,9 +44,6 @@ DeclareFloatParam (Size, "Feather", kNoGroup, kNoFlags, 0.5, 0.0, 1.0);
 DeclareBoolParam (InvertKey, "Invert key", kNoGroup, false);
 DeclareBoolParam (ShowKey, "Show key", kNoGroup, false);
 
-DeclareFloatParam (_OutputWidth);
-DeclareFloatParam (_OutputHeight);
-
 DeclareFloatParam (_OutputAspectRatio);
 
 //-----------------------------------------------------------------------------------------//
@@ -58,10 +55,6 @@ DeclareFloatParam (_OutputAspectRatio);
 #endif
 
 #define BLACK float2(0.0, 1.0).xxxy
-
-#define BdrPixel(SHADER,XY) (IsOutOfBounds(XY) ? BLACK : tex2D(SHADER, XY))
-
-#define LUMACONV float3(0.2989, 0.5866, 0.1145)
 
 #define LOOP   12
 #define DIVIDE 24
@@ -87,14 +80,14 @@ DeclarePass (Delta)
 
    if (InvertKey) alpha = 1.0 - alpha;
 
-   return float4 (alpha.xxx, Fgnd.a);
+   return float4 (alpha.xxxx);
 }
 
 DeclareEntryPoint (DifferenceKey)
 {
    float4 Fgnd = ReadPixel (Fg, uv1);
-   float4 Bgnd = ShowKey ? float4 (0.0.xxx, 1.0) : ReadPixel (Bg, uv2);
-   float4 _msk = ReadPixel (Mask, uv4);
+   float4 Bgnd = ShowKey ? BLACK : ReadPixel (Bg, uv2);
+   float4 _msk = ReadPixel (Mask, uv1);
    float4 retval;
 
    if (IsOutOfBounds (uv1)) { retval = Bgnd; }
@@ -121,4 +114,3 @@ DeclareEntryPoint (DifferenceKey)
 
    return lerp (Bgnd, retval, retval.a * _msk.x);
 }
-

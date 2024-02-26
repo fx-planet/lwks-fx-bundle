@@ -36,7 +36,7 @@
 
 #include "_utils.fx"
 
-DeclareLightworksEffect ("Triple split", "DVE", "Multiscreen Effects", "A range of three way splits over a background", CanSize);
+DeclareLightworksEffect ("Triple split", "DVE", "Multiscreen Effects", "A range of three way splits over an adjustable background", CanSize);
 
 //-----------------------------------------------------------------------------------------//
 // Inputs

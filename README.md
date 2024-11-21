@@ -1,4 +1,11 @@
-# Lightworks user Fx library, February 26, 2024.
+# This is an OLD repository that is no longer maintained!   
+# The current Lightworks user Fx library can now be found there: https://github.com/LWKS-Software/lwks-fx-bundle  
+___  
+___
+#### The original text follows for archiving purposes only:  
+
+  
+### Lightworks user Fx library, February 26, 2024.
 
 The effects in this ZIP file were created by Lightworks users - thank you to all who have contributed, especially khaver, who started things off.  They will run on versions of Lightworks from 2023.1 upwards.  In the versions that support it you can directly browse and load these effects from within the Lightworks effects engine.
 
